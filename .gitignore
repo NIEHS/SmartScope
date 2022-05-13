@@ -16,4 +16,5 @@ Smartscope/server/main/custom_templates/
 *.sif
 config/singularity/etc.hosts
 config/singularity/resolv.conf
+config/singularity/env.sh
 Smartscope/lib/Finders/AIFinder/detectors/AR3-0528-3_atlas.png
