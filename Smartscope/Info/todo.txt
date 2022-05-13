@@ -1,0 +1,24 @@
+t  High Priority
+2021-01-11  Test with serialem and deploy v0.6 on NIEHS server
+2021-01-11  Write documentation! Good docs contribute to project longevity
+2021-01-11  Fix mySQL error when connection drops (somewhat fixed but testing will tell)
+2021-01-11  Prevent adding BIS target to queue. Redirect to center instead
+
+
+t  Medium Priority
+2020-09-13  Add way to import the exported models to remote server (works but very clunky)
+2020-09-13  Write a script for 1-step installation
+2021-01-11  Add a button for admin users to register an atlas or square to the training set after proper and careful curation (will ease AI development)
+2021-01-25  Keep track of tilt angle somewhere in the database
+
+t  Low Priority
+2021-01-11  Add support for EER movies
+2021-01-11  Add main user to session (will be useful for filtering the grids in the sidepanel)
+2021-01-11  Split data collection and screening sessions (will be useful for filtering the grids in the sidepanel)
+2021-01-11  Allow for atlas alignement when reloading an already screened grid.
+2021-01-11  Change the way we handle the different classifier to allow to add a new one or switch easily mid run (useful in case of a square that has bad hole identification and would liek to test another one)
+2021-01-11  Make sure that all the manual interactions are monitored in the database
+2021-01-11  Add square and hole recentering routines in the serialEM functions (now easier since we can grab the buffer images directly from python)
+2021-01-11  Add ways to easily swap between different serialEM function (to test new methods without interfering)
+2021-01-11  Build in BISECT
+2021-01-11  Add multi-shot per hole.

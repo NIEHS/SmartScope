@@ -1,0 +1,20 @@
+# this is read by the standalone daemon and embedded servers
+[server]
+
+# this is only for the mysqld standalone daemon
+[mysqld]
+datadir=/mnt/mariadb/
+plugin_dir=/usr/lib/mysql/plugin/
+socket=/run/mysqld/mysqld.sock
+port=10500
+# Disabling symbolic-links is recommended to prevent assorted security risks
+#skip-networking
+symbolic-links=0
+sql-mode=''
+character-set-server=utf8
+tmpdir=/tmp 
+
+[mysqld_safe]
+log-error=/opt/logs/mysqld.log
+pid-file=/var/run/mysqld.pid
+

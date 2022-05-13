@@ -1,0 +1,54 @@
+{% load rest_framework %}
+{% for hole in holes %}
+<div class='col-12 col-lg-6 col-xl-4 p-1'>
+    <div id="{{hole.hm_id}}" hole_id="{{hole.hole_id.hole_id}}" class="card holeCard">
+        <div class="card-header">
+
+            <div class="row p-0 align-items-center justify-content-between">
+                <div class="div col-2 p-0 justify-content-center d-none d-md-block">
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">Rate</a>
+                            <div class="dropdown-menu hmQuality">
+                                {% for key,class in classifier.classes.items %}
+                                <button id='' class="dropdown-item" label="{{class.name}}"
+                                    onclick="updateClassifier('holes','{{classifier.name}}', '{{key}}', ['{{hole.hole_id.pk}}'])">{{class.name}}</button>
+                                {% endfor %}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <h5 class="col-19 card-title m-0">Hole {{hole.number}}</h5>
+                <div class="div col-2 p-0 justify-content-center d-none d-md-block">
+                    <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
+                            class="bi bi-zoom-in zoomIcon"></i></button>
+
+                </div>
+            </div>
+        </div>
+        <div class="card-img-top ">
+            <div class="div row mw-100 m-0 p-0 justify-content-center">
+                <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-center">
+                    <img class="w-100" src="{{hole.png.url}}">
+                </div>
+                <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-center">
+                    <img class="w-100" src="{{hole.ctf_img}}">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text text-left m-0">Defocus: {{hole.defocus|floatformat:0}} &#8491;</p>
+            <p class="card-text text-left m-0">CTFfit: {{hole.ctffit|floatformat:1}} &#8491;</p>
+            <p class="card-text text-left m-0">Astig: {{hole.astig|floatformat:0}} &#8491;</p>
+            <p class="card-text text-left m-0">Angle: {{hole.angast|floatformat:1}} &#176;</p>
+        </div>
+        <div class="card-footer py-1">
+            <p class="card-text text-left m-0"><small class="text-muted">Frames: {{hole.frames}}</small></p>
+            <p class="card-text text-left m-0"><small class="text-muted">Completion time:
+                    {{hole.hole_id.completion_time |date:'Y-m-d, H:i:s'}}</small></p>
+        </div>
+
+    </div>
+</div>
+{% endfor %}

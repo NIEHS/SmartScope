@@ -1,0 +1,188 @@
+squareFinders: 
+    Square finder:
+        name: Square finder
+        method: find_squares
+        package: Smartscope.lib.Finders.basic_finders
+        targetClass:
+            - Finder
+            - Classifier
+        description: |
+            Square finder using binary threshold detection.
+            The classifier uses a flow diagram of decision to label the squares.    
+    
+    AI square finder: 
+        name: AI square finder
+        method: find_squares
+        package: Smartscope.lib.Finders.AIFinder.wrapper
+        kwargs: 
+            device: cpu
+            imgsz: 2048
+            thresh: 0.2
+            iou: 0.3
+            weights: square_weights/new_r50_final.pth
+        targetClass:
+            - Finder
+            - Classifier
+        description: |
+            Square finder using RCNN identification and classification.
+        classes:
+            square:
+                value: 1
+                name: Good
+                color: blue
+            small:
+                value: -1
+                name: Small
+                color: red
+            fraction:
+                value: -1
+                name: Partial
+                color: MediumAquaMarine        
+            dry:
+                value: -1
+                name: Dry
+                color: blueviolet
+            cracked:
+                value: -1
+                name: Cracked
+                color: purple
+            contaminated:
+                value: -1
+                name: Contaminated
+                color: CornflowerBlue
+
+holeFinders: 
+    FFT finder: 
+        name: FFT finder
+        method: fft_method
+        package: Smartscope.lib.Finders.basic_finders
+        targetClass:
+            - Finder
+        description: |
+            Hole finder that identifies the angle and spacing of the holes by identifying the spots in the power spectrum.
+
+    Binary finder:
+        name: Binary finder
+        method: find_targets_binary
+        package: Smartscope.lib.Finders.basic_finders
+        targetClass:
+            - Finder
+        description: |
+            Hole finder that identifies the holes with binary thresholding.
+            This method is pretty weak.
+
+    Regular pattern: 
+        name: Regular pattern
+        method: regular_pattern
+        package: Smartscope.lib.Finders.basic_finders
+        kwargs: 
+            spacing: 5
+        targetClass:
+            - Finder
+        description: |
+            Hole finder that just places a regularly spaced pattern on the square.
+            This method doesn't identify holes and is used a fallback.
+            Also, this method is currently preffered on non-holey grids such as negative stain.
+    
+    AI hole finder:
+        name: AI hole finder
+        method: find_holes
+        package: Smartscope.lib.Finders.AIFinder.wrapper
+        kwargs: 
+            imgsz: 1280
+            thresh: 0.2
+            iou: 0.15
+            device: cpu
+            weights_circle: circle_weights/circle_weight_12_7_21.pt
+            method: yolo
+        targetClass:
+            - Finder
+        description: |
+            Hole finder that uses the YOLO architecture to identify the holes.
+            Has a built-in classifier to sort out the dark contamination spots that are often labeled as holes on carbon mesh grids.
+
+
+selectors:
+    Size selector:
+        name: Size selector
+        method: cluster_by_field
+        package: Smartscope.lib.selectors
+        kwargs:
+            field: area
+        targetClass:
+            - Selector
+        description: |
+            Sorts and clusters the targets by their size in N categories.
+        clusters:
+            values: ascending
+            colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
+        exclude: [] 
+
+    Distance selector:
+        name: Distance selector
+        method: cluster_by_field
+        package: Smartscope.lib.selectors
+        kwargs:
+            field: dist_from_center
+        targetClass:
+            - Selector
+        description: |
+            Sorts and clusters the targets by their distance from center in N categories.
+        clusters:
+            values: ascending
+            colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
+        exclude: []         
+
+    Graylevel selector:
+        name: Graylevel selector
+        method: gray_level_selector
+        package: Smartscope.lib.selectors
+        targetClass:
+            - Selector
+        description: |
+            Sorts and clusters the targets by gray level from darkest to brightest.
+        clusters:
+            values: ascending
+            colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
+        exclude: ['0','1']   
+
+Micrographs curation: 
+    name: Micrographs curation
+    targetClass:
+        - Classifier
+    description: |
+        Classes for manual micrographs curation
+    classes:
+        Not Bad:
+            value: 1
+            name: Not Bad
+            color: "MediumSlateBlue"
+        Decent:
+            value: 2
+            name: Decent
+            color: "#56B4E9"
+        Great:
+            value: 3
+            name: Great
+            color: "#0072B2"        
+        Cracked:
+            value: -1
+            name: Cracked
+            color: "#CC79A7"
+        Empty:
+            value: -1
+            name: No particles, Empty hole
+            color: "#E69F00"
+        Contaminated:
+            value: -1
+            name: Contamination, Aggregate
+            color: "#009E73"
+        Icy:
+            value: -1
+            name: Bad/Crystalline/Thick ice
+            color: "#D55E00"
+        Missed Target:
+            value: -1
+            Name: Missed Target
+            color: "gray"
+        

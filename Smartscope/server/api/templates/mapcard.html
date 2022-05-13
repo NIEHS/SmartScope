@@ -1,0 +1,131 @@
+{% load rest_framework %}
+{% load static %}
+<div class="card holeCard mapCard" targets="{{instance.targets_prefix}}">
+    <div class="card-header">
+        <div class="row p-0 align-items-center justify-content-between">
+            <h3 class="d-inline">{{instance.alias_name}}</h3>
+
+            <div class="div col-4 p-0 justify-content-center d-none d-md-block">
+                <button id='' class='a btn btn-outline-secondary showLegend hasTooltip' type="button" value='1'
+                    data-toggle="tooltip" data-placement="top" title="Toggle legend">
+                    <i class="bi bi-card-list "></i></button>
+                <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-display"></i></a>
+                <div class="dropdown-menu">
+                    <div class="div" id="quality">
+                        <h6 class="dropdown-header">Classifiers</h6>
+
+                        {% for classifier in targets_methods.classifiers %}
+                        <button id='opt-classifiers'
+                            class="dropdown-item hasTooltip {% if classifier.name == method %}active{% endif %}"
+                            data-toggle="tooltip" data-placement="left" title="{{classifier.description}}"
+                            onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %} false,'classifiers','{{classifier.name}}')">{{classifier.name}}</button>
+                        {% endfor %}
+
+                        <h6 class="dropdown-header">Selectors</h6>
+                        {% for selector in targets_methods.selectors %}
+                        <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
+                            title="{{selector.description}}"
+                            class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
+                            onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'selectors','{{selector.name}}')">{{selector.name}}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
+                        class="bi bi-zoom-in zoomIcon"></i></button>
+
+
+
+            </div>
+        </div>
+    </div>
+    <nav class=" card-header py-0 navbar navbar-expand-xl navbar-light bg-light" role="navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#atlasNavBar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-center" id="atlasNavBar">
+            <ul id="queueBtns" class="navbar-nav">
+                <li id="{{instance.targets_prefix}}SeleMenu" class="nav-item dropdown">
+
+                    {% if instance.targets_prefix == 'hole' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">All Holes</a>
+                    <div id='' class="dropdown-menu">
+                        <button class="dropdown-item" onclick='queueSquareTargets(this)' value='addall'>Queue
+                            all holes</button>
+                        <button class="dropdown-item" onclick='queueSquareTargets(this)' value='cancelall'>Cancel all
+                            holes</button>
+                        <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS('{{instance.pk}}')"
+                            value=''>Regroup
+                            BIS</button>
+                    </div>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle disabled" href="#" id="addTargetsBtn" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">New targets</a>
+                    <div class="dropdown-menu">
+                        <button id='addTargets' class="dropdown-item" onclick="addTargets(this, targetsSelection)"
+                            value='addTargets'>Add
+                            Targets</button>
+                        <button id='clearTargets' class="dropdown-item"
+                            onclick="clearSelection(targetsSelection,'targets')" value='addTargets'>Clear
+                            Targets</button>
+                    </div>
+                </li>
+                {% endif %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle disabled" href="#" id="{{instance.targets_prefix}}SeleMenuBtn"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                        onclick="optionMenu({{instance.targets_prefix}}Selection, '{{instance.targets_prefix}}s')">
+                        Actions</a>
+                    <div class="dropdown-menu">
+                        {% if display_type == 'classifiers' %}
+                        <div class="div" id="quality">
+                            <h6 class="dropdown-header">Edit quality</h6>
+                            {% for methods in targets_methods.classifiers %}
+                            {% if methods.name == method %}
+                            {% for key,class in methods.classes.items %}
+                            <button id='' class="dropdown-item"
+                                onclick="updateClassifier('{{instance.targets_prefix}}s','{{method}}', '{{key}}')">{{class.name}}</button>
+                            {% endfor %}
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        {% endif %}
+                        <div class="div" id="{{instance.targets_prefix}}Queue">
+
+                            <h6 class="dropdown-header">Add/remove from Queue</h6>
+                            <button id='opt-queued-{{instance.targets_prefix}}' class="dropdown-item" value='1'
+                                onclick="popupSele(this)">Queue</button>
+                        </div>
+
+                    </div>
+                </li>
+                <li class="nav-item d-flex align-items-center">
+                    <a id='{{instance.targets_prefix}}ClearSele' class="nav-link disabled hasTooltip"
+                        onclick="clearSelection({{instance.targets_prefix}}Selection,'{{instance.targets_prefix}}')"
+                        data-toggle="tooltip" data-placement="top" title="Clear Selection"><i
+                            class="bi bi-x-square"></i></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="row h-100 w-100 m-0 p-0 justify-content-center">
+        <div id="{% if instance.alias_name == 'Atlas' %}Atlas{% else %}Square{% endif %}_im"
+            class="d-flex w-100 mh-100 justify-content-center">
+            {{ svg | safe }}
+        </div>
+    </div>
+
+    <div class="card-footer py-1">
+        <p class="card-text text-left m-0"><small class="text-muted">Completion time:
+                {{instance.completion_time |date:'Y-m-d, H:i:s'}}</small></p>
+    </div>
+</div>
+
+<script>
+    $("#main").find(".hasTooltip").tooltip();
+</script>

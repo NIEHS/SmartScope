@@ -1,0 +1,17 @@
+data/PythonPlugin.vcxproj.filters.i
+data/stdafx.h.i
+data/PythonPlugin.cpp.i
+data/PythonPlugin.sln.i
+data/PythonPlugin.def.i
+data/MacroMasterList.h.i
+data/PySEMSocket.cpp.i
+data/buildall.bat.i
+data/SerialEMModule.cpp.i
+data/Resource.h.i
+data/buildmodules.i
+data/stdafx.cpp.i
+data/PythonPlugin.vcxproj.i
+data/Readme.txt.i
+data/PySEMSocket.h.i
+data/PythonPlugin.rc.i
+data/setup.py.i

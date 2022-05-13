@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<title>Session setup</title>
+<div id="body-row" class='row'>
+    <!-- 
+    <div id="sidebar-container" class="sidebar-expanded col-auto d-none d-md-block">
+        <ul class="list-group sticky-top sticky-offset">
+            <li id="Menu"
+                class="list-group-item sidebar-separator-title text-muted d-flex align-items-center menu-collapsed">
+                Menu
+            </li>
+            <div style='max-height: 28vh; overflow: auto;'>
+                <a class="bg-dark list-group-item list-group-item-action h-100" id="setup"
+                    href="{% url 'setup_autoscreen' %}">
+                    <div class="d-flex w-100 justify-content-start align-items-center">
+                        <span class="menu-collapsed">Setup</span>
+                    </div>
+                </a>
+            </div>
+
+            <li id="Sessions"
+                class="list-group-item sidebar-separator-title text-muted d-flex align-items-center menu-collapsed">
+                Menu
+            </li>
+            {% if sessions %}
+            {% for s in sessions %}
+            <a class="bg-dark list-group-item list-group-item-action h-100" id="{{s.session_id}}"
+                href="{% url 'run_autoscreen' %}{{s.session_id}}/">
+                <div class="d-flex w-100 justify-content-start align-items-center ">
+                    <span class="menu-collapsed col-11 pl-0 pr-0">{{ s }}</span>
+                    <span class="pl-1 pr-1 col-1">{% if alive and s.session_id == session.session_id %}{% include
+                        "circle.svg" %}{% endif %}</span>
+                </div>
+            </a>
+            {% endfor %}
+            {% endif %}
+    </div> -->
+
+    <div id='main' class="col" style="background-color: #f5f5f5;">
+        {% block main %} {% endblock main %}
+    </div>
+</div>
+{% endblock content %}

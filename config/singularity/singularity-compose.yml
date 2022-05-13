@@ -1,0 +1,34 @@
+version: "2.0"
+instances:
+  smartscope:
+    build:
+      context: ../../
+      recipe: config/singularity/smartscope-min-CUDA10.2-torch1.8.1.def
+    volumes:
+      - /home/bouvettej2/Smartscope-beta:/opt/smartscope
+      - /auto_screening/:/mnt/data/
+      - /auto_screening/log_test/:/opt/logs/
+      - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/
+      - /auto_screening/tmp/test_db/:/mnt/mariadb/
+      - /mnt/gatan_Raid_X/:/mnt/arctica/
+      - /mnt/krios_Raid_X:/mnt/krios/
+      - /auto_screening/tmp/scope/:/mnt/scope/
+    # ports:
+    #   - "48002:48002"
+    start:
+      options:
+        - writable-tmpfs
+        - nv
+        - "env-file=smartscope.env"
+  # nginx:
+  #   image: docker://nginx
+  #   # build:
+  #   #   context: ../../
+  #   volumes:
+  #     - nginx-test/:/etc/nginx/conf.d/
+  #     - /home/bouvettej2/Smartscope-beta/static/:/opt/smartscope/static/
+  #     - /auto_screening/:/mnt/data/
+  #     - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/
+  #   ports:
+  #     - "8080:80"
+      

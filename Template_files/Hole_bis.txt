@@ -1,0 +1,125 @@
+MacroName  Hole
+
+TiltAngle = {tilt_angle}
+TiltTo $TiltAngle
+
+ReportTargetDefocus TD
+TD_low = {defocus_min} # low defocus microns
+TD_high = {defocus_max}  #high defocus microns
+delta = {defocus_step} # defocus step microns
+
+ReportTargetDefocus TD
+
+if $TD > $TD_low OR $TD <= $TD_high
+    SetTargetDefocus $TD_low
+else
+    IncTargetDefocus -$delta
+endif
+
+
+
+is_negativestain = {NS}
+drift_crit = {drift_crit}
+
+
+if $is_negativestain == 0
+    #if $TiltAngle == 0
+        file = reference/holeref.mrc
+    #else
+    #    file = reference/holeref_$TiltAngle.mrc
+    #endif
+    ReadOtherFile 0 T $file
+endif
+
+center = {center}
+xpos = {Xpos}
+ypos = {Ypos}
+zpos = {Zpos}
+
+holes = {Holes}
+xs = {Xs}
+ys = {Ys}
+
+AllowFileOverwrite 1 
+
+SetImageShift 0 0
+echo Moving to $center at X: $xpos Y: $ypos Z: $zpos
+MoveStageTo $xpos $ypos $zpos
+if $is_negativestain == 0
+
+    V
+    CropCenterToSize A 1700 1700
+    AlignTo T
+    ReportAlignShift
+    Echo hole shift 1 $RepVal5 $RepVal6
+    holeshift = sqrt $RepVal5 * $RepVal5 + $RepVal6 * $RepVal6
+
+    if $holeshift > 500
+        if $TiltAngle == 0
+            ResetImageShift
+        else
+            ReportImageShift
+            sh_x = $RepVal5
+            sh_y = $RepVal6 * COS ( $TiltAngle )
+            echo Resetting stage by $sh_x $sh_y
+            MoveStage $sh_x $sh_y
+        endif
+        V
+        CropCenterToSize A 1700 1700
+        LimitNextAutoAlign 0.5
+        AlignTo T
+        ReportAlignShift
+        Echo hole shift 2 $RepVal5 $RepVal6
+    endif
+
+endif
+V
+OpenTextFile Lock W 0 raw/.lock
+CloseTextFile Lock
+OpenNewFile $center
+S
+CloseFile
+RemoveFile raw/.lock
+
+Autofocus
+
+ReportDefocus
+currentDefocus = $RepVal1
+
+if $drift_crit > 0
+    DriftWaitTask $drift_crit A 300 10 -1 T 1
+endif
+
+loop $#holes i
+    prevind = $i - 1
+
+    CallFunction Autoloader::WaitForRefilling
+    CallFunction Autoloader::WaitForPump 
+
+    if $i > 1
+        x = $xs[$i] - $xs[$prevind]
+        y = $ys[$i] - $ys[$prevind]
+    else 
+        x = $xs[$i]
+        y = $ys[$i]
+    endif
+
+    ImageShiftByMicrons $x $y
+    def = $ys[$i] * SIN ( $TiltAngle )
+    echo Changing defocus by $def for $ys[$i] at $TiltAngle degree tilt
+    SetDefocus $currentDefocus - $def
+
+    OpenTextFile Lock W 0 raw/.lock
+    CloseTextFile Lock
+    OpenNewFile $holes[$i]
+    Preview
+    S
+    CloseFile
+    Delay 1
+    RemoveFile raw/.lock
+endloop
+echo Area done
+#CompareStrings file reference/holeref.mrc
+#if $ReportedValue1 != 0
+#    RemoveFile $file
+#endif

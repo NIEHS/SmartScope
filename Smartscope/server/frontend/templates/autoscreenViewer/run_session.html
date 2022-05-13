@@ -1,0 +1,97 @@
+{% extends "auto_screen_run.html" %}
+{% block main %}
+{% csrf_token %}
+
+<div class="row align-items-center justify-content-between">
+    <h1 class="col-auto">Run {{session}}</h1>
+    <a class='btn btn-outline-primary' href="{% url 'browser' %}?session_id={{session.session_id}}">Go to session
+        browser</a>
+    <p id="disk" class="col-auto align-middle"> Loading...</p>
+</div>
+{% if session.isScopeLocked.1 is not None %}
+<div class="row align-items-center justify-content-center">
+    {% if session.isScopeLocked.1 != session.session_id%}
+    <div class='alert-warning p-2 m-2'>Microscope {{session.microscope_id}} is currently busy: <a
+            href="{% url 'run_session' session.isScopeLocked.1 %}">View
+            current session</a></div>
+    {% else %}
+    <div class='alert-warning p-2 m-2'>Microscope {{session.microscope_id}} is currently busy running this session.
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if process is not None%}
+<p>PID: {{process.PID}}</p>
+<p>Status: {{process.status}}</p>
+<p>Start time: {{process.start_time}}</p>
+<p>End time: {{process.end_time}}</p>
+{% endif %}
+
+
+<button id="start-button" class="btn btn-outline-primary" type="button" value="start">Start</button>
+<button id="pause" class="btn active " type="button" value="pause">Pause between grids</button>
+{% if request.user.is_staff %}
+<span>Staff only (use carefully):</span>
+<button id="force-start-button" class="btn btn-outline-primary" type="button" value="start">Force Start</button>
+<button id="removeLockButton" class="btn btn-outline-primary" type="button" value="remove_lock">Remove Microscope Lock
+    File</button>
+<button id="forceKill" class="btn btn-outline-primary" type="button" value="force_kill">Force-kill all session
+    processes</button>
+{% endif %}
+
+
+<div id="paused" class='popup hidden'>
+    <h3>SerialEM is paused</h3>
+    <div>
+        <button id="continue" class="btn btn-outline-primary" type="button" value="continue">Continue current
+            grid</button>
+        <button id="continue-next" class="btn btn-outline-primary" type="button" value="next">Proceed to next
+            grid</button>
+
+    </div>
+</div>
+
+<div>
+    <div class="media">
+        <div class="media-body">
+            <h5 class="mt-0 font-weight-bold blue-text">Queue</h5>
+            <textarea readonly id='queue' class="form-control z-depth-1" rows="10">
+                Fetching Queue...
+            </textarea>
+        </div>
+    </div>
+
+    <div class="media">
+        <div class="media-body">
+            <h5 class="mt-0 font-weight-bold blue-text">Main Output</h5>
+            <textarea readonly id='out' class="form-control z-depth-1" rows="10">
+                Fetching Logs...
+            </textarea>
+        </div>
+    </div>
+    <div class="media">
+        <div class="media-body">
+            <h5 class="mt-0 font-weight-bold blue-text">Processing</h5>
+            <textarea readonly id='proc' class="form-control z-depth-1" rows="10">
+                Fetching logs...
+                </textarea>
+        </div>
+    </div>
+</div>
+
+{% endblock main %}
+
+{% block script %}
+{% load static %}
+
+<script>
+    var is_running = {% if alive %}true{% else %} false{% endif %};
+    const session_id = "{{session.session_id}}";
+    console.log(is_running)
+</script>
+<script src="{% static 'run_session.js' %}"></script>
+
+
+
+{% endblock script %}

@@ -1,0 +1,96 @@
+MacroName Autoloader
+SetDirectory {Source}
+ClearPersistentVars
+
+AllowFileOverwrite 1
+grids = {Grids}
+positions = {Positions}
+loop $#grids ind
+    GetFileInWatchedDir .$positions[$ind]_finished.txt
+        if $ReportedValue1 == 1
+            echo Grid $positions[$ind] already screened
+            Continue
+        endif
+        LoadCartridge $positions[$ind]
+        Delay 10
+        SetColumnOrGunValve 1
+
+    loop 100000
+        GetFileInWatchedDir .$positions[$ind]_finished.txt
+        if $ReportedValue1 == 1
+            echo Grid $positions[$ind] finished screening
+            Break
+        else
+            GetFileInWatchedDir script.txt
+            echo waiting for next command
+            if $ReportedValue1 == 1
+                RunScriptInWatchedDir script.txt
+            else
+                Delay 1           
+            endif
+        endif
+
+    endloop
+
+    MoveStageTo 0 0
+    SetColumnOrGunValve 0
+    Delay 10
+endloop
+
+Function Eucentric
+    echo Starting eucentricity
+    loop 3
+        Zs = {{ 0 0 }}
+        ReportStageXYZ
+        initZ = $ReportedValue3
+        TiltTo 10
+        Search
+        loop 2 euc_ind
+            TiltBy -5
+            Search
+            AlignTo B 1
+            ReportAlignShift
+            Zs[$euc_ind] = $ReportedValue6 / SIN (5 * $euc_ind)
+        endloop
+        Z = ( $Zs[1] + $Zs[2] ) / 2000
+        totalZ = $initZ + $Z
+        if ABS $totalZ < 275
+            echo Moving by $Z um
+            MoveStage 0 0 $Z
+        endif
+        if ABS $Z < 50
+            echo Eucentric Done
+            Break
+        else
+            echo Iterating...
+        endif
+    endloop
+EndFunction
+
+Function WaitForRefilling
+
+Loop 10
+  AreDewarsFilling
+  If $repVal1 == 1
+    echo LN2 is Refilling
+  Else
+    Break   
+  Endif   
+  Delay 1 min
+EndLoop
+
+EndFunction
+
+Function WaitForPump
+
+Loop 10
+  IsPVPRunning pumping
+  If $pumping == 1
+    echo Pump is Running
+  Else
+    Break   
+  Endif   
+  Delay 30 sec
+EndLoop      
+
+EndFunction

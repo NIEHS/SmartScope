@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: serialem
+Version: 1.0
+Summary: Python module for SerialEM
+Home-page: http://bio3d.colorado.edu/SerialEM
+Author: David Mastronarde
+Author-email: mast@colorado.edu
+Maintainer: David Mastronarde
+Maintainer-email: mast@colorado.edu
+License: UNKNOWN
+Platform: UNKNOWN
+
+
+Python module for using Python scripting in SerialEM or external control of SerialEM
+
+

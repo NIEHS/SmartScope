@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<title>{{title}}</title>
+<div class="container-fluid">
+    <h1 class="title align-middle">{{title}}</h1>
+    <ul>
+        {% for l in log %}
+        {% if l.0 == '' %}
+        <br>
+        {% elif l.0 == 't' %}
+        <h5>{{l.1}}</h5>
+        {% else %}
+        <li class='list-group-item'><b class='pr-2'>{{l.0}}</b>{{l.1}}</li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+{% endblock content %}

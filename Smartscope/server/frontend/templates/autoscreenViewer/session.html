@@ -1,0 +1,14 @@
+{% block session %}
+{% csrf_token %}
+<div id='session' class="container-fluid">
+    {% csrf_token %}
+    <h3>{{session}}</h3>
+    {% for field in form_general %}
+    <div class="row align-items-center">
+        <div class="col-4">{{ field.label }}</div>
+        <div class="col-4">{{ field }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock session %}

@@ -1,0 +1,118 @@
+t  v0.7a
+2021-02-25  Made the frontend responsive to the new data layout. More things are funnelled through the websocket for responsive design.
+2022-02-25  Massive change in data organization throught the introduction of plugins and protocols.
+2022-02-25  Plugins are made to easily add and test new ways to find, classify and select areas.
+2022-02-25  Added Finders, Classifiers and Selector layers to the process to help with selecting areas.
+
+t  v0.6
+2022-02-02  Changed the settling time for image-shift to 0 seconds from the default 1 second
+2022-02-02  The new PLUGINS_FILE located in config/smartscope/plugins.json contains the different hole finders and square finders
+2022-02-02  Moved the SMARTSCOPE variable from the django settings file and introduced a PLUGINS_FILE variable instead.
+2022-02-02  Added a lock file mechanism to prevent launching multiple sessions on the same microscope simultaneously
+2022-01-22  Finished full stack containerization and wrote installation procedure.
+2022-01-21  Containerized the webserver for singularity, still missing the database configuration.
+2022-01-21  Modified Images to cards with zoom in capabilities
+2022-01-11  Websocket requires ASGI protocol. Moved from uwgi to uvicorn/gunicorn for serving django
+2022-01-11  Added WebSocket connection for auto refreshes on live grid, still using API calls to load the data and when grid is completed
+2022-01-11  Added Redis cache for websocket dependencies. (Could be used for more caching options)
+2022-01-11  New submission form for starting run with responsive validation
+2022-01-11  Added Scale bars to atlas and square
+2022-01-08  Made the Website mobile friendly
+2022-01-06  Added a button to regroup the holes for BIS after curating
+2022-01-06  Improved the hole grouping algorithm
+2022-01-06  Changed SVG library for dynamic SVG renderering (svg files are not saved to disk anymore)
+2022-01-06  Removed data duplication between /raw and /area directory when image is single tile. Replace by symbolic link (Should consider hard link)
+2022-01-06  Removed extraction of holes and squares from images to save disk space as we're not using them
+2021-12-18  Changed the side panel and url management in browser to dynamically load from the API.
+2021-12-18  The grid names on the side panel take the color of the rating given to them.
+2021-12-18  Added proper logging throughout the python code. Global logs are located in $AUTOSCREENING/logs
+2021-12-18  Added a fake scope to test the workflow offline of the microscope. The fake scope picks up files from a random pool.
+2021-12-18  Smartscope now connects through serialem with the serialem python API using socket connection
+2021-12-18  Added new fields to Detector model for enabling movie alignment
+2021-12-18  Built in movie alignment in the Montage class using IMOD alignframe (Only work with counting mode. Will need work to allow for EER.)
+
+t  v0.5
+2021-09-09  Updated the hole finder to new version. Disabled the hole classifer
+2021-09-09  Added the ability to add targets when the hole finder fails
+
+t  v0.44
+2021-07-12  Split of worker and server to allow split install between 2 computers
+
+t  v0.43
+2021-05-25  Added new hole finder and square classifer based on AI. (Name AIFinder)
+
+t  v0.42
+2021-05-20  Backend was prepared for modular selection and easy installation of new finders and classifiers. (not yet showing in frontend)
+2021-05-20  Clicking the high-mag images will pop a window with a zoomed in vof the image and the FFT.
+2021-05-20  All high-mag images from BIS group are shown at once.
+2021-05-20  Squares with queued, completed or active targets are highlighted with different colors on the atlas
+2021-05-20  BIS targets in one group are highlighed on hover
+2021-05-20  Can remove/add all targets from queue in one click
+2021-05-20  Added many quality of live improvements to the front end
+
+t  v0.41
+2021-04-22  Fixed the frame file name addition to the database
+2021-04-22  Added tracking of Z-height on atlas and squares for proper navigation
+2021-04-21  Modified the function for autocontrast_holes to use less standard deviations around the mean. It improved contrasts although it is far from perfect.
+2021-04-21  Fixed the bugs with the new serialem scripts.
+2021-04-21  Fixed a bug where the .mdoc file was not saved at the time of copying the files. Issue was happening on K2.
+
+t  v0.4
+2021-04-19  Each grid in a session can have different GridCollectionParams
+2021-04-19  Moved the microscope parameters from the ScreeningSession to a new model GridCollectionParams.
+2021-04-16  Added Image-shift capabilities
+2021-04-09  Fixed bug where high mag models were not exported to .json.
+2021-04-09  Removed some amount of useless calls to the dabase to speed up loadings
+2021-04-07  Added remote database server connection
+2021-04-07  Added s3 read for files
+2021-04-07  Added all environment variables to a conf.env file
+
+t  v0.35
+2021-03-24  Reverted to the original hole reference alignement since the new implementation was not satisfactory.
+2021-03-24  Fixed a bug in the autoscreen running interface that stays into error after restart instead of going back to running
+2021-03-24  Re-added automatic reset of the microscope auto_screen directory at the start of a new screening session. Now as a singal when a new Process instance is created.
+2021-03-23  Troubleshooted the new autoscreening script on the microscope.
+2021-03-22  Added signals to automatically create a group directory on creation and moving session on group change.
+2021-03-19  Added all the dynamic GET and PUT request to work through the API.
+2021-03-18  Added basic REST API to filter the different models
+2021-03-18  Added migration of v0.2 to 0.34
+2021-03-04  Added script to migrate vprior to 0.2 to the new standard.
+2021-03-04  Added methods to export and import the database as ScreeningSession blocks
+2021-03-04  Added sqlite db to the main db
+
+t  v0.34
+2021-03-02  Added grid types fields and redirected notes and quality ratings to main DB.
+2021-03-01  Added launching methods of autoscreening from the web interface
+2021-02-25  Added models to keep track of grids in main db. Also added exporting the models to json in session creation
+2021-02-25  Changed config file paths to env variables  
+2021-02-25  Dockerized the dev version
+
+t  v0.33 
+2021-02-17  Included the new fft hole spacing finder.
+2021-02-16  Added binning to the hole and high-mag pngs.
+
+t  v0.32
+2021-02-12  Changed sidebar display
+2021-02-11  Modified the square identification method to make it more reliable.
+2021-02-11  Modified the find_target function in the Square class in Montage.py.
+2021-02-11  Added the generic hole template for when regular pattern identification is used.
+
+t  v0.31
+2021-02-10  Added ChangeLog page to the website
+2021-02-10  Added vnumber on the report page.
+2021-02-10  Fixed typo in webpage saying abording instead of aborting.
+2021-02-10  Added the new niehs hostnames to the the django allowed-hosts
+2021-02-10  Added saving the reconstructed atlas raw mrc.
+2021-02-10  Added using the exctracted hole as template to align to the hole.
+2021-02-10  Added extracting full resolution holes from the squares as mrc.
+2021-02-10  Added using the exctracted square as template to align to the square.
+2021-02-10  Added extracting full resolution squares from the atlas as mrc.
+
+t  v0.3
+2021-02-09  Added the new square classifier and colors for each new categories
+
+t  v0.21 
+2021-02-06  deployed. Added uwsgi plugin for nginx webserver
+
+t  v0.2 
+2021-02-03  deployed with the new dynamic webserver

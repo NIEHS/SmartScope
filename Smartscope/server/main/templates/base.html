@@ -1,0 +1,73 @@
+<head>
+    {% load static %}
+    {% csrf_token %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="shortcut icon" href="{% static 'images/icon32px.png' %}" type="image/png" />
+
+    <script src="{% static 'base/js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'base/js/popper.min.js' %}"></script>
+    <script src="{% static 'jquery.rwdImageMaps.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'base/css/bootstrap.min.css' %}">
+    <link rel=" stylesheet" href="{% static 'base.css' %}">
+    <link rel=" stylesheet" href="{% static 'reports.css' %}">
+    <link rel=" stylesheet" href="{% static 'base/bootstrap-icons-1.7.2/bootstrap-icons.css' %}">
+    <script src="{% static 'base/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'base.js' %}"></script>
+
+</head>
+
+<body>
+
+    <nav class="navbar navbar-default navbar-expand-md navbar-dark bg-dark fixed-top" role="navigation">
+        <div class="navbar-brand m-0 p-0 pl-1">
+
+            <a class="" href="#"><img src="{% static 'images/icon256px.png' %}" height='40'></a>
+
+
+        </div>
+        <div class="navbar-brand m-0 mr-auto p-0 pl-1" style="font-size: 0.9rem;">
+            <p class="p-0 m-0">{{request.user}}</p>
+            <p class="p-0 m-0"><a href="/logout"><small>Logout</small></a></p>
+        </div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link " id="browse" href="{% url 'browser' %}">Session Browser</a>
+                </li>
+                {% if USE_MICROSCOPE %}
+                <li class="nav-item">
+                    <a class="nav-link" id="run" href="{% url 'run' %}">Run Smartscope</a>
+                </li>
+                {% endif %}
+                <!-- <li class="nav-item">
+                    <a href="{% url 'evaluatemicrographs' %}" class="nav-link" id="evaluatemicrographs">Evaluate
+                        Micrographs</a> -->
+                </li>
+                <li class="nav-item">
+                    <a href="/log/changelog" class="nav-link" id="changelog">Change Log</a>
+                </li>
+                <!-- <li class="nav-item">
+                    <a href="/log/todo" class="nav-link" id="todo">To Do</a>
+                </li> -->
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item d-flex align-items-center"><a class="nav-link bi bi-question-square py-0"
+                        href="https://docs.smartscope.org" style="font-size:1.5rem;" target="_blank"></a></li>
+                {% if request.user.is_staff %}<li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
+                {% endif %}
+
+            </ul>
+        </div>
+    </nav>
+
+
+    {% block content %}{% endblock content %}
+
+
+</body>
+
+{% block script %}{% endblock script %}

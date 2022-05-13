@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% block content %}
+{% csrf_token %}
+
+<title>Micrographs Evaluation tool</title>
+
+<div id="body-row" class='row'>
+    <div class='row'>
+        <h4 class=col>Unlabeled micrographs: <span id="count"></span></h4>
+    </div>
+    <div class=row>
+        <div id='main' class="col align-items-center" style="background-color: #f5f5f5;">
+            <div id='micrograph'>
+
+                <h3 id='hm_name'></h3>
+                <div id='hmQuality'>
+                    {% for quality in quality_choices %}
+                    <button id='rateQuality-{{quality.0}}' class="btn btn-xs btn-outline-primary"
+                        value='{{quality.0}}'>{{quality.1}}</button>
+                    {% endfor %}
+                    <button id='skip' class="btn btn-xs btn-outline-danger" value='skip'>Skip</button>
+                </div>
+                <div id='zoomedContent' style='display:flex; height:100%;'>
+                    <div id='zoomedMic' class='col-6'>
+                        <img id='mic' class='mw-100 mh-100' src=''>
+                    </div>
+                    <div id='fft' class='col-6'>
+                        <img id='fftImg' class='mw-100 mh-100' src=''>
+                        <div id='ctffind' class='ctftext'>
+                            <p><b id='defocus'></b></p>
+                            <p><b id='ctffit'></b></p>
+                            <p><b id='astig'></b></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <script src="{% static 'evaluation.js' %}"></script>
+</div>
+
+{% endblock content %}

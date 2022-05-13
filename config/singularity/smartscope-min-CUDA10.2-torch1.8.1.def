@@ -1,0 +1,88 @@
+Bootstrap:  docker
+From:   pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
+
+%files
+    . /opt/smartscope/
+
+
+%post
+    apt-get update && apt-get -y upgrade
+    apt-get -y install python3-dev default-libmysqlclient-dev build-essential wget libglib2.0-0 ffmpeg libsm6 libxext6 curl
+    wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.15_RHEL7-64_CUDA10.1.sh
+    yes | bash imod_4.11.15_RHEL7-64_CUDA10.1.sh -name IMOD
+    cp /opt/smartscope/config/singularity/ctffind /usr/local
+    mkdir /opt/logs
+    yes | pip install -r /opt/smartscope/config/singularity/requirements.txt
+    yes | pip install -e /opt/smartscope/ --no-dependencies
+    yes | pip install -e /opt/smartscope/SerialEM-python --no-dependencies
+
+
+
+
+%environment
+    #General
+    export PATH=$PATH:/opt/smartscope/Smartscope/bin
+    export IMOD_DIR=/usr/local/IMOD
+    export PATH=$IMOD_DIR/bin:$PATH
+    export CTFFIND=/usr/local/ctffind
+    export APP=/opt/smartscope
+    export TEMPLATE_FILES=/opt/smartscope/Template_files
+    # export SMARTSCOPE_EXE=smartscope.py
+    #Microscope
+    # export MOUNTLOC=/mnt/scope/
+    #Storage
+    export AUTOSCREENDIR=/mnt/data/
+    export TEMPDIR=/tmp/
+    export LOGDIR=/opt/logs/
+    #LongTermStorage
+    export AUTOSCREENSTORAGE=/mnt/longterm/
+    #Websockets-redis
+    # export REDIS_HOST=127.0.0.1
+    # export REDIS_PORT=7780
+
+##############################
+# Uncommment the part needed depending on installation type
+##############################
+%startscript
+    # cd /opt/smartscope;
+    # . config/singularity/env.sh
+    # redis-server --port $REDIS_PORT &
+    #If you're not planning on running a root install of nginx on your system, you can uncomment this
+    nginx
+    gunicorn -c /opt/smartscope/config/singularity/gunicorn_singularity.conf.py
+
+##############################
+# APP smartscope
+##############################
+
+%apprun smartscope
+    echo "Running smartscope.py"
+    echo "Arguments received: $*"
+    # cd /opt/smartscope;
+    # . config/singularity/env.sh
+    # env | sort
+    exec smartscope.py "$@"
+
+%applabels smartscope
+   Entrypoint to the smartscope main executable
+
+%apphelp smartscope
+    This is the help for smartscope.
+
+##############################
+# APP dbmanage
+##############################
+
+%apprun dbmanage
+    echo "Running manage.py"
+    echo "Arguments received: $*"
+    # cd /opt/smartscope;
+    # . config/singularity/env.sh
+    # env | sort
+    exec manage.py "$@"
+
+%applabels dbmanage
+   Entrypoint to the django manage.py command main executable
+
+%apphelp dbmanage
+    This is the help for dbmanage.

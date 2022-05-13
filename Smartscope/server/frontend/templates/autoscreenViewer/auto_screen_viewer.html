@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+
+<title>Smartscope Browser</title>
+<div id="body-row" class='row'>
+    <div id="sidebar-container" class="col-12 col-md-auto">
+        <a id="sidebarCollapse"
+            class="bg-dark list-group-item list-group-item-action d-flex align-items-center px-0 justify-content-end"
+            href='#' data-toggle="collapse" data-target="#sidebarNav" aria-expanded="true">
+            <img id="sidebarCollapseLogo" src="{% static 'images/arrow.svg' %}" width="24" height="24"
+                style="transform:rotate(180deg)"></img>
+        </a>
+        <div class="sidebar sidebar-collapse sidebar-expand-md collapse show" id="sidebarNav">
+            <ul class="list-group sticky-top sticky-offset">
+                <li id="groups"
+                    class="list-group-item sidebar-separator-title text-muted d-flex align-items-center menu-collapsed">
+                    GROUPS
+                </li>
+                <div id="sidebarGroups" style='max-height: 25vh; overflow: auto;'>
+                </div>
+
+                <li id="sessions"
+                    class="list-group-item sidebar-separator-title text-muted d-flex align-items-center menu-collapsed">
+                    SESSIONS
+                </li>
+                <div id="sidebarSessions" style='max-height: 25vh; overflow: auto;'>
+                </div>
+
+
+                <li id="grids"
+                    class="list-group-item sidebar-separator-title text-muted d-flex align-items-center menu-collapsed">
+                    GRIDS
+                </li>
+                <div id='sidebarGrids' style='max-height: 25vh; overflow: auto;'>
+                </div>
+            </ul>
+        </div>
+    </div>
+
+    <div id='main' class="col-12 col-md" style="background-color: #f5f5f5;">
+
+
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script src="{% static 'browser.js' %}"></script>
+{% endblock script %}

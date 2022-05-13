@@ -1,0 +1,72 @@
+#!/bin/bash
+
+if [ $# -gt 0 ] ; then
+    if [ "$1" == "-f" ] ; then rm -r build ; fi
+fi
+
+pushd ../SerialEM
+hg pull -u
+if [ $? -ne 0 ] ; then echo "Error updating SerialEM" ; exit 1 ; fi
+popd
+
+diff -q ../SerialEM/MacroMasterList.h . > /dev/null 2>&1
+masterDiff=$?
+if [ $masterDiff -eq 0 ] ; then
+    hg incoming | grep changeset > /dev/null 2>&1
+    if [[ $? -ne 0 && -e build ]] ; then
+        echo "nothing to do"
+        exit 0
+    fi
+fi
+
+hg pull -u
+if [ $? -ne 0 ] ; then echo "Error updating PythonModule" ; exit 1 ; fi
+    
+if [ $masterDiff -ne 0 ] ; then
+    cp -f ../SerialEM/MacroMasterList.h .
+    if [ $? -ne 0 ] ; then echo "Error copying changed masterList" ; exit 1 ; fi
+    hg commit -m "Changed in SerialEM" MacroMasterList.h
+    if [ $? -ne 0 ] ; then echo "Error committing changed masterList" ; exit 1 ; fi
+    hg push
+fi
+    
+rm -r build
+rm -r PythonModules
+mkdir PythonModules
+mkdir PythonModules/2.7
+mkdir PythonModules/3.4-32
+mkdir PythonModules/3.4-64
+
+
+"C:/Program Files (x86)/Python27/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 2.7" ; exit 1 ; fi
+"C:/Program Files (x86)/Python34/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.4-32" ; exit 1 ; fi
+"C:/Program Files (x86)/Python35/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.5-32" ; exit 1 ; fi
+"C:/Program Files/Python34/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.4-64" ; exit 1 ; fi
+"C:/Program Files/Python35/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.5-64" ; exit 1 ; fi
+"C:/Program Files/Python36/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.6" ; exit 1 ; fi
+"C:/Program Files/Python38/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.8" ; exit 1 ; fi
+"C:/Program Files/Python39/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.9" ; exit 1 ; fi
+
+cp build/lib*/*cp*pyd PythonModules
+cp build/lib.win32-2.7/serialem.pyd PythonModules/2.7
+cp build/lib.win32-3.4/serialem.pyd PythonModules/3.4-32
+cp build/lib.win-amd64-3.4/serialem.pyd PythonModules/3.4-64
+
+cp "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/redist/x64/Microsoft.VC140.CRT/msvcp140.dll" PythonModules
+chmod u+w PythonModules/msvcp140.dll
+
+C:/Program\ Files/WinRAR/WinRAR a -r -z./path.txt PythonModules.rar PythonModules
+C:/Program\ Files/WinRAR/WinRAR s -y PythonModules.rar
+chmod a+rx PythonModules.exe
+scp PythonModules.exe bio3d.colorado.edu:SerialEM/Testing-3.9-32
+if [ $? -ne 0 ] ; then echo "Error copying to Testing-3.9-32" ; exit 1 ; fi
+scp PythonModules.exe bio3d.colorado.edu:SerialEM/Testing-3.9-64
+if [ $? -ne 0 ] ; then echo "Error copying to Testing-3.9-64" ; exit 1 ; fi

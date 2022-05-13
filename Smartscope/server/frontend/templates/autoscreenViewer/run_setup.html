@@ -1,0 +1,107 @@
+{% extends "auto_screen_run.html" %}
+
+{% block main %}
+{% load static %}
+<form class="needs-validation" novalidate method="post" onsubmit="validateForm(event)">
+    {% csrf_token %}
+    <h3>GENERAL</h3>
+    <div class="form-row">
+        {% for field in form_general %}
+        <div class="form-group col-auto">
+            <div class="row mw-100 mx-1 align-content-center justify-content-between">
+                <label class="mb-0" for="{{field.id_for_label}}">{{ field.label }}</label>
+                {% if field.help_text %}
+                <img src="{% static 'images/info-circle.svg' %}" id='{{field.id_for_label}}_help' data-toggle="tooltip"
+                    data-placement="left" title="{{ field.help_text }}">
+                {% endif %}
+            </div>
+            {{ field }}
+            <div class="invalid-tooltip">{{ field.help_text }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    <h3>COLLECTION PARAMETERS</h3>
+    <div class="form-row">
+        {% for field in form_params %}
+
+        <div class="form-group col-auto">
+            <div class="row mw-100 mx-1 align-content-center justify-content-between">
+                <label class="mb-0" for="{{field.id}}">{{ field.label }}</label>
+                <img src="{% static 'images/info-circle.svg' %}" id='{{field.id_for_label}}_help' data-toggle="tooltip"
+                    data-placement="left" title="{{ field.help_text }}">
+            </div>
+            {{ field }}
+            <div class="invalid-tooltip">{{ field.help_text }}</div>
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="div row align-items-center">
+        <h3 class="col-auto pr-1 mb-0">AUTOLOADER</h3>
+        <!-- <button id='addGridbtn' class='col-auto btn btn-primary' onclick="addGrid(event)" type="button" value='1'>Add
+            Grid</button> -->
+    </div>
+    <div class="form-group">
+        <input id="autoloaderForm" class="form-control" type="hidden"></input>
+        <div id="autoloaderFormError" class="alert alert-danger collapse">At least one grid is required</div>
+    </div>
+    <div id='autoloader' class="row">
+        {% for grid in grids %}
+        <div id="grid-{{ forloop.counter }}" class='col-12 col-md-6 col-lg-4 col-xl-3 p-1 topgrid'>
+            <div class="card">
+                <div class="card-header">
+                    <div class="form-group row mw-100 align-items-center p-0 m-0 justify-content-between">
+                        {{ grid.name }}
+                        {% if grid.name.help_text %}
+                        <div class="invalid-tooltip">{{ grid.name.help_text }}</div>
+                        {% endif %}
+                        <div class="div col-1 p-0 justify-content-center">
+                            <img id="copy_help" src="{% static 'images/clipboard.svg' %}" data-toggle="tooltip"
+                                data-placement="left" title="Fill from preceding grid card"
+                                onclick="fillFromPreviousWrapper(this)">
+                        </div>
+                        <div class="div col-1 p-0 justify-content-center">
+                            <img id="copy_help" src="{% static 'images/x-lg.svg' %}" data-toggle="tooltip"
+                                data-placement="left" title="Remove Grid" onclick="removeGrid(this)">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% for field in grid %}
+                    {% if field != grid.name %}
+                    <div class="form-group form-row mb-0">
+                        <label class="col-form-label col-5 mb-0" for="{{field.id}}">{{ field.label }}</label>
+                        {{ field }}
+                        <div class="invalid-tooltip">{{ field.help_text }}</div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div id="addGridDiv" class='col-12 col-md-6 col-lg-4 col-xl-3 p-1'>
+            <div class="card h-100">
+                <div class="card-body justify-content-center align-items-center d-flex">
+                    <button id='addGridbtn' class='col-auto btn btn-outline-secondary h-50 w-50' type="button"
+                        value='1'><i class="bi bi-plus-lg" style="font-size: 3rem;"></i></button>
+                    <div>
+
+                    </div>
+                </div>
+
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <button class="btn btn-primary" type="submit" value="Submit">Submit</button>
+</form>
+{% endblock main %}
+
+{% block script %}
+
+
+<script src="{% static 'setup_session.js' %}"></script>
+
+{% endblock script %}

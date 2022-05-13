@@ -1,0 +1,22 @@
+MacroName Atlas
+
+TiltTo 0
+MoveStageTo 0 0
+SetLowDoseMode 0
+SetMag {Mag}
+SetPercentC2 104
+SetSpotSize {SpotSize}
+
+CallFunction Autoloader::Eucentric
+CallFunction Autoloader::WaitForRefilling
+CallFunction Autoloader::WaitForPump 
+
+OpenTextFile Lock W 0 raw/.lock
+CloseTextFile Lock
+OpenNewMontage {tile0} {tile1} {Atlas}
+#SetMontageParams 1 410 410 4096 4096 0 1
+M
+CloseFile
+Delay 1
+RemoveFile raw/.lock
+SetLowDoseMode 1
