@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 1.2
 Name: serialem
 Version: 1.0
 Summary: Python module for SerialEM
@@ -8,9 +8,7 @@ Author-email: mast@colorado.edu
 Maintainer: David Mastronarde
 Maintainer-email: mast@colorado.edu
 License: UNKNOWN
+Description: 
+        Python module for using Python scripting in SerialEM or external control of SerialEM
+        
 Platform: UNKNOWN
-
-
-Python module for using Python scripting in SerialEM or external control of SerialEM
-
-

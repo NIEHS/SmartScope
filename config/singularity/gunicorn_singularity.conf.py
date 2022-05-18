@@ -10,7 +10,7 @@ reload = False
 capture_output = False
 
 proc_name = 'smartscopeGunicorn'
-chdir = os.getenv('APP')
+# chdir = os.getenv('APP')
 pidfile = '/tmp/smartscopeGunicorn_dev.pid'
 worker_tmp_dir = '/tmp'
 umask = int(os.getenv('DEFAULT_UMASK'))

@@ -19,7 +19,7 @@ squareFinders:
             imgsz: 2048
             thresh: 0.2
             iou: 0.3
-            weights: square_weights/new_r50_final.pth
+            weights: square_weights/model_new_weights_env.pth
         targetClass:
             - Finder
             - Classifier
