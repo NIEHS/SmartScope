@@ -19,7 +19,7 @@ from django.db.models import Q
 import base64
 from Smartscope.lib.montage import power_spectrum
 from Smartscope.lib.system_monitor import disk_space
-from Smartscope.lib.db_manipulations import get_hole_count, viewer_only
+from Smartscope.core.db_manipulations import get_hole_count, viewer_only
 from Smartscope.lib.converters import *
 from Smartscope.server.lib.worker_jobs import send_to_worker
 from django.conf import settings

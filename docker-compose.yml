@@ -1,9 +1,13 @@
-version: "2"
+version: "3"
 services:
   smartscope:
-    image: smartscope:0.6
+    image: localhost/smartscope:0.6
+    container_name: smartscope
     build:
       context: .
+      args:
+        - USER_ID=1001 #Set a specific user ID for the smartscope_user account in the container. Useful to match existing host id
+        - GROUP_ID=20800 #Set a specific group ID for the smartscope_group account in the container. Useful to match existing host id
     restart: always
     volumes:
       #Volumes are spelled /path/on/host/:/path/in/container/
@@ -37,10 +41,8 @@ services:
       MYSQL_USERNAME: root #Needs to match with the value set in the db service
       MYSQL_ROOT_PASSWORD: pass #Needs to match with the value set in the db service
       DB_NAME: smartscope #Needs to match with the value set in the db service
-      DB_PATH:
-        #Not currently used since it connects to db via socket.
-        ####Cache###
-
+      DB_PATH: '' #Not currently used since it connects to db via socket.
+      ####Cache###
       REDIS_HOST: cache #Shouldn't need to be changed
       REDIS_PORT: 6379 #Shouldn't need to be changed
       ###AWS###
@@ -53,11 +55,11 @@ services:
     depends_on:
       - db
       - cache
-      - nginx
     networks:
       - smartscopenet
     command: gunicorn -c /opt/smartscope/config/singularity/gunicorn_singularity.conf.py
     deploy:
+      #Used to pass the GPU through. Also need to install the nvidia-container-toolkit.
       resources:
         reservations:
           devices:
@@ -89,11 +91,22 @@ services:
   nginx:
     image: nginx
     ports:
-      - 8080:80
+      - 48000:80 #Bind a different port on host by changing the first value. i.e. 8080:80.
+      # - 443:443 #Use if you choose to use ssl. RECOMMENDED
     volumes:
-      - ./config/singularity/nginx-test/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./config/docker/templates_noSSL/:/etc/nginx/templates/ #Change to ./config/docker/templates_SSL to use SSL
+      #- /path/to/certs:/etx/nginx/certs/ #Uncomment to mount the ssl certificate from the host
+      - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
+      - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
+      - /home/bouvettej2/Smartscope-beta/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
+      - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True
+    environment:
+      SERVER_NAME: lxd-02012614 #Should match the ALLOWED_HOSTS from the smartscope service
+      CERT_FILENAME: filename #ROOT name of the certs without extension.
     networks:
       - smartscopenet
+    depends_on:
+      - smartscope
 
 networks:
   smartscopenet: {}

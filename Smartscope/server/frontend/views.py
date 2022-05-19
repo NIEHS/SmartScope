@@ -20,7 +20,7 @@ import subprocess as sub
 import psutil
 import signal
 from django.utils.timezone import now
-from Smartscope.lib.db_manipulations import viewer_only
+from Smartscope.core.db_manipulations import viewer_only
 
 
 def signup(request):

@@ -2,8 +2,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import logging
-from Smartscope.lib.autoscreen import update
-from Smartscope.lib.db_manipulations import update_target, viewer_only
+from Smartscope.core.autoscreen import update
+from Smartscope.core.db_manipulations import update_target, viewer_only
 from asgiref.sync import async_to_sync, sync_to_async
 
 logger = logging.getLogger(__name__)

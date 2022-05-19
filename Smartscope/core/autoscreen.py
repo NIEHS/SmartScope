@@ -2,11 +2,11 @@
 import os
 import signal
 import sys
-from Smartscope.lib.selectors import selector_wrapper
+from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import *
 from Smartscope.server.api.serializers import *
 from Smartscope.lib.file_manipulations import *
-from Smartscope.lib.db_manipulations import *
+from Smartscope.core.db_manipulations import *
 import Smartscope.lib.serialem_methods as SerialEM
 from Smartscope.lib.logger import create_logger
 from Smartscope.lib.config import *

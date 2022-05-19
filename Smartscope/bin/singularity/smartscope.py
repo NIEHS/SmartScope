@@ -14,7 +14,7 @@ import django
 django.setup()
 import sys
 import logging
-from Smartscope.lib.main_commands import main
+from Smartscope.core.main_commands import main
 from Smartscope.lib.logger import default_logger
 
 proclog = logging.getLogger('processing')

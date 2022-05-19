@@ -84,8 +84,8 @@ INSTALLED_APPS = [
     'django_filters',
     'storages',
     'channels',
-    'Smartscope.settings.apps.Frontend',
-    'Smartscope.settings.apps.API',
+    'Smartscope.core.settings.apps.Frontend',
+    'Smartscope.core.settings.apps.API',
 ]
 
 MIDDLEWARE = [
@@ -104,7 +104,7 @@ ROOT_URLCONF = 'Smartscope.server.main.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'server/main/custom_templates'), os.path.join(BASE_DIR, 'server/main/templates')],
+        'DIRS': [os.path.join(BASE_DIR, '../server/main/custom_templates'), os.path.join(BASE_DIR, '../server/main/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -152,8 +152,6 @@ else:
     DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST')
     DATABASES['default']['PORT'] = os.getenv('MYSQL_PORT')
 
-print(DATABASES)
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -186,47 +184,9 @@ REST_FRAMEWORK = {
 
 
 # Enable finders. List of tuples, where first value is the name and the is the method import path relative to Smartscope.Finders. Third value is the optional keyword arguments that can be supplemented to the function.
-SMARTSCOPE_CONFIG = os.path.join(BASE_DIR, '../config/smartscope/')
+SMARTSCOPE_CONFIG = os.path.join(os.getenv('APP'), 'config/smartscope/')
 SMARTSCOPE_PLUGINS = SMARTSCOPE_CONFIG + 'plugins.yaml'
 SMARTSCOPE_PROTOCOLS = SMARTSCOPE_CONFIG + 'protocols.yaml'
-
-# WEIGHTS_DIR = os.path.join(os.getenv("TEMPLATE_FILES"), 'weights')
-# SMARTSCOPE = {
-#     'Finders': {
-#         'FFT finder': {
-#             'method': 'fft_method',
-#             'package': 'Smartscope.lib.Finders.basic_finders'
-#         },
-#         'Binary finder': {
-#             'method': 'find_targets_binary',
-#             'package': 'Smartscope.lib.Finders.basic_finders'
-#         },
-#         'Regular Pattern': {
-#             'method': 'regular_pattern',
-#             'package': 'Smartscope.lib.Finders.basic_finders',
-#             'kwargs': dict(spacing=5)
-#         },
-#         'Square finder': {
-#             'method': 'find_squares',
-#             'package': 'Smartscope.lib.Finders.basic_finders'
-#         },
-#         'AI Square finder': {
-#             'method': 'find_squares',
-#             'package': 'Smartscope.lib.Finders.AIFinder.wrapper',
-#             'kwargs': dict(device='cpu', imgsz=2048, thresh=0.2, iou=0.5, weights=os.path.join(WEIGHTS_DIR, 'square_weights/best_square.pth'))
-#         },
-#         'AI Hole finder': {
-#             'method': 'find_holes',
-#             'package': 'Smartscope.lib.Finders.AIFinder.wrapper',
-#             'kwargs': dict(imgsz=1280, thresh=0.7, iou=0.15, device='cpu', weights_circle=os.path.join(WEIGHTS_DIR, 'circle_weights/aug_27_yolo_circle_weights.pt'), method='yolo')
-#         },
-#         'AI Hole finder+classifier': {
-#             'method': 'find_and_classify_holes',
-#             'package': 'Smartscope.lib.Finders.AIFinder.wrapper',
-#             'kwargs': dict(weights_circle=os.path.join(WEIGHTS_DIR, 'circle_weights/new_circle_yolo.pt'), weights_class=os.path.join(WEIGHTS_DIR, 'classifier_weights/resNet34_newlabel2.pth'), imgsz=1280, thresh=0.2, iou=0.3, device='cpu', method='yolo')
-#         }
-#     }
-# }
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/

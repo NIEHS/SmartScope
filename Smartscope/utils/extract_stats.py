@@ -1,9 +1,9 @@
 from cv2 import textureFlattening
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 import logging
 import numpy as np
 import pandas as pd
-from Smartscope.lib.db_manipulations import get_hole_count
+from Smartscope.core.db_manipulations import get_hole_count
 
 FORMAT = "[%(levelname)s] %(funcName)s, %(asctime)s: %(message)s"
 logging.basicConfig(format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S", level=logging.DEBUG)
