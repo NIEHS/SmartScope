@@ -3,13 +3,13 @@ import os
 import json
 from Smartscope.lib.file_manipulations import clean_source_dir, process_montage
 from Smartscope.lib.export_optics import export_optics
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 from Smartscope.lib.db_manipulations import group_holes_for_BIS, add_targets
 from django.db import transaction
 from Smartscope.lib.Finders.basic_finders import find_square_center
 from Smartscope.lib.file_manipulations import process_montage
-from Smartscope.server.models import SquareModel, HoleModel, import_session
-from Smartscope.lib.autoscreen import autoscreen
+# from Smartscope.server.models import SquareModel, HoleModel, import_session
+from Smartscope.core.autoscreen import autoscreen
 from Smartscope.lib.config import *
 import numpy as np
 

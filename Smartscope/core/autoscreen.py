@@ -3,7 +3,7 @@ import os
 import signal
 import sys
 from Smartscope.lib.selectors import selector_wrapper
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 from Smartscope.server.api.serializers import *
 from Smartscope.lib.file_manipulations import *
 from Smartscope.lib.db_manipulations import *

@@ -5,7 +5,7 @@ import os
 # os.chdir(os.environ['SMARTSCOPE_DIR'])
 # # os.environ['DJANGO_SETTINGS_MODULE'] = 'SmartscopeWorker.settings.settings'
 # django.setup()
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 
 import numpy as np
 import pandas as pd

@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from rest_framework import response
 from Smartscope.lib.db_manipulations import update, update_target
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 from .serializers import *
 from rest_framework import generics
 from django_filters.rest_framework import DjangoFilterBackend

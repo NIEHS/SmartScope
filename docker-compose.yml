@@ -1,11 +1,12 @@
 version: "2"
-services: 
+services:
   smartscope:
     image: smartscope:0.6
     build:
       context: .
     restart: always
-    volumes: #Volumes are spelled /path/on/host/:/path/in/container/
+    volumes:
+      #Volumes are spelled /path/on/host/:/path/in/container/
       - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
       - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
       - /home/bouvettej2/Smartscope-beta/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
@@ -17,7 +18,7 @@ services:
       - /home/bouvettej2/Template_files/:/opt/Template_files/
     environment:
       ALLOWED_HOSTS: localhost,lxd-02012614 #List of allowed hostnames for connection
-      DJANGO_SETTINGS_MODULE: Smartscope.settings.server_docker #Shouldn't need to be changed, here for testing
+      DJANGO_SETTINGS_MODULE: Smartscope.core.settings.server_docker #Shouldn't need to be changed, here for testing
       USE_STORAGE: True #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
       USE_LONGTERMSTORAGE: True #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
       USE_MICROSCOPE: True #Set to false to disable creating and starting workflow. Useful for a 'viewer' only server
@@ -36,8 +37,10 @@ services:
       MYSQL_USERNAME: root #Needs to match with the value set in the db service
       MYSQL_ROOT_PASSWORD: pass #Needs to match with the value set in the db service
       DB_NAME: smartscope #Needs to match with the value set in the db service
-      DB_PATH: #Not currently used since it connects to db via socket.
-      ####Cache###
+      DB_PATH:
+        #Not currently used since it connects to db via socket.
+        ####Cache###
+
       REDIS_HOST: cache #Shouldn't need to be changed
       REDIS_PORT: 6379 #Shouldn't need to be changed
       ###AWS###
@@ -53,14 +56,14 @@ services:
       - nginx
     networks:
       - smartscopenet
-    command:  gunicorn -c /opt/smartscope/config/singularity/gunicorn_singularity.conf.py
+    command: gunicorn -c /opt/smartscope/config/singularity/gunicorn_singularity.conf.py
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
   db:
     image: mariadb:10.5
     restart: always
@@ -91,7 +94,6 @@ services:
       - ./config/singularity/nginx-test/default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - smartscopenet
-  
 
 networks:
   smartscopenet: {}

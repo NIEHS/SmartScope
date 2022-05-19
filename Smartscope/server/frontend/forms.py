@@ -1,5 +1,5 @@
 from django import forms
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 
 
 class ScreeningSessionForm(forms.ModelForm):

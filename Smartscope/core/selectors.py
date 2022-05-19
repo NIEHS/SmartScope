@@ -1,5 +1,5 @@
 from Smartscope.lib.config import load_plugins
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 from django.contrib.contenttypes.models import ContentType
 from Smartscope.lib.montage import *
 import Smartscope.lib.logger

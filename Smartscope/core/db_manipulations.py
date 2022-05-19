@@ -1,6 +1,6 @@
 
 from Smartscope.lib.config import load_plugins
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 from scipy.spatial.distance import cdist
 import numpy as np
 import random

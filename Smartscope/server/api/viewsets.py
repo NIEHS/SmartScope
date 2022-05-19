@@ -7,7 +7,7 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import *
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 from Smartscope.server.frontend.forms import *
 from rest_framework.decorators import action
 from rest_framework.response import Response

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from Smartscope.server.models import *
+from Smartscope.core.models import *
 # Register your models here.
 
 admin.site.register(ScreeningSession)
