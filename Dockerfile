@@ -24,7 +24,7 @@ ENV IMOD_DIR=/usr/local/IMOD
 ENV PATH=$IMOD_DIR/bin:$PATH
 ENV CTFFIND=/usr/local/ctffind
 ENV APP=/opt/smartscope/
-ENV TEMPLATE_FILES=/opt/smartscope/Template_files
+# ENV TEMPLATE_FILES=/opt/smartscope/Template_files
 #Storage
 ENV AUTOSCREENDIR=/mnt/data/
 ENV TEMPDIR=/tmp/

@@ -14,16 +14,18 @@ services:
       ### Microscopes ### One mount per microscope to /mnt/{micoscope_name}/
       - /mnt/gatan_Raid_X:/mnt/arctica/
       - /mnt/krios_Rais_X:/mnt/krios/
+      - /home/bouvettej2/Template_files/:/opt/Template_files/
     environment:
       ALLOWED_HOSTS: localhost,lxd-02012614 #List of allowed hostnames for connection
       DJANGO_SETTINGS_MODULE: Smartscope.settings.server_docker #Shouldn't need to be changed, here for testing
       USE_STORAGE: True #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
       USE_LONGTERMSTORAGE: True #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
       USE_MICROSCOPE: True #Set to false to disable creating and starting workflow. Useful for a 'viewer' only server
-      DEFAULT_UMASK: '003' #default=003. Will set 774 permission on all the files created by smartscope
+      DEFAULT_UMASK: '003' #default=003. Will set 774(rwxrwxr--) permission on all the files created by smartscope
       LOGLEVEL: DEBUG #Log level, choices are INFO, WARNING, CRITICAL, DEBUG. default:INFO
       DEBUG: True #set to True to get a django debug page whenever a page isn't found or an error occurs while loading assets to the web browser.
       SECRET_KEY: 'd41d8cd98f00b204e9800998e' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
+      TEMPLATE_FILES: /opt/Template_files/
       ###SerialEM variables###
       SEM_PYTHON: False #Set to False skip connection to serialEM
       NO_TEM_TESTMODE: True #Set to True to test the workflow on sample images. SEM_PYTHON needs to also be False to work.
