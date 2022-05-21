@@ -20,9 +20,8 @@ RUN chown smartscope_user /mnt/ &&\
 	mkdir /opt/logs/
 
 #General environment variables
-ENV PATH=$PATH:/opt/smartscope/Smartscope/bin \
+ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:$IMOD_DIR/bin \
 	IMOD_DIR=/usr/local/IMOD \
-	PATH=$IMOD_DIR/bin:$PATH \
 	CTFFIND=/usr/local/ctffind \
 	APP=/opt/smartscope/ \
 	AUTOSCREENDIR=/mnt/data/ \
