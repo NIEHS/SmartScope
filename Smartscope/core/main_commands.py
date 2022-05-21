@@ -106,6 +106,8 @@ def continue_run(next_or_continue, microscope_id):
     print(json.dumps({'continue': next_or_continue}))
 
 
+def stop_session(sessionid):
+    open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'))
 # def manage(*args):
 #     arguments = ["manage.py", *args]  # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.settings.server')
 #     mainlog.debug(arguments)

@@ -91,6 +91,15 @@ def load_protocol_wrapper(protocol):
     return load_protocol()
 
 
+def is_stop_file(sessionid: str) -> bool:
+    stop_file = os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop')
+    if os.path.isfile(stop_file):
+        mainlog.debug(f'Stop file {stop_file} found.')
+        os.remove(stop_file)
+        return True
+    return False
+
+
 def run_grid(grid, session, processing_queue):
     """Main logic for the SmartScope process
 
@@ -101,6 +110,7 @@ def run_grid(grid, session, processing_queue):
     if grid.status == 'complete':
         mainlog.info(f'{grid.name} already complete')
         return
+    session_id = session.pk
     # try:
     # Set the Websocket_update_decorator grid property
     processing_queue.put(['set_update', [grid]])
@@ -164,7 +174,8 @@ def run_grid(grid, session, processing_queue):
     restarting = True
     is_done = False
     while running:
-
+        if is_stop_file(session_id):
+            return 'stopped'
         grid = update(grid, refresh_from_db=True, last_update=None)
         params = grid.params_id
         is_bis = params.bis_max_distance > 0
@@ -260,6 +271,7 @@ def run_grid(grid, session, processing_queue):
     else:
         update(grid, status='complete')
         mainlog.info('Grid finished')
+        return 'finished'
     # except Exception as err:
     #     mainlog.exception(err)
     #     error = True
@@ -433,12 +445,12 @@ def autoscreen(session_id):
         child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(processing_queue,))
         child_process.start()
         for grid in grids:
-            run_grid(grid, session, processing_queue)
+            status = run_grid(grid, session, processing_queue)
             # if error:
             #     mainlog.info('run_grid finished with and error or was interrupted')
-            #     break
-            # raise error('run_grid finished with and error or was interrupted')
-        status = 'finished'
+        #     #     break
+        #     # raise error('run_grid finished with and error or was interrupted')
+        # status = 'finished'
     except Exception as e:
         mainlog.exception(e)
         status = 'error'

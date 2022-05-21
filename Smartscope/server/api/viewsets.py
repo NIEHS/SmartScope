@@ -128,7 +128,9 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                 # send_to_worker('which Smartscope.sh', communicate=True)
             else:
                 logger.info('stopping')
-                send_to_worker(self.object.microscope_id.worker_hostname, 'kill', arguments=['-INT', process.PID])
+                # send_to_worker(self.object.microscope_id.worker_hostname, 'kill', arguments=['-15', process.PID])
+                send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
+                               arguments=['stop_session', self.object.session_id])
 
             rounds = 0
             check = True
