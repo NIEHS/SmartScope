@@ -2,12 +2,12 @@
 import os
 import signal
 import sys
+from Smartscope.core.microscope_interfaces import FakeScopeInterface, SerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import *
 from Smartscope.server.api.serializers import *
 from Smartscope.lib.file_manipulations import *
 from Smartscope.core.db_manipulations import *
-import Smartscope.lib.serialem_methods as SerialEM
 from Smartscope.lib.logger import create_logger
 from Smartscope.lib.config import *
 from django.db import transaction
@@ -17,7 +17,6 @@ import multiprocessing
 import logging
 from Smartscope.lib.converters import *
 from Smartscope.server.api.serializers import *
-from copy import deepcopy
 
 
 proclog = logging.getLogger('processing')
@@ -79,7 +78,6 @@ def print_queue(squares, holes, session):
         string.append(f"\t{h.number} -> {h.name}\n")
     string.append('------------------------------------------------------------\n')
     string = ''.join(string)
-    # logging.debug(string)
     with open(os.path.join(session.directory, 'queue.txt'), 'w') as f:
         f.write(string)
 
@@ -100,7 +98,7 @@ def is_stop_file(sessionid: str) -> bool:
     return False
 
 
-def run_grid(grid, session, processing_queue):
+def run_grid(grid, session, processing_queue, scope):
     """Main logic for the SmartScope process
 
     Args:
@@ -136,14 +134,14 @@ def run_grid(grid, session, processing_queue):
 
     atlas = queue_atlas(grid)
     params = grid.params_id
-    SerialEM.loadGrid(grid.position)
-    SerialEM.setup(params.save_frames, session.detector_id.energy_filter, params.zeroloss_delay)
+    scope.loadGrid(grid.position)
+    scope.setup(params.save_frames, params.zeroloss_delay)
     if atlas.status == 'queued' or atlas.status == 'started':
         atlas = update(atlas, status='started')
         print('Waiting on atlas file')
         path = os.path.join(session.microscope_id.scope_path, atlas.raw)
-        SerialEM.atlas(mag=session.detector_id.atlas_mag, c2=session.detector_id.c2_perc, spotsize=session.detector_id.spot_size,
-                       tileX=params.atlas_x, tileY=params.atlas_y, file=atlas.raw)
+        scope.atlas(mag=session.detector_id.atlas_mag, c2=session.detector_id.c2_perc, spotsize=session.detector_id.spot_size,
+                    tileX=params.atlas_x, tileY=params.atlas_y, file=atlas.raw)
         # create_serialem_script('atlas', session, grids=grid, sele=atlas)
         get_file(path, remove=True)
         atlas = update(atlas, status='acquired')
@@ -201,9 +199,9 @@ def run_grid(grid, session, processing_queue):
                 restarting = False
                 hole = update(hole, status='started')
 
-                SerialEM.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                    file=hole.raw, is_negativestain=grid.holeType.name == 'NegativeStain')
-                currentDefocus = SerialEM.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
+                scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
+                                 file=hole.raw, is_negativestain=grid.holeType.name == 'NegativeStain')
+                currentDefocus = scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
                 hole = update(hole, status='acquired')
                 # grid = update(grid, last_update=None)
                 transaction.on_commit(lambda: processing_queue.put([process_hole_image, [hole, session.microscope_id]]))
@@ -212,21 +210,21 @@ def run_grid(grid, session, processing_queue):
                     restarting = False
                     # processin_queue.put(process_hole_image(hole))
                     mainlog.info(f'Restarting run, recentering on {hole} area before taking high-mag images')
-                    SerialEM.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                        file=hole.raw, is_negativestain=grid.holeType.name == 'NegativeStain')
-                    currentDefocus = SerialEM.focusDrift(params.target_defocus_min, params.target_defocus_max,
-                                                         params.step_defocus, params.drift_crit)
+                    scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
+                                     file=hole.raw, is_negativestain=grid.holeType.name == 'NegativeStain')
+                    scope.focusDrift(params.target_defocus_min, params.target_defocus_max,
+                                     params.step_defocus, params.drift_crit)
 
-                isXi, isYi = 0, 0
                 mainlog.debug(f'{hole} is {hole.status} {bis_holes}')
+                scope.reset_image_shift_values()
                 for h in bis_holes:
                     hm, created = add_high_mag(grid, h)
                     mainlog.debug(f'Just created:{created} {hm}, {hm.pk}')
                     if hm.status in [None, 'started']:
                         isX, isY = stage_x - h.finders[0].stage_x, (stage_y - h.finders[0].stage_y) * cos(radians(round(params.tilt_angle, 1)))
-                        out = SerialEM.highmag(isXi, isYi, isX, isY, currentDefocus, round(params.tilt_angle, 1), file=hm.raw,)
+                        out = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw,)
                         if out is not None:
-                            isXi, isYi, frames = out
+                            frames = out
                         else:
                             frames = None
                         hm = update(hm, is_x=isX, is_y=isY, frames=frames, status='acquired')
@@ -240,7 +238,7 @@ def run_grid(grid, session, processing_queue):
             if square.status == 'queued' or square.status == 'started':
                 mainlog.info('Waiting on square file')
                 path = os.path.join(session.microscope_id.scope_path, square.raw)
-                SerialEM.square(square.finders[0].stage_x, square.finders[0].stage_y, square.finders[0].stage_z, file=square.raw)
+                scope.square(square.finders[0].stage_x, square.finders[0].stage_y, square.finders[0].stage_z, file=square.raw)
                 square = update(square, status='acquired')
                 transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
         elif is_done:
@@ -415,7 +413,6 @@ def write_sessionLock(session, lockFile):
 
 
 def autoscreen(session_id):
-    os.setpgrp()
     session = ScreeningSession.objects.get(session_id=session_id)
     microscope = session.microscope_id
     lockFile, sessionLock = session.isScopeLocked
@@ -436,21 +433,18 @@ def autoscreen(session_id):
         mainlog.info(f'Process: {process}')
         mainlog.info(f'Session: {session}')
         mainlog.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
-        # if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
-        #     os.environ['SEM_PYTHON'] = 'False'
-        #     mainlog.info('Setting scope into test mode')
-        SerialEM.connect(ip=microscope.serialem_IP, port=microscope.serialem_PORT, directory=microscope.windows_path)
-        # START image processing processes
-        processing_queue = multiprocessing.JoinableQueue()
-        child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(processing_queue,))
-        child_process.start()
-        for grid in grids:
-            status = run_grid(grid, session, processing_queue)
-            # if error:
-            #     mainlog.info('run_grid finished with and error or was interrupted')
-        #     #     break
-        #     # raise error('run_grid finished with and error or was interrupted')
-        # status = 'finished'
+        if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
+            mainlog.info('Setting scope into test mode')
+            scopeInterface = FakeScopeInterface
+        else:
+            scopeInterface = SerialemInterface
+        with scopeInterface(ip=microscope.serialem_IP, port=microscope.serialem_PORT, energyfilter=session.detector_id.energy_filter, directory=microscope.windows_path) as scope:
+            # START image processing processes
+            processing_queue = multiprocessing.JoinableQueue()
+            child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(processing_queue,))
+            child_process.start()
+            for grid in grids:
+                status = run_grid(grid, session, processing_queue, scope)
     except Exception as e:
         mainlog.exception(e)
         status = 'error'
@@ -458,7 +452,7 @@ def autoscreen(session_id):
         mainlog.info('Stopping Smartscope.py autoscreen')
         status = 'killed'
     finally:
-        SerialEM.disconnect()
+        # SerialEM.disconnect()
         os.remove(lockFile)
         update(process, status=status)
         mainlog.debug('Wrapping up')

@@ -106,7 +106,7 @@ selectors:
     Size selector:
         name: Size selector
         method: cluster_by_field
-        package: Smartscope.lib.selectors
+        package: Smartscope.core.selectors
         kwargs:
             field: area
         targetClass:
@@ -121,7 +121,7 @@ selectors:
     Distance selector:
         name: Distance selector
         method: cluster_by_field
-        package: Smartscope.lib.selectors
+        package: Smartscope.core.selectors
         kwargs:
             field: dist_from_center
         targetClass:
@@ -136,7 +136,7 @@ selectors:
     Graylevel selector:
         name: Graylevel selector
         method: gray_level_selector
-        package: Smartscope.lib.selectors
+        package: Smartscope.core.selectors
         targetClass:
             - Selector
         description: |
@@ -144,7 +144,7 @@ selectors:
         clusters:
             values: ascending
             colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
-        exclude: ['0','1']   
+        exclude: ['0']   
 
 Micrographs curation: 
     name: Micrographs curation
