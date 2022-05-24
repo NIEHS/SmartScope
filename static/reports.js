@@ -699,7 +699,7 @@ async function addTargets(btn, selection) {
     console.log(`Adding targets on square: ${currentState.square}`, coords)
     clearSelection(selection, 'targets')
     var url = "/api/addtargets/"
-    let res = await apifetchAsync(url, { 'square_id': currentState.square, 'targets': coords }, 'POST')
+    let res = await apifetchAsync(url, { 'session_id': fullmeta.session_id, 'square_id': currentState.square, 'targets': coords }, 'POST')
     console.log(res)
     loadSquare(currentState.square, false)
 }

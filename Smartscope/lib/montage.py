@@ -608,6 +608,7 @@ class Square(Montage):
         save_image(np.hstack(imlist), self._id, extension='png', destination=self._id)
 
     def create_targets(self, starting_index=0):
+        # THIS NEEDS TO BE REORGANIZED AND MOVED OUT OF THE CLASS
         targets = []
         self.target_class = eval(self.target_class)
         if isinstance(self.targets, tuple):
@@ -625,17 +626,7 @@ class Square(Montage):
                 t.analyze_target(target, self, threshold=self.area_threshold)
                 t.finder = self.finder
                 t.classifier = self.classifier
-                if t.area < 100:
-                    continue
                 find_tile(self, t)
-
-                if 'mask' in t.__dict__:
-                    delattr(t, 'mask')
-                if 'image' in t.__dict__:
-                    delattr(t, 'image')
-                if 'pixelpoints' in t.__dict__:
-                    delattr(t, 'pixelpoints')
-
                 targets.append(t)
         return targets
 
@@ -870,8 +861,8 @@ class LatticeTarget(Target):
         self._id = self.hole_name
         self.extract_size = 70000  # 7um
 
-    def draw_target(self, hole, image, binning_factor):
-        (x, y), radius = hole, 15 * binning_factor
+    def draw_target(self, hole, pixel_size):
+        (x, y), radius = hole, 12000 // pixel_size
         self.x = int(x)
         self.y = int(y)
         self.radius = radius
@@ -880,7 +871,7 @@ class LatticeTarget(Target):
         self.area = np.pi * (radius ** 2)
 
     def analyze_target(self, shape, montage, threshold=4000):
-        self.draw_target(shape, montage.montage, montage.binning_factor)
+        self.draw_target(shape, montage.pixel_size)
         # self.unbinned_x = int(floor(self.x * montage.binning_factor))
         # self.unbinned_y = int(floor(self.y * montage.binning_factor))
-        self.dist_from_center = round(sqrt((self.x - montage.centroid[0])**2 + (self.y - montage.centroid[1])**2), 2)
+        # self.dist_from_center = round(sqrt((self.x - montage.centroid[0])**2 + (self.y - montage.centroid[1])**2), 2)

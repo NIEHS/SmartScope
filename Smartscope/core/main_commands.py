@@ -21,11 +21,14 @@ mainlog = logging.getLogger('autoscreen')
 def add_holes(id, targets):
     instance = SquareModel.objects.get(pk=id)
     montage, is_metadata = process_montage(instance, mag_level='square', working_dir=instance.grid_id.directory)
-    montage.targets = np.array(targets) + np.array([0, instance.shape_y // instance.binning_factor])
+    montage.targets = np.array(targets) + np.array([0, instance.shape_y])
     montage.target_class = 'LatticeTarget'
-    montage.centroid = find_square_center(montage.montage)
+    montage.finder = 'Manual finder'
+    montage.classifier = None
+    montage.stage_z = instance.finders[0].stage_z
+    # montage.centroid = find_square_center(montage.montage)
     targets = montage.create_targets(starting_index=len(instance.targets))
-    holes = add_targets(instance.grid_id, instance, targets, HoleModel, manual_addition=True)
+    holes = add_targets(instance.grid_id, instance, targets, HoleModel)
     return holes
 
 
@@ -39,7 +42,8 @@ def add_single_targets(id, *args):
         targets.append(j)
     mainlog.debug(targets)
     holes = add_holes(id=id, targets=targets)
-    mainlog.debug([h.__dict__ for h in holes])
+
+    mainlog.debug(holes)
 
 
 def check_pause(microscope_id: str):

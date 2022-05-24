@@ -8,7 +8,7 @@ squareFinders:
             - Classifier
         description: |
             Square finder using binary threshold detection.
-            The classifier uses a flow diagram of decision to label the squares.    
+            The classifier uses a flow diagram of decision to label the squares.
     
     AI square finder: 
         name: AI square finder
@@ -101,6 +101,12 @@ holeFinders:
             Hole finder that uses the YOLO architecture to identify the holes.
             Has a built-in classifier to sort out the dark contamination spots that are often labeled as holes on carbon mesh grids.
 
+    Manual finder:
+        name: Manual finder
+        targetClass:
+            - Finder
+        description: |
+            Targets that are added manually
 
 selectors:
     Size selector:
