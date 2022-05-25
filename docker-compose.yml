@@ -18,7 +18,8 @@ services:
       - /auto_screening/tmp/scope/smartscope_testfiles/:/mnt/testfiles/ #Use to mount test files directory for testing
       ### Microscopes ### One mount per microscope to /mnt/{micoscope_name}/
       - /mnt/gatan_Raid_X:/mnt/arctica/
-      - /mnt/krios_Rais_X:/mnt/krios/
+      - /mnt/krios_Raid_X:/mnt/krios/
+      - /auto_screening/tmp/scope/:/mnt/fake_scope/
       - /home/bouvettej2/Template_files/:/opt/Template_files/
     environment:
       ALLOWED_HOSTS: localhost,lxd-02012614 #List of allowed hostnames for connection

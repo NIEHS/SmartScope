@@ -90,8 +90,6 @@ def regroup_bis(grid_id, square_id):
             holes_for_grouping.append(h)
         else:
             other_holes.append(h)
-    # holes_for_grouping = [h for h in filtered_holes if h.quality in [None, '1', '2']]
-    # holes_for_grouping = [h for h in filtered_holes if h.is_good(plugins=plugins) and not h.is_excluded(protocol, square.targets_prefix)]
 
     proclog.debug(f'\nAll Holes = {len(all_holes)}\nFiltered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 

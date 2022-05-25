@@ -1,3 +1,5 @@
+from functools import partial
+from typing import Any
 from Smartscope.lib.Datatypes.microscope import MicroscopeInterface
 import serialem as sem
 import time
@@ -200,6 +202,11 @@ class SerialemInterface(MicroscopeInterface):
 
 class FakeScopeInterface(MicroscopeInterface):
 
+    # generate_fake_file: Any = None
+
+    # def __post_init__(self):
+    #     self.generate_fake_file = partial(generate_fake_file, destination_dir=self.scope_path)
+
     def checkDewars(self, wait=30) -> None:
         pass
 
@@ -210,22 +217,22 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        generate_fake_file(file, 'atlas')
+        generate_fake_file(file, 'atlas', destination_dir=self.scope_path)
 
     def square(self, stageX, stageY, stageZ, file=''):
-        generate_fake_file(file, 'square')
+        generate_fake_file(file, 'square', destination_dir=self.scope_path)
 
     def align():
         pass
 
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
-        generate_fake_file(file, 'hole')
+        generate_fake_file(file, 'lowmagHole', destination_dir=self.scope_path)
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
-    def highmag(self, isXi, isYi, isX, isY, currentDefocus, tiltAngle, file='', frames=True):
-        generate_fake_file(file, 'highmag')
+    def highmag(self, isX, isY, tiltAngle, file=''):
+        generate_fake_file(file, 'highmag', destination_dir=self.scope_path)
 
     def connect(self, directory: str):
         logger.info('Connecting to fake scope.')

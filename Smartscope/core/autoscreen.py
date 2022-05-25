@@ -438,7 +438,11 @@ def autoscreen(session_id):
             scopeInterface = FakeScopeInterface
         else:
             scopeInterface = SerialemInterface
-        with scopeInterface(ip=microscope.serialem_IP, port=microscope.serialem_PORT, energyfilter=session.detector_id.energy_filter, directory=microscope.windows_path) as scope:
+        with scopeInterface(ip=microscope.serialem_IP,
+                            port=microscope.serialem_PORT,
+                            energyfilter=session.detector_id.energy_filter,
+                            directory=microscope.windows_path,
+                            scope_path=microscope.scope_path) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
             child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(processing_queue,))
