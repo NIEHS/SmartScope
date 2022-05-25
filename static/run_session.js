@@ -22,22 +22,20 @@ async function loadlogs() {
     }
     disk.innerHTML = `Hard drive: ${data.disk[0]} GB total, ${data.disk[1]} GB free, ${data.disk[2]}% full`
     isPaused(data.paused)
+    isStopFile(data.is_stop_file)
     setPause(data)
 }
 
 async function startSession(start = true) {
     let url = `/api/sessions/${session_id}/run_session/`
+    var str = 'stop'
     if (start === true) {
-        method = 'POST'
         str = 'start'
-    } else {
-        method = 'POST'
-        str = 'stop'
     }
     var r = confirm(`Do you want to ${str} this session?`);
     if (r == true) {
         console.log("starting")
-        response = await apifetchAsync(url, { 'start': start }, method);
+        response = await apifetchAsync(url, { 'start': start }, 'POST');
         return response
     } else {
         console.log("Cancel")
@@ -73,6 +71,17 @@ function setPause(data) {
     } else {
         pause.classList.add('btn-outline-danger')
     }
+}
+
+function isStopFile(data) {
+    console.log('Is Stop File?', data)
+
+    if (data == true) {
+        $('#stopSignal').removeClass('d-none')
+        return
+    }
+    $('#stopSignal').addClass('d-none')
+
 }
 
 function isPaused(paused) {

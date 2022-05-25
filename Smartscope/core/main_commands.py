@@ -46,11 +46,12 @@ def add_single_targets(id, *args):
     mainlog.debug(holes)
 
 
-def check_pause(microscope_id: str):
+def check_pause(microscope_id: str, session_id: str):
     pause = os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'.pause_{microscope_id}'))
     paused = os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'paused_{microscope_id}'))
+    is_stop_file = os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'{session_id}.stop'))
 
-    print(json.dumps(dict(pause=pause, paused=paused)))
+    print(json.dumps(dict(pause=pause, paused=paused, is_stop_file=is_stop_file)))
 
 
 def toggle_pause(microscope_id: str):
@@ -112,6 +113,8 @@ def continue_run(next_or_continue, microscope_id):
 
 def stop_session(sessionid):
     open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'))
+
+
 # def manage(*args):
 #     arguments = ["manage.py", *args]  # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.settings.server')
 #     mainlog.debug(arguments)
