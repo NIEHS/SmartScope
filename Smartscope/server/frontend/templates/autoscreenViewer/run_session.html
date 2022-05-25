@@ -21,6 +21,10 @@
 </div>
 {% endif %}
 
+<div id='stopSignal' class="row align-items-center justify-content-center d-none">
+    <div class='alert-info p-2 m-2'>Stop signal was received, Session will stop after the current acquisition. This may
+        take a few minutes. </div>
+</div>
 {% if process is not None%}
 <p>PID: {{process.PID}}</p>
 <p>Status: {{process.status}}</p>

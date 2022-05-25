@@ -82,12 +82,18 @@ class AddTargets(APIView):
 
     def post(self, request, format=None):
         data = request.data
-
-        out, err = send_to_worker(os.getenv('SMARTSCOPE_EXE'),
-                                  arguments=['add_single_targets', data['square_id'], ' '.join([f'{i[0]},{i[1]}' for i in data['targets']])], communicate=True, timeout=30)
+        microscope_id = ScreeningSession.objects.get(pk=data['session_id']).microscope_id
+        logger.debug('Adding targets')
+        try:
+            out, err = send_to_worker(microscope_id.worker_hostname, microscope_id.executable,
+                                      arguments=['add_single_targets', data['square_id'], ' '.join([f'{i[0]},{i[1]}' for i in data['targets']])], communicate=True, timeout=30)
+            success = True
+        except Exception as err:
+            logger.exception(err)
+            success = False
         logger.debug(out.decode("utf-8"))
         logger.debug(err.decode("utf-8"))
-        response = dict(success=True, targets_added=len(data['targets']))
+        response = dict(success=success, targets_added=len(data['targets']))
         return Response(response)
 
 

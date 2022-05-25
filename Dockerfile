@@ -20,14 +20,14 @@ RUN chown smartscope_user /mnt/ &&\
 	mkdir /opt/logs/
 
 #General environment variables
-ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:$IMOD_DIR/bin \
-	IMOD_DIR=/usr/local/IMOD \
+ENV IMOD_DIR=/usr/local/IMOD \	
 	CTFFIND=/usr/local/ctffind \
 	APP=/opt/smartscope/ \
 	AUTOSCREENDIR=/mnt/data/ \
 	TEMPDIR=/tmp/ \
 	LOGDIR=/opt/logs/ \
 	AUTOSCREENSTORAGE=/mnt/longterm/
+ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:$IMOD_DIR/bin
 
 RUN wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.15_RHEL7-64_CUDA10.1.sh && \
 	yes | bash imod_4.11.15_RHEL7-64_CUDA10.1.sh -name IMOD && \

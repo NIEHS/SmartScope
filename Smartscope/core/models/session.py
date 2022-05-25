@@ -292,6 +292,10 @@ class ScreeningSession(BaseModel):
             return [cwd, url]
 
     @property
+    def stop_file(self):
+        return os.path.join(os.getenv('TEMPDIR'), f'{self.session_id}.stop')
+
+    @property
     def storage(self):
         return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
 
@@ -494,7 +498,7 @@ class AutoloaderGrid(BaseModel):
 
     @property
     def protocol(self):
-        if self.holeType == 'NegativeStain':
+        if self.holeType in ['NegativeStain', 'Lacey']:
             return 'NegativeStain'
         return 'SPA'
 

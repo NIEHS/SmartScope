@@ -14,7 +14,7 @@ SPA:
 NegativeStain:
     squareFinders:
         - AI square finder
-        - Square finder
+        # - Square finder
     holeFinders:
         - Regular pattern
     squareSelectors:
