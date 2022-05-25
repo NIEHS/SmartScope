@@ -53,13 +53,13 @@ def resume_incomplete_processes(queue, grid, microscope_id):
     high_mag = grid.highmagmodel_set.exclude(status__in=['queued', 'started', 'completed']).order_by('number')
     for square in squares:
         mainlog.info(f'Square {square} was not fully processed')
-        queue.put([process_square_image, [square, grid, microscope_id]])
+        transaction.on_commit(lambda: queue.put([process_square_image, [square, grid, microscope_id]]))
     for hole in holes:
         mainlog.info(f'Hole {hole} was not fully processed')
-        queue.put([process_hole_image, [hole, microscope_id]])
+        transaction.on_commit(lambda: queue.put([process_hole_image, [hole, microscope_id]]))
     for hm in high_mag:
         mainlog.info(f'High_mag {hm} was not fully processed')
-        queue.put([process_hm_image, [hm, microscope_id]])
+        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id]]))
 
 
 def print_queue(squares, holes, session):
@@ -200,7 +200,7 @@ def run_grid(grid, session, processing_queue, scope):
                 hole = update(hole, status='started')
 
                 scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                 file=hole.raw, is_negativestain=grid.holeType.name == 'NegativeStain')
+                                 file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
                 currentDefocus = scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
                 hole = update(hole, status='acquired')
                 # grid = update(grid, last_update=None)
@@ -211,7 +211,7 @@ def run_grid(grid, session, processing_queue, scope):
                     # processin_queue.put(process_hole_image(hole))
                     mainlog.info(f'Restarting run, recentering on {hole} area before taking high-mag images')
                     scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                     file=hole.raw, is_negativestain=grid.holeType.name == 'NegativeStain')
+                                     file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
                     scope.focusDrift(params.target_defocus_min, params.target_defocus_max,
                                      params.step_defocus, params.drift_crit)
 

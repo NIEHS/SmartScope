@@ -46,7 +46,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         img = cv2.bilateralFilter(auto_contrast(montage.raw_montage.copy()), 30, 75, 75)
     for target in targets:
         x, y = target.finders[0].x, target.finders[0].y
-
+        # mainlog.debug(f'X:{type(x)},Y:{type(y)},Radius:{type(target.radius)}')
         target.median = np.mean(img[y - target.radius:y + target.radius, x - target.radius:x + target.radius])
         if save:
             cv2.circle(img, (x, y), target.radius, target.median, 10)
@@ -55,7 +55,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         save_image(img, 'gray_level_selector', extension='png', destination=parent.directory, resize_to=1024)
 
     targets.sort(key=lambda x: x.median)
-    mainlog.debug([t.median for t in targets])
+    # mainlog.debug([t.median for t in targets])
     # split_targets = np.array_split(np.array(targets), n_groups)
     # output = list()
     return generate_equal_clusters(parent, targets, n_groups)
@@ -77,8 +77,8 @@ def selector_wrapper(selectors, selection, *args, **kwargs):
             outputs = locals()[method['method']](selection, *args, *method['args'], **method['kwargs'], **kwargs)
             with transaction.atomic():
                 for obj in outputs:
-                    obj['method_name'] = method['name']
-                    Selector.objects.update_or_create(**obj)
+                    # obj['method_name'] = method['name']
+                    Selector.objects.update_or_create(**obj, method_name=method['name'])
                     # obj.save()
         except Exception as err:
             proclog.exception(err)

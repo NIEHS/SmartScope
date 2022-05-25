@@ -190,9 +190,11 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
     def get_logs(self, request, **kwargs):
         self.object = self.get_object()
         logger.info('Fetching logs')
-        paused_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
-                                            self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk], communicate=True)
-        paused_output = json.loads(paused_output.decode("utf-8").strip().split('\n')[-1])
+        check_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
+                                           self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
+        check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
+        # check_stop_file_output = send_to_worker(self.object.microscope_id. worker_hostname,
+        #                                         self.object.microscope_id.executable, arguments=['check_stop_file', self.object.session_id], communicate=True)
         disk_status = disk_space(settings.AUTOSCREENDIR)
         try:
             out = self.read_file('run.out')
@@ -204,7 +206,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
             proc = ''
             queue = ''
 
-        return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **paused_output))
+        return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **check_output))
 
     @ action(detail=True, methods=['post'], )
     def force_kill(self, request, **kwargs):
