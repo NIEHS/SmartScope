@@ -110,7 +110,7 @@ def continue_run(next_or_continue, microscope_id):
 
 
 def stop_session(sessionid):
-    open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'))
+    open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'), 'w').close()
 
 
 # def manage(*args):

@@ -22,7 +22,7 @@ services:
       - /auto_screening/tmp/scope/:/mnt/fake_scope/
       - /home/bouvettej2/Template_files/:/opt/Template_files/
     environment:
-      ALLOWED_HOSTS: localhost,lxd-02012614,192.168.0.198 #List of allowed hostnames for connection
+      ALLOWED_HOSTS: localhost,domain.com #List of allowed hostnames for connection
       DJANGO_SETTINGS_MODULE: Smartscope.core.settings.server_docker #Shouldn't need to be changed, here for testing
       USE_STORAGE: True #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
       USE_LONGTERMSTORAGE: True #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
