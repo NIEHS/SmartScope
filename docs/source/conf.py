@@ -22,7 +22,7 @@ copyright = '2022, NIEHS/NIH Molecular Microscopy Consortium and Bartesaghi Lab'
 author = 'Jonathan Bouvette'
 
 # The full version, including alpha/beta/rc tags
-release = '0.6'
+release = '0.6beta'
 
 
 # -- General configuration ---------------------------------------------------

@@ -32,9 +32,12 @@ Installation steps
 
 2. Download the AI models
 
+    The AI models can be download by clicking the following :download:`this link <https://docs.smartscope.org/downloads/Smartscope0.6.tar.gz>` or via the wget command.
+
     .. code-block:: bash
 
-        Add the AI models download procedure
+        wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz
+        tar -xvf SmartScope0.6.tar.gz
 
 3. Using a text editor, open the docker-compose.yml file and edit the values to your needs. The file includes description of each entry.
 
@@ -54,6 +57,8 @@ Installation steps
 
 4. Run the docker-compose file. On the first run, this should build the images and start the pods.
 
+    .. note:: This process takes a few minutes to complete when the smartscope images needs to be built.
+
     .. code-block:: bash
 
         #This will build and run all the pods as a daemon
@@ -67,4 +72,19 @@ Installation steps
         sudo podman-compose build
         #To force rebuilding an existing image
         sudo podman-compose build --no-cache
- 
+
+5. Set up the initial database (only once)
+
+    SmartScope includes an initial database dump containing the migrations and some basic entries. To copy it into your deployment, you'll need to access the database pod and enter a few commands:
+
+    .. code-block:: bash
+
+        #First copy the dump into the location were your database is. This is the same directory specified in the volumes section of the docker-compose file for the db service.
+        cp SmartScope/config/docker/initialdb.sql /path/to/db/
+        sudo podman exec smartscope-db mysql -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /var/lib/mysql/initialdb.sql
+
+6. Log in to the web interface with the initial admin account.
+
+    You should now be able to access the smartscope interface at `<http://localhost:48000/>`_.
+
+    .. note:: You may need to change the domain and port number to reflect the docker-compose file with the port specified in the nginx service and one of the domains specified in the ALLOWED_HOSTS of the smartscope service.
