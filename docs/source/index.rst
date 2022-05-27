@@ -26,13 +26,16 @@ Site map
 
 .. toctree::
 
+   news.rst
    beta.rst
    installation.rst
    setup.rst
    overview.rst
    run_smartscope.rst
    citation.rst
+   contact.rst
    license.rst
+
 
    
 Indices and tables

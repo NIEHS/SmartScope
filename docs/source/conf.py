@@ -19,7 +19,7 @@ import sphinx_rtd_theme
 
 project = 'SmartScope'
 copyright = '2022, NIEHS/NIH Molecular Microscopy Consortium and Bartesaghi Lab'
-author = 'Jonathan Bouvette'
+author = 'Jonathan Bouvette and Elizabeth Viverette'
 
 # The full version, including alpha/beta/rc tags
 release = '0.6beta'
