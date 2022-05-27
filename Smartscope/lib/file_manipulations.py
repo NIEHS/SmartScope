@@ -15,8 +15,9 @@ import glob
 import logging
 
 
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
+# logger = logging.getLogger('processing')
+# logger = logging.getLogger('autoscreen')
+logger = logging.getLogger(__name__)
 
 
 def split_path(path):
@@ -26,7 +27,7 @@ def split_path(path):
     file = path_split[-1]
     name, ext = '.'.join(file.split('.')[:-1]), file.split('.')[-1]
     splitted_path = Path(path, root, file, name, ext)
-    proclog.info(splitted_path)
+    logger.info(splitted_path)
     return splitted_path
 
 
@@ -49,7 +50,7 @@ def copy_file(file, remove=True):
                 os.remove(mdoc)
                 exists = False
             except OSError as err:
-                proclog.warning(err, 'Sleeping 2 secs and retrying')
+                logger.warning(err, 'Sleeping 2 secs and retrying')
                 time.sleep(2)
     return split_path(new_file)
 
@@ -59,7 +60,7 @@ def process_montage(obj, mag_level='atlas', save=True, raw_only=False, frames=Fa
     try:
         montage = MAG_LEVELS[mag_level.lower()](**obj.__dict__, **kwargs)
     except Exception as err:
-        proclog.error(err)
+        logger.error(err)
     is_metadata = montage.create_dirs(force_reproces=force_reprocess)
     if not is_metadata:
         montage.parse_mdoc(file=obj.raw)
@@ -78,17 +79,17 @@ def get_file(file, remove=True):
 
 def file_busy(file, directory, timeout=1):
     count = 0
-    proclog.info(f'Waiting for {file}')
+    logger.info(f'Waiting for {file}')
     sys.stdout.flush()
     while not os.path.isfile(os.path.join(directory, file)):
         time.sleep(timeout)
     else:
-        proclog.info("Montage still acquiring")
+        logger.info("Montage still acquiring")
         sys.stdout.flush()
         while os.path.isfile(os.path.join(directory, '.lock')):
             time.sleep(timeout)
         else:
-            proclog.info('Montage acquisition finished, processing file.')
+            logger.info('Montage acquisition finished, processing file.')
 
 
 def now():
@@ -99,7 +100,7 @@ def clean_source_dir(dir=os.getenv('MOUNTLOC')):
     files = glob.glob(os.path.join(dir, '*.txt'))
     files += glob.glob(os.path.join(dir, '.*'))
 
-    proclog.debug('\n'.join(files))
+    logger.debug('\n'.join(files))
     [os.remove(file) for file in files if os.path.isfile(file)]
     open(os.path.join(dir, '.pause'), 'w').close()
 
@@ -113,7 +114,7 @@ def create_dirs(settings):
             try:
                 os.chmod(d, 0o775)
             except PermissionError as err:
-                proclog.warning(f'Could not set permissions on directory: {d}', err)
+                logger.warning(f'Could not set permissions on directory: {d}', err)
 
 
 def create_dirs_docker(working_dir):
@@ -134,7 +135,7 @@ def create_scope_dirs(scope_path):
 
 
 def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
-    mainlog.info(f"Generating fake {file} from {funcname}")
+    logger.info(f"Generating fake {file} from {funcname}")
     TEST_FILES_ROOT = os.getenv('TEST_FILES')
     dirs = dict(atlas=os.path.join(TEST_FILES_ROOT, 'atlas'),
                 square=os.path.join(TEST_FILES_ROOT, 'square'),
@@ -152,8 +153,8 @@ def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('M
     shutil.copy(f'{randomfile}.mdoc', f'{destination}.mdoc')
     while not all([os.path.getsize(randomfile) == os.path.getsize(destination),
                    os.path.getsize(f'{randomfile}.mdoc') == os.path.getsize(f'{destination}.mdoc')]):
-        mainlog.debug(f'Fake files improperly copied, trying again')
+        logger.debug(f'Fake files improperly copied, trying again')
         shutil.copy(randomfile, destination)
         shutil.copy(f'{randomfile}.mdoc', f'{destination}.mdoc')
-    mainlog.info(f'Sleeping {sleeptime} sec to mimic scope acquisition')
+    logger.info(f'Sleeping {sleeptime} sec to mimic scope acquisition')
     time.sleep(sleeptime)

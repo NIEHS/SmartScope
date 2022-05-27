@@ -15,10 +15,7 @@ from asgiref.sync import async_to_sync
 from django.contrib.contenttypes.models import ContentType
 
 
-Smartscope.lib.logger.default_logger()
-
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
+logger = logging.getLogger(__name__)
 
 
 class Websocket_update_decorator:
@@ -36,7 +33,7 @@ class Websocket_update_decorator:
                 outputDict = {'type': 'update.metadata',
                               'update': {}}
 
-                mainlog.debug(f'Updating {obj}, sending to websocket {self.grid.grid_id} group')
+                logger.debug(f'Updating {obj}, sending to websocket {self.grid.grid_id} group')
                 outputDict['update'] = update_to_fullmeta([obj])
                 async_to_sync(channel_layer.group_send)(self.grid.grid_id, outputDict)
 
@@ -133,20 +130,20 @@ def get_hole_count(grid, hole_list=None):
 
         last_hour_date_time = grid.end_time - timedelta(hours=1)
         last_hour = len([h for h in completed if h.completion_time >= last_hour_date_time])
-    mainlog.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
+    logger.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
     return dict(completed=num_completed, queued=queued, perhour=holes_per_hour, lasthour=last_hour)
 
 
 def viewer_only(user):
     groups = user.groups.all().values_list('name', flat=True)
-    mainlog.debug(groups)
+    logger.debug(groups)
     if 'viewer_only' in groups:
         return True
     return False
 
 
 def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=False, iterations=500, score_weight=2):
-    proclog.debug(
+    logger.debug(
         f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes
     coords = np.array([[h.finders[0].stage_x, h.finders[0].stage_y] for h in hole_models])
@@ -160,7 +157,7 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
 
     # Find lines with the most hits as max group size
     max_group_size = np.max(np.sum(filter_start, axis=0))
-    proclog.debug(f'Max group size: {max_group_size}')
+    logger.debug(f'Max group size: {max_group_size}')
     best = (-1000, 0, 0, [])
     score_no_change = 0
     # Start iterations
@@ -175,7 +172,7 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
         group_size = max_group_size
         # Group from max size to min_group_size
         while group_size >= min_group_size:
-            # proclog.debug(f'Doing iteration: {iter}, group_size: {group_size}')
+            # logger.debug(f'Doing iteration: {iter}, group_size: {group_size}')
             for i in rd_idx_list:
                 where = np.where(filter[i] == 1)[0]
                 if len(where) >= group_size:
@@ -192,16 +189,16 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
         score = (coverage * 100) - (num_groups * score_weight)
         # see if iteration was better than last
         if score > best[0] or iter == 1:
-            proclog.debug(f'Iteration {iter}: Coverage= {coverage}, num_groups={num_groups}, score= {score}')
+            logger.debug(f'Iteration {iter}: Coverage= {coverage}, num_groups={num_groups}, score= {score}')
             best = (score, coverage, num_groups, groups)
             score_no_change = 0
         else:
             score_no_change += 1
             if score_no_change == 250:
-                proclog.debug('No changes for 250 iterations, stopping')
+                logger.debug('No changes for 250 iterations, stopping')
                 break
 
-    proclog.info(f'Best hole grouping: Coverage= {best[1]}, num_groups={best[2]}, score= {best[0]}')
+    logger.info(f'Best hole grouping: Coverage= {best[1]}, num_groups={best[2]}, score= {best[0]}')
 
     for i, g in best[3]:
         center = hole_models[i]
@@ -331,7 +328,7 @@ def add_high_mag(grid, parent):
 def select_n_squares(parent, n):
     squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
     plugins = load_plugins()['squareFinders']
-    mainlog.debug(plugins)
+    logger.debug(plugins)
     squares = [s for s in squares if s.is_good(plugins=plugins)]
     if len(squares) > 0:
         split_squares = np.array_split(squares, n)
@@ -352,9 +349,9 @@ def select_n_holes(parent, n, is_bis=False):
         **filter_fields).order_by('dist_from_center'))
     # if len(holes) == 0:
     #     # To still select holes when they are all predicted to be bad. Because we're not sure the classifier is working well yet (added v.0.44)
-    #     proclog.info('No holes new selected, overlooking prediction classes')
+    #     logger.info('No holes new selected, overlooking prediction classes')
     #     filter_fields.pop('class_num__lt')
-    #     proclog.debug(filter_fields)
+    #     logger.debug(filter_fields)
     #     holes = list(parent.holemodel_set.filter(
     #         **filter_fields).order_by('dist_from_center'))
 
@@ -419,7 +416,7 @@ def select_n_areas(parent, n, is_bis=False):
                 logger.debug(f'Selecting {sele.name} from cluster {choice}')
                 update(sele, selected=True, extra_fields=['status'])
     else:
-        proclog.info('All targets are rejected, skipping')
+        logger.info('All targets are rejected, skipping')
     # targets_filtered = [t for t in targets if t.is_good(plugins=plugins) and not t.is_excluded(protocol, parent.targets_prefix)]
 
-    # mainlog.debug(f"{len(targets)}, {len(targets_filtered)}")
+    # logger.debug(f"{len(targets)}, {len(targets_filtered)}")

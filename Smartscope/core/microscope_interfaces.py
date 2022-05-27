@@ -238,7 +238,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
-    def highmag(self, isX, isY, tiltAngle, file=''):
+    def highmag(self, isX, isY, tiltAngle, file='', frames=True):
         generate_fake_file(file, 'highmag', destination_dir=self.scope_path)
 
     def connect(self, directory: str):

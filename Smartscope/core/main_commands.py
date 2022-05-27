@@ -14,8 +14,9 @@ from Smartscope.lib.config import *
 from Smartscope.core.test_commands import is_gpu_enabled
 import numpy as np
 
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
+# logger = logging.getLogger('processing')
+# logger = logging.getLogger('autoscreen')
+logger = logging.getLogger(__name__)
 
 
 def add_holes(id, targets):
@@ -33,17 +34,17 @@ def add_holes(id, targets):
 
 
 def add_single_targets(id, *args):
-    mainlog.info(f'Adding {len(args)} targets to square {id}')
+    logger.info(f'Adding {len(args)} targets to square {id}')
     targets = []
     for i in args:
         j = i.split(',')
         j = [float(k) for k in j]
 
         targets.append(j)
-    mainlog.debug(targets)
+    logger.debug(targets)
     holes = add_holes(id=id, targets=targets)
 
-    mainlog.debug(holes)
+    logger.debug(holes)
 
 
 def check_pause(microscope_id: str, session_id: str):
@@ -69,7 +70,7 @@ def regroup_bis(grid_id, square_id):
     square = SquareModel.objects.get(square_id=square_id)
     plugins = load_plugins()
     protocol = load_protocol(os.path.join(grid.directory, 'protocol.yaml'))
-    proclog.debug(f"{grid_id} {square_id}")
+    logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
     all_holes = list(HoleModel.objects.filter(square_id=square_id))
     excluded_groups = []
@@ -91,7 +92,7 @@ def regroup_bis(grid_id, square_id):
         else:
             other_holes.append(h)
 
-    proclog.debug(f'\nAll Holes = {len(all_holes)}\nFiltered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
+    logger.debug(f'\nAll Holes = {len(all_holes)}\nFiltered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 
     holes = group_holes_for_BIS(holes_for_grouping, max_radius=collection_params.bis_max_distance,
                                 min_group_size=collection_params.min_bis_group_size, queue_all=collection_params.holes_per_square == -1)
@@ -115,7 +116,7 @@ def stop_session(sessionid):
 
 # def manage(*args):
 #     arguments = ["manage.py", *args]  # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.settings.server')
-#     mainlog.debug(arguments)
+#     logger.debug(arguments)
 #     try:
 #         from django.core.management import execute_from_command_line
 #     except ImportError as exc:
@@ -128,7 +129,7 @@ def stop_session(sessionid):
 
 
 def run(command, *args):
-    mainlog.debug(f"Running: {command} {' '.join(args)}")
+    logger.debug(f"Running: {command} {' '.join(args)}")
     globals()[command](*args)
 
 
@@ -151,6 +152,6 @@ def main(args):
     try:
         run(command, *args)
     except Exception as e:
-        mainlog.exception(e)
+        logger.exception(e)
     except KeyboardInterrupt:
-        mainlog.info('Stopping Smartscope')
+        logger.info('Stopping Smartscope')
