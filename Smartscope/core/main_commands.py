@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def add_holes(id, targets):
     instance = SquareModel.objects.get(pk=id)
     montage, is_metadata = process_montage(instance, mag_level='square', working_dir=instance.grid_id.directory)
-    montage.targets = np.array(targets) + np.array([0, instance.shape_y])
+    montage.targets = np.array(targets) + np.array([0, instance.shape_x])
     montage.target_class = 'LatticeTarget'
     montage.finder = 'Manual finder'
     montage.classifier = None

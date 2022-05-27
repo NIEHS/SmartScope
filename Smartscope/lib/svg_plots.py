@@ -2,67 +2,10 @@ import drawSvg as draw
 from drawSvg import elements as elementsModule
 from math import floor, sqrt
 from io import StringIO
-
-from matplotlib.pyplot import legend
 from Smartscope.lib.config import *
 import logging
 
-# logger = logging.getLogger('logger')
 logger = logging.getLogger(__name__)
-
-# class Svg:
-#     content = ''
-
-#     def load(self, file):
-#         with open(file, 'r') as f:
-#             svg = f.readlines()
-#         self.header = svg[0]
-#         self.png = svg[1]
-#         self.content = svg[2:-1]
-
-#     def set_size(self, x, y):
-#         self.sizeX = x
-#         self.sizeY = y
-#         self.header = f"""<svg viewBox="0 0 {y} {x}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">\n"""
-
-#     def add_bg_image(self, path, id=''):
-#         if id != '':
-#             id = f'id="{id}" '
-#         img = f"""<image {id}xlink:href="{path}" x="0" y="0" height="{self.sizeX}" width="{self.sizeY}" />\n"""
-#         self.png = img
-
-#     def add_rect(self, x, y, width, height, rotation=None, id=''):
-#         if id != '':
-#             id = f'id="{id}" '
-#         rect = f"""<rect {id}x="{x}" y="{y}" width="{width}" height="{height}" fill="green" fill-opacity="0" stroke-width="5" stroke="green" />\n"""
-#         if rotation is not None:
-#             transform = f"""<g transform = "rotate({rotation} {x+width//2} {y+height//2})">/n{rect}</g>\n"""
-#             return transform
-#         else:
-#             return rect
-
-#     def add_circ(self, x, y, radius, id=''):
-#         if id != '':
-#             id = f'id="{id}" '
-#         circ = f"""<circle {id}cx="{x}" cy="{y}" r="{radius}" fill="green" fill-opacity="0" stroke-width="5" stroke="green" />"""
-#         return circ
-
-#     def add_anchor(self, func, *, link=''):
-#         def inner(*args, **kwargs):
-#             inside = func(*args, **kwargs)
-#             outside = f"""<a xlink:href="{link}">\n{inside}</a>\n"""
-#             return outside
-#         return inner
-
-#     def save(self, file):
-#         with open(file, 'w') as f:
-#             f.write(self.header)
-#             f.write(self.png)
-#             f.write(self.content)
-#
-#
-#         f.write('</svg>')
-# DEFAULT_COLORS = ['blue', 'purple', 'red', 'gray', 'white']
 
 
 def add_scale_bar(pixelsize, w, h, id_type='atlas'):

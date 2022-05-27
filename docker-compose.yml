@@ -30,7 +30,7 @@ services:
       DEFAULT_UMASK: '003' #default=003. Will set 774(rwxrwxr--) permission on all the files created by smartscope
       LOGLEVEL: DEBUG #Log level, choices are INFO, WARNING, CRITICAL, DEBUG. default:INFO
       DEBUG: True #set to True to get a django debug page whenever a page isn't found or an error occurs while loading assets to the web browser.
-      SECRET_KEY: 'd41d8cd98f00b204e9800998e' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
+      SECRET_KEY: 'd41d8cd98f00b204e9800998eag' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
       TEMPLATE_FILES: /opt/Template_files/
       ###SerialEM variables###
       SEM_PYTHON: False #Set to False skip connection to serialEM
