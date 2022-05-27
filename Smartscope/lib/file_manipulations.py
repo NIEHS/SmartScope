@@ -133,7 +133,7 @@ def create_scope_dirs(scope_path):
             os.mkdir(d)
 
 
-def generate_fake_file(file, funcname, sleeptime=7, **kwargs):
+def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
     mainlog.info(f"Generating fake {file} from {funcname}")
     TEST_FILES_ROOT = os.getenv('TEST_FILES')
     dirs = dict(atlas=os.path.join(TEST_FILES_ROOT, 'atlas'),
@@ -147,7 +147,7 @@ def generate_fake_file(file, funcname, sleeptime=7, **kwargs):
         dirname = dir[f'{funcname}_frames']
 
     randomfile = random.choice(glob.glob(f'{dirname}/*.???'))
-    destination = os.path.join(os.getenv('MOUNTLOC'), file)
+    destination = os.path.join(destination_dir, file)
     shutil.copy(randomfile, destination)
     shutil.copy(f'{randomfile}.mdoc', f'{destination}.mdoc')
     while not all([os.path.getsize(randomfile) == os.path.getsize(destination),

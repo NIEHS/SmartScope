@@ -59,7 +59,7 @@ def resume_incomplete_processes(queue, grid, microscope_id):
         transaction.on_commit(lambda: queue.put([process_hole_image, [hole, microscope_id]]))
     for hm in high_mag:
         mainlog.info(f'High_mag {hm} was not fully processed')
-        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id]]))
+        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id, grid.params_id.save_frames]]))
 
 
 def print_queue(squares, holes, session):
@@ -182,7 +182,6 @@ def run_grid(grid, session, processing_queue, scope):
             squares, holes = [], []
         else:
             squares, holes = get_queue(grid)
-            # mainlog.debug(f'Done after fectchin queue?: {is_done}')
         print_queue(squares, holes, session)
         if len(holes) > 0 and (len(squares) == 0 or grid.collection_mode == 'screening'):
             is_done = False
@@ -222,11 +221,11 @@ def run_grid(grid, session, processing_queue, scope):
                     mainlog.debug(f'Just created:{created} {hm}, {hm.pk}')
                     if hm.status in [None, 'started']:
                         isX, isY = stage_x - h.finders[0].stage_x, (stage_y - h.finders[0].stage_y) * cos(radians(round(params.tilt_angle, 1)))
-                        out = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw,)
-                        if out is not None:
-                            frames = out
-                        else:
-                            frames = None
+                        frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw, frames=params.save_frames)
+                        # if out is not None:
+                        #     frames = out
+                        # else:
+                        #     frames = None
                         hm = update(hm, is_x=isX, is_y=isY, frames=frames, status='acquired')
                         if h != hole:
                             update(h, status='acquired')
@@ -240,7 +239,8 @@ def run_grid(grid, session, processing_queue, scope):
                 path = os.path.join(session.microscope_id.scope_path, square.raw)
                 scope.square(square.finders[0].stage_x, square.finders[0].stage_y, square.finders[0].stage_z, file=square.raw)
                 square = update(square, status='acquired')
-                transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
+                # transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
+                process_square_image(square, grid, session.microscope_id)
         elif is_done:
             microscope_id = session.microscope_id.pk
             if os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'.pause_{microscope_id}')):
@@ -438,13 +438,19 @@ def autoscreen(session_id):
             scopeInterface = FakeScopeInterface
         else:
             scopeInterface = SerialemInterface
-        with scopeInterface(ip=microscope.serialem_IP, port=microscope.serialem_PORT, energyfilter=session.detector_id.energy_filter, directory=microscope.windows_path) as scope:
+        with scopeInterface(ip=microscope.serialem_IP,
+                            port=microscope.serialem_PORT,
+                            energyfilter=session.detector_id.energy_filter,
+                            directory=microscope.windows_path,
+                            scope_path=microscope.scope_path) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
             child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(processing_queue,))
             child_process.start()
             for grid in grids:
                 status = run_grid(grid, session, processing_queue, scope)
+                if status == 'stop':
+                    break
     except Exception as e:
         mainlog.exception(e)
         status = 'error'

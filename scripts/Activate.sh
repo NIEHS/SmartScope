@@ -4,5 +4,5 @@
 
 echo 'Setting smartscope environment'
 set -a
-. ~/CryoEM-worker-test/conf.env
+. ../config/conda/conf.env
 set +a

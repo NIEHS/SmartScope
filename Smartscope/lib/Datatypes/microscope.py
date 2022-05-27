@@ -36,6 +36,7 @@ class MicroscopeInterface(ABC):
     ip: str
     port: int
     directory: str
+    scope_path: str
     energyfilter: bool
     state: MicroscopeState = MicroscopeState()
     imageHandler: Any = Montage

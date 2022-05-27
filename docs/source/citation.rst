@@ -8,6 +8,3 @@ Here's the citation information:
 
     Bouvette, J., Huang, Q., Riccio A.A., Copeland, W.C, Bartesaghi, A., Borgnia M. J. (2022). Automated systematic evaluation of cryo-EM specimens with SmartScope. BioRxiv, `<https://doi.org/10.1101/2022.05.05.490801>`_ 
 
-
-.. toctree::
-   :maxdepth: 2

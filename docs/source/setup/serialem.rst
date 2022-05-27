@@ -30,13 +30,18 @@ Ensure that dose-fraciionation and exposure times are set for that purpose.
 
 Record
 #######
-Currenly used to acquire the atlas. Atlas is acquired outside of low-dose mode and current scripting commands for acquiring montage will use Record by default.
+(Under deprecation) Currenly used to acquire the atlas. Atlas is acquired outside of low-dose mode and current scripting commands for acquiring montage will use Record by default.
 
 Focus/Trial
 ############
 Used for autofocus and drift correction. For autofocus, the specified image-shift position that is set will be used for each sample. We suggest changing it when doing data collection to ensure that the focus area illuminates between holes.
 
+Non Low-dose presets
+********************
 
+The easiest way to set up for the atlas is to create an imaging state for mont-mapping. This way, when acquiring the atlas, it will use the mont-map setting instead of Record.
+
+.. note:: There is a workaround that needs to be executed prior to starting SmartScope for this to happen successfully. `Click here for more details <>`_
 
 
 

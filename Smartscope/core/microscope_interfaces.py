@@ -1,3 +1,6 @@
+from multiprocessing.sharedctypes import Value
+from pathlib import PureWindowsPath
+from typing import Any
 from Smartscope.lib.Datatypes.microscope import MicroscopeInterface
 import serialem as sem
 import time
@@ -145,13 +148,13 @@ class SerialemInterface(MicroscopeInterface):
             sem.OpenNewFile(file)
             sem.Save()
             sem.CloseFile()
-            frames = None
-        else:
-            sem.EarlyReturnNextShot(0)
-            sem.Preview()  # Seems possible to change this to Record in 4.0, needs testing
-            frames = sem.ReportLastFrameFile()
-            if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
-                frames = frames[0]
+            return None
+
+        sem.EarlyReturnNextShot(0)
+        sem.Preview()  # Seems possible to change this to Record in 4.0, needs testing
+        frames = sem.ReportLastFrameFile()
+        if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
+            frames = frames[0]
         logger.debug(f"Frames: {frames},")
         return frames.split('\\')[-1]
 
@@ -166,6 +169,9 @@ class SerialemInterface(MicroscopeInterface):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
+            movies_directory = PureWindowsPath(self.directory, 'movies').as_posix().replace('/', '\\')
+            logger.info(f'Saving frames to {movies_directory}')
+            sem.SetFolderForFrames(movies_directory)
             # sem.EarlyReturnNextShot(0)
         else:
             logger.info('Saving frames disabled')
@@ -187,8 +193,11 @@ class SerialemInterface(MicroscopeInterface):
         sem.Exit(1)
 
     def loadGrid(self, position):
-
-        if sem.ReportSlotStatus(position) == 1:
+        slot_status = sem.ReportSlotStatus(position)
+        if slot_status == -1:
+            raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
+        if slot_status == 1:
+            logger.info(f'Autoloader position is occupied')
             logger.info(f'Loading grid {position}')
             sem.Delay(5)
             sem.SetColumnOrGunValve(0)
@@ -200,6 +209,11 @@ class SerialemInterface(MicroscopeInterface):
 
 class FakeScopeInterface(MicroscopeInterface):
 
+    # generate_fake_file: Any = None
+
+    # def __post_init__(self):
+    #     self.generate_fake_file = partial(generate_fake_file, destination_dir=self.scope_path)
+
     def checkDewars(self, wait=30) -> None:
         pass
 
@@ -210,22 +224,22 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        generate_fake_file(file, 'atlas')
+        generate_fake_file(file, 'atlas', destination_dir=self.scope_path)
 
     def square(self, stageX, stageY, stageZ, file=''):
-        generate_fake_file(file, 'square')
+        generate_fake_file(file, 'square', destination_dir=self.scope_path)
 
     def align():
         pass
 
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
-        generate_fake_file(file, 'hole')
+        generate_fake_file(file, 'lowmagHole', destination_dir=self.scope_path)
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
-    def highmag(self, isXi, isYi, isX, isY, currentDefocus, tiltAngle, file='', frames=True):
-        generate_fake_file(file, 'highmag')
+    def highmag(self, isX, isY, tiltAngle, file=''):
+        generate_fake_file(file, 'highmag', destination_dir=self.scope_path)
 
     def connect(self, directory: str):
         logger.info('Connecting to fake scope.')
