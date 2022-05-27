@@ -11,9 +11,6 @@ from typing import Any
 
 from Smartscope.lib.montage import Montage
 
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
-
 
 @dataclass
 class MicroscopeState:

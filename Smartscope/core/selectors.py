@@ -2,15 +2,14 @@ from Smartscope.lib.config import load_plugins
 from Smartscope.core.models import *
 from django.contrib.contenttypes.models import ContentType
 from Smartscope.lib.montage import *
-import Smartscope.lib.logger
 import numpy as np
 from django.db import transaction
 import cv2
 from Smartscope.lib.image_manipulations import save_image, to_8bits, auto_contrast
-Smartscope.lib.logger.default_logger()
 
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
+# logger = logging.getLogger('processing')
+# logger = logging.getLogger('autoscreen')
+logger = logging.getLogger(__name__)
 
 
 def generate_equal_clusters(parent, targets, n_groups):
@@ -30,7 +29,7 @@ def cluster_by_field(parent, n_groups, field='area'):
 
     targets = np.array(parent.targets.order_by(field))
     output = []
-    mainlog.debug(plugins)
+    logger.debug(plugins)
     # targets = [t for t in targets if t.is_good(plugins=plugins)]
 
     return generate_equal_clusters(parent, targets, n_groups)
@@ -38,7 +37,7 @@ def cluster_by_field(parent, n_groups, field='area'):
 
 def gray_level_selector(parent, n_groups, save=True, montage=None):
     targets = list(parent.targets)
-    mainlog.debug(f'Initial targets = {len(targets)}')
+    logger.debug(f'Initial targets = {len(targets)}')
     if montage is None:
         montage = Montage(**parent.__dict__, working_dir=parent.grid_id.directory)
         montage.create_dirs()
@@ -46,7 +45,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         img = cv2.bilateralFilter(auto_contrast(montage.raw_montage.copy()), 30, 75, 75)
     for target in targets:
         x, y = target.finders[0].x, target.finders[0].y
-        # mainlog.debug(f'X:{type(x)},Y:{type(y)},Radius:{type(target.radius)}')
+        # logger.debug(f'X:{type(x)},Y:{type(y)},Radius:{type(target.radius)}')
         target.median = np.mean(img[y - target.radius:y + target.radius, x - target.radius:x + target.radius])
         if save:
             cv2.circle(img, (x, y), target.radius, target.median, 10)
@@ -55,7 +54,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         save_image(img, 'gray_level_selector', extension='png', destination=parent.directory, resize_to=1024)
 
     targets.sort(key=lambda x: x.median)
-    # mainlog.debug([t.median for t in targets])
+    # logger.debug([t.median for t in targets])
     # split_targets = np.array_split(np.array(targets), n_groups)
     # output = list()
     return generate_equal_clusters(parent, targets, n_groups)
@@ -70,8 +69,8 @@ def selector_wrapper(selectors, selection, *args, **kwargs):
             method['kwargs'] = dict()
 
         import_cmd = f"from {method['package']} import {method['method']}"
-        proclog.debug(import_cmd)
-        proclog.debug(f"kwargs = {method['kwargs']}")
+        logger.debug(import_cmd)
+        logger.debug(f"kwargs = {method['kwargs']}")
         exec(import_cmd)
         try:
             outputs = locals()[method['method']](selection, *args, *method['args'], **method['kwargs'], **kwargs)
@@ -81,4 +80,4 @@ def selector_wrapper(selectors, selection, *args, **kwargs):
                     Selector.objects.update_or_create(**obj, method_name=method['name'])
                     # obj.save()
         except Exception as err:
-            proclog.exception(err)
+            logger.exception(err)

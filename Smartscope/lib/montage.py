@@ -25,7 +25,8 @@ import logging
 
 mpl.use('Agg')
 
-proclog = logging.getLogger('processing')
+# logger = logging.getLogger('processing')
+logger = logging.getLogger(__name__)
 
 
 def auto_canny(image, limits=None, sigma=0.33, dilation=5):
@@ -124,7 +125,7 @@ def fit_gauss(blur, min=40, max=255):
         params, cov = curve_fit(gauss, x[:-1], y, expected)
         return params, True
     except Exception as err:
-        proclog.debug('Could not fit gaussian, passing expected params')
+        logger.debug('Could not fit gaussian, passing expected params')
         return expected, False
 
 
@@ -345,7 +346,7 @@ class Montage(GenericPosition):
         #     os.mkdir(os.path.join(self._id, 'targets'))
         if not force_reproces and self.status in ['processed', 'completed']:
             if os.path.isfile(f'{self._id}/{self._id}.mrc') and os.path.isfile(self.metadataFile):  # and self.binning_factor is not None
-                proclog.info('Found metadata, reading...')
+                logger.info('Found metadata, reading...')
                 self.read_data()
                 return True
         return False
@@ -359,19 +360,19 @@ class Montage(GenericPosition):
         # while True:
         #     waited = 0
         time_elapsed = time.time() - os.path.getctime(file)
-        #     proclog.debug(time_elapsed)
+        #     logger.debug(time_elapsed)
         if time_elapsed < minfiletime:
-            proclog.debug('File may not have finished writing, waiting 2 seconds')
+            logger.debug('File may not have finished writing, waiting 2 seconds')
             time.sleep(minfiletime)
             # waited += 2
             # else:
             #     break
 
         com = f'alignframes -input {file} -output {self.raw} -gain {os.path.join(frames_dir,self.metadata.iloc[-1].GainReference)} -rotation -1 -dfile {self.frames}.mdoc -volt {self.metadata.iloc[-1].Voltage}'
-        proclog.debug(com)
+        logger.debug(com)
         p = sub.run(shlex.split(com), stdout=sub.PIPE, stderr=sub.PIPE)
-        proclog.debug(p.stdout.decode('utf-8'))
-        proclog.debug(p.stderr.decode('utf-8'))
+        logger.debug(p.stdout.decode('utf-8'))
+        logger.debug(p.stderr.decode('utf-8'))
 
     def build_montage(self, raw_only=False):
 
@@ -437,7 +438,7 @@ class Montage(GenericPosition):
         return binned_img, apix, binned_size, round(binning_factor, 3)
 
     def find_targets(self, methods: list, *args, save=True):
-        proclog.debug(f'Using method: {methods}')
+        logger.debug(f'Using method: {methods}')
         for method in methods:
             if not 'args' in method.keys():
                 method['args'] = []
@@ -445,17 +446,17 @@ class Montage(GenericPosition):
                 method['kwargs'] = dict()
 
             import_cmd = f"from {method['package']} import {method['method']}"
-            proclog.debug(import_cmd)
-            proclog.debug(f"kwargs = {method['kwargs']}")
+            logger.debug(import_cmd)
+            logger.debug(f"kwargs = {method['kwargs']}")
             exec(import_cmd)
             try:
                 output, success, self.target_class, self.centroid = locals()[method['method']](self, *method['args'], **method['kwargs'])
 
             except Exception as err:
-                proclog.exception(err)
+                logger.exception(err)
                 continue
             if success:
-                proclog.debug(f'{method} was successful: {success}')
+                logger.debug(f'{method} was successful: {success}')
                 self.targets = output
                 self.finder = method['name']
                 self.classifier = method['name'] if 'Classifier' in method['targetClass'] else None
@@ -494,14 +495,14 @@ class Montage(GenericPosition):
 
     def CTFfind(self, scope_params):
         img = self.raw
-        # proclog.debug(f'CTFfind, img={img}, pixel_size={self.pixel_size}')
+        # logger.debug(f'CTFfind, img={img}, pixel_size={self.pixel_size}')
         extraparam = ''
 
         p = sub.run([os.getenv('CTFFIND')],
                     input=f'{img}\n{self.name}/ctf.mrc\n{self.pixel_size}\n{self.metadata.Voltage.iloc[-1]}\n{scope_params.spherical_abberation}\n0.1\n512\n30\n10\n5000\n50000\n200\nno\nno\nno\nno\nno',
                     encoding='ascii', capture_output=True, text=True)
-        # proclog.debug(p.stdout)
-        # proclog.debug(p.stderr)
+        # logger.debug(p.stdout)
+        # logger.debug(p.stderr)
         with open(f'{self.name}/ctf.txt', 'r') as f:
             lines = [[float(j) for j in i.split(' ')] for i in f.readlines() if '#' not in i]
 
@@ -702,10 +703,10 @@ class Target:
             cv2.drawContours(result, [cnt], -1, (0, 255, 0), cv2.FILLED)
 
         if len(cnts) > 0:
-            proclog.debug(f'Square {self._id} is cracked')
+            logger.debug(f'Square {self._id} is cracked')
             return True
         else:
-            proclog.debug(f'Square {self._id} is good')
+            logger.debug(f'Square {self._id} is good')
             return False
 
 

@@ -15,6 +15,7 @@ from Smartscope.server.lib.s3functions import *
 from Smartscope.lib.svg_plots import *
 from Smartscope.lib.config import deep_get
 import logging
+
 logger = logging.getLogger(__name__)
 
 

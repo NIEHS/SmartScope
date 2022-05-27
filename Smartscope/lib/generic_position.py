@@ -9,8 +9,7 @@ from ast import literal_eval
 import pandas as pd
 import logging
 
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
+logger = logging.getLogger(__name__)
 
 
 class GenericPosition:
