@@ -81,7 +81,7 @@ Installation steps
 
         #First copy the dump into the location were your database is. This is the same directory specified in the volumes section of the docker-compose file for the db service.
         cp SmartScope/config/docker/initialdb.sql /path/to/db/
-        sudo podman exec smartscope-db mysql -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /var/lib/mysql/initialdb.sql
+        sudo podman exec smartscope-db /bin/bash -c 'mysql -p$MYSQL_ROOT_PASSWORD init_smartscope < /var/lib/mysql/initialdb.sql'
 
 6. Log in to the web interface with the initial admin account.
 
