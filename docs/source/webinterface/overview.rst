@@ -10,7 +10,7 @@ Web Interface
 
    ./login.md
    ./browser.md
-   ./runsmartscope.md
+   .. ./runsmartscope.md
    
    
 

@@ -59,8 +59,10 @@ Site map
    webinterface/overview.rst
    installation.rst
    setup.rst
+   run_smartscope.rst
    citation.rst
    license.rst
+
    
 
 

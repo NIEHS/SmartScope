@@ -6,9 +6,9 @@ This is the fastest way to get started with SmartScope.
 Requirements
 ************
 
-**Warning:** This has been tested only with Podman thus far. We assume that it will work with Docker as well using the same commands and simply replacing podman with docker.
+.. warning:: This has been tested only with Podman thus far. We assume that it will work with Docker as well using the same commands and simply replacing podman with docker.
 
-**Versions tested:** The installation requires Podman version >=3.0 and podman-compose 0.1.x. If you are using podman >=3.4, you can use podman-compose from the main branch on github.
+.. note:: The installation requires Podman version >=3.0 and podman-compose 0.1.x. If you are using podman >=3.4, you can use podman-compose from the main branch on github.
 
 Here are the links on how to install Podman and podman-compose:
     - `Podman <https://podman.io/getting-started/installation>`_
@@ -85,6 +85,10 @@ Installation steps
 
 6. Log in to the web interface with the initial admin account.
 
-    You should now be able to access the smartscope interface at `<http://localhost:48000/>`_.
+    You should now be able to access the smartscope interface at `<https://localhost:48000/>`_.
 
     .. note:: You may need to change the domain and port number to reflect the docker-compose file with the port specified in the nginx service and one of the domains specified in the ALLOWED_HOSTS of the smartscope service.
+
+7. The installation is done!
+    
+    There is a few more set up steps to do in SerialEM and in the web portal to get up and running. `Click here <../setup.html>`_. for the instructions
