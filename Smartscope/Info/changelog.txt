@@ -1,10 +1,8 @@
-t  v0.7a
+t  v0.6
 2021-02-25  Made the frontend responsive to the new data layout. More things are funnelled through the websocket for responsive design.
 2022-02-25  Massive change in data organization throught the introduction of plugins and protocols.
 2022-02-25  Plugins are made to easily add and test new ways to find, classify and select areas.
 2022-02-25  Added Finders, Classifiers and Selector layers to the process to help with selecting areas.
-
-t  v0.6
 2022-02-02  Changed the settling time for image-shift to 0 seconds from the default 1 second
 2022-02-02  The new PLUGINS_FILE located in config/smartscope/plugins.json contains the different hole finders and square finders
 2022-02-02  Moved the SMARTSCOPE variable from the django settings file and introduced a PLUGINS_FILE variable instead.
