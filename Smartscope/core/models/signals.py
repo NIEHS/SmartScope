@@ -125,9 +125,15 @@ def change_group(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=ScreeningSession)
-def create_scope_directory(sender, instance, created, *args, **kwargs):
+def create_session_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.microscope_id.scope_path)
+
+
+@receiver(post_save, sender=Microscope)
+def create_scope_directory(sender, instance, created, *args, **kwargs):
+    if created:
+        create_scope_dirs(instance.scope_path)
 
 
 # @ receiver(post_save, sender=Process)

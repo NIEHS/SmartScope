@@ -30,18 +30,41 @@ Ensure that dose-fraciionation and exposure times are set for that purpose.
 
 Record
 #######
-(Under deprecation) Currenly used to acquire the atlas. Atlas is acquired outside of low-dose mode and current scripting commands for acquiring montage will use Record by default.
+
+Currenly used to acquire the atlas. Atlas is acquired outside of low-dose mode and current scripting commands for acquiring montage will use Record by default.
+
+.. note:: We're currently testing how to reliably use the mont-map preset for the atlas acquisition, which will allow us to use Record instead of Preview for the acquisition.
 
 Focus/Trial
 ############
+
 Used for autofocus and drift correction. For autofocus, the specified image-shift position that is set will be used for each sample. We suggest changing it when doing data collection to ensure that the focus area illuminates between holes.
 
-Non Low-dose presets
+.. note:: This will also be changed in the near future. We plan on including automatic focus positioning relative to the mesh spacing and orientation.
+
+Non Low-dose Presets
 ********************
 
 The easiest way to set up for the atlas is to create an imaging state for mont-mapping. This way, when acquiring the atlas, it will use the mont-map setting instead of Record.
 
 .. note:: There is a workaround that needs to be executed prior to starting SmartScope for this to happen successfully. `Click here for more details <>`_
 
+Hole Reference Image
+********************
 
+.. note:: This procedure will need to be repeated if a different hole size or the View preset is modified.
 
+A hole reference needs to be provided to realign to holes at the View mag. Here's how to create it:
+
+#. Run eucentricity and autofocus on a square
+#. Acquire View
+#. Center on a hole
+#. Change the cropping of View to only view one hole
+#. Acquire View
+#. Save the image with the following name:
+    
+    File -> Save to other -> Save to /scope_path/reference/holeref.mrc
+
+#. Reset cropping to full.
+
+.. note:: Using a single static hole reference is a temporary solution that will be modified in the near future.
