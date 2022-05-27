@@ -1,20 +1,29 @@
-Run Smartscope
-==============
+Set up SmartScope
+=================
 
-Clicking the Run Autoscreening tab on the top navigational bar sends the user to a blank session setup page. A side panel appears on the left of the screen, with a link to return to the setup page, as well as links to the ten most recent sessions.
+Clicking the Run SmartScope tab on the top navigational bar sends the user to a blank session setup page. A side panel appears on the left of the screen, with a link to return to the setup page, as well as links to the ten most recent sessions.
+
+.. figure:: /_static/setupsession.png
+   :width: 100%
+   :align: center
+   :figclass: align-center
 
 Setup Smartscope
 ****************
 
 The session setup page includes three main sections: General, Collection Parameters, and Autoloader. Of these settings, only collection parameters may be changed later, and cannot be changed for a grid that is currently being imaged. Information on each section is available by hovering over the *i* near each field.
 
-### General
+General
+*******
+
 *	Session Name
 *	Group
 *	Microscope
 *	Detector
 
-### Collection Parameters
+Collection Parameters
+*********************
+
 *	Atlas x -> number of tiles in x for the Atlas image
 *	Atlas y -> number of tiles in y direction for the Atlas image
 *	Squares num -> number of squares that will be automatically queued
