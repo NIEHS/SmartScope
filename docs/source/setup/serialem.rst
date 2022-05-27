@@ -52,7 +52,7 @@ The easiest way to set up for the atlas is to create an imaging state for mont-m
 Hole Reference Image
 ********************
 
-.. note:: Using a single static hole reference is a temporary solution that will be modified in the near future.
+.. note:: This procedure will need to be repeated if a different hole size or the View preset is modified.
 
 A hole reference needs to be provided to realign to holes at the View mag. Here's how to create it:
 
@@ -65,3 +65,6 @@ A hole reference needs to be provided to realign to holes at the View mag. Here'
     
     File -> Save to other -> Save to /scope_path/reference/holeref.mrc
 
+#. Reset cropping to full.
+
+.. note:: Using a single static hole reference is a temporary solution that will be modified in the near future.
