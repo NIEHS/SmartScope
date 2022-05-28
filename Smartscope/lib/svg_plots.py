@@ -2,67 +2,10 @@ import drawSvg as draw
 from drawSvg import elements as elementsModule
 from math import floor, sqrt
 from io import StringIO
-
-from matplotlib.pyplot import legend
 from Smartscope.lib.config import *
 import logging
 
-# logger = logging.getLogger('logger')
 logger = logging.getLogger(__name__)
-
-# class Svg:
-#     content = ''
-
-#     def load(self, file):
-#         with open(file, 'r') as f:
-#             svg = f.readlines()
-#         self.header = svg[0]
-#         self.png = svg[1]
-#         self.content = svg[2:-1]
-
-#     def set_size(self, x, y):
-#         self.sizeX = x
-#         self.sizeY = y
-#         self.header = f"""<svg viewBox="0 0 {y} {x}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">\n"""
-
-#     def add_bg_image(self, path, id=''):
-#         if id != '':
-#             id = f'id="{id}" '
-#         img = f"""<image {id}xlink:href="{path}" x="0" y="0" height="{self.sizeX}" width="{self.sizeY}" />\n"""
-#         self.png = img
-
-#     def add_rect(self, x, y, width, height, rotation=None, id=''):
-#         if id != '':
-#             id = f'id="{id}" '
-#         rect = f"""<rect {id}x="{x}" y="{y}" width="{width}" height="{height}" fill="green" fill-opacity="0" stroke-width="5" stroke="green" />\n"""
-#         if rotation is not None:
-#             transform = f"""<g transform = "rotate({rotation} {x+width//2} {y+height//2})">/n{rect}</g>\n"""
-#             return transform
-#         else:
-#             return rect
-
-#     def add_circ(self, x, y, radius, id=''):
-#         if id != '':
-#             id = f'id="{id}" '
-#         circ = f"""<circle {id}cx="{x}" cy="{y}" r="{radius}" fill="green" fill-opacity="0" stroke-width="5" stroke="green" />"""
-#         return circ
-
-#     def add_anchor(self, func, *, link=''):
-#         def inner(*args, **kwargs):
-#             inside = func(*args, **kwargs)
-#             outside = f"""<a xlink:href="{link}">\n{inside}</a>\n"""
-#             return outside
-#         return inner
-
-#     def save(self, file):
-#         with open(file, 'w') as f:
-#             f.write(self.header)
-#             f.write(self.png)
-#             f.write(self.content)
-#
-#
-#         f.write('</svg>')
-# DEFAULT_COLORS = ['blue', 'purple', 'red', 'gray', 'white']
 
 
 def add_scale_bar(pixelsize, w, h, id_type='atlas'):
@@ -177,8 +120,9 @@ def drawAtlas(atlas, targets, display_type, method):
         color, label, prefix = i.css_color(plugins, display_type, method)
         if color is not None:  # style = f"stroke: {color}; fill: {color}; color: {color}; "
             sz = floor(sqrt(i.area))
-            x = i.finders[0].x - sz // 2
-            y = -(i.finders[0].y - sz // 2) + d.height - sz
+            finder = list(i.finders.all())[0]
+            x = finder.x - sz // 2
+            y = -(finder.y - sz // 2) + d.height - sz
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
                                class_=f'target', onclick="clickSquare(this)")  # style=style,
 
@@ -220,8 +164,9 @@ def drawSquare(square, targets, display_type, method):
     for i in targets:
         color, label, prefix = i.css_color(plugins, display_type, method)
         if color is not None:
-            x = i.finders[0].x
-            y = -(i.finders[0].y) + d.height
+            finder = list(i.finders.all())[0]
+            x = finder.x
+            y = -(finder.y) + d.height
             # qualityClass = f'quality-{i.quality}' if i.quality is not None else ''
             c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,
                             class_=f'target', number=i.number, onclick="clickHole(this)")

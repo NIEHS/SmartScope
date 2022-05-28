@@ -6,6 +6,7 @@ import numpy as np
 import random
 import logging
 import Smartscope.lib.logger
+from django.db.models.query import prefetch_related_objects
 from django.db import transaction
 from datetime import timedelta
 from Smartscope.lib.converters import *
@@ -146,7 +147,8 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
     logger.debug(
         f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes
-    coords = np.array([[h.finders[0].stage_x, h.finders[0].stage_y] for h in hole_models])
+    prefetch_related_objects(hole_models, 'finders')
+    coords = np.array([[list(h.finders.all())[0].stage_x, list(h.finders.all())[0].stage_y] for h in hole_models])
     input_number = len(hole_models)
     # Generate distance matrix
     cd = cdist(coords, coords)

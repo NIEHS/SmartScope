@@ -16,7 +16,7 @@ import multiprocessing
 import logging
 from Smartscope.lib.converters import *
 from Smartscope.server.api.serializers import *
-
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ def get_queue(grid):
         (list): [squares,holes]; List of SquareModels that are status='queued' and List of HoleModels that are status='queued'
     """
     squares = list(grid.squaremodel_set.filter(selected=1, status__in=['queued', 'started']).order_by('number'))
-    holes = list(grid.holemodel_set.filter(selected=1, status__in=['queued', 'started', 'processed',
-                                                                   'acquired']).order_by('square_id__completion_time', 'number'))
+    holes = list(grid.holemodel_set.filter(selected=1, square_id__status='completed', status__in=['queued', 'started', 'processed',
+                                                                                                  'acquired']).order_by('square_id__completion_time', 'number'))
     return squares, [h for h in holes if not h.bisgroup_acquired]
 
 
@@ -190,14 +190,16 @@ def run_grid(grid, session, processing_queue, scope):
         if len(holes) > 0 and (len(squares) == 0 or grid.collection_mode == 'screening'):
             is_done = False
             hole = holes[0]
-            stage_x, stage_y, stage_z = hole.finders[0].stage_x, hole.finders[0].stage_y, hole.finders[0].stage_z
+            finder = hole.finders.first()
+            stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
             if is_bis and hole.bis_group is not None:
-                bis_holes = list(grid.holemodel_set.filter(bis_group=hole.bis_group,
-                                                           bis_type='is_area').exclude(status__in=['acquired', 'completed']))
+                bis_holes = list(grid.holemodel_set(manager='display').filter(bis_group=hole.bis_group,
+                                                                              bis_type='is_area').exclude(status__in=['acquired', 'completed']))
                 # bis_holes = [h for h in bis_holes if h.quality in [None, '0', '1']]
                 bis_holes += [hole]
             else:
                 bis_holes = [hole]
+
             if hole.status == 'queued' or hole.status == 'started':
                 restarting = False
                 hole = update(hole, status='started')
@@ -224,7 +226,8 @@ def run_grid(grid, session, processing_queue, scope):
                     hm, created = add_high_mag(grid, h)
                     logger.debug(f'Just created:{created} {hm}, {hm.pk}')
                     if hm.status in [None, 'started']:
-                        isX, isY = stage_x - h.finders[0].stage_x, (stage_y - h.finders[0].stage_y) * cos(radians(round(params.tilt_angle, 1)))
+                        finder = list(h.finders.all())[0]
+                        isX, isY = stage_x - finder.stage_x, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
                         frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw, frames=params.save_frames)
                         # if out is not None:
                         #     frames = out
@@ -241,7 +244,8 @@ def run_grid(grid, session, processing_queue, scope):
             if square.status == 'queued' or square.status == 'started':
                 logger.info('Waiting on square file')
                 path = os.path.join(session.microscope_id.scope_path, square.raw)
-                scope.square(square.finders[0].stage_x, square.finders[0].stage_y, square.finders[0].stage_z, file=square.raw)
+                finder = square.finders.first()
+                scope.square(finder.stage_x, finder.stage_y, finder.stage_z, file=square.raw)
                 square = update(square, status='acquired')
                 # transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
                 process_square_image(square, grid, session.microscope_id)
@@ -350,6 +354,8 @@ def process_square_image(square, grid, microscope_id):
         transaction.on_commit(lambda: logger.debug('targets added'))
     if square.status == 'processed':
         selector_wrapper(protocol[f'{square.targets_prefix}Selectors'], square, n_groups=5)
+        square = update(square, status='selected')
+    if square.status == 'selected':
         if is_bis:
             holes = list(HoleModel.objects.filter(square_id=square.square_id))
             holes = group_holes_for_BIS([h for h in holes if h.is_good(plugins=plugins) and not h.is_excluded(protocol, square.targets_prefix)[0]],
@@ -420,6 +426,7 @@ def write_sessionLock(session, lockFile):
 
 
 def autoscreen(session_id):
+    # cache.clear()
     session = ScreeningSession.objects.get(session_id=session_id)
     microscope = session.microscope_id
     lockFile, sessionLock = session.isScopeLocked

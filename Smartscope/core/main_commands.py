@@ -8,21 +8,18 @@ from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
 from django.db import transaction
 from Smartscope.lib.Finders.basic_finders import find_square_center
 from Smartscope.lib.file_manipulations import process_montage
-# from Smartscope.server.models import SquareModel, HoleModel, import_session
 from Smartscope.core.autoscreen import autoscreen
 from Smartscope.lib.config import *
 from Smartscope.core.test_commands import is_gpu_enabled
 import numpy as np
 
-# logger = logging.getLogger('processing')
-# logger = logging.getLogger('autoscreen')
 logger = logging.getLogger(__name__)
 
 
 def add_holes(id, targets):
     instance = SquareModel.objects.get(pk=id)
     montage, is_metadata = process_montage(instance, mag_level='square', working_dir=instance.grid_id.directory)
-    montage.targets = np.array(targets) + np.array([0, instance.shape_y])
+    montage.targets = np.array(targets) + np.array([0, instance.shape_x])
     montage.target_class = 'LatticeTarget'
     montage.finder = 'Manual finder'
     montage.classifier = None
