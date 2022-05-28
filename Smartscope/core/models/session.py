@@ -2,6 +2,7 @@ from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.query import prefetch_related_objects
 from datetime import datetime
 import Smartscope
 import os
@@ -14,6 +15,7 @@ from django.apps import apps
 from Smartscope.server.lib.s3functions import *
 from Smartscope.lib.svg_plots import *
 from Smartscope.lib.config import deep_get, load_plugins
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -712,7 +714,7 @@ class Target(BaseModel):
 
     def is_excluded(self, protocol, targets_prefix):
         protocolselectors = protocol[f'{targets_prefix}Selectors']
-        for selector in self.selectors:
+        for selector in self.selectors.all():
 
             protocol = [protocol for protocol in protocolselectors if protocol['name'] == selector.method_name]
             if len(protocol) > 0 and selector.label in protocol[0]['exclude']:
@@ -730,7 +732,7 @@ class Target(BaseModel):
         Returns:
             boolean: Whether the target is good for selection or not.
         """
-        for label in self.classifiers:
+        for label in self.classifiers.all():
             plugin = deep_get(plugins, label.method_name)
             if plugin['classes'][label.label]['value'] < 1:
                 return False
@@ -800,9 +802,11 @@ class SquareModel(Target, ExtraPropertyMixin):
         return self.holemodel_set.all()
 
     def toSVG(self, display_type, method):
-        # reset_queries()
-        sq = drawSquare(self, list(HoleModel.display.filter(square_id=self.square_id)), display_type, method)
-        # logger.debug(f'Loading square required {len(connection.queries)} queries')
+        reset_queries()
+        holes = list(HoleModel.display.filter(square_id=self.square_id))
+        # prefetch_related_objects(holes, 'finders', 'classifiers', 'selectors')
+        sq = drawSquare(self, holes, display_type, method)
+        logger.debug(f'Loading square required {len(connection.queries)} queries')
         return sq
 
     @ property

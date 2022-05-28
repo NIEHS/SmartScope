@@ -1,6 +1,7 @@
 from Smartscope.lib.config import load_plugins
 from Smartscope.core.models import *
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.query import prefetch_related_objects
 from Smartscope.lib.montage import *
 import numpy as np
 from django.db import transaction
@@ -37,6 +38,7 @@ def cluster_by_field(parent, n_groups, field='area'):
 
 def gray_level_selector(parent, n_groups, save=True, montage=None):
     targets = list(parent.targets)
+    prefetch_related_objects(targets, 'finders')
     logger.debug(f'Initial targets = {len(targets)}')
     if montage is None:
         montage = Montage(**parent.__dict__, working_dir=parent.grid_id.directory)
@@ -44,7 +46,8 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
     if save:
         img = cv2.bilateralFilter(auto_contrast(montage.raw_montage.copy()), 30, 75, 75)
     for target in targets:
-        x, y = target.finders[0].x, target.finders[0].y
+        finder = list(target.finders.all())[0]
+        x, y = finder.x, finder.y
         # logger.debug(f'X:{type(x)},Y:{type(y)},Radius:{type(target.radius)}')
         target.median = np.mean(img[y - target.radius:y + target.radius, x - target.radius:x + target.radius])
         if save:

@@ -120,8 +120,9 @@ def drawAtlas(atlas, targets, display_type, method):
         color, label, prefix = i.css_color(plugins, display_type, method)
         if color is not None:  # style = f"stroke: {color}; fill: {color}; color: {color}; "
             sz = floor(sqrt(i.area))
-            x = i.finders.first().x - sz // 2
-            y = -(i.finders.first().y - sz // 2) + d.height - sz
+            finder = list(i.finders.all())[0]
+            x = finder.x - sz // 2
+            y = -(finder.y - sz // 2) + d.height - sz
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
                                class_=f'target', onclick="clickSquare(this)")  # style=style,
 
@@ -163,8 +164,9 @@ def drawSquare(square, targets, display_type, method):
     for i in targets:
         color, label, prefix = i.css_color(plugins, display_type, method)
         if color is not None:
-            x = i.finders.first().x
-            y = -(i.finders.first().y) + d.height
+            finder = list(i.finders.all())[0]
+            x = finder.x
+            y = -(finder.y) + d.height
             # qualityClass = f'quality-{i.quality}' if i.quality is not None else ''
             c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,
                             class_=f'target', number=i.number, onclick="clickHole(this)")
