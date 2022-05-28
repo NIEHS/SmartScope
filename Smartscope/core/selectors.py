@@ -18,7 +18,7 @@ def generate_equal_clusters(parent, targets, n_groups):
         split_targets = np.array_split(targets, n_groups)
         for ind, bucket in enumerate(split_targets):
             for target in bucket:
-                output.append(dict(content_type=ContentType.objects.get_for_model(parent),
+                output.append(dict(content_type=ContentType.objects.get_for_model(target),
                                    object_id=target.pk,
                                    defaults=dict(label=ind)))
     return output

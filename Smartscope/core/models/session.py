@@ -1,6 +1,6 @@
-from django.db import models
+from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from datetime import datetime
 import Smartscope
@@ -13,7 +13,7 @@ from django.conf import settings
 from django.apps import apps
 from Smartscope.server.lib.s3functions import *
 from Smartscope.lib.svg_plots import *
-from Smartscope.lib.config import deep_get
+from Smartscope.lib.config import deep_get, load_plugins
 import logging
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,21 @@ class HoleImageManager(models.Manager):
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('highmagmodel_set')
 
 
+class DisplayManager(models.Manager):
+    # use_for_related_fields = True
+    # def get_prefetch_queryset(self, instances, queryset=None):
+    #     super().get_prefetch_queryset()
+    #     image_ids = [image.pk for images in instances]
+    #     return
+
+    def __init__(self):
+        super().__init__()
+
+    def get_queryset(self):
+        # logger.debug("Image Manager")
+        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
+
+
 class SquareImageManager(models.Manager):
     def get_queryset(self):
         # logger.debug("Square Image Manager")
@@ -103,34 +118,34 @@ class ExtraPropertyMixin:
                 return storage.url(data)
         return data
 
-    @property
+    @ property
     def is_aws(self):
         if os.path.isabs(self.directory):
             return False
         return True
 
-    @property
+    @ property
     def directory(self):
         return os.path.join(self.grid_id.directory, self.name)
 
-    @property
+    @ property
     def svg(self):
         return os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.svg')
 
-    @property
+    @ property
     def png(self):
         return dict(path=os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.png'),
                     url=self.get_full_path(os.path.join(self.grid_id.url, 'pngs', f'{self.name}.png')))
 
-    @property
+    @ property
     def mrc(self):
         return os.path.join(self.directory, f'{self.name}.mrc')
 
-    @property
+    @ property
     def raw_mrc(self):
         return os.path.join(self.grid_id.directory, 'raw', f'{self.name}.mrc')
 
-    @property
+    @ property
     def ctf_img(self):
         # img_path = os.path.join(self.directory, 'ctf.png')
         # if os.path.isfile(img_path):
@@ -268,7 +283,7 @@ class ScreeningSession(BaseModel):
     class Meta(BaseModel.Meta):
         db_table = "screeningsession"
 
-    @property
+    @ property
     def _dir_url(self):
         if settings.USE_STORAGE:
             cwd = os.path.join(settings.AUTOSCREENDIR, self.working_dir)
@@ -291,27 +306,27 @@ class ScreeningSession(BaseModel):
             os.mkdir(cwd)
             return [cwd, url]
 
-    @property
+    @ property
     def stop_file(self):
         return os.path.join(os.getenv('TEMPDIR'), f'{self.session_id}.stop')
 
-    @property
+    @ property
     def storage(self):
         return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
 
-    @property
+    @ property
     def directory(self):
         return self._dir_url[0]
 
-    @property
+    @ property
     def url(self):
         return self._dir_url[1]
 
-    @property
+    @ property
     def scopeLockFile(self):
         return f'{self.microscope_id.microscope_id}.lock'
 
-    @property
+    @ property
     def isScopeLocked(self):
         lockFile = os.path.join(settings.TEMPDIR, self.scopeLockFile)
         if os.path.isfile(lockFile):
@@ -434,15 +449,15 @@ class AutoloaderGrid(BaseModel):
     objects = GridManager()
     # aliases
 
-    @property
+    @ property
     def id(self):
         return self.grid_id
 
-    @property
+    @ property
     def parent(self):
         return self.session_id
 
-    @parent.setter
+    @ parent.setter
     def set_parent(self, parent):
         self.session_id = parent
     # endaliases
@@ -466,7 +481,7 @@ class AutoloaderGrid(BaseModel):
     def count_acquired_squares(self):
         return self.squaremodel_set.filter(status='completed').count()
 
-    @property
+    @ property
     def holes(self):
         return self.holemodel_set.all()
 
@@ -474,11 +489,11 @@ class AutoloaderGrid(BaseModel):
     def count_acquired_holes(self):
         return self.holemodel_set.filter(status='completed').count()
 
-    @property
+    @ property
     def high_mag(self):
         return self.holemodel_set.all()
 
-    @property
+    @ property
     def end_time(self):
         try:
             hole = self.holemodel_set.filter(status='completed').order_by('-completion_time').first()
@@ -490,29 +505,29 @@ class AutoloaderGrid(BaseModel):
         except:
             return self.last_update
 
-    @property
+    @ property
     def time_spent(self):
         timeSpent = self.end_time - self.start_time
         logger.debug(f'Time spent: {self.grid_id}, {timeSpent}')
         return timeSpent
 
-    @property
+    @ property
     def protocol(self):
         if self.holeType in ['NegativeStain', 'Lacey']:
             return 'NegativeStain'
         return 'SPA'
 
-    @property
+    @ property
     def _dir_url(self):
         self_wd = f'{self.position}_{self.name}'
         wd, url = self.parent._dir_url
         return (os.path.join(wd, self_wd), os.path.join(url, self_wd))
 
-    @property
+    @ property
     def directory(self):
         return self._dir_url[0]
 
-    @property
+    @ property
     def url(self):
         return self._dir_url[1]
 
@@ -573,47 +588,52 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     # aliases
 
-    @property
+    @ property
     def alias_name(self):
         return 'Atlas'
 
-    @property
+    @ property
     def targets_prefix(self):
         return 'square'
 
-    @property
+    @ property
     def id(self):
         return self.atlas_id
 
-    @property
+    @ property
     def parent(self):
         return self.grid_id
 
-    @parent.setter
+    @ parent.setter
     def set_parent(self, parent):
         self.grid_id = parent
 
-    @property
+    @ property
     def base_target_query(self):
         return self.squaremodel_set
 
-    @property
+    @ property
     def targets(self):
         return self.squaremodel_set.all()
 
-    @property
-    def targets_methods(self):
-        plugins = load_plugins()
-        finders, classifiers, selectors = set(), set(), set()
-        for target in self.targets:
-            finders = finders | set([finder.method_name for finder in target.finders])
-            classifiers = classifiers | set([classifier.method_name for classifier in target.classifiers])
-            selectors = selectors | set([selector.method_name for selector in target.selectors])
-        # logger.debug(output)
-        return dict(finders=[deep_get(plugins, finder) for finder in finders], classifiers=[deep_get(plugins, classifier) for classifier in classifiers], selectors=[deep_get(plugins, selector) for selector in selectors])
+    # @ property
+    # def targets_methods(self):
+    #     plugins = load_plugins()
+    #     targets = self.squaremodel_set.values_list('square_id', flat=True)
+    #     contenttype = ContentType.objects.get_for_model(self.base_target_query.first())
+
+    #     finders = list(Finder.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
+    #     classifiers = list(Classifier.objects.filter(content_type=contenttype,
+    #                                                  object_id__in=targets).values_list('method_name', flat=True).distinct())
+    #     selectors = list(Selector.objects.filter(object_id__in=targets).values_list(
+    #         'method_name', flat=True).distinct())  # NEED TO LOOK INTO THE CONTENT TYPE ISSUE
+    #     logger.debug(f'Finders: {finders}, Classifiers: {classifiers}, Selectors: {selectors}')
+    #     return dict(finders=[deep_get(plugins, finder) for finder in finders],
+    #                 classifiers=[deep_get(plugins, classifier) for classifier in classifiers],
+    #                 selectors=[deep_get(plugins, selector) for selector in selectors])
 
     def toSVG(self, display_type, method):
-        return drawAtlas(self, self.targets, display_type, method)
+        return drawAtlas(self, list(SquareModel.display.filter(atlas_id=self.atlas_id)), display_type, method)
 
     class Meta(BaseModel.Meta):
         unique_together = ('grid_id', 'name')
@@ -632,91 +652,6 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     def __str__(self):
         return self.name
-
-
-class Target(BaseModel):
-    name = models.CharField(max_length=100, null=False)
-    number = models.IntegerField()
-    pixel_size = models.FloatField(null=True)
-    shape_x = models.IntegerField(null=True)
-    shape_y = models.IntegerField(null=True)
-    selected = models.BooleanField(default=False)
-    status = models.CharField(max_length=20, null=True, default=None)
-    grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
-    completion_time = models.DateTimeField(null=True)
-
-    class Meta:
-        abstract = True
-
-    @property
-    def targets_methods(self):
-        plugins = load_plugins()
-        finders, classifiers, selectors = set(), set(), set()
-        for target in self.targets:
-            finders = finders | set([finder.method_name for finder in target.finders])
-            classifiers = classifiers | set([classifier.method_name for classifier in target.classifiers])
-            selectors = selectors | set([selector.method_name for selector in target.selectors])
-        # logger.debug(f'Classifiers:{classifiers}')
-        if classifiers == set() and self.targets_prefix == 'hole':
-            classifiers = ['Micrographs curation']
-        return dict(finders=[deep_get(plugins, finder) for finder in finders], classifiers=[deep_get(plugins, classifier) for classifier in classifiers], selectors=[deep_get(plugins, selector) for selector in selectors])
-
-    @property
-    def classifiers(self):
-        return list(Classifier.objects.filter(object_id=self.pk))
-
-    @property
-    def finders(self):
-        return list(Finder.objects.filter(object_id=self.pk))
-
-    @property
-    def selectors(self):
-        return list(Selector.objects.filter(object_id=self.pk))
-
-    def is_excluded(self, protocol, targets_prefix):
-        protocolselectors = protocol[f'{targets_prefix}Selectors']
-        for selector in self.selectors:
-
-            protocol = [protocol for protocol in protocolselectors if protocol['name'] == selector.method_name]
-            if len(protocol) > 0 and selector.label in protocol[0]['exclude']:
-                # logger.debug(f'{self.name}: Excluded. Label={selector.label}')
-                return True, selector.label
-
-        return False, selector.label
-
-    def is_good(self, plugins):
-        """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
-
-        Args:
-            plugins (dict): Dictionnary or sub-section from the loaded pluging.yaml.
-
-        Returns:
-            boolean: Whether the target is good for selection or not.
-        """
-        for label in self.classifiers:
-            plugin = deep_get(plugins, label.method_name)
-            if plugin['classes'][label.label]['value'] < 1:
-                return False
-        return True
-
-    def css_color(self, plugins, display_type, method):
-        display_type = 'classifiers' if display_type is None else display_type
-
-        # logger.debug(f'{display_type}, {method}, {plugins}')
-        for label in getattr(self, display_type):
-            method = label.method_name if method is None else method
-            # logger.debug(f'{self.name}: {label.method_name}, {method}')
-            if label.method_name == method:
-                plugin = deep_get(plugins, label.method_name)
-                if display_type == 'classifiers':
-                    return plugin['classes'][label.label]['color'], plugin['classes'][label.label]['name'], ''
-                elif display_type == 'selectors':
-                    # logger.debug(plugin)
-                    return plugin['clusters']['colors'][int(label.label)], label.label, 'Cluster'
-        if display_type == 'selectors':
-            # logger.debug(f'{self.name}: Color none')
-            return None, None, ''
-        return 'blue', 'target', ''
 
 
 class TargetLabel(BaseModel):
@@ -755,6 +690,72 @@ class Selector(TargetLabel):
         db_table = 'selector'
 
 
+class Target(BaseModel):
+    name = models.CharField(max_length=100, null=False)
+    number = models.IntegerField()
+    pixel_size = models.FloatField(null=True)
+    shape_x = models.IntegerField(null=True)
+    shape_y = models.IntegerField(null=True)
+    selected = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, null=True, default=None)
+    grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
+    completion_time = models.DateTimeField(null=True)
+    # Generic Relations, not fields
+    finders = GenericRelation(Finder, related_query_name='target')
+    classifiers = GenericRelation(Classifier, related_query_name='target')
+    selectors = GenericRelation(Selector, related_query_name='target')
+
+    display = DisplayManager()
+
+    class Meta:
+        abstract = True
+
+    def is_excluded(self, protocol, targets_prefix):
+        protocolselectors = protocol[f'{targets_prefix}Selectors']
+        for selector in self.selectors:
+
+            protocol = [protocol for protocol in protocolselectors if protocol['name'] == selector.method_name]
+            if len(protocol) > 0 and selector.label in protocol[0]['exclude']:
+                # logger.debug(f'{self.name}: Excluded. Label={selector.label}')
+                return True, selector.label
+
+        return False, selector.label
+
+    def is_good(self, plugins):
+        """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
+
+        Args:
+            plugins (dict): Dictionnary or sub-section from the loaded pluging.yaml.
+
+        Returns:
+            boolean: Whether the target is good for selection or not.
+        """
+        for label in self.classifiers:
+            plugin = deep_get(plugins, label.method_name)
+            if plugin['classes'][label.label]['value'] < 1:
+                return False
+        return True
+
+    def css_color(self, plugins, display_type, method):
+        display_type = 'classifiers' if display_type is None else display_type
+
+        # logger.debug(f'{display_type}, {method}, {plugins}')
+        for label in getattr(self, display_type).all():
+            method = label.method_name if method is None else method
+            # logger.debug(f'{self.name}: {label.method_name}, {method}')
+            if label.method_name == method:
+                plugin = deep_get(plugins, label.method_name)
+                if display_type == 'classifiers':
+                    return plugin['classes'][label.label]['color'], plugin['classes'][label.label]['name'], ''
+                elif display_type == 'selectors':
+                    # logger.debug(plugin)
+                    return plugin['clusters']['colors'][int(label.label)], label.label, 'Cluster'
+        if display_type == 'selectors':
+            # logger.debug(f'{self.name}: Color none')
+            return None, None, ''
+        return 'blue', 'target', ''
+
+
 class SquareModel(Target, ExtraPropertyMixin):
     square_id = models.CharField(max_length=30, primary_key=True, editable=False)
     area = models.FloatField(null=True)
@@ -765,11 +766,11 @@ class SquareModel(Target, ExtraPropertyMixin):
     objects = ImageManager()
     # aliases
 
-    @property
+    @ property
     def alias_name(self):
         return f'Square {self.number}'
 
-    @property
+    @ property
     def targets_prefix(self):
         return 'hole'
 
@@ -790,7 +791,7 @@ class SquareModel(Target, ExtraPropertyMixin):
     def parent_stage_z(self):
         return self.parent.stage_z
 
-    @property
+    @ property
     def base_target_query(self):
         return self.holemodel_set
 
@@ -799,7 +800,10 @@ class SquareModel(Target, ExtraPropertyMixin):
         return self.holemodel_set.all()
 
     def toSVG(self, display_type, method):
-        return drawSquare(self, self.targets, display_type, method)
+        # reset_queries()
+        sq = drawSquare(self, list(HoleModel.display.filter(square_id=self.square_id)), display_type, method)
+        # logger.debug(f'Loading square required {len(connection.queries)} queries')
+        return sq
 
     @ property
     def has_queued(self):
@@ -872,7 +876,7 @@ class HoleModel(Target, ExtraPropertyMixin):
             self.bis_type = 'center'
         return self.bis_group
 
-    @property
+    @ property
     def alias_name(self):
         return f'Hole {self.number}'
 

@@ -6,6 +6,8 @@ import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
 from django_filters.rest_framework import DjangoFilterBackend
+
+from Smartscope.core.models.models_actions import targets_methods
 from .serializers import *
 from Smartscope.core.models import *
 from Smartscope.server.frontend.forms import *
@@ -47,7 +49,7 @@ class ExtraActionsMixin:
         display_type = isnull_to_none(request.query_params['display_type'])
         context['display_type'] = 'classifiers' if display_type is None else display_type
         context['method'] = isnull_to_none(request.query_params['method'])
-        context['targets_methods'] = obj.targets_methods
+        context['targets_methods'] = targets_methods(obj)
         context['instance'] = obj
         if context['method'] is None:
             methods = context['targets_methods'][context['display_type']]
