@@ -432,7 +432,7 @@ def autoscreen(session_id):
     lockFile, sessionLock = session.isScopeLocked
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
-    is_stop_file()
+    is_stop_file(session.session_id)
     # SETUP SESSION LOGGING
     # logger = create_logger('autoscreen', os.path.join(session.directory, 'run.out'))
     # create_logger('processing', os.path.join(session.directory, 'proc.out'))
