@@ -1,6 +1,4 @@
-from multiprocessing.sharedctypes import Value
 from pathlib import PureWindowsPath
-from typing import Any
 from Smartscope.lib.Datatypes.microscope import MicroscopeInterface
 import serialem as sem
 import time
@@ -159,7 +157,8 @@ class SerialemInterface(MicroscopeInterface):
         return frames.split('\\')[-1]
 
     def connect(self, directory: str):
-        logger.debug(f'{self.ip}:{self.port}')
+        logger.info(
+            f'Initiating connection to SerialEM at: {self.ip}:{self.port}\n\t If no more messages show up after this one and the External Control notification is not showing up on the SerialEM interface, there is a problem. \n\t The best way to solve it is generally by closing and restarting SerialEM.')
         sem.ConnectToSEM(self.port, self.ip)
         sem.SetDirectory(directory)
         sem.ClearPersistentVars()
@@ -208,11 +207,6 @@ class SerialemInterface(MicroscopeInterface):
 
 
 class FakeScopeInterface(MicroscopeInterface):
-
-    # generate_fake_file: Any = None
-
-    # def __post_init__(self):
-    #     self.generate_fake_file = partial(generate_fake_file, destination_dir=self.scope_path)
 
     def checkDewars(self, wait=30) -> None:
         pass
