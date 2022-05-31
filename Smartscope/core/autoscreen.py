@@ -63,7 +63,7 @@ def resume_incomplete_processes(queue, grid, microscope_id):
         transaction.on_commit(lambda: queue.put([process_hole_image, [hole, microscope_id]]))
     for hm in high_mag:
         logger.info(f'High_mag {hm} was not fully processed')
-        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id, grid.params_id.save_frames]]))
+        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id]]))
 
 
 def print_queue(squares, holes, session):

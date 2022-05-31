@@ -289,13 +289,22 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
 
     @ action(detail=True, methods=['get'])
     def fullmeta(self, request, **kwargs):
-        self.serializer_class = FullGridSerializer
         obj = self.get_object()
+        if obj.status is None:
+            serializer = self.get_serializer(obj, many=False)
+            data = serializer.data
+            data['atlas'] = {}
+            data['squares'] = {}
+            data['holes'] = []
+            data['counts'] = dict(completed=0, queued=0, perhour=0, lasthour=0)
+            return Response(data)
+
+        self.serializer_class = FullGridSerializer
         serializer = self.get_serializer(obj, many=False)
         data = serializer.data
         data['atlas'] = list_to_dict(data['atlas'])
         data['squares'] = list_to_dict(data['squares'])
-        data['holes'] = []  # list_to_dict(data['holes'])
+        data['holes'] = []
         data['counts'] = get_hole_count(obj)
         return Response(data)
 

@@ -757,6 +757,7 @@ async function reportMain() {
         $('#Atlas_im').html('<h3>Grid is started. Atlas will appear once acquired.</h3>')
 
     }
+    $('#Atlas_im').html('<h3>Grid is not yet started. Atlas will appear once acquired.</h3>')
 };
 $('#main').on('change', ".card circle", function () {
     console.log('Changed!')

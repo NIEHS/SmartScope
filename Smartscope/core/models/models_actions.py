@@ -14,6 +14,8 @@ def targets_methods(instance):
     finders = list(Finder.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
     classifiers = list(Classifier.objects.filter(content_type=contenttype,
                                                  object_id__in=targets).values_list('method_name', flat=True).distinct())
+    if instance.targets_prefix == 'hole':
+        classifiers.append('Micrographs curation')
     selectors = list(Selector.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
     logger.debug(f'Finders: {finders}, Classifiers: {classifiers}, Selectors: {selectors}')
     return dict(finders=[deep_get(plugins, finder) for finder in finders],
