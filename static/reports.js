@@ -743,7 +743,8 @@ async function reportMain() {
     renderCounts()
     // checkState()
     if (fullmeta.status != null) {
-        if (!jQuery.isEmptyObject(fullmeta.atlas)) {
+        console.log(fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status)
+        if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {
             await loadAtlas();
             if (![null, undefined].includes(currentState.square)) {
                 await loadSquare(currentState.square)
@@ -755,7 +756,7 @@ async function reportMain() {
         }
         console.log('atlas is acquiring')
         $('#Atlas_im').html('<h3>Grid is started. Atlas will appear once acquired.</h3>')
-
+        return
     }
     $('#Atlas_im').html('<h3>Grid is not yet started. Atlas will appear once acquired.</h3>')
 };

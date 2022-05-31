@@ -391,12 +391,15 @@ def process_hm_image(hm, microscope_id):
             montage = High_Mag(**hm.__dict__)
             is_metadata = montage.create_dirs(force_reproces=False)
             if not is_metadata:
-                try:
-                    montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
-                except Exception as e:
+                mdoc = os.path.join(frames_dir, f'{hm.frames}.mdoc')
+                while not os.path.isfile(mdoc):
                     logger.info('waiting for mdoc file')
                     time.sleep(2)
-                    montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
+                    # montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
+                # except Exception as e:
+                #     logger.info('waiting for mdoc file')
+                #     time.sleep(2)
+                montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
                 montage.align_frames(frames_dir=frames_dir)
                 montage.build_montage(raw_only=False)
                 save_image(montage.montage, montage._id, extension='png')

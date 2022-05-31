@@ -101,12 +101,13 @@ class SerialemInterface(MicroscopeInterface):
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
 
         sem.TiltTo(tiltAngle)
-        sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+
         sem.AllowFileOverwrite(1)
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stageX, stageY, stageZ)
         time.sleep(0.2)
         if not is_negativestain:
+            sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
             aligned = self.align()
             holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
             if holeshift > aliThreshold:
