@@ -392,8 +392,8 @@ def process_hm_image(hm, microscope_id):
             is_metadata = montage.create_dirs(force_reproces=False)
             if not is_metadata:
                 mdoc = os.path.join(frames_dir, f'{hm.frames}.mdoc')
-                while not os.path.isfile(mdoc):
-                    logger.info('waiting for mdoc file')
+                while not os.path.isfile(mdoc) and not os.path.isfile(hm.frames):
+                    logger.info('waiting for frames to finish acquiring.')
                     time.sleep(2)
                     # montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
                 # except Exception as e:
@@ -468,8 +468,8 @@ def autoscreen(session_id):
             logger.debug(f'Main Log handlers:{logger.handlers}')
             for grid in grids:
                 status = run_grid(grid, session, processing_queue, scope)
-                if status == 'stop':
-                    raise KeyboardInterrupt
+                if status == 'stopped':
+                    raise KeyboardInterrupt()
             status = 'complete'
     except Exception as e:
         logger.exception(e)
