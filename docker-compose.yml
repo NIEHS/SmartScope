@@ -24,17 +24,17 @@ services:
     environment:
       ALLOWED_HOSTS: localhost,lxd-02012614,192.168.0.198 #List of allowed hostnames for connection, comma separated without spaces
       DJANGO_SETTINGS_MODULE: Smartscope.core.settings.server_docker #Shouldn't need to be changed, here for testing
-      USE_STORAGE: True #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
-      USE_LONGTERMSTORAGE: True #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
-      USE_MICROSCOPE: True #Set to false to disable creating and starting workflow. Useful for a 'viewer' only server
+      USE_STORAGE: 'True' #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
+      USE_LONGTERMSTORAGE: 'True' #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
+      USE_MICROSCOPE: 'True' #Set to false to disable creating and starting workflow. Useful for a 'viewer' only server
       DEFAULT_UMASK: '003' #default=003. Will set 774(rwxrwxr--) permission on all the files created by smartscope
       LOGLEVEL: DEBUG #Log level, choices are INFO, WARNING, CRITICAL, DEBUG. default:INFO
-      DEBUG: True #set to True to get a django debug page whenever a page isn't found or an error occurs while loading assets to the web browser.
+      DEBUG: 'True' #set to True to get a django debug page whenever a page isn't found or an error occurs while loading assets to the web browser.
       SECRET_KEY: 'd41d8cd98f00b204e9800998eag' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
       TEMPLATE_FILES: /opt/Template_files/
       ###SerialEM variables###
-      SEM_PYTHON: False #Set to False skip connection to serialEM
-      NO_TEM_TESTMODE: True #Set to True to test the workflow on sample images. SEM_PYTHON needs to also be False to work.
+      SEM_PYTHON: 'True' #Set to False skip connection to serialEM
+      NO_TEM_TESTMODE: 'True' #Set to True to test the workflow on sample images. SEM_PYTHON needs to also be False to work.
       TEST_FILES: /mnt/testfiles/ #Shouldn't need to be changed.Along the SEM_PYTHON: False and NO_TEM_TESTMODE: True. This is the location of the test images.
       ####Database###
       MYSQL_HOST: db #Shouldn't need to be changed
@@ -47,7 +47,7 @@ services:
       REDIS_HOST: cache #Shouldn't need to be changed
       REDIS_PORT: 6379 #Shouldn't need to be changed
       ###AWS###
-      USE_AWS: False # If the data is to be moved and read to/from S3 bucket. Complete all the AWS fields for connection
+      USE_AWS: 'False' # If the data is to be moved and read to/from S3 bucket. Complete all the AWS fields for connection
       AWS_STORAGE_BUCKET_NAME:
       AWS_DATA_PREFIX: data
       AWS_S3_REGION_NAME: us-east-1
@@ -58,7 +58,7 @@ services:
       - cache
     networks:
       - smartscopenet
-    command: gunicorn -c /opt/smartscope/config/singularity/gunicorn_singularity.conf.py
+    command: gunicorn -c /opt/smartscope/config/docker/gunicorn.conf.py
     deploy:
       #Used to pass the GPU through. Also need to install the nvidia-container-toolkit.
       resources:
