@@ -97,14 +97,14 @@ services:
       # - 443:443 #Use if you choose to use ssl. RECOMMENDED
     volumes:
       - ./config/docker/templates_noSSL/:/etc/nginx/templates/ #Change to ./config/docker/templates_SSL to use SSL
-      #- /path/to/certs:/etx/nginx/certs/ #Uncomment to mount the ssl certificate from the host
+      #- /path/to/certs/cert.pem:/opt/certs/smartscope.crt #Uncomment to mount the ssl certificate from the host
+      #- /path/to/certs/privkey.pem:/opt/certs/smartscope.key #Uncomment to mount the ssl certificate from the host
       - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
       - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
-      - /home/bouvettej2/Smartscope-beta/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
+      - /home/bouvettej2/Smartscope-beta/static/:/opt/smartscope/static/ #Path to the Repo static files. It's technically for the javascript assets
       - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True
     environment:
       SERVER_NAME: lxd-02012614 #Should match the ALLOWED_HOSTS from the smartscope service
-      CERT_FILENAME: filename #ROOT name of the certs without extension.
     networks:
       - smartscopenet
     depends_on:
