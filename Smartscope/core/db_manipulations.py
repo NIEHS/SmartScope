@@ -110,7 +110,7 @@ def get_hole_count(grid, hole_list=None):
     if hole_list is not None:
         all_holes = hole_list
     else:
-        all_holes = list(HoleModel.objects.filter(grid_id=grid.grid_id))
+        all_holes = list(HoleModel.display.filter(grid_id=grid.grid_id))
     completed = [hole for hole in all_holes if hole.status == 'completed']
     if len(completed) == 0:
         return dict(completed=0, queued=0, perhour=0, last_hour=0)

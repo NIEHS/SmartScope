@@ -366,7 +366,6 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             is_bis = obj.grid_id.params_id.bis_max_distance > 0
             if action == 'addall':
                 query_filters = dict(selected=False)
-                # exclude_fields = dict(bis_type='is_area')
                 if is_bis:
                     query_filters['bis_type'] = 'center'
                     query_filters['bis_group__isnull'] = False
@@ -392,16 +391,10 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         logger.debug('Regrouping BIS')
         try:
             obj = self.get_object()
-            # data = request.data
-            # square_id = data['square_id']
-            # grid_id = data['grid_id']
             microscope = obj.grid_id.session_id.microscope_id
-
             out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
                                       'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
