@@ -5,8 +5,6 @@ import mrcfile.mrcinterpreter
 import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
-from django_filters.rest_framework import DjangoFilterBackend
-
 from Smartscope.core.models.models_actions import targets_methods
 from .serializers import *
 from Smartscope.core.models import *
@@ -15,9 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.template.response import SimpleTemplateResponse
 from django.template.loader import render_to_string
-from rest_framework.renderers import JSONRenderer
 from django.db import transaction
-from django.db.models import Q
 import base64
 from Smartscope.lib.montage import power_spectrum
 from Smartscope.lib.system_monitor import disk_space
@@ -28,7 +24,6 @@ from django.conf import settings
 import json
 import os
 import time
-import copy
 import logging
 from rest_framework.renderers import TemplateHTMLRenderer
 

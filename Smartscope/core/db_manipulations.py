@@ -5,7 +5,6 @@ from scipy.spatial.distance import cdist
 import numpy as np
 import random
 import logging
-import Smartscope.lib.logger
 from django.db.models.query import prefetch_related_objects
 from django.db import transaction
 from datetime import timedelta
