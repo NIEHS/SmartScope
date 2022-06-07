@@ -682,7 +682,7 @@ function SvgCoords(evt) {
 function add_target(item) {
     // ft_sz = Math.floor(size / 3000 * 80)
     el = document.createElementNS("http://www.w3.org/2000/svg", 'path')
-    el.setAttribute("d", `M${item.x - 5} ${item.y - 15} h10 v10 h10 v10 h-10 v10 h-10 v-10 h-10 v-10 h10 z`)
+    el.setAttribute("d", `M${item.x - 10} ${item.y - 30} h20 v20 h20 v20 h-20 v20 h-20 v-20 h-20 v-20 h20 z`)
     el.setAttribute("class", "temporaryTarget")
     // el.setAttribute("r", 10)
     el.setAttribute('style', 'fill: red')
@@ -743,7 +743,8 @@ async function reportMain() {
     renderCounts()
     // checkState()
     if (fullmeta.status != null) {
-        if (!jQuery.isEmptyObject(fullmeta.atlas)) {
+        console.log(fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status)
+        if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {
             await loadAtlas();
             if (![null, undefined].includes(currentState.square)) {
                 await loadSquare(currentState.square)
@@ -755,8 +756,9 @@ async function reportMain() {
         }
         console.log('atlas is acquiring')
         $('#Atlas_im').html('<h3>Grid is started. Atlas will appear once acquired.</h3>')
-
+        return
     }
+    $('#Atlas_im').html('<h3>Grid is not yet started. Atlas will appear once acquired.</h3>')
 };
 $('#main').on('change', ".card circle", function () {
     console.log('Changed!')

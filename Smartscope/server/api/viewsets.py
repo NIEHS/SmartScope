@@ -5,8 +5,6 @@ import mrcfile.mrcinterpreter
 import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
-from django_filters.rest_framework import DjangoFilterBackend
-
 from Smartscope.core.models.models_actions import targets_methods
 from .serializers import *
 from Smartscope.core.models import *
@@ -15,9 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.template.response import SimpleTemplateResponse
 from django.template.loader import render_to_string
-from rest_framework.renderers import JSONRenderer
 from django.db import transaction
-from django.db.models import Q
 import base64
 from Smartscope.lib.montage import power_spectrum
 from Smartscope.lib.system_monitor import disk_space
@@ -28,7 +24,6 @@ from django.conf import settings
 import json
 import os
 import time
-import copy
 import logging
 from rest_framework.renderers import TemplateHTMLRenderer
 
@@ -289,13 +284,22 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
 
     @ action(detail=True, methods=['get'])
     def fullmeta(self, request, **kwargs):
-        self.serializer_class = FullGridSerializer
         obj = self.get_object()
+        if obj.status is None:
+            serializer = self.get_serializer(obj, many=False)
+            data = serializer.data
+            data['atlas'] = {}
+            data['squares'] = {}
+            data['holes'] = []
+            data['counts'] = dict(completed=0, queued=0, perhour=0, lasthour=0)
+            return Response(data)
+
+        self.serializer_class = FullGridSerializer
         serializer = self.get_serializer(obj, many=False)
         data = serializer.data
         data['atlas'] = list_to_dict(data['atlas'])
         data['squares'] = list_to_dict(data['squares'])
-        data['holes'] = []  # list_to_dict(data['holes'])
+        data['holes'] = []
         data['counts'] = get_hole_count(obj)
         return Response(data)
 
@@ -357,7 +361,6 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             is_bis = obj.grid_id.params_id.bis_max_distance > 0
             if action == 'addall':
                 query_filters = dict(selected=False)
-                # exclude_fields = dict(bis_type='is_area')
                 if is_bis:
                     query_filters['bis_type'] = 'center'
                     query_filters['bis_group__isnull'] = False
@@ -383,16 +386,10 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         logger.debug('Regrouping BIS')
         try:
             obj = self.get_object()
-            # data = request.data
-            # square_id = data['square_id']
-            # grid_id = data['grid_id']
             microscope = obj.grid_id.session_id.microscope_id
-
             out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
                                       'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')

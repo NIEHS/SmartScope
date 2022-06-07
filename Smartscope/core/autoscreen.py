@@ -63,7 +63,7 @@ def resume_incomplete_processes(queue, grid, microscope_id):
         transaction.on_commit(lambda: queue.put([process_hole_image, [hole, microscope_id]]))
     for hm in high_mag:
         logger.info(f'High_mag {hm} was not fully processed')
-        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id, grid.params_id.save_frames]]))
+        transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id]]))
 
 
 def print_queue(squares, holes, session):
@@ -391,12 +391,15 @@ def process_hm_image(hm, microscope_id):
             montage = High_Mag(**hm.__dict__)
             is_metadata = montage.create_dirs(force_reproces=False)
             if not is_metadata:
-                try:
-                    montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
-                except Exception as e:
-                    logger.info('waiting for mdoc file')
+                mdoc = os.path.join(frames_dir, f'{hm.frames}.mdoc')
+                while not os.path.isfile(mdoc) and not os.path.isfile(hm.frames):
+                    logger.info('waiting for frames to finish acquiring.')
                     time.sleep(2)
-                    montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
+                    # montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
+                # except Exception as e:
+                #     logger.info('waiting for mdoc file')
+                #     time.sleep(2)
+                montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
                 montage.align_frames(frames_dir=frames_dir)
                 montage.build_montage(raw_only=False)
                 save_image(montage.montage, montage._id, extension='png')
@@ -432,7 +435,7 @@ def autoscreen(session_id):
     lockFile, sessionLock = session.isScopeLocked
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
-    is_stop_file()
+    is_stop_file(session.session_id)
     # SETUP SESSION LOGGING
     # logger = create_logger('autoscreen', os.path.join(session.directory, 'run.out'))
     # create_logger('processing', os.path.join(session.directory, 'proc.out'))
@@ -465,8 +468,8 @@ def autoscreen(session_id):
             logger.debug(f'Main Log handlers:{logger.handlers}')
             for grid in grids:
                 status = run_grid(grid, session, processing_queue, scope)
-                if status == 'stop':
-                    raise KeyboardInterrupt
+                if status == 'stopped':
+                    raise KeyboardInterrupt()
             status = 'complete'
     except Exception as e:
         logger.exception(e)

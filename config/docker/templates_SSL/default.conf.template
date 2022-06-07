@@ -22,7 +22,6 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_redirect off;
-        proxy_redirect off;
     }
 
     location /websocket/ {
@@ -60,8 +59,8 @@ server {
         }
     }
 
-    ssl_certificate /etc/nginx/certs/${CERT_FILENAME}.crt;
-    ssl_certificate_key /etc/nginx/certs/${CERT_FILENAME}.key;
+    ssl_certificate /opt/certs/smartscope.crt;
+    ssl_certificate_key /opt/certs/smartscope.key;
     ssl_session_timeout 1h;
     ssl_prefer_server_ciphers on;
     ssl_session_cache shared:SSL:5m;

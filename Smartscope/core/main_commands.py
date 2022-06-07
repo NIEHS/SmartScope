@@ -23,7 +23,7 @@ def add_holes(id, targets):
     montage.target_class = 'LatticeTarget'
     montage.finder = 'Manual finder'
     montage.classifier = None
-    montage.stage_z = instance.finders[0].stage_z
+    montage.stage_z = instance.finders.all()[0].stage_z
     # montage.centroid = find_square_center(montage.montage)
     targets = montage.create_targets(starting_index=len(instance.targets))
     holes = add_targets(instance.grid_id, instance, targets, HoleModel)

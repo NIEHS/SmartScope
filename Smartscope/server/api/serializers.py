@@ -337,6 +337,8 @@ class SvgSerializer(RESTserializers.Serializer):
     def load_meta(self):
         # json_meta = dict()
         targets = self.instance.targets
+        if len(targets) == 0:
+            return dict()
         return update_to_fullmeta(targets)
 
     def to_representation(self, instance):

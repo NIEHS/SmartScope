@@ -48,7 +48,7 @@ class GenericPosition:
             time.sleep(2)
             with open(f'{image}.mdoc', 'r') as file:
                 mdocFile = file.read().split('\n\n')
-                proclog.debug(mdocFile)
+                logger.debug(mdocFile)
         if movie:
             stacks = [m for m in mdocFile[1:] if '[MontSection =' not in m]
         else:

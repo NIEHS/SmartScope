@@ -357,16 +357,16 @@ class Montage(GenericPosition):
 
     def align_frames(self, frames_dir, minfiletime=5):
         file = os.path.join(frames_dir, self.frames)
-        # while True:
-        #     waited = 0
-        time_elapsed = time.time() - os.path.getctime(file)
-        #     logger.debug(time_elapsed)
-        if time_elapsed < minfiletime:
-            logger.debug('File may not have finished writing, waiting 2 seconds')
-            time.sleep(minfiletime)
-            # waited += 2
-            # else:
-            #     break
+        # # while True:
+        # #     waited = 0
+        # time_elapsed = time.time() - os.path.getctime(file)
+        # #     logger.debug(time_elapsed)
+        # if time_elapsed < minfiletime:
+        #     logger.debug('File may not have finished writing, waiting 2 seconds')
+        #     time.sleep(minfiletime)
+        # waited += 2
+        # else:
+        #     break
 
         com = f'alignframes -input {file} -output {self.raw} -gain {os.path.join(frames_dir,self.metadata.iloc[-1].GainReference)} -rotation -1 -dfile {self.frames}.mdoc -volt {self.metadata.iloc[-1].Voltage}'
         logger.debug(com)

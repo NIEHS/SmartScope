@@ -897,7 +897,7 @@ class HoleModel(Target, ExtraPropertyMixin):
             if self.high_mag is None:
                 return False
             status_set = set([self.high_mag.status])
-        logger.debug(f"STATUS_SET = {status_set}")
+        # logger.debug(f"STATUS_SET = {status_set}")
         if list(status_set) in [['acquired'], ['processed']] or len(status_set) > 1:
             return True
         elif status_set == set(['completed']):
