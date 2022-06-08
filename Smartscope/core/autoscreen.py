@@ -126,9 +126,10 @@ def run_grid(grid, session, processing_queue, scope):
 
     if grid.status is None:
         grid = update(grid, status='started', start_time=timezone.now())
-    os.chdir(session.directory)
-    grid.create_dir()
-    processing_queue.put([os.chdir, [os.path.join(grid.directory)]])
+    # os.chdir(session.directory)
+    create_grid_directories(grid.directory)
+    os.chdir(grid.directory)
+    processing_queue.put([os.chdir, [grid.directory]])
 
     # ADD the new protocl loader
     protocol = load_protocol_wrapper(grid.protocol)

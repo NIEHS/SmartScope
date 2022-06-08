@@ -11,7 +11,7 @@ services:
     restart: always
     volumes:
       #Volumes are spelled /path/on/host/:/path/in/container/
-      - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
+      - /datastaging/data/smartscope/:/mnt/data/ #Where the data is to be saved (required)
       - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
       - /home/bouvettej2/Smartscope-beta/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
       - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True
@@ -99,7 +99,7 @@ services:
       - ./config/docker/templates_noSSL/:/etc/nginx/templates/ #Change to ./config/docker/templates_SSL to use SSL
       #- /path/to/certs/cert.pem:/opt/certs/smartscope.crt #Uncomment to mount the ssl certificate from the host
       #- /path/to/certs/privkey.pem:/opt/certs/smartscope.key #Uncomment to mount the ssl certificate from the host
-      - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
+      - /datastaging/data/smartscope/:/mnt/data/ #Where the data is to be saved (required)
       - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
       - /home/bouvettej2/Smartscope-beta/static/:/opt/smartscope/static/ #Path to the Repo static files. It's technically for the javascript assets
       - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True

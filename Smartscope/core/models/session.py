@@ -305,7 +305,7 @@ class ScreeningSession(BaseModel):
                 return [self.working_dir, self.working_dir]
 
         if settings.USE_STORAGE:
-            os.mkdir(cwd)
+            # os.mkdir(cwd)
             return [cwd, url]
 
     @ property
@@ -556,13 +556,13 @@ class AutoloaderGrid(BaseModel):
     def __str__(self):
         return f'{self.position}_{self.name}'
 
-    def create_dir(self):
-        for dirs in [self.directory,
-                     os.path.join(self.directory, 'raw'),
-                     os.path.join(self.directory, 'pngs')]:
-            if not os.path.isdir(dirs):
-                os.mkdir(dirs)
-        os.chdir(self.directory)
+    # def create_dir(self):
+    #     for dirs in [self.directory,
+    #                  os.path.join(self.directory, 'raw'),
+    #                  os.path.join(self.directory, 'pngs')]:
+    #         if not os.path.isdir(dirs):
+    #             os.mkdir(dirs)
+    #     os.chdir(self.directory)
 
     def export(self, working_dir=None):
         to_export = list(self.atlasmodel_set.all())

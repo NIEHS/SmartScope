@@ -1,22 +1,18 @@
 #!/usr/bin/env python
 
-from math import cos, radians
 import os
 import time
 import shutil
 import sys
 import random
 
-from cv2 import resize
 from .montage import Atlas, Square, Hole, High_Mag, save_image
 from collections import namedtuple
 from datetime import datetime
 import glob
 import logging
+from pathlib import Path
 
-
-# logger = logging.getLogger('processing')
-# logger = logging.getLogger('autoscreen')
 logger = logging.getLogger(__name__)
 
 
@@ -132,6 +128,12 @@ def create_scope_dirs(scope_path):
     for d in [source, os.path.join(source, 'raw'), os.path.join(source, 'reference'), os.path.join(source, 'movies')]:
         if not os.path.isdir(d):
             os.mkdir(d)
+
+
+def create_grid_directories(path: str) -> None:
+    path = Path(path)
+    for directory in [path, path / 'raw', path / 'pngs']:
+        directory.mkdir(parents=True, exist_ok=True)
 
 
 def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
