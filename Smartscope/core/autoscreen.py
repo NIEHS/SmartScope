@@ -461,7 +461,8 @@ def autoscreen(session_id):
                             port=microscope.serialem_PORT,
                             energyfilter=session.detector_id.energy_filter,
                             directory=microscope.windows_path,
-                            scope_path=microscope.scope_path) as scope:
+                            scope_path=microscope.scope_path,
+                            loader_size=microscope.loader_size) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
             child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(session.directory, processing_queue,))

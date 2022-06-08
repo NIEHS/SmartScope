@@ -193,17 +193,18 @@ class SerialemInterface(MicroscopeInterface):
         sem.Exit(1)
 
     def loadGrid(self, position):
-        slot_status = sem.ReportSlotStatus(position)
-        if slot_status == -1:
-            raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
-        if slot_status == 1:
-            logger.info(f'Autoloader position is occupied')
-            logger.info(f'Loading grid {position}')
+        if self.loadGrid > 1:
+            slot_status = sem.ReportSlotStatus(position)
+            if slot_status == -1:
+                raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
+            if slot_status == 1:
+                logger.info(f'Autoloader position is occupied')
+                logger.info(f'Loading grid {position}')
+                sem.Delay(5)
+                sem.SetColumnOrGunValve(0)
+                sem.LoadCartridge(position)
+            logger.info(f'Grid {position} is loaded')
             sem.Delay(5)
-            sem.SetColumnOrGunValve(0)
-            sem.LoadCartridge(position)
-        logger.info(f'Grid {position} is loaded')
-        sem.Delay(5)
         sem.SetColumnOrGunValve(1)
 
 

@@ -37,6 +37,7 @@ class MicroscopeInterface(ABC):
     energyfilter: bool
     state: MicroscopeState = MicroscopeState()
     imageHandler: Any = Montage
+    loader_size: int = 12
 
     def __enter__(self):
         self.connect(self.directory)
