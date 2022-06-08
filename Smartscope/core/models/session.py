@@ -163,7 +163,7 @@ class Microscope(BaseModel):
     voltage = models.IntegerField(default=200)
     spherical_abberation = models.FloatField(default=2.7)
     microscope_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    loader_size = models.CharField(max_length=30)
+    loader_size = models.IntegerField(default=12)
 
     # Worker location
     worker_hostname = models.CharField(max_length=30, default='localhost')

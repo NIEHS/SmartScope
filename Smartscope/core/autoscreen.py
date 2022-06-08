@@ -248,8 +248,8 @@ def run_grid(grid, session, processing_queue, scope):
                 finder = square.finders.first()
                 scope.square(finder.stage_x, finder.stage_y, finder.stage_z, file=square.raw)
                 square = update(square, status='acquired')
-                # transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
-                process_square_image(square, grid, session.microscope_id)
+                transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
+                # process_square_image(square, grid, session.microscope_id)
         elif is_done:
             microscope_id = session.microscope_id.pk
             if os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'.pause_{microscope_id}')):
@@ -344,6 +344,7 @@ def process_square_image(square, grid, microscope_id):
     plugins = load_plugins()
     params = grid.params_id
     is_bis = params.bis_max_distance > 0
+    montage = None
     if square.status == 'acquired':
         montage = get_file_and_process(square, 'square', directory=microscope_id.scope_path)
         montage.find_targets(load_protocol()['holeFinders'])
@@ -354,7 +355,7 @@ def process_square_image(square, grid, microscope_id):
                         shape_y=montage.shape_y, pixel_size=montage.pixel_size, refresh_from_db=True)
         transaction.on_commit(lambda: logger.debug('targets added'))
     if square.status == 'processed':
-        selector_wrapper(protocol[f'{square.targets_prefix}Selectors'], square, n_groups=5)
+        selector_wrapper(protocol[f'{square.targets_prefix}Selectors'], square, n_groups=5, montage=montage)
         square = update(square, status='selected')
     if square.status == 'selected':
         if is_bis:
@@ -437,9 +438,6 @@ def autoscreen(session_id):
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
     is_stop_file(session.session_id)
-    # SETUP SESSION LOGGING
-    # logger = create_logger('autoscreen', os.path.join(session.directory, 'run.out'))
-    # create_logger('processing', os.path.join(session.directory, 'proc.out'))
     if sessionLock is not None:
         logger.warning(
             f'\nThe requested microscope is busy.\n\tLock file {lockFile} found\n\tSession id: {sessionLock} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
@@ -480,7 +478,6 @@ def autoscreen(session_id):
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'
     finally:
-        # SerialEM.disconnect()
         os.remove(lockFile)
         update(process, status=status)
         logger.debug('Wrapping up')

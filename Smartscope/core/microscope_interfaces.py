@@ -193,7 +193,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.Exit(1)
 
     def loadGrid(self, position):
-        if self.loadGrid > 1:
+        if self.loader_size > 1:
             slot_status = sem.ReportSlotStatus(position)
             if slot_status == -1:
                 raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')

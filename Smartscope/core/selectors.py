@@ -1,15 +1,14 @@
 from Smartscope.lib.config import load_plugins
-from Smartscope.core.models import *
+from Smartscope.core.models import Selector
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.query import prefetch_related_objects
-from Smartscope.lib.montage import *
+from Smartscope.lib.montage import Montage
 import numpy as np
 from django.db import transaction
 import cv2
 from Smartscope.lib.image_manipulations import save_image, to_8bits, auto_contrast
+import logging
 
-# logger = logging.getLogger('processing')
-# logger = logging.getLogger('autoscreen')
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +24,7 @@ def generate_equal_clusters(parent, targets, n_groups):
     return output
 
 
-def cluster_by_field(parent, n_groups, field='area'):
+def cluster_by_field(parent, n_groups, field='area', **kwargs):
     plugins = load_plugins()
 
     targets = np.array(parent.targets.order_by(field))
@@ -80,7 +79,7 @@ def selector_wrapper(selectors, selection, *args, **kwargs):
             with transaction.atomic():
                 for obj in outputs:
                     # obj['method_name'] = method['name']
-                    Selector.objects.update_or_create(**obj, method_name=method['name'])
+                    Selector(**obj, method_name=method['name']).save()
                     # obj.save()
         except Exception as err:
             logger.exception(err)
