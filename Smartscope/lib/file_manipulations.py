@@ -133,7 +133,7 @@ def create_scope_dirs(scope_path):
 def create_grid_directories(path: str) -> None:
     path = Path(path)
     for directory in [path, path / 'raw', path / 'pngs']:
-        directory.mkdir(parents=True, exist_ok=True)
+        directory.mkdir(exist_ok=True)
 
 
 def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
