@@ -20,7 +20,7 @@ def generate_equal_clusters(parent, targets, n_groups):
             for target in bucket:
                 output.append(dict(content_type=ContentType.objects.get_for_model(target),
                                    object_id=target.pk,
-                                   defaults=dict(label=ind)))
+                                   label=ind))
     return output
 
 
