@@ -1,7 +1,7 @@
 version: "3"
 services:
   smartscope:
-    image: localhost/smartscope:0.6
+    image: localhost/smartscope:0.61
     container_name: smartscope
     build:
       context: .

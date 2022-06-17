@@ -244,7 +244,7 @@ class GridCollectionParams(BaseModel):
     square_y = models.IntegerField(default=1)
     squares_num = models.IntegerField(default=3)
     holes_per_square = models.IntegerField(default=3)  # If -1 means all
-    bis_max_distance = models.FloatField(default=0)  # 0 means not BIS
+    bis_max_distance = models.FloatField(default=3)  # 0 means not BIS
     min_bis_group_size = models.IntegerField(default=1)
     target_defocus_min = models.FloatField(default=-2)
     target_defocus_max = models.FloatField(default=-2)

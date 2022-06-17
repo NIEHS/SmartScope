@@ -15,7 +15,7 @@ squareFinders:
         method: find_squares
         package: Smartscope.lib.Finders.AIFinder.wrapper
         kwargs: 
-            device: 0
+            device: cpu
             imgsz: 2048
             thresh: 0.2
             iou: 0.3
@@ -92,7 +92,7 @@ holeFinders:
             imgsz: 1280
             thresh: 0.2
             iou: 0.15
-            device: 0
+            device: cpu
             weights_circle: circle_weights/circle_weight_12_7_21.pt
             method: yolo
         targetClass:

@@ -136,7 +136,7 @@ def create_grid_directories(path: str) -> None:
         directory.mkdir(exist_ok=True)
 
 
-def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
+def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
     logger.info(f"Generating fake {file} from {funcname}")
     TEST_FILES_ROOT = os.getenv('TEST_FILES')
     dirs = dict(atlas=os.path.join(TEST_FILES_ROOT, 'atlas'),

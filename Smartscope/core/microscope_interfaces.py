@@ -223,7 +223,7 @@ class FakeScopeInterface(MicroscopeInterface):
         generate_fake_file(file, 'atlas', destination_dir=self.scope_path)
 
     def square(self, stageX, stageY, stageZ, file=''):
-        generate_fake_file(file, 'square', destination_dir=self.scope_path)
+        generate_fake_file(file, 'square', sleeptime=30, destination_dir=self.scope_path)
 
     def align():
         pass
@@ -235,7 +235,7 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True):
-        generate_fake_file(file, 'highmag', destination_dir=self.scope_path)
+        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.scope_path)
 
     def connect(self, directory: str):
         logger.info('Connecting to fake scope.')

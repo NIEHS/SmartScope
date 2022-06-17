@@ -485,3 +485,36 @@ def autoscreen(session_id):
         child_process.join()
         logger.debug('Process joined')
         os.killpg(0, signal.SIGINT)  # Make sure child processes are killed, testing this.
+
+
+def resume_processing(grid_id, n_processes):
+    try:
+        grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+        update.grid = grid
+        session = grid.session_id
+        processing_queue = multiprocessing.JoinableQueue()
+        resume_incomplete_processes(processing_queue, grid, session.microscope_id)
+        os.chdir(grid.directory)
+        child_process = []
+        for n in range(int(n_processes)):
+            child_process.append(multiprocessing.Process(target=processing_worker_wrapper, args=(session.directory, processing_queue,)))
+        for proc in child_process:
+            proc.start()
+            time.sleep(3)
+        processing_queue.join()
+        grid.refresh_from_db()
+        while grid.status != 'complete':
+            time.sleep(30)
+            resume_incomplete_processes(processing_queue, grid, session.microscope_id)
+            processing_queue.join()
+    except Exception as e:
+        logger.exception(e)
+    except KeyboardInterrupt as e:
+        logger.exception(e)
+    finally:
+        logger.debug('Wrapping up')
+        processing_queue.put(['exit'] * int(n_processes))
+        for proc in child_process:
+            proc.join()
+        logger.debug('Process joined')
+        os.killpg(0, signal.SIGINT)

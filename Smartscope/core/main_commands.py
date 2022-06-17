@@ -8,9 +8,9 @@ from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
 from django.db import transaction
 from Smartscope.lib.Finders.basic_finders import find_square_center
 from Smartscope.lib.file_manipulations import process_montage
-from Smartscope.core.autoscreen import autoscreen
+from Smartscope.core.autoscreen import autoscreen, resume_processing
 from Smartscope.lib.config import *
-from Smartscope.core.test_commands import is_gpu_enabled
+from Smartscope.core.test_commands import is_gpu_enabled, test_serialem_connection
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,6 @@ def add_holes(id, targets):
     montage.finder = 'Manual finder'
     montage.classifier = None
     montage.stage_z = instance.finders.all()[0].stage_z
-    # montage.centroid = find_square_center(montage.montage)
     targets = montage.create_targets(starting_index=len(instance.targets))
     holes = add_targets(instance.grid_id, instance, targets, HoleModel)
     return holes
