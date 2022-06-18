@@ -356,15 +356,16 @@ def process_square_image(square, grid, microscope_id):
         transaction.on_commit(lambda: logger.debug('targets added'))
     if square.status == 'processed':
         selector_wrapper(protocol[f'{square.targets_prefix}Selectors'], square, n_groups=5, montage=montage)
+
         square = update(square, status='selected')
+        transaction.on_commit(lambda: logger.debug('Selectors added'))
     if square.status == 'selected':
         if is_bis:
-            holes = list(HoleModel.objects.filter(square_id=square.square_id))
+            holes = list(HoleModel.display.filter(square_id=square.square_id))
             holes = group_holes_for_BIS([h for h in holes if h.is_good(plugins=plugins) and not h.is_excluded(protocol, square.targets_prefix)[0]],
                                         max_radius=grid.params_id.bis_max_distance, min_group_size=grid.params_id.min_bis_group_size)
-            with transaction.atomic():
-                for hole in holes:
-                    hole.save()
+            for hole in holes:
+                hole.save()
         logger.info(f'Picking holes on {square}')
 
         select_n_areas(square, grid.params_id.holes_per_square, is_bis=is_bis)
