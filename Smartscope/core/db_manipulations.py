@@ -275,7 +275,7 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
 #         if val is not None and field not in fields_dict.keys():
 #             fields_dict[field] = val
 
-def add_targets(grid, parent, targets, model, **extra_fields):
+def add_targets(grid, parent, targets, model, finder, classifier=None, **extra_fields):
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
     if model is SquareModel:
@@ -288,10 +288,10 @@ def add_targets(grid, parent, targets, model, **extra_fields):
     model_content_type_id = ContentType.objects.get_for_model(model)
     # all_objects = model.objects.all().filter(**defaut_field_dict)
     with transaction.atomic():
-        for target in targets:
+        for ind, target in enumerate(targets):
             fields_dict = defaut_field_dict.copy()
 
-            fields_dict['number'] = target._id
+            fields_dict['number'] = ind
             for field in fields:
                 val = getattr(target, field, None)
                 if val is not None and field not in fields_dict.keys():
@@ -301,17 +301,17 @@ def add_targets(grid, parent, targets, model, **extra_fields):
             obj = obj.save()
             output.append(obj)
 
-            finder = Finder(content_type=model_content_type_id, object_id=obj.pk, method_name=target.finder,
-                            x=getattr(target, 'x', None),
-                            y=getattr(target, 'y', None),
-                            stage_x=getattr(target, 'stage_x', None),
-                            stage_y=getattr(target, 'stage_y', None),
-                            stage_z=getattr(target, 'stage_z', None))
-            output.append(finder.save())
-            if target.classifier is not None:
-                classifier = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=target.classifier,
-                                        label=getattr(target, 'quality', None))
-                output.append(classifier.save())
+            finder_model = Finder(content_type=model_content_type_id, object_id=obj.pk, method_name=finder,
+                                  x=target.x,
+                                  y=target.y,
+                                  stage_x=target.stage_x,
+                                  stage_y=target.stage_y,
+                                  stage_z=target.stage_z)
+            finder_model.save()
+            if classifier is not None:
+                classifier_model = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=classifier,
+                                              label=target.quality)
+                classifier_model.save()
 
     return output
 

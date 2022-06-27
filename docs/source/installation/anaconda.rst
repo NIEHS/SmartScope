@@ -16,7 +16,7 @@ Requirements
         sudo apt-get install default-libmysqlclient-dev build-essential libglib2.0-0 ffmpeg libsm6 libxext6 
 
 
-Setting up the smartscope environment
+Setting up the SmartScope environment
 *************************************
 
 #. Clone or download the `git repository <https://github.com/NIEHS/SmartScope>`_ and navigate to the directory

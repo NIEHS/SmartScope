@@ -1,9 +1,7 @@
-from Smartscope.lib.montage import Hole, Square
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers as RESTserializers
 from Smartscope.core.models import *
 from Smartscope.server.lib.s3functions import *
-import os
 from Smartscope.lib.converters import *
 
 

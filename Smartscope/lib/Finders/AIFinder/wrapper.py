@@ -20,38 +20,38 @@ def find_squares(montage, **kwargs):
     kwargs['weights'] = os.path.join(WEIGHT_DIR, kwargs['weights'])
     if not IS_CUDA:
         kwargs['device'] = 'cpu'
-    squares, labels, _, _ = detect(montage.raw_montage, **kwargs)
+    squares, labels, _, _ = detect(montage.image, **kwargs)
     success = True
-    if len(squares) < 20 and montage.raw_montage.shape[0] > 20000:
+    if len(squares) < 20 and montage.image.shape[0] > 20000:
         success = False
     logger.info(f'AI square finder found {len(squares)} squares')
     logger.debug(f'{squares},{type(squares)}')
-    return (squares, labels), success, 'AISquareTarget', None
+    return (squares, labels), success, 'AISquareTarget'
 
 
 def find_holes(montage, **kwargs):
     logger.info('Running AI hole detection')
-    centroid = find_square_center(montage.raw_montage)
+    # centroid = find_square_center(montage.image)
     kwargs['weights_circle'] = os.path.join(WEIGHT_DIR, kwargs['weights_circle'])
     if not IS_CUDA:
         kwargs['device'] = 'cpu'
-    holes, _ = detect_holes(montage.raw_montage, **kwargs)
+    holes, _ = detect_holes(montage.image, **kwargs)
     success = True
     if len(holes) < 10:
         success = False
 
     logger.info(f'AI hole detection found {len(holes)} holes')
-    return holes, success, 'AIHoleTarget', centroid
+    return holes, success, 'AIHoleTarget'
 
 
 def find_and_classify_holes(montage, **kwargs):
     logger.info('Running AI hole detection and classification')
-    centroid = find_square_center(montage.raw_montate)
-    holes, labels = detect_and_classify_holes(montage.raw_montage, **kwargs)
+    # centroid = find_square_center(montage.image)
+    holes, labels = detect_and_classify_holes(montage.image, **kwargs)
     # print(holes)
     success = True
     if len(holes) < 20:
         success = False
 
     logger.info(f'AI hole detection found {len(holes)} holes')
-    return (holes, labels), success, 'AIHoleTarget', centroid
+    return (holes, labels), success, 'AIHoleTarget'

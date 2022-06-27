@@ -1,30 +1,26 @@
 
+from functools import partial
 import os
 import signal
 import sys
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, SerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import *
-from Smartscope.server.api.serializers import *
-from Smartscope.lib.file_manipulations import *
+from Smartscope.lib.image_manipulations import auto_contrast, auto_contrast_sigma, fourier_crop
+from Smartscope.lib.montage import Montage, Movie, create_targets, find_targets
+from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
+from Smartscope.lib.file_manipulations import get_file_and_process
 from Smartscope.core.db_manipulations import *
 from Smartscope.lib.config import *
 from django.db import transaction
 from django.utils import timezone
-from math import cos, radians, floor, sqrt
+from math import cos, radians
 import multiprocessing
 import logging
 from Smartscope.lib.converters import *
-from Smartscope.server.api.serializers import *
-from django.core.cache import cache
+import subprocess
 
 logger = logging.getLogger(__name__)
-
-
-def add_log_handlers(directory: str, name: str) -> None:
-    main_handler = logging.FileHandler(os.path.join(directory, name), mode='a', encoding='utf-8')
-    main_handler.setFormatter(logger.parent.handlers[0].formatter)
-    logging.getLogger('Smartscope').addHandler(main_handler)
 
 
 def get_queue(grid):
@@ -54,13 +50,20 @@ def resume_incomplete_processes(queue, grid, microscope_id):
         status__in=['queued', 'started', 'completed']).order_by('number')
     holes = grid.holemodel_set.filter(selected=1).exclude(
         status__in=['queued', 'started', 'processed', 'completed']).order_by('square_id__number', 'number')
-    high_mag = grid.highmagmodel_set.exclude(status__in=['queued', 'started', 'completed']).order_by('number')
+    # high_mag = grid.highmagmodel_set.exclude(status__in=['queued', 'started', 'completed']).order_by('number')
     for square in squares:
         logger.info(f'Square {square} was not fully processed')
         transaction.on_commit(lambda: queue.put([process_square_image, [square, grid, microscope_id]]))
     for hole in holes:
         logger.info(f'Hole {hole} was not fully processed')
         transaction.on_commit(lambda: queue.put([process_hole_image, [hole, microscope_id]]))
+    # for hm in high_mag:
+    #     logger.info(f'High_mag {hm} was not fully processed')
+    #     transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id]]))
+
+
+def queue_highmag_process(queue, grid, microscope_id):
+    high_mag = grid.highmagmodel_set.exclude(status__in=['queued', 'started', 'completed']).order_by('completetion_time').limit(20)
     for hm in high_mag:
         logger.info(f'High_mag {hm} was not fully processed')
         transaction.on_commit(lambda: queue.put([process_hm_image, [hm, microscope_id]]))
@@ -113,20 +116,16 @@ def run_grid(grid, session, processing_queue, scope):
         logger.info(f'{grid.name} already complete')
         return
     session_id = session.pk
-    # try:
     # Set the Websocket_update_decorator grid property
     processing_queue.put(['set_update', [grid]])
     update.grid = grid
 
     logger.info(f'Starting {grid.name}')  # \nHoleType: {grid.holeType.name}
 
-    # logger.debug(f'{grid.hole_finders}')
-    # logger.debug(grid.square_finders)
     grid = update(grid, refresh_from_db=True, last_update=None)
 
     if grid.status is None:
         grid = update(grid, status='started', start_time=timezone.now())
-    # os.chdir(session.directory)
     create_grid_directories(grid.directory)
     os.chdir(grid.directory)
     processing_queue.put([os.chdir, [grid.directory]])
@@ -136,6 +135,7 @@ def run_grid(grid, session, processing_queue, scope):
     save_protocol(protocol)
 
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
+    subprocess.Popen(shlex.split(f'smartscope.py highmag_processing {grid.grid_id} 1'))
 
     atlas = queue_atlas(grid)
     params = grid.params_id
@@ -147,17 +147,17 @@ def run_grid(grid, session, processing_queue, scope):
         path = os.path.join(session.microscope_id.scope_path, atlas.raw)
         scope.atlas(mag=session.detector_id.atlas_mag, c2=session.detector_id.c2_perc, spotsize=session.detector_id.spot_size,
                     tileX=params.atlas_x, tileY=params.atlas_y, file=atlas.raw)
-        # create_serialem_script('atlas', session, grids=grid, sele=atlas)
         get_file(path, remove=True)
         atlas = update(atlas, status='acquired')
         # grid = update(grid, last_update=None)
 
     if atlas.status == 'acquired':
         logger.info('Atlas acquired')
-        montage, _ = process_montage(atlas, mag_level='atlas')
-        montage.find_targets(load_protocol()['squareFinders'])
-        targets = montage.create_targets()
-        squares = add_targets(grid, atlas, targets, SquareModel)
+        montage = Montage(atlas.name)
+        montage.export_as_png()
+        targets, finder_method, classifier_method, targets_class = find_targets(montage, load_protocol()['squareFinders'])
+        targets = create_targets(targets, montage)
+        squares = add_targets(grid, atlas, targets, SquareModel, finder_method, classifier_method)
         atlas = update(atlas, status='processed', pixel_size=montage.pixel_size,
                        shape_x=montage.shape_x, shape_y=montage.shape_y, stage_z=montage.stage_z)
         # grid = update(grid, last_update=None)
@@ -172,7 +172,7 @@ def run_grid(grid, session, processing_queue, scope):
         # grid = update(grid, last_update=None)
     if atlas.status == 'completed':
         logger.info('Atlas analysis is complete')
-    # raise Exception('Atlas done, exit')
+
     running = True
     restarting = True
     is_done = False
@@ -208,7 +208,7 @@ def run_grid(grid, session, processing_queue, scope):
                 scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
                                  file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
                 currentDefocus = scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
-                hole = update(hole, status='acquired')
+                hole = update(hole, status='acquired', completition_time=timezone.now())
                 # grid = update(grid, last_update=None)
                 transaction.on_commit(lambda: processing_queue.put([process_hole_image, [hole, session.microscope_id]]))
             if hole.status in ['acquired', 'processed']:
@@ -230,14 +230,10 @@ def run_grid(grid, session, processing_queue, scope):
                         finder = list(h.finders.all())[0]
                         isX, isY = stage_x - finder.stage_x, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
                         frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw, frames=params.save_frames)
-                        # if out is not None:
-                        #     frames = out
-                        # else:
-                        #     frames = None
-                        hm = update(hm, is_x=isX, is_y=isY, frames=frames, status='acquired')
+                        hm = update(hm, is_x=isX, is_y=isY, frames=frames, status='acquired', completetion_time=timezone.now())
                         if h != hole:
-                            update(h, status='acquired')
-                        transaction.on_commit(lambda: processing_queue.put([process_hm_image, [hm, session.microscope_id]]))
+                            update(h, status='acquired', completition_time=timezone.now())
+                        # transaction.on_commit(lambda: processing_queue.put([process_hm_image, [hm, session.microscope_id]]))
 
         elif len(squares) > 0:
             is_done = False
@@ -247,7 +243,7 @@ def run_grid(grid, session, processing_queue, scope):
                 path = os.path.join(session.microscope_id.scope_path, square.raw)
                 finder = square.finders.first()
                 scope.square(finder.stage_x, finder.stage_y, finder.stage_z, file=square.raw)
-                square = update(square, status='acquired')
+                square = update(square, status='acquired', completition_time=timezone.now())
                 transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, session.microscope_id]]))
                 # process_square_image(square, grid, session.microscope_id)
         elif is_done:
@@ -279,19 +275,12 @@ def run_grid(grid, session, processing_queue, scope):
         update(grid, status='complete')
         logger.info('Grid finished')
         return 'finished'
-    # except Exception as err:
-    #     logger.exception(err)
-    #     error = True
-    # except KeyboardInterrupt as err:
-    #     logger.info('Stopping main process')
-    #     error = True
 
 
 def create_process(session):
     process = session.process_set.first()
-    # logger.debug(f'Trying to fetch process from db: {process}')
+
     if process is None:
-        # logger.debug(f'process not found, creating new one')
         process = Process(session_id=session, PID=os.getpid(), status='running')
         process = process.save()
         return process
@@ -299,57 +288,49 @@ def create_process(session):
     return update(process, PID=os.getpid(), status='running')
 
 
-def get_file_and_process(item, mag_level, directory=''):
-    if not os.path.isfile(item.raw):
-        path = os.path.join(directory, item.raw)
-        get_file(path, remove=True)
-    montage, _ = process_montage(item, mag_level=mag_level)
-    return montage
-
-
-def processing_worker_wrapper(logdir, queue,):
-    logging.getLogger('Smartscope').handlers.pop()
-    logger.debug(f'Log handlers:{logger.handlers}')
-    add_log_handlers(directory=logdir, name='proc.out')
-    logger.debug(f'Log handlers:{logger.handlers}')
-    try:
-        while True:
-            logger.debug(f'Approximate processing queue size: {queue.qsize()}')
-            item = queue.get()
-            logger.debug(f'Got item {item} from queue')
-            if 'set_update' in item:
-                update.grid = item[1][0]
-                queue.task_done()
-                continue
-            if item == 'exit':
-                break
-            if item is not None:
-                logger.debug(f'Running {item[0]} {item[1]} from queue')
-                item[0](*item[1])
-                queue.task_done()
-            else:
-                logger.debug(f'Sleeping 2 sec')
-                time.sleep(2)
-    except Exception as e:
-        logger.error("Error in the processing worker")
-        logger.exception(e)
-    except KeyboardInterrupt as e:
-        logger.info('SIGINT recieved by the processing worker')
+# def processing_worker_wrapper(logdir, queue, output_queue=None):
+#     logging.getLogger('Smartscope').handlers.pop()
+#     logger.debug(f'Log handlers:{logger.handlers}')
+#     add_log_handlers(directory=logdir, name='proc.out')
+#     logger.debug(f'Log handlers:{logger.handlers}')
+#     try:
+#         while True:
+#             logger.debug(f'Approximate processing queue size: {queue.qsize()}')
+#             item = queue.get()
+#             logger.debug(f'Got item {item} from queue')
+#             if 'set_update' in item:
+#                 update.grid = item[1][0]
+#                 queue.task_done()
+#                 continue
+#             if item == 'exit':
+#                 break
+#             if item is not None:
+#                 logger.debug(f'Running {item[0]} {item[1]} from queue')
+#                 output = item[0](*item[1])
+#                 if output_queue is not None and output is not None:
+#                     output_queue.put(output)
+#                 queue.task_done()
+#             else:
+#                 logger.debug(f'Sleeping 2 sec')
+#                 time.sleep(2)
+#     except Exception as e:
+#         logger.error("Error in the processing worker")
+#         logger.exception(e)
+#     except KeyboardInterrupt as e:
+#         logger.info('SIGINT recieved by the processing worker')
 
 
 def process_square_image(square, grid, microscope_id):
-    # square = SquareModel.objects.get(pk=square)
-    # grid = AutoloaderGrid.objects.get(pk=grid)
     protocol = load_protocol(os.path.join(grid.directory, 'protocol.yaml'))
     plugins = load_plugins()
     params = grid.params_id
     is_bis = params.bis_max_distance > 0
     montage = None
     if square.status == 'acquired':
-        montage = get_file_and_process(square, 'square', directory=microscope_id.scope_path)
-        montage.find_targets(load_protocol()['holeFinders'])
-        targets = montage.create_targets()
-        holes = add_targets(grid, square, targets, HoleModel)
+        montage = get_file_and_process(square, directory=microscope_id.scope_path)
+        montage.export_as_png()
+        targets, finder_method, classifier_method, targets_class = find_targets(montage, load_protocol()['holeFinders'])
+        holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
 
         square = update(square, status='processed', shape_x=montage.shape_x,
                         shape_y=montage.shape_y, pixel_size=montage.pixel_size, refresh_from_db=True)
@@ -380,13 +361,12 @@ def process_square_image(square, grid, microscope_id):
 def process_hole_image(hole, microscope_id):
     # hole = HoleModel.objects.get(pk=hole)
     montage = get_file_and_process(hole, 'hole', directory=microscope_id.scope_path)
+    montage.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
     update(hole, status='processed',
            pixel_size=montage.pixel_size,)
 
 
 def process_hm_image(hm, microscope_id):
-    # hm = HighMagModel.objects.get(pk=hm)
-    # microscope = Microscope.objects.get(pk=microscope_id)
     logger.info(f'Processing {hm}, {hm.pk}, {hm.status}')
     if hm.status == 'acquired':
         if hm.frames is not None:
@@ -398,10 +378,6 @@ def process_hm_image(hm, microscope_id):
                 while not os.path.isfile(mdoc) and not os.path.isfile(hm.frames):
                     logger.info('waiting for frames to finish acquiring.')
                     time.sleep(2)
-                    # montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
-                # except Exception as e:
-                #     logger.info('waiting for mdoc file')
-                #     time.sleep(2)
                 montage.parse_mdoc(file=os.path.join(frames_dir, hm.frames), movie=True)
                 montage.align_frames(frames_dir=frames_dir)
                 montage.build_montage(raw_only=False)
@@ -432,7 +408,6 @@ def write_sessionLock(session, lockFile):
 
 
 def autoscreen(session_id):
-    # cache.clear()
     session = ScreeningSession.objects.get(session_id=session_id)
     microscope = session.microscope_id
     lockFile, sessionLock = session.isScopeLocked
@@ -488,26 +463,23 @@ def autoscreen(session_id):
         os.killpg(0, signal.SIGINT)  # Make sure child processes are killed, testing this.
 
 
-def resume_processing(grid_id, n_processes):
+def highmag_processing(grid_id, n_processes):
     try:
         grid = AutoloaderGrid.objects.get(grid_id=grid_id)
         update.grid = grid
         session = grid.session_id
         processing_queue = multiprocessing.JoinableQueue()
-        resume_incomplete_processes(processing_queue, grid, session.microscope_id)
         os.chdir(grid.directory)
         child_process = []
         for n in range(int(n_processes)):
             child_process.append(multiprocessing.Process(target=processing_worker_wrapper, args=(session.directory, processing_queue,)))
         for proc in child_process:
             proc.start()
-            time.sleep(3)
-        processing_queue.join()
-        grid.refresh_from_db()
         while grid.status != 'complete':
-            time.sleep(30)
-            resume_incomplete_processes(processing_queue, grid, session.microscope_id)
+            queue_highmag_process(processing_queue, grid, session.microscope_id)
             processing_queue.join()
+            time.sleep(30)
+            grid.refresh_from_db()
     except Exception as e:
         logger.exception(e)
     except KeyboardInterrupt as e:
