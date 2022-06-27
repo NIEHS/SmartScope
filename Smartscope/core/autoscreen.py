@@ -1,8 +1,8 @@
 
-from functools import partial
 import os
 import signal
 import sys
+import time
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, SerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import *
@@ -19,6 +19,7 @@ import multiprocessing
 import logging
 from Smartscope.lib.converters import *
 import subprocess
+
 
 logger = logging.getLogger(__name__)
 

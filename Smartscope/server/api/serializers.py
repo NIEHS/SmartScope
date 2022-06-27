@@ -362,18 +362,19 @@ class SvgSerializer(RESTserializers.Serializer):
 
 
 def update_to_fullmeta(objects: list):
-    classname = objects[0].__class__.__name__
-    updateDict = dict()
-    if classname == 'AutoloaderGrid':
-        return models_to_serializers[classname]['serializer'](objects[0], many=False).data
-    serialized_obj = list_to_dict(models_to_serializers[classname]['serializer'](objects, many=True).data)
-    updateDict[models_to_serializers[classname]['key']] = serialized_obj
-    if classname == 'HoleModel':
-        serialized_obj = list_to_dict(models_to_serializers['SquareModel']['serializer'](
-            [objects[0].square_id], many=True).data)
-        updateDict[models_to_serializers['SquareModel']['key']] = serialized_obj
-    # if classname == 'AtlasModel':
-    #     serialized_obj = list_to_dict(models_to_serializers['AtlasModel']['serializer'](
-    #         objects[0], many=True).data)
-    #     updateDict[models_to_serializers[classname]['key']] = serialized_obj
+    updateDict = dict(atlas=[], squares=[], holes=[])
+    for obj in objects:
+        classname = obj.__class__.__name__
+        if classname == 'AutoloaderGrid':
+            updateDict.update(models_to_serializers[classname]['serializer'](obj, many=False).data)
+            continue
+        if classname in models_to_serializers.keys():
+            updateDict[models_to_serializers[classname]['key']].append(obj)
+        if classname == 'HoleModel' and (square := obj.square_id) not in updateDict['squares']:
+            updateDict['squares'].append(square)
+
+    updateDict['squares'] = list_to_dict(models_to_serializers['SquareModel']['serializer'](
+        updateDict['squares'], many=True).data)
+    updateDict['holes'] = list_to_dict(models_to_serializers['HoleModel']['serializer'](updateDict['holes'], many=True).data)
+
     return updateDict

@@ -100,10 +100,6 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
             logger.info(f'Approximate processing queue size: {queue.qsize()}')
             item = queue.get()
             logger.info(f'Got item {item} from queue')
-            # if 'set_update' in item:
-            #     update.grid = item[1][0]
-            #     queue.task_done()
-            #     continue
             if item == 'exit':
                 break
             if item is not None:
@@ -113,7 +109,6 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
                 if output_queue is not None and output is not None:
                     logger.debug(f'Adding {output} to output queue')
                     output_queue.put(output)
-
             else:
                 logger.debug(f'Sleeping 2 sec')
                 time.sleep(2)

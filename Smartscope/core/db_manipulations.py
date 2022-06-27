@@ -1,4 +1,5 @@
 
+from typing import Any, Callable, List, Union
 from Smartscope.lib.config import load_plugins
 from Smartscope.core.models import *
 from scipy.spatial.distance import cdist
@@ -8,8 +9,7 @@ import logging
 from django.db.models.query import prefetch_related_objects
 from django.db import transaction
 from datetime import timedelta
-from Smartscope.lib.converters import *
-from Smartscope.server.api.serializers import *
+from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer, models_to_serializers
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.contenttypes.models import ContentType
@@ -18,26 +18,26 @@ from django.contrib.contenttypes.models import ContentType
 logger = logging.getLogger(__name__)
 
 
-class Websocket_update_decorator:
+class Websocket_update:
 
-    def __init__(self, f=None, grid=None):
+    def __init__(self, f: Callable[[Any], List[Any]] = None, grid: Union[AutoloaderGrid, None] = None):
         self.f = f
         self.grid = grid
 
     def __call__(self, *args, **kwargs):
-        obj = self.f(*args, **kwargs)
+        objs = self.f(*args, **kwargs)
         if self.grid is not None:
 
             channel_layer = get_channel_layer()
-            if obj.__class__.__name__ in models_to_serializers.keys():
-                outputDict = {'type': 'update.metadata',
-                              'update': {}}
 
-                logger.debug(f'Updating {obj}, sending to websocket {self.grid.grid_id} group')
-                outputDict['update'] = update_to_fullmeta([obj])
-                async_to_sync(channel_layer.group_send)(self.grid.grid_id, outputDict)
+            outputDict = {'type': 'update.metadata',
+                          'update': {}}
 
-        return obj
+            logger.debug(f'Updating {objs}, sending to websocket {self.grid.grid_id} group')
+            outputDict['update'] = update_to_fullmeta(objs)
+            async_to_sync(channel_layer.group_send)(self.grid.grid_id, outputDict)
+
+        return objs
 
 
 def update_target(data):
@@ -227,7 +227,7 @@ def queue_atlas(grid):
     return atlas
 
 
-@ Websocket_update_decorator
+@ Websocket_update
 def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     updated_fields = []
     updated_fields += extra_fields
@@ -238,42 +238,8 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     instance = instance.save(update_fields=updated_fields)
     if refresh_from_db:
         instance.refresh_from_db()
-    return instance
+    return [instance]
 
-
-# def add_targets(grid, parent, targets, model, **extra_fields):
-#     output = []
-#     defaut_field_dict = dict(grid_id=grid, **extra_fields)
-#     if model is SquareModel:
-#         defaut_field_dict['atlas_id'] = parent
-#     elif model is HoleModel:
-#         defaut_field_dict['square_id'] = parent
-#     elif model is HighMagModel:
-#         defaut_field_dict['hole_id'] = parent
-#     fields = get_fields_names(model)
-
-#     # all_objects = model.objects.all().filter(**defaut_field_dict)
-#     with transaction.atomic():
-#         for target in targets:
-#             fields_dict = defaut_field_dict.copy()
-
-#             fields_dict['number'] = target._id
-#             for field in fields:
-#                 val = getattr(target, field, None)
-#                 if val is not None and field not in fields_dict.keys():
-#                     fields_dict[field] = val
-
-#             obj = model(**fields_dict)
-#             output.append(obj.save())
-
-#     return output
-
-# def fill_fields(model, target):
-#     fields = get_fields_names(model)
-#     for field in fields:
-#         val = getattr(target, field, None)
-#         if val is not None and field not in fields_dict.keys():
-#             fields_dict[field] = val
 
 def add_targets(grid, parent, targets, model, finder, classifier=None, **extra_fields):
     output = []
