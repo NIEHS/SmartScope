@@ -3,6 +3,7 @@ from functools import partial
 import signal
 import time
 from typing import List
+from Smartscope.core.db_manipulations import websocket_update
 from Smartscope.core.models import AutoloaderGrid
 from pathlib import Path
 from Smartscope.lib.preprocessing_methods import get_CTFFIN4_data, process_hm_from_average, process_hm_from_frames, processing_worker_wrapper
@@ -12,6 +13,7 @@ import sys
 import multiprocessing
 import logging
 from django.db import transaction
+
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +86,8 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             status__in=['queued', 'started', 'completed']).order_by('completion_time')[:20])
 
     def queue_incomplete_processes(self):
-        from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path)
+        from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,
+                               spherical_abberation=self.microscope.spherical_abberation)
         from_frames = partial(process_hm_from_frames, frames_directories=self.frames_directory,
                               spherical_abberation=self.microscope.spherical_abberation)
         for obj in self.incomplete_processes:
@@ -117,19 +120,23 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     def update_processes(self):
         logger.info(f'Updating {len(self.to_update)} items in the database')
         if len(self.to_update) == 0:
-            logger.info(f'No items to updating, waiting 30 seconds before checking again.')
+            logger.info(f'No items to update, waiting 30 seconds before checking again.')
             return time.sleep(30)
         with transaction.atomic():
-            while len(self.to_update) > 0:
-                self.to_update.pop().save()
-        # logger.debug(f'{len(self.to_update)} to update')
+            [obj.save() for obj in self.to_update]
+            # map(lambda obj: obj.save(), self.to_update)
+        websocket_update(self.to_update, self.grid.grid_id)
+        self.to_update = []
 
 
-def highmag_processing(pipeline: PreprocessingPipeline, grid_id: str) -> None:
+PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline)
+
+
+def highmag_processing(pipeline: PreprocessingPipeline, grid_id: str, n_processes: int = 1) -> None:
     try:
         grid = AutoloaderGrid.objects.get(grid_id=grid_id)
-        pipeline = pipeline(grid, frames_directory=sys.args[-1])
-        pipeline.start()
+        pipeline = PREPROCESSING_PIPELINE_FACTORY[pipeline](grid)
+        pipeline.start(n_processes)
 
     except Exception as e:
         logger.exception(e)

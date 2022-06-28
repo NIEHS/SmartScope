@@ -7,10 +7,11 @@ from Smartscope.core.models import *
 from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
 from django.db import transaction
 from Smartscope.lib.Finders.basic_finders import find_square_center
-from Smartscope.core.autoscreen import autoscreen, highmag_processing
+from Smartscope.core.autoscreen import autoscreen
 from Smartscope.lib.config import *
 from Smartscope.core.test_commands import is_gpu_enabled, test_serialem_connection
 from Smartscope.core.utils.training_data import add_to_training_set
+from Smartscope.core.preprocessing_pipelines import highmag_processing
 import numpy as np
 
 

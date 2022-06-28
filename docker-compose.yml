@@ -103,7 +103,7 @@ services:
       #- /path/to/certs/privkey.pem:/opt/certs/smartscope.key #Uncomment to mount the ssl certificate from the host
       - /datastaging/data/smartscope/:/mnt/data/ #Where the data is to be saved (required)
       - /auto_screening/log_dev:/opt/logs/ #Where the log files are to be saved (required)
-      - /home/bouvettej2/Smartscope-beta/static/:/opt/smartscope/static/ #Path to the Repo static files. It's technically for the javascript assets
+      - /home/bouvettej2/Smartscope-dev/static/:/opt/smartscope/static/ #Path to the Repo static files. It's technically for the javascript assets
       - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True
     environment:
       SERVER_NAME: lxd-02012614 #Should match the ALLOWED_HOSTS from the smartscope service

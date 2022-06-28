@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 import time
-from typing import Union
+from typing import List, Union
 import cv2
 import mrcfile
 import os
@@ -348,12 +348,24 @@ class BaseImage(ABC):
         return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
 
     @property
+    def shape_x(self):
+        return self.image.shape[0]
+
+    @property
+    def shape_y(self):
+        return self.image.shape[1]
+
+    @property
     def stage_z(self):
         return self.metadata.iloc[0].StageZ
 
     @property
     def pixel_size(self):
         return self.metadata.iloc[0].PixelSpacing
+
+    @property
+    def ctf(self):
+        return Path(self.directory, 'ctf.txt')
 
     def read_image(self):
         with mrcfile.open(self.image_path) as mrc:
@@ -393,11 +405,9 @@ class Montage(BaseImage):
             return
 
         self.metadata = parse_mdoc(self.mdoc, self.is_movie)
-        if len(self.metadata.index) == 1 and not self.image_path.exists():
-            logger.debug('Montage is only one tile, building is not required, creating symbolic link')
-            self.make_symlink()
-        else:
-            self.build_montage()
+
+        self.build_montage()
+        self.read_image()
         self.save_metadata()
 
     def build_montage(self):
@@ -419,19 +429,22 @@ class Montage(BaseImage):
             self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
             self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
             montage = img
-        else:
-            self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
-            self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-            montsize = np.array([0, 0])
-            for _, piece in enumerate(self.metadata.piece_limits):
-                for ind, i in enumerate(piece[2]):
-                    if i > montsize[ind]:
-                        montsize[ind] = i
-            montage = np.empty(np.flip(montsize), dtype='int16')
-            for ind, piece in enumerate(self.metadata.piece_limits):
-                montage[piece[0, 1]: piece[-2, 1], piece[0, 0]: piece[-2, 0]] = img[ind, :, :]
-            montage = montage[~np.all(montage == 0, axis=1)]
-            montage = montage[:, ~(montage == 0).all(0)]
+            self.image = montage
+            self.make_symlink()
+            return
+
+        self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
+        self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
+        montsize = np.array([0, 0])
+        for _, piece in enumerate(self.metadata.piece_limits):
+            for ind, i in enumerate(piece[2]):
+                if i > montsize[ind]:
+                    montsize[ind] = i
+        montage = np.empty(np.flip(montsize), dtype='int16')
+        for ind, piece in enumerate(self.metadata.piece_limits):
+            montage[piece[0, 1]: piece[-2, 1], piece[0, 0]: piece[-2, 0]] = img[ind, :, :]
+        montage = montage[~np.all(montage == 0, axis=1)]
+        montage = montage[:, ~(montage == 0).all(0)]
 
         self.image = montage
 
@@ -446,10 +459,6 @@ class Movie(BaseImage):
     @property
     def shifts(self):
         return Path(self.directory, 'ali.xf')
-
-    @property
-    def ctf(self):
-        return Path(self.directory, 'ctf.txt')
 
     def __post_init__(self):
         self.directory.mkdir(exist_ok=True)
@@ -521,7 +530,7 @@ def find_targets(montage: Montage, methods: list):
 #     #     pass
 
 
-def create_targets(targets, montage):
+def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):
     output_targets = []
     if isinstance(targets, tuple):
         targets, labels = targets
@@ -530,6 +539,7 @@ def create_targets(targets, montage):
     for target, label in zip(targets, labels):
         t = AITarget(target, quality=label)
         t.convert_image_coords_to_stage(montage)
+        t.set_area_radius(target_type)
         output_targets.append(t)
 
     output_targets.sort(key=lambda x: (x.stage_x, x.stage_y))

@@ -5,7 +5,7 @@ from pathlib import Path
 import logging
 from Smartscope.lib.file_manipulations import locate_file_in_directories, get_file_and_process
 from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop
-from Smartscope.lib.montage import Movie
+from Smartscope.lib.montage import Montage, Movie
 from Smartscope.lib.logger import add_log_handlers
 from Smartscope.lib.generic_position import parse_mdoc
 import os
@@ -83,9 +83,14 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
     return movie
 
 
-def process_hm_from_average(raw, name, scope_path_directory):
+def process_hm_from_average(raw, name, scope_path_directory, spherical_abberation: float = 2.7):
+    # montage = Montage(name=name)
+    # if not montage.check_metadata():
     montage = get_file_and_process(raw, name, directory=scope_path_directory)
     montage.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    if not montage.ctf.exists():
+        CTFfind(input_mrc=montage.image_path, output_directory=montage.name,
+                voltage=montage.metadata.Voltage.iloc[-1], pixel_size=montage.pixel_size, spherical_abberation=spherical_abberation)
     return montage
 
 

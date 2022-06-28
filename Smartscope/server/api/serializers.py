@@ -372,9 +372,9 @@ def update_to_fullmeta(objects: list):
             updateDict[models_to_serializers[classname]['key']].append(obj)
         if classname == 'HoleModel' and (square := obj.square_id) not in updateDict['squares']:
             updateDict['squares'].append(square)
-
-    updateDict['squares'] = list_to_dict(models_to_serializers['SquareModel']['serializer'](
-        updateDict['squares'], many=True).data)
+    logger.debug(f'Update dict = {updateDict}')
+    updateDict['atlas'] = list_to_dict(models_to_serializers['AtlasModel']['serializer'](updateDict['atlas'], many=True).data)
+    updateDict['squares'] = list_to_dict(models_to_serializers['SquareModel']['serializer'](updateDict['squares'], many=True).data)
     updateDict['holes'] = list_to_dict(models_to_serializers['HoleModel']['serializer'](updateDict['holes'], many=True).data)
-
+    logger.debug(updateDict)
     return updateDict

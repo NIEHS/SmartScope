@@ -1,4 +1,5 @@
 from itertools import count
+from turtle import st
 from django.contrib.auth.models import User, Group
 import mrcfile
 import mrcfile.mrcinterpreter
@@ -193,15 +194,15 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         # check_stop_file_output = send_to_worker(self.object.microscope_id. worker_hostname,
         #                                         self.object.microscope_id.executable, arguments=['check_stop_file', self.object.session_id], communicate=True)
         disk_status = disk_space(settings.AUTOSCREENDIR)
-        try:
-            out = self.read_file('run.out')
-            proc = self.read_file('proc.out')
-            queue = self.read_file('queue.txt')
+        # try:
+        out = self.read_file('run.out')
+        proc = self.read_file('proc.out')
+        queue = self.read_file('queue.txt', start_line=0)
 
-        except FileNotFoundError:
-            out = ''
-            proc = ''
-            queue = ''
+        # except FileNotFoundError:
+        #     out = ''
+        #     proc = ''
+        #     queue = ''
 
         return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **check_output))
 
@@ -221,11 +222,11 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         logger.info(f'OUTPUT: {out}\nERROR: {err}')
         return Response(dict(out=out, err=err))
 
-    def read_file(self, name):
+    def read_file(self, name, start_line=-100):
         try:
             # print(os.path.join(self.object.directory, name))
             with open(os.path.join(self.object.directory, name), 'r') as f:
-                file = ''.join(f.readlines()[-100:])
+                file = ''.join(f.readlines()[start_line:])
             return file
         except FileNotFoundError as err:
             return ''

@@ -9,7 +9,7 @@ import logging
 from django.db.models.query import prefetch_related_objects
 from django.db import transaction
 from datetime import timedelta
-from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer, models_to_serializers
+from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.contenttypes.models import ContentType
@@ -18,26 +18,32 @@ from django.contrib.contenttypes.models import ContentType
 logger = logging.getLogger(__name__)
 
 
-class Websocket_update:
+class Websocket_update_decorator:
 
     def __init__(self, f: Callable[[Any], List[Any]] = None, grid: Union[AutoloaderGrid, None] = None):
         self.f = f
         self.grid = grid
 
     def __call__(self, *args, **kwargs):
-        objs = self.f(*args, **kwargs)
+        objs = outputs = self.f(*args, **kwargs)
+        if not isinstance(outputs, list):
+            objs = [objs]
         if self.grid is not None:
+            websocket_update(objs, self.grid.grid_id)
 
-            channel_layer = get_channel_layer()
+        return outputs
 
-            outputDict = {'type': 'update.metadata',
-                          'update': {}}
 
-            logger.debug(f'Updating {objs}, sending to websocket {self.grid.grid_id} group')
-            outputDict['update'] = update_to_fullmeta(objs)
-            async_to_sync(channel_layer.group_send)(self.grid.grid_id, outputDict)
+def websocket_update(objs, grid_id):
 
-        return objs
+    channel_layer = get_channel_layer()
+
+    outputDict = {'type': 'update.metadata',
+                  'update': {}}
+
+    logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')
+    outputDict['update'] = update_to_fullmeta(objs)
+    async_to_sync(channel_layer.group_send)(grid_id, outputDict)
 
 
 def update_target(data):
@@ -227,7 +233,7 @@ def queue_atlas(grid):
     return atlas
 
 
-@ Websocket_update
+@ Websocket_update_decorator
 def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     updated_fields = []
     updated_fields += extra_fields
@@ -238,7 +244,7 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     instance = instance.save(update_fields=updated_fields)
     if refresh_from_db:
         instance.refresh_from_db()
-    return [instance]
+    return instance
 
 
 def add_targets(grid, parent, targets, model, finder, classifier=None, **extra_fields):
