@@ -12,7 +12,8 @@ from Smartscope.lib.config import *
 from Smartscope.core.test_commands import is_gpu_enabled, test_serialem_connection
 from Smartscope.core.utils.training_data import add_to_training_set
 from Smartscope.core.preprocessing_pipelines import highmag_processing
-from Smartscope.lib.montage import Montage, convert_centers_to_boxes, create_targets
+from Smartscope.lib.montage import Montage, create_targets
+from Smartscope.lib.image_manipulations import convert_centers_to_boxes
 import numpy as np
 
 

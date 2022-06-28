@@ -376,5 +376,5 @@ def update_to_fullmeta(objects: list):
     updateDict['atlas'] = list_to_dict(models_to_serializers['AtlasModel']['serializer'](updateDict['atlas'], many=True).data)
     updateDict['squares'] = list_to_dict(models_to_serializers['SquareModel']['serializer'](updateDict['squares'], many=True).data)
     updateDict['holes'] = list_to_dict(models_to_serializers['HoleModel']['serializer'](updateDict['holes'], many=True).data)
-    logger.debug(updateDict)
+    # logger.debug(updateDict)
     return updateDict

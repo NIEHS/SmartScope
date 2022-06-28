@@ -166,7 +166,7 @@ def run_grid(grid, session, processing_queue, scope):
         logger.info('Atlas acquired')
         montage = get_file_and_process(raw=atlas.raw, name=atlas.name, directory=microscope.scope_path)
         montage.export_as_png()
-        targets, finder_method, classifier_method, targets_class = find_targets(montage, load_protocol()['squareFinders'])
+        targets, finder_method, classifier_method = find_targets(montage, load_protocol()['squareFinders'])
         targets = create_targets(targets, montage, target_type='square')
         squares = add_targets(grid, atlas, targets, SquareModel, finder_method, classifier_method)
         atlas = update(atlas, status='processed', pixel_size=montage.pixel_size,
@@ -333,7 +333,7 @@ def process_square_image(square, grid, microscope_id):
     if square.status == 'acquired':
         montage = get_file_and_process(raw=square.raw, name=square.name, directory=microscope_id.scope_path)
         montage.export_as_png()
-        targets, finder_method, classifier_method, targets_class = find_targets(montage, load_protocol()['holeFinders'])
+        targets, finder_method, classifier_method = find_targets(montage, load_protocol()['holeFinders'])
         targets = create_targets(targets, montage, target_type='hole')
         holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
 

@@ -110,7 +110,7 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
                 output = item[0](*item[1], **item[2])
                 queue.task_done()
                 if output_queue is not None and output is not None:
-                    logger.debug(f'Adding {output} to output queue')
+                    # logger.debug(f'Adding {output} to output queue')
                     output_queue.put(output)
             else:
                 logger.debug(f'Sleeping 2 sec')

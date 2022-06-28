@@ -30,15 +30,6 @@ mpl.use('Agg')
 logger = logging.getLogger(__name__)
 
 
-def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max_x: float, max_y: float, diameter_in_um: float = 1.2) -> np.ndarray:
-    radius_in_pix = int(diameter_in_um * 10000 / pixel_size_in_angst // 2)
-    left = max([0, center[1] - radius_in_pix])
-    up = max([0, center[0] - radius_in_pix])
-    right = min([max_x, center[1] + radius_in_pix])
-    down = min([max_y, center[0] + radius_in_pix])
-    return np.array([up, left, down, right])
-
-
 def auto_canny(image, limits=None, sigma=0.33, dilation=5):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
@@ -89,72 +80,6 @@ def pixel_to_stage(dist, tile, tiltAngle):
     specimen_dist = np.sum(R * np.reshape(dist, (-1, 1)), axis=0)
     coords = tile.StagePosition + specimen_dist / np.array([1, cos(radians(round(tiltAngle, 1)))])
     return np.around(coords, decimals=3)
-
-
-def find_contours(im, thresh):
-    thresh = cv2.threshold(im, thresh, 255, cv2.THRESH_BINARY)[1]
-    t = cv2.convertScaleAbs(thresh)
-    cnts = cv2.findContours(t.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    return cnts, t
-
-
-def gauss(x, mu, sigma, A):
-    return A * np.exp(- ((x - mu) ** 2) / (2 * sigma ** 2))
-
-
-def fit_gauss(blur, min=40, max=255):
-    bins = max - min
-    flat_blur = blur.flatten()
-    flat_blur = flat_blur[(flat_blur > min) & (flat_blur < max)]
-    y, x, _ = plt.hist(flat_blur, bins=bins)
-    peak = np.argmax(y)
-    amax = np.max(y)
-    std = [-1, -1]
-    for i in range(peak, int(bins), 1):
-        if y[i] <= amax * 0.25:
-            std[1] = i - peak
-            break
-    for i in range(peak, 0, -1):
-        if y[i] <= amax * 0.25:
-            std[0] = peak - i
-            break
-
-    std = np.mean(np.array([abs(i) for i in std if i >= 0]))
-
-    expected = (x[peak], std, amax)
-    try:
-        params, cov = curve_fit(gauss, x[:-1], y, expected)
-        return params, True
-    except Exception as err:
-        logger.debug('Could not fit gaussian, passing expected params')
-        return expected, False
-
-
-def plot_hist_gauss(image, thresh, mu=None, sigma=None, a=None, size=254):
-    mydpi = 300
-    fig = plt.figure(figsize=(5, 5), dpi=mydpi)
-    ax = fig.add_subplot(111)
-    flat = image.flatten()
-    ax.hist(flat, bins=200, label='Distribution')
-    x = np.linspace(0, 255, 100)
-    if all([mu is not None, sigma is not None, a is not None]):
-        ax.plot(x, gauss(x, mu, sigma, a), color='red', lw=3, label='gaussian')
-
-    if mu is None:
-        mu = np.mean(flat)
-    ax.axvline(mu, c='orange', label='mean')
-    ax.axvline(thresh, c='green', label='threshold')
-    ax.title.set_text('Histogram')
-    ax.set_xlabel('Pixel intensity')
-    ax.set_ylabel('Counts')
-    ax.legend()
-    fig.canvas.draw()
-    hist = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-    hist = hist.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    hist = imutils.resize(hist, height=size)
-    plt.close(fig='all')
-    return hist
 
 
 def plot_hist(image, size=254, **kwargs):
@@ -219,52 +144,6 @@ def highpass(im, pixel_size, filter_size=4):
     F = fabs * np.exp(1j * fang)
     reversed = to_8bits(np.real(np.fft.ifft2(np.fft.ifftshift(F))))
     return reversed, fabs
-
-
-def find_pattern(image, apix, plot=False, saveLoc=None, thresh=100, highpass_res=4):
-    smallest_distance = 0
-    smallest_distance_pix = 0
-    stack = None
-    angle = 0
-    hp, fft = highpass(image, apix, filter_size=highpass_res)
-
-    center = np.array(fft.shape) // 2
-    cropped = fft[center[0]:center[0] + int(center[0] // 2), center[1]:center[1] + int(center[1] // 2)]
-    cropped_rgb = cv2.cvtColor(cropped, cv2.COLOR_GRAY2RGB)
-    cnts, t = find_contours(cropped, thresh)
-
-    min_t, max_t = cropped.shape[0] * 0.005, cropped.shape[0] * 0.05
-    cnts = [cnt for cnt in cnts if (min_t <= cv2.contourArea(cnt) <= max_t)]
-
-    for cnt in cnts:
-        cv2.drawContours(cropped_rgb, [cnt], -1, (255, 0, 0))
-        mask = np.zeros(cropped.shape, np.uint8)
-        cv2.drawContours(mask, [cnt], 0, 255, -1)
-        _, max_val, _, max_loc = cv2.minMaxLoc(cropped, mask=mask)
-        if 0 not in max_loc and max_val > 100:
-            cropped_rgb[max_loc[::-1]] = [0, 0, 255]
-            dist_pix = np.sqrt(np.sum((np.array(max_loc) / np.array(image.shape))**2))
-            dist = 1 / dist_pix * apix / 10000
-            ang = degrees(atan2(*max_loc[::-1]))
-
-            if dist > smallest_distance:
-                smallest_distance = dist
-                smallest_distance_pix = np.array(max_loc)
-                angle = ang
-
-    if plot:
-        extracted_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        hp_rgb = cv2.cvtColor(to_8bits(hp), cv2.COLOR_GRAY2RGB)
-        fft_rgb = cv2.cvtColor(fft, cv2.COLOR_GRAY2RGB)
-        hist_cropped = plot_hist(cropped, size=image.shape[0], threshold=thresh)
-        crop_rgb = imutils.resize(cropped_rgb, height=image.shape[0])
-        stack = np.hstack([extracted_rgb, hp_rgb, fft_rgb, crop_rgb, hist_cropped])
-        if saveLoc is not None:
-            cv2.imwrite(saveLoc, stack)
-    if len(cnts) > 0:
-        return smallest_distance, angle, smallest_distance_pix
-    else:
-        return None, None, None
 
 
 def plot_thresholds(im, blur, thresh, thresholded, cnts, file, mu=None, sigma=None, a=None, polygon='Circle'):
@@ -480,13 +359,13 @@ def find_targets(montage: Montage, methods: list):
         logger.debug(f"kwargs = {method['kwargs']}")
         exec(import_cmd)
         try:
-            output, success, targets_class = locals()[method['method']](montage, *method['args'], **method['kwargs'])
+            output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
         except Exception as err:
             logger.exception(err)
             continue
         if success:
             logger.debug(f'{method} was successful: {success}')
-            return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None, targets_class
+            return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
 
 
 def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):

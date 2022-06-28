@@ -78,7 +78,8 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             self.check_for_update()
             self.update_processes()
             self.list_incomplete_processes()
-            if self.grid.status == 'complete' and len(self.incomplete_processes) == 0 and self.to_process_queue.qsize() == 0 and self.processed_queue.qsize() == 0:
+            self.grid.refresh_from_db()
+            if self.grid.status == 'complete' and len(self.incomplete_processes) == 0:
                 break
 
     def list_incomplete_processes(self):
@@ -101,7 +102,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         for proc in self.child_process:
             proc.join()
         logger.debug('Process joined')
-        os.killpg(0, signal.SIGINT)
+        # os.killpg(0, signal.SIGINT)
 
     def check_for_update(self):
         while self.processed_queue.qsize() > 0:
