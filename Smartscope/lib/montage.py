@@ -30,6 +30,15 @@ mpl.use('Agg')
 logger = logging.getLogger(__name__)
 
 
+def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max_x: float, max_y: float, diameter_in_um: float = 1.2) -> np.ndarray:
+    radius_in_pix = int(diameter_in_um * 10000 / pixel_size_in_angst // 2)
+    left = max([0, center[1] - radius_in_pix])
+    up = max([0, center[0] - radius_in_pix])
+    right = min([max_x, center[1] + radius_in_pix])
+    down = min([max_y, center[0] + radius_in_pix])
+    return np.array([up, left, down, right])
+
+
 def auto_canny(image, limits=None, sigma=0.33, dilation=5):
     # compute the median of the single channel pixel intensities
     v = np.median(image)

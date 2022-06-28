@@ -12,6 +12,7 @@ from Smartscope.lib.config import *
 from Smartscope.core.test_commands import is_gpu_enabled, test_serialem_connection
 from Smartscope.core.utils.training_data import add_to_training_set
 from Smartscope.core.preprocessing_pipelines import highmag_processing
+from Smartscope.lib.montage import Montage, convert_centers_to_boxes, create_targets
 import numpy as np
 
 
@@ -20,14 +21,15 @@ logger = logging.getLogger(__name__)
 
 def add_holes(id, targets):
     instance = SquareModel.objects.get(pk=id)
-    montage, is_metadata = process_montage(instance, mag_level='square', working_dir=instance.grid_id.directory)
-    montage.targets = np.array(targets) + np.array([0, instance.shape_x])
-    montage.target_class = 'LatticeTarget'
-    montage.finder = 'Manual finder'
-    montage.classifier = None
-    montage.stage_z = instance.finders.all()[0].stage_z
-    targets = montage.create_targets(starting_index=len(instance.targets))
-    holes = add_targets(instance.grid_id, instance, targets, HoleModel)
+    montage = Montage(name=instance.name, working_dir=instance.grid_id.directory)
+    targets = np.array(targets) + np.array([0, instance.shape_x])
+    hole_size = holeSize if (holeSize := instance.grid_id.holeType.hole_size) is not None else 1.2
+    targets = list(map(lambda t: convert_centers_to_boxes(t, montage.pixel_size, montage.shape_x, montage.shape_y, hole_size), targets))
+    logger.debug(targets)
+    finder = 'Manual finder'
+    targets = create_targets(targets=targets, montage=montage, target_type='hole')
+    start_number = instance.base_target_query.order_by('-number').values_list('number', flat=True).first() + 1
+    holes = add_targets(grid=instance.grid_id, parent=instance, targets=targets, model=HoleModel, finder=finder, start_number=start_number)
     return holes
 
 

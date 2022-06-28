@@ -247,7 +247,7 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     return instance
 
 
-def add_targets(grid, parent, targets, model, finder, classifier=None, **extra_fields):
+def add_targets(grid, parent, targets, model, finder, classifier=None, start_number=0, **extra_fields):
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
     if model is SquareModel:
@@ -263,7 +263,7 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, **extra_f
         for ind, target in enumerate(targets):
             fields_dict = defaut_field_dict.copy()
 
-            fields_dict['number'] = ind
+            fields_dict['number'] = ind + start_number
             for field in fields:
                 val = getattr(target, field, None)
                 if val is not None and field not in fields_dict.keys():
