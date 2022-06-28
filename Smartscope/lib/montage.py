@@ -72,7 +72,6 @@ def closest_node(node, nodes, num=1):
 
 
 def pixel_to_stage(dist, tile, tiltAngle):
-    # apix = tile.binning_factor * tile.PixelSpacing / 10000
     apix = tile.PixelSpacing / 10000
     dist *= apix
     theta = radians(tile.RotationAngle)
@@ -184,11 +183,9 @@ def power_spectrum(im):
     f = np.fft.fft2(im)
     fshift = np.fft.fftshift(f)
     fabs = np.abs(fshift)
-    contrasted = auto_contrast_hole(fabs, sigmas=0.5, to_8bits=True)
+    contrasted = auto_contrast_sigma(fabs, sigmas=0.5, to_8bits=True)
     img = imutils.resize(contrasted, height=800)
-    # buffer = io.BytesIO()
     is_succes, buffer = cv2.imencode(".png", img)
-    # _, real = cv2.imencode(".png", imutils.resize(auto_contrast(im), height=400))
     return io.BytesIO(buffer)
 
 
@@ -202,15 +199,8 @@ def highpass(im, pixel_size, filter_size=4):
     size = round_up_to_odd(size)
 
     center = np.floor(np.array(im.shape) / 2).astype(int)
-
-    # filter = gkern(kernlen=size,std=5)
-    # filter = gaussian_kernel(size, max([5, int(size//30)]))
-    # filter /= np.min(filter)
-    # np.nan_to_num(filter, copy=False, nan=1)
-    # sz = np.floor(np.array(filter.shape)/2).astype(int)
     high = np.ones(im.shape)
     cv2.ellipse(high, (center[0], center[1]), (size[0], size[1]), 0.0, 0.0, 360.0, 0, -1)
-    # high[center[0]-sz[0]:center[0]+sz[0]+1, center[1]-sz[1]:center[1]+sz[1]+1] = filter
     padding = np.array(high.shape) * 0.002
     padding = padding.astype(int)
     high[center[0] - padding[0]:center[0] + padding[0], :] *= 0.2
@@ -466,25 +456,6 @@ class Movie(BaseImage):
     def check_metadata(self):
         if self.image_path.exists() and self.shifts.exists() and self.ctf.exists():
             return True
-        # self.metadata = parse_mdoc(self.mdoc, self.is_movie)
-
-    # def resize_montage(self, apix=-1, binning_factor=-1, fouriercrop=False):
-    #     if binning_factor > 0:
-    #         apix = self.pixel_size * binning_factor
-    #     elif apix > 0:
-    #         binning_factor = apix / self.pixel_size
-    #     elif 'apix' in self.__dict__:
-    #         binning_factor = self.apix / self.pixel_size
-
-    #     else:
-    #         binning_factor = 1
-    #     # self.metadata['binning_factor'] = binning_factor
-    #     binned_size = np.floor(np.array(self.image.shape) / binning_factor).astype(int)
-    #     if fouriercrop:
-    #         binned_img = fourier_crop(self.image, height=binned_size[0])
-    #     else:
-    #         binned_img = imutils.resize(self.image, height=binned_size[0])
-    #     return binned_img, apix, binned_size, round(binning_factor, 3)
 
 
 def find_targets(montage: Montage, methods: list):
@@ -509,27 +480,6 @@ def find_targets(montage: Montage, methods: list):
             return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None, targets_class
 
 
-# class Atlas(Montage):
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.type = 'atlas'
-#         self.target = "square"
-#         self.apix = 2800
-#         self.threshold = 30
-#         self.area_threshold = [8000, 200000]
-#         self.font_size = 14
-#         self.auto_contrast = auto_contrast
-#         self.auto_contrast_kwargs = dict(cutperc=[0.05, 0.01], to_8bits=True)
-#         self.template = np.load(os.path.join(os.getenv('TEMPLATE_FILES'), 'template.npy'))
-
-#     # def find_grid_mesh(self):
-#     #     pass
-
-#     # def find_mesh_material(self):
-#     #     pass
-
-
 def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):
     output_targets = []
     if isinstance(targets, tuple):
@@ -545,181 +495,6 @@ def create_targets(targets: List, montage: BaseImage, target_type: str = 'square
     output_targets.sort(key=lambda x: (x.stage_x, x.stage_y))
 
     return output_targets
-
-
-# class Square(Montage):
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.type = 'square'
-#         self.target = "hole"
-#         self.apix = 600
-#         self.area_threshold = [75, 1000]
-#         self.font_size = 7
-#         self.auto_contrast = auto_contrast
-#         self.auto_contrast_kwargs = dict(cutperc=[0.05, 0.01], to_8bits=True)
-#         self.target_class = HoleTarget
-
-#     def save(self):
-#         imlist = []
-#         result = cv2.cvtColor(self.montage.copy(), cv2.COLOR_GRAY2RGB)
-
-#         cv2.drawContours(result, [square_cont], -1, (0, 0, 255), cv2.LINE_AA)
-#         cv2.circle(result, tuple(self.centroid), 10, (0, 0, 255), cv2.FILLED)
-
-#         if len(cnts) > 0:
-#             for cnt in cnts:
-#                 cv2.drawContours(result, [cnt], -1, (0, 255, 0), cv2.FILLED)
-#         else:
-#             for t in self.targets:
-#                 cv2.circle(result, tuple(t), 10, (0, 255, 0), cv2.FILLED)
-#         mont_rgb = cv2.cvtColor(self.montage.copy(), cv2.COLOR_GRAY2RGB)
-#         imlist.append(mont_rgb)
-#         if fft_method:
-#             filter_rgb = cv2.cvtColor(np.uint8(pattern_filter * 255), cv2.COLOR_GRAY2RGB)
-#             product_rgb = cv2.cvtColor(product.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-#             imlist += [filter_rgb, product_rgb]
-#         imlist.append(result)
-#         save_image(np.hstack(imlist), self.name, extension='png', destination=self.name)
-
-#     def create_targets(self, starting_index=0):
-#         # THIS NEEDS TO BE REORGANIZED AND MOVED OUT OF THE CLASS
-#         targets = []
-#         self.target_class = eval(self.target_class)
-#         if isinstance(self.targets, tuple):
-#             self.targets, labels = self.targets
-#             for ind, (target, label) in enumerate(zip(self.targets, labels)):
-#                 t = self.target_class(hole_name=ind + starting_index, square_id=self.square_id, class_num=label)
-#                 t.analyze_target(target, self)
-#                 t.finder = self.finder
-#                 t.classifier = self.classifier
-#                 find_tile(self, t)
-#                 targets.append(t)
-#         else:
-#             for ind, target in enumerate(self.targets):
-#                 t = self.target_class(hole_name=ind + starting_index, square_id=self.square_id)
-#                 t.analyze_target(target, self, threshold=self.area_threshold)
-#                 t.finder = self.finder
-#                 t.classifier = self.classifier
-#                 find_tile(self, t)
-#                 targets.append(t)
-#         return targets
-
-
-# class Hole(Montage):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.type = 'hole'
-#         self.target = None
-#         self.apix = 88
-#         self.auto_contrast = auto_contrast_hole
-#         self.auto_contrast_kwargs = dict(sigmas=3, to_8bits=True)
-
-
-# class High_Mag(Montage):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.type = 'hole'
-#         self.target = None
-#         self.apix = 4
-#         self.fourier_crop = True
-#         self.auto_contrast = auto_contrast
-#         self.auto_contrast_kwargs = dict(cutperc=[0.5, 0.5])
-#         # self.binning_factor = 1
-
-
-# class Target:
-
-#     def __init__(self, *args, **kwargs):
-#         for key, value in kwargs.items():
-#             setattr(self, key, value)
-
-#     def analyze_target(self, shape, montage, threshold=4000):
-#         if self.type == 'square':
-#             self.draw_square(shape, montage.montage)
-#         elif self.type == 'hole':
-#             self.draw_hole(shape, montage.montage)
-
-#         if all([(montage.area_threshold[0] < self.area < montage.area_threshold[1]), self.x > montage.montage.shape[1] * 0.03,
-#                 self.x < montage.montage.shape[1] * 0.97,
-#                 self.y > montage.montage.shape[0] * 0.03,
-#                 self.y < montage.montage.shape[0] * 0.97]):
-#             if self.type == 'square':
-#                 is_cracked = self.find_cracks()
-
-#             else:
-#                 self.dist_from_center = sqrt((self.x - montage.x)**2 + (self.y - montage.y)**2)
-#             if is_cracked:
-#                 self.quality = 'cracked'
-#             else:
-#                 self.quality = 'good'
-#         else:
-#             self.quality = 'bad'
-
-#     def find_cracks(self, save=True):
-#         blurred = cv2.GaussianBlur(self.image, (5, 5), 0)
-
-#         result = cv2.cvtColor(self.image.copy(), cv2.COLOR_GRAY2RGB)
-
-#         (mu, sigma, a), is_fit = fit_gauss(blurred, min=150)
-#         if not is_fit:
-#             (mu, sigma, a), is_fit = fit_gauss(blurred, min=30)
-#         if mu < 100:
-#             sig = 3
-#         else:
-#             sig = 2
-
-#         threshold = min([230, int(mu + sigma * sig)])
-
-#         cnts, t = find_contours(blurred, threshold)
-#         cnts = [cnt for cnt in cnts if (200 < cv2.contourArea(cnt))]
-#         for cnt in cnts:
-#             cv2.drawContours(result, [cnt], -1, (0, 255, 0), cv2.FILLED)
-
-#         if len(cnts) > 0:
-#             logger.debug(f'Square {self._id} is cracked')
-#             return True
-#         else:
-#             logger.debug(f'Square {self._id} is good')
-#             return False
-
-
-# class SquareTarget(Target):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._id = self.square_name
-#         self.extract_size = 800000  # 80 um
-
-#     def draw_square(self, square, image):
-#         square = cv2.minAreaRect(square)
-#         contour = cv2.boxPoints(square).astype(int)
-
-#         self.area = cv2.contourArea(contour)
-#         self.x = int(np.sum(contour[:, 0]) // contour.shape[0])
-#         self.y = int(np.sum(contour[:, 1]) // contour.shape[0])
-
-#     def analyze_target(self, shape, montage, template):
-#         self.draw_square(shape, montage)
-#         # self.unbinned_x = int(floor(self.x * montage.binning_factor))
-#         # self.unbinned_y = int(floor(self.y * montage.binning_factor))
-#         half_box = int(floor(self.extract_size / montage.pixel_size / 2))
-#         # self.image = montage.image[max([0, self.unbinned_y - half_box]): min([montage.image.shape[0], self.unbinned_y + half_box]),
-#         #                                  max([0, self.unbinned_x - half_box]): min([montage.image.shape[1], self.unbinned_x + half_box])]
-
-#         self.image = montage.image[max([0, self.y - half_box]): min([montage.image.shape[0], self.y + half_box]),
-#                                    max([0, self.x - half_box]): min([montage.image.shape[1], self.x + half_box])]
-
-#         # save_mrc(os.path.join(montage._id, 'targets', f'{self._id}.mrc'), self.image, montage.pixel_size, [self.unbinned_x, self.unbinned_y])
-
-#         if all([self.x > montage.montage.shape[1] * 0.03,
-#                 self.x < montage.montage.shape[1] * 0.97,
-#                 self.y > montage.montage.shape[0] * 0.03,
-#                 self.y < montage.montage.shape[0] * 0.97,
-#                 ]):
-
-#             self.quality = decide_type(cv2.resize(self.image, (128, 128), interpolation=cv2.INTER_AREA), template)
-#         else:
-#             self.quality = 'bad'
 
 
 @dataclass
@@ -760,57 +535,3 @@ class AITarget:
         tile, dist = closest_node([self.x, self.y], montage.metadata.piece_center)
         self.stage_x, self.stage_y = pixel_to_stage(dist, montage.metadata.iloc[tile], montage.metadata.iloc[tile].TiltAngle)
         self.stage_z = montage.stage_z
-    # def analyze_target(self, shape, montage):
-    #     if isinstance(shape, list):
-    #         shape = np.array(shape).astype(np.float32)
-    #     if isinstance(shape, Tensor):
-    #         shape = shape.numpy().astype(np.float32)
-    #     self.get_center(shape, montage)
-    #     self.get_area(shape, montage)
-
-
-# class AISquareTarget(AITarget):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.shape_type = 'square'
-
-
-# class AIHoleTarget(AITarget):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.shape_type = 'hole'
-
-
-# class HoleTarget(Target):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._id = self.hole_name
-#         # self.extract_size = 70000  # 6um
-
-#     def draw_hole(self, hole, image):
-#         (x, y), radius = cv2.minEnclosingCircle(hole)
-#         self.x = int(x)
-#         self.y = int(y)
-#         self.radius = int(radius)
-#         self.area = np.pi * (radius ** 2)
-
-#     def analyze_target(self, shape, montage, threshold=4000):
-#         self.draw_hole(shape, montage.montage)
-
-
-# class LatticeTarget(Target):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._id = self.hole_name
-#         self.extract_size = 70000  # 7um
-
-#     def draw_target(self, hole, pixel_size):
-#         (x, y), radius = hole, 12000 // pixel_size
-#         self.x = int(x)
-#         self.y = int(y)
-#         self.radius = radius
-
-#         self.area = np.pi * (radius ** 2)
-
-#     def analyze_target(self, shape, montage, threshold=4000):
-#         self.draw_target(shape, montage.pixel_size)
