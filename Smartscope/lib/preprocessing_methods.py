@@ -62,7 +62,7 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
     logger.info(f'Processing {frames_file_name}')
     directory, frames_file = locate_file_in_directories(directory_list=frames_directories, file_name=frames_file_name)
     if directory is None:
-        logger.info(f"Frames not found in {', '.join(frames_directories)}. Skipping.")
+        logger.info(f"Frames not found in {frames_directories}. Skipping.")
         return movie
     mdoc = Path(directory, f'{frames_file_name}.mdoc')
     if not mdoc.exists():
