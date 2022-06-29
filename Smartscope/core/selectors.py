@@ -43,7 +43,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         montage = Montage(**parent.__dict__, working_dir=parent.grid_id.directory)
         montage.create_dirs()
     if save:
-        img = cv2.bilateralFilter(auto_contrast(montage.raw_montage.copy()), 30, 75, 75)
+        img = cv2.bilateralFilter(auto_contrast(montage.image.copy()), 30, 75, 75)
     for target in targets:
         finder = list(target.finders.all())[0]
         x, y = finder.x, finder.y

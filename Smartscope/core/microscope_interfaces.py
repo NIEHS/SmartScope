@@ -10,6 +10,10 @@ from Smartscope.lib.file_manipulations import generate_fake_file
 logger = logging.getLogger(__name__)
 
 
+class CartridgeLoadingError(Exception):
+    pass
+
+
 class SerialemInterface(MicroscopeInterface):
 
     def checkDewars(self, wait=30):
@@ -205,6 +209,8 @@ class SerialemInterface(MicroscopeInterface):
                 sem.LoadCartridge(position)
             logger.info(f'Grid {position} is loaded')
             sem.Delay(5)
+            if sem.ReportSlotStatus(position) != 0:
+                raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
 
 

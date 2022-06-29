@@ -1,7 +1,9 @@
-from django.conf import settings
 import subprocess as sub
 import shlex
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def send_to_worker(hostname: str, script: str, arguments: list = [], kw_arguments: dict = dict(), communicate=False, timeout=15):
@@ -24,7 +26,7 @@ def send_to_worker(hostname: str, script: str, arguments: list = [], kw_argument
             stdout = sub.DEVNULL
             stderr = sub.DEVNULL
 
-    print(command)
+    logger.info(command)
     # print(os.environ)
 
     proc = sub.Popen(shlex.split(command), stdout=stdout, stderr=stderr, env=env)
@@ -35,5 +37,5 @@ def send_to_worker(hostname: str, script: str, arguments: list = [], kw_argument
         except sub.TimeoutExpired:
             proc.kill()
             outs, errs = proc.communicate()
-        print('OUTPUT:', outs.decode('utf-8'), '\nERRORS:', errs.decode('utf-8'))
+        logger.info(f'OUTPUT: {outs}\nERRORS: {errs}')
         return outs, errs

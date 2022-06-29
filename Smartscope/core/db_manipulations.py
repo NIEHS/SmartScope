@@ -1,4 +1,5 @@
 
+from typing import Any, Callable, List, Union
 from Smartscope.lib.config import load_plugins
 from Smartscope.core.models import *
 from scipy.spatial.distance import cdist
@@ -8,8 +9,7 @@ import logging
 from django.db.models.query import prefetch_related_objects
 from django.db import transaction
 from datetime import timedelta
-from Smartscope.lib.converters import *
-from Smartscope.server.api.serializers import *
+from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.contenttypes.models import ContentType
@@ -20,24 +20,30 @@ logger = logging.getLogger(__name__)
 
 class Websocket_update_decorator:
 
-    def __init__(self, f=None, grid=None):
+    def __init__(self, f: Callable[[Any], List[Any]] = None, grid: Union[AutoloaderGrid, None] = None):
         self.f = f
         self.grid = grid
 
     def __call__(self, *args, **kwargs):
-        obj = self.f(*args, **kwargs)
+        objs = outputs = self.f(*args, **kwargs)
+        if not isinstance(outputs, list):
+            objs = [objs]
         if self.grid is not None:
+            websocket_update(objs, self.grid.grid_id)
 
-            channel_layer = get_channel_layer()
-            if obj.__class__.__name__ in models_to_serializers.keys():
-                outputDict = {'type': 'update.metadata',
-                              'update': {}}
+        return outputs
 
-                logger.debug(f'Updating {obj}, sending to websocket {self.grid.grid_id} group')
-                outputDict['update'] = update_to_fullmeta([obj])
-                async_to_sync(channel_layer.group_send)(self.grid.grid_id, outputDict)
 
-        return obj
+def websocket_update(objs, grid_id):
+
+    channel_layer = get_channel_layer()
+
+    outputDict = {'type': 'update.metadata',
+                  'update': {}}
+
+    logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')
+    outputDict['update'] = update_to_fullmeta(objs)
+    async_to_sync(channel_layer.group_send)(grid_id, outputDict)
 
 
 def update_target(data):
@@ -241,41 +247,7 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     return instance
 
 
-# def add_targets(grid, parent, targets, model, **extra_fields):
-#     output = []
-#     defaut_field_dict = dict(grid_id=grid, **extra_fields)
-#     if model is SquareModel:
-#         defaut_field_dict['atlas_id'] = parent
-#     elif model is HoleModel:
-#         defaut_field_dict['square_id'] = parent
-#     elif model is HighMagModel:
-#         defaut_field_dict['hole_id'] = parent
-#     fields = get_fields_names(model)
-
-#     # all_objects = model.objects.all().filter(**defaut_field_dict)
-#     with transaction.atomic():
-#         for target in targets:
-#             fields_dict = defaut_field_dict.copy()
-
-#             fields_dict['number'] = target._id
-#             for field in fields:
-#                 val = getattr(target, field, None)
-#                 if val is not None and field not in fields_dict.keys():
-#                     fields_dict[field] = val
-
-#             obj = model(**fields_dict)
-#             output.append(obj.save())
-
-#     return output
-
-# def fill_fields(model, target):
-#     fields = get_fields_names(model)
-#     for field in fields:
-#         val = getattr(target, field, None)
-#         if val is not None and field not in fields_dict.keys():
-#             fields_dict[field] = val
-
-def add_targets(grid, parent, targets, model, **extra_fields):
+def add_targets(grid, parent, targets, model, finder, classifier=None, start_number=0, **extra_fields):
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
     if model is SquareModel:
@@ -288,10 +260,10 @@ def add_targets(grid, parent, targets, model, **extra_fields):
     model_content_type_id = ContentType.objects.get_for_model(model)
     # all_objects = model.objects.all().filter(**defaut_field_dict)
     with transaction.atomic():
-        for target in targets:
+        for ind, target in enumerate(targets):
             fields_dict = defaut_field_dict.copy()
 
-            fields_dict['number'] = target._id
+            fields_dict['number'] = ind + start_number
             for field in fields:
                 val = getattr(target, field, None)
                 if val is not None and field not in fields_dict.keys():
@@ -301,17 +273,17 @@ def add_targets(grid, parent, targets, model, **extra_fields):
             obj = obj.save()
             output.append(obj)
 
-            finder = Finder(content_type=model_content_type_id, object_id=obj.pk, method_name=target.finder,
-                            x=getattr(target, 'x', None),
-                            y=getattr(target, 'y', None),
-                            stage_x=getattr(target, 'stage_x', None),
-                            stage_y=getattr(target, 'stage_y', None),
-                            stage_z=getattr(target, 'stage_z', None))
-            output.append(finder.save())
-            if target.classifier is not None:
-                classifier = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=target.classifier,
-                                        label=getattr(target, 'quality', None))
-                output.append(classifier.save())
+            finder_model = Finder(content_type=model_content_type_id, object_id=obj.pk, method_name=finder,
+                                  x=target.x,
+                                  y=target.y,
+                                  stage_x=target.stage_x,
+                                  stage_y=target.stage_y,
+                                  stage_z=target.stage_z)
+            finder_model.save()
+            if classifier is not None:
+                classifier_model = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=classifier,
+                                              label=target.quality)
+                classifier_model.save()
 
     return output
 

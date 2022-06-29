@@ -863,7 +863,7 @@ class SquareModel(Target, ExtraPropertyMixin):
 class HoleModel(Target, ExtraPropertyMixin):
 
     hole_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    dist_from_center = models.FloatField(null=True)
+    # dist_from_center = models.FloatField(null=True)
     radius = models.IntegerField()  # Can be removed and area can be put in the target class
     area = models.FloatField()
     square_id = models.ForeignKey(SquareModel, on_delete=models.CASCADE, to_field='square_id')
@@ -960,6 +960,7 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     astig = models.FloatField(null=True)
     angast = models.FloatField(null=True)
     ctffit = models.FloatField(null=True)
+    completion_time = models.DateTimeField(null=True)
 
     # aliases
     objects = HighMagImageManager()

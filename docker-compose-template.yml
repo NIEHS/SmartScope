@@ -2,7 +2,7 @@ version: "3"
 services:
   smartscope:
     image: localhost/smartscope:0.62
-    # container_name: smartscope
+    container_name: smartscope
     build:
       context: .
       args:
@@ -46,10 +46,10 @@ services:
               capabilities: [ gpu ]
   db:
     image: mariadb:10.5
-    # container_name: smartscope-db
+    container_name: smartscope-db
     restart: always
-    # ports:
-    #   - 6603:3306
+    ports:
+      - 6603:3306
     volumes:
       - /auto_screening/tmp/test_db3/:/var/lib/mysql
     environment:

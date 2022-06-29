@@ -7,6 +7,15 @@ import cv2
 import imutils
 
 
+def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max_x: float, max_y: float, diameter_in_um: float = 1.2) -> np.ndarray:
+    radius_in_pix = int(diameter_in_um * 10000 / pixel_size_in_angst // 2)
+    left = max([0, center[1] - radius_in_pix])
+    up = max([0, center[0] - radius_in_pix])
+    right = min([max_x, center[1] + radius_in_pix])
+    down = min([max_y, center[0] + radius_in_pix])
+    return np.array([up, left, down, right])
+
+
 def extract_from_image(image, center: tuple, apix: float, binned_apix: float = -1, box_size: float = 2):
     if binned_apix == -1:
         binned_apix = apix
@@ -63,7 +72,7 @@ def auto_contrast(img, cutperc=[0.05, 0.01], to_8bits=True):
         return img
 
 
-def auto_contrast_hole(img, sigmas=3, to_8bits=True):
+def auto_contrast_sigma(img, sigmas=3, to_8bits=True):
     mean = floor(np.mean(img))
     sigma = floor(np.std(img))
     im_max = np.max(img)
@@ -72,8 +81,6 @@ def auto_contrast_hole(img, sigmas=3, to_8bits=True):
     min_side = max(im_min, mean - sigmas * sigma)
     max_side = min(im_max, mean + sigmas * sigma) - min_side
 
-    # print('Using auto_contrast_hole', min_side, max_side + min_side)
-    # print('Mean ', mean, 'Std ', sigma)
     img = (img.astype('float32') - min_side) / (max_side)
     img[img < 0] = 0
     img[img > 1] = 1
@@ -83,26 +90,19 @@ def auto_contrast_hole(img, sigmas=3, to_8bits=True):
         return img
 
 
-def save_image(img, filename, extension='png', resize_to=None, destination=None):
+def save_image(img, filename, extension='png', resize_to: int = None, destination=None):
     if resize_to is not None:
         img = imutils.resize(img, width=resize_to)
-    # if extension == 'tif':
-    #     if destination is None:
-    #         destination = 'tiffs'
-    #     tiff = TIFF.open(os.path.join(destination, f'{filename}.{extension}'), mode='w')
-    #     tiff.write_image(img)
-    #     tiff.close()
 
-    if extension == 'png':
-        if destination is None:
-            destination = 'pngs'
-        file = os.path.join(destination, f'{filename}.{extension}')
-        if os.path.isfile(file):
-            os.rename(file, os.path.join(destination, f'{filename}_old.{extension}'))
-        cv2.imwrite(file, img)
+    if destination is None:
+        destination = 'pngs'
+    file = os.path.join(destination, f'{filename}.{extension}')
+    if os.path.isfile(file):
+        os.rename(file, os.path.join(destination, f'{filename}_old.{extension}'))
+    cv2.imwrite(file, img)
 
 
-def mrc_to_png(mrc_file):
+def mrc_to_png(mrc_file, ):
     with mrcfile.open(mrc_file) as mrc:
         img = mrc.data[0]
     img = to_8bits(img)

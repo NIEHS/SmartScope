@@ -18,17 +18,16 @@ django.setup()
 import sys
 import logging
 from Smartscope.core.main_commands import main
-from Smartscope.lib.logger import default_logger
+# from Smartscope.lib.logger import default_logger
 
-proclog = logging.getLogger('processing')
-mainlog = logging.getLogger('autoscreen')
+logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
 
     # default logger
-    default_logger()
+    # default_logger()
 
     args = sys.argv[1:]
-    mainlog.debug(args)
+    logger.debug(args)
     main(args)
