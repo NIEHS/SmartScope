@@ -98,8 +98,9 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 self.to_process_queue.put([from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)])
 
     def stop(self):
-        self.to_process_queue.put(['exit'] * len(self.child_process))
+
         for proc in self.child_process:
+            self.to_process_queue.put('exit')
             proc.join()
         logger.debug('Process joined')
         # os.killpg(0, signal.SIGINT)
