@@ -1,4 +1,5 @@
 import cv2
+from cv2 import circle
 import numpy as np
 import imutils
 import matplotlib as mpl
@@ -6,9 +7,11 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from math import floor, degrees, atan, cos, sin, radians
 from .calc_angle_spacing import calc_angle_spacing
-from Smartscope.lib.image_manipulations import to_8bits, auto_contrast
-
+from Smartscope.lib.image_manipulations import convert_centers_to_boxes, save_image, to_8bits, auto_contrast
+import logging
 mpl.use('Agg')
+
+logger = logging.getLogger(__name__)
 
 
 def find_contours(im, thresh):
@@ -90,10 +93,10 @@ def find_squares(montage, threshold=30):
     return cnts, True, 'SquareTarget', None
 
 
-def find_square(montage):
-    thresh = np.mean(montage.montage)
-    hist = plot_hist_gauss(montage.montage, thresh, size=montage.montage.shape[0])
-    contours, _ = find_contours(montage.montage, thresh)
+def find_square(image):
+    thresh = np.mean(image)
+    hist = plot_hist_gauss(image, thresh, size=image.shape[0])
+    contours, _ = find_contours(image, thresh)
     contour = [cnt for cnt in contours if (1000 < cv2.contourArea(cnt))][0]
     M = cv2.moments(contour)
     cX = int(M["m10"] / M["m00"])
@@ -159,47 +162,65 @@ def fourrier_filter(im, ang, coords):
     return rev
 
 
-def fft_method(montage):
+def fft_method(montage, diameter_in_um=1.2):
     """ Finds the spacing and angle by finding peaks in the 2D power spectrum of the image. """
-    orientation, spacing, square_cont, ratio = calc_angle_spacing(montage.raw_montage)
+    orientation, spacing, square_cont, ratio = calc_angle_spacing(montage.image)
     square_angle = square_cont[0] - square_cont[1]
     square_angle = degrees(atan(square_angle[0] / square_angle[1]))
-    square_cont = square_cont // montage.binning_factor
-    square_cont = square_cont.astype(int)
-    centroid = np.array([np.sum(square_cont[:, 0]) / square_cont.shape[0],
-                         np.sum(square_cont[:, 1]) / square_cont.shape[0]]).astype(int)
+    bit8_montage = auto_contrast(montage.image)
+    bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
+    square, _, _ = find_square(bit8_montage)
+    mask = np.zeros(bit8_montage.shape, dtype="uint8")
+    cv2.drawContours(mask, [square], -1, 255, cv2.FILLED)
+    cv2.drawContours(bit8_color, [square], -1, (255, 0, 0), 20)
     dist_pix = 1 / spacing / ratio
     dist = dist_pix / (montage.pixel_size / 10000)
     orientation = 90 - square_angle - orientation
-    print(f'Found holey pattern of {round(dist,2)} \u03BCm at {round(orientation,2)}\u00B0')
-    pattern_filter = fourrier_filter(montage.montage, orientation, 1 / dist_pix)
-    product = pattern_filter * montage.montage
-    cnts, t = find_contours(product, 80)
-    cnts = [cnt for cnt in cnts if (75 < cv2.contourArea(cnt) < 2000)]
-    return cnts, True, 'HoleTarget', centroid
+    logger.info(f'Found holey pattern of {round(dist,2)} \u03BCm at {round(orientation,2)}\u00B0')
+    pattern_filter = fourrier_filter(montage.image, orientation, 1 / dist_pix)
+    product = pattern_filter * mask
+    cnts, t = find_contours(product, 254)
+    logger.debug(f'Adding {len(cnts)} holes to square')
+    outputs = []
+    radius_in_pix = int(diameter_in_um * 10000 / montage.pixel_size // 2)
+    for cnt in cnts:
+        center, radius = cv2.minEnclosingCircle(cnt)
+        if radius_in_pix * 0.7 < radius < radius_in_pix * 1.5:
+            logger.debug(f'{center}, {radius}')
+            outputs.append(convert_centers_to_boxes(center, montage.pixel_size,
+                                                    montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
+            cv2.circle(bit8_color, np.array(center).astype(int), int(radius), (0, 255, 0), cv2.FILLED)
+    save_image(bit8_color, 'fft_method', destination=montage.directory, resize_to=512)
+    return outputs, True
 
 
-def regular_pattern(montage, spacing=5):
+def regular_pattern(montage, spacing_in_um=3, diameter_in_um=1.2):
     """ Applies a regular pattern of targets on the image. """
-    _, centroid, _ = find_square(montage)
-    spacing *= 10000
-    target_area = int(floor(5000 / montage.apix))
-    pixel_spacing = int(floor(spacing / montage.apix))
-    n_pt = np.floor(montage.binned_size / pixel_spacing).astype(int)
+    radius_in_pix = int(diameter_in_um * 10000 / montage.pixel_size // 2)
+    pixel_spacing = int(floor(spacing_in_um * 10000 // montage.pixel_size))
+    n_pt_x = int(montage.shape_x // pixel_spacing)
+    n_pt_y = int(montage.shape_y // pixel_spacing)
+    logger.info(f'Initiaing a {n_pt_x*n_pt_y} points lattice')
+    bit8_montage = auto_contrast(montage.image)
+    bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
+    square, _, _ = find_square(bit8_montage)
+    output = []
+    mask = np.zeros(bit8_montage.shape, dtype="uint8")
+    cv2.drawContours(mask, [square], -1, 255, cv2.FILLED)
+    cv2.drawContours(bit8_color, [square], -1, (255, 0, 0), 20)
 
-    # thresh = cv2.threshold(montage.montage, mu - 4 * sigma, 255, cv2.THRESH_BINARY)[1]
-    # t = cv2.convertScaleAbs(thresh)
-    ar = []
-    for x in range(n_pt[1]):
+    for x in range(n_pt_x):
         x *= pixel_spacing
-        for y in range(n_pt[0]):
+        for y in range(n_pt_y):
             y *= pixel_spacing
-            m = np.mean(montage.montage[y - target_area:y + target_area, x - target_area:x + target_area])
-            if m > 120:
-                ar.append([x, y])
-    array = np.array(ar) * montage.binning_factor
-    # array *= montage.binning_factor
-    return array, True, 'LatticeTarget', centroid
+            cv2.circle(bit8_color, [y, x], radius_in_pix, (0, 0, int(mask[x, y])), cv2.FILLED)
+            if mask[y, x] == 255:
+                output.append(convert_centers_to_boxes(np.array([x, y]), montage.pixel_size,
+                              montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
+    logger.info(f'Filtered a total of {len(output)} targets within the square')
+    save_image(bit8_color, 'regular_pattern', destination=montage.directory, resize_to=512)
+    # logger.debug(output)
+    return output, True
 
 
 def find_square_center(img):

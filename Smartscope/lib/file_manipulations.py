@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 
-from math import cos, radians
+
 import os
 import time
 import shutil
 import sys
 import random
-
-from cv2 import resize
-from .montage import Atlas, Square, Hole, High_Mag, save_image
+from typing import List, Union
+from .montage import Montage
 from collections import namedtuple
 from datetime import datetime
 import glob
 import logging
+from pathlib import Path
 
 
-# logger = logging.getLogger('processing')
-# logger = logging.getLogger('autoscreen')
 logger = logging.getLogger(__name__)
 
 
@@ -55,20 +53,20 @@ def copy_file(file, remove=True):
     return split_path(new_file)
 
 
-def process_montage(obj, mag_level='atlas', save=True, raw_only=False, frames=False, force_reprocess=False, **kwargs):
-    MAG_LEVELS = {'atlas': Atlas, 'square': Square, 'hole': Hole, 'high_mag': High_Mag}
-    try:
-        montage = MAG_LEVELS[mag_level.lower()](**obj.__dict__, **kwargs)
-    except Exception as err:
-        logger.error(err)
-    is_metadata = montage.create_dirs(force_reproces=force_reprocess)
-    if not is_metadata:
-        montage.parse_mdoc(file=obj.raw)
-        montage.build_montage(raw_only=raw_only)
-        save_image(montage.montage, montage._id, extension='png')
-        if save:
-            montage.save_metadata()
-    return montage, is_metadata
+# def process_montage(obj, mag_level='atlas', save=True, raw_only=False, frames=False, force_reprocess=False, **kwargs):
+#     MAG_LEVELS = {'atlas': Atlas, 'square': Square, 'hole': Hole, 'high_mag': High_Mag}
+#     try:
+#         montage = MAG_LEVELS[mag_level.lower()](**obj.__dict__, **kwargs)
+#     except Exception as err:
+#         logger.error(err)
+#     is_metadata = montage.create_dirs(force_reproces=force_reprocess)
+#     if not is_metadata:
+#         montage.parse_mdoc(file=obj.raw)
+#         montage.build_montage(raw_only=raw_only)
+#         save_image(montage.montage, montage._id, extension='png')
+#         if save:
+#             montage.save_metadata()
+#     return montage, is_metadata
 
 
 def get_file(file, remove=True):
@@ -134,7 +132,13 @@ def create_scope_dirs(scope_path):
             os.mkdir(d)
 
 
-def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
+def create_grid_directories(path: str) -> None:
+    path = Path(path)
+    for directory in [path, path / 'raw', path / 'pngs']:
+        directory.mkdir(exist_ok=True)
+
+
+def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
     logger.info(f"Generating fake {file} from {funcname}")
     TEST_FILES_ROOT = os.getenv('TEST_FILES')
     dirs = dict(atlas=os.path.join(TEST_FILES_ROOT, 'atlas'),
@@ -158,3 +162,20 @@ def generate_fake_file(file, funcname, sleeptime=7, destination_dir=os.getenv('M
         shutil.copy(f'{randomfile}.mdoc', f'{destination}.mdoc')
     logger.info(f'Sleeping {sleeptime} sec to mimic scope acquisition')
     time.sleep(sleeptime)
+
+
+def locate_file_in_directories(directory_list: List[str], file_name: str) -> Union[str, None]:
+    """Locate a file from a list of possible locations and return the directory in which it was found or None if it couldn't be found"""
+    for directory in directory_list:
+        path = Path(directory, file_name)
+        if path.exists():
+            return directory, path
+    return None, None
+
+
+def get_file_and_process(raw, name, directory=''):
+    if not os.path.isfile(raw):
+        path = os.path.join(directory, raw)
+        get_file(path, remove=True)
+    montage = Montage(name)
+    return montage

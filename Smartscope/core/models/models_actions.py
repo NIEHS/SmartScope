@@ -1,3 +1,4 @@
+from typing import Dict
 from .session import Finder, Classifier, Selector
 from django.contrib.contenttypes.models import ContentType
 from Smartscope.lib.config import deep_get, load_plugins
@@ -23,3 +24,9 @@ def targets_methods(instance):
     return dict(finders=[deep_get(plugins, finder) for finder in finders],
                 classifiers=[deep_get(plugins, classifier) for classifier in classifiers],
                 selectors=[deep_get(plugins, selector) for selector in selectors])
+
+
+def update_fields(instance, fields: Dict):
+    for key, val in fields.items():
+        setattr(instance, key, val)
+    return instance

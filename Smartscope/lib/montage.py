@@ -1,5 +1,9 @@
 #! /usr/bin/env python
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
 import time
+from typing import List, Union
 import cv2
 import mrcfile
 import os
@@ -14,18 +18,15 @@ from math import radians, sin, cos, floor, sqrt, degrees, atan2
 from scipy.spatial.distance import cdist
 import pandas as pd
 import math
-from Smartscope.lib.generic_position import GenericPosition
+from Smartscope.lib.generic_position import parse_mdoc
 from Smartscope.lib.Classifiers.basic_pred import decide_type
 from Smartscope.lib.Finders.basic_finders import *
-from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_hole, save_image, mrc_to_png, fourier_crop
+from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma, save_image, mrc_to_png, fourier_crop
 from torch import Tensor
-import subprocess as sub
-import shlex
 import logging
 
 mpl.use('Agg')
 
-# logger = logging.getLogger('processing')
 logger = logging.getLogger(__name__)
 
 
@@ -62,13 +63,6 @@ def quantize(x, mi=-3, ma=3, dtype=np.uint8):
     return x
 
 
-def find_tile(montage, target):
-    bin_center = montage.metadata.piece_center  # / montage.metadata.binning_factor
-    tile, dist = closest_node([target.x, target.y], bin_center)
-    target.stage_x, target.stage_y = pixel_to_stage(dist, montage.metadata.iloc[tile], montage.metadata.iloc[tile].TiltAngle)
-    target.stage_z = montage.stage_z
-
-
 def closest_node(node, nodes, num=1):
     nodes = np.stack((nodes))
     cd = cdist([node], nodes)
@@ -78,7 +72,6 @@ def closest_node(node, nodes, num=1):
 
 
 def pixel_to_stage(dist, tile, tiltAngle):
-    # apix = tile.binning_factor * tile.PixelSpacing / 10000
     apix = tile.PixelSpacing / 10000
     dist *= apix
     theta = radians(tile.RotationAngle)
@@ -87,72 +80,6 @@ def pixel_to_stage(dist, tile, tiltAngle):
     specimen_dist = np.sum(R * np.reshape(dist, (-1, 1)), axis=0)
     coords = tile.StagePosition + specimen_dist / np.array([1, cos(radians(round(tiltAngle, 1)))])
     return np.around(coords, decimals=3)
-
-
-def find_contours(im, thresh):
-    thresh = cv2.threshold(im, thresh, 255, cv2.THRESH_BINARY)[1]
-    t = cv2.convertScaleAbs(thresh)
-    cnts = cv2.findContours(t.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    return cnts, t
-
-
-def gauss(x, mu, sigma, A):
-    return A * np.exp(- ((x - mu) ** 2) / (2 * sigma ** 2))
-
-
-def fit_gauss(blur, min=40, max=255):
-    bins = max - min
-    flat_blur = blur.flatten()
-    flat_blur = flat_blur[(flat_blur > min) & (flat_blur < max)]
-    y, x, _ = plt.hist(flat_blur, bins=bins)
-    peak = np.argmax(y)
-    amax = np.max(y)
-    std = [-1, -1]
-    for i in range(peak, int(bins), 1):
-        if y[i] <= amax * 0.25:
-            std[1] = i - peak
-            break
-    for i in range(peak, 0, -1):
-        if y[i] <= amax * 0.25:
-            std[0] = peak - i
-            break
-
-    std = np.mean(np.array([abs(i) for i in std if i >= 0]))
-
-    expected = (x[peak], std, amax)
-    try:
-        params, cov = curve_fit(gauss, x[:-1], y, expected)
-        return params, True
-    except Exception as err:
-        logger.debug('Could not fit gaussian, passing expected params')
-        return expected, False
-
-
-def plot_hist_gauss(image, thresh, mu=None, sigma=None, a=None, size=254):
-    mydpi = 300
-    fig = plt.figure(figsize=(5, 5), dpi=mydpi)
-    ax = fig.add_subplot(111)
-    flat = image.flatten()
-    ax.hist(flat, bins=200, label='Distribution')
-    x = np.linspace(0, 255, 100)
-    if all([mu is not None, sigma is not None, a is not None]):
-        ax.plot(x, gauss(x, mu, sigma, a), color='red', lw=3, label='gaussian')
-
-    if mu is None:
-        mu = np.mean(flat)
-    ax.axvline(mu, c='orange', label='mean')
-    ax.axvline(thresh, c='green', label='threshold')
-    ax.title.set_text('Histogram')
-    ax.set_xlabel('Pixel intensity')
-    ax.set_ylabel('Counts')
-    ax.legend()
-    fig.canvas.draw()
-    hist = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-    hist = hist.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    hist = imutils.resize(hist, height=size)
-    plt.close(fig='all')
-    return hist
 
 
 def plot_hist(image, size=254, **kwargs):
@@ -190,11 +117,9 @@ def power_spectrum(im):
     f = np.fft.fft2(im)
     fshift = np.fft.fftshift(f)
     fabs = np.abs(fshift)
-    contrasted = auto_contrast_hole(fabs, sigmas=0.5, to_8bits=True)
+    contrasted = auto_contrast_sigma(fabs, sigmas=0.5, to_8bits=True)
     img = imutils.resize(contrasted, height=800)
-    # buffer = io.BytesIO()
     is_succes, buffer = cv2.imencode(".png", img)
-    # _, real = cv2.imencode(".png", imutils.resize(auto_contrast(im), height=400))
     return io.BytesIO(buffer)
 
 
@@ -208,15 +133,8 @@ def highpass(im, pixel_size, filter_size=4):
     size = round_up_to_odd(size)
 
     center = np.floor(np.array(im.shape) / 2).astype(int)
-
-    # filter = gkern(kernlen=size,std=5)
-    # filter = gaussian_kernel(size, max([5, int(size//30)]))
-    # filter /= np.min(filter)
-    # np.nan_to_num(filter, copy=False, nan=1)
-    # sz = np.floor(np.array(filter.shape)/2).astype(int)
     high = np.ones(im.shape)
     cv2.ellipse(high, (center[0], center[1]), (size[0], size[1]), 0.0, 0.0, 360.0, 0, -1)
-    # high[center[0]-sz[0]:center[0]+sz[0]+1, center[1]-sz[1]:center[1]+sz[1]+1] = filter
     padding = np.array(high.shape) * 0.002
     padding = padding.astype(int)
     high[center[0] - padding[0]:center[0] + padding[0], :] *= 0.2
@@ -226,52 +144,6 @@ def highpass(im, pixel_size, filter_size=4):
     F = fabs * np.exp(1j * fang)
     reversed = to_8bits(np.real(np.fft.ifft2(np.fft.ifftshift(F))))
     return reversed, fabs
-
-
-def find_pattern(image, apix, plot=False, saveLoc=None, thresh=100, highpass_res=4):
-    smallest_distance = 0
-    smallest_distance_pix = 0
-    stack = None
-    angle = 0
-    hp, fft = highpass(image, apix, filter_size=highpass_res)
-
-    center = np.array(fft.shape) // 2
-    cropped = fft[center[0]:center[0] + int(center[0] // 2), center[1]:center[1] + int(center[1] // 2)]
-    cropped_rgb = cv2.cvtColor(cropped, cv2.COLOR_GRAY2RGB)
-    cnts, t = find_contours(cropped, thresh)
-
-    min_t, max_t = cropped.shape[0] * 0.005, cropped.shape[0] * 0.05
-    cnts = [cnt for cnt in cnts if (min_t <= cv2.contourArea(cnt) <= max_t)]
-
-    for cnt in cnts:
-        cv2.drawContours(cropped_rgb, [cnt], -1, (255, 0, 0))
-        mask = np.zeros(cropped.shape, np.uint8)
-        cv2.drawContours(mask, [cnt], 0, 255, -1)
-        _, max_val, _, max_loc = cv2.minMaxLoc(cropped, mask=mask)
-        if 0 not in max_loc and max_val > 100:
-            cropped_rgb[max_loc[::-1]] = [0, 0, 255]
-            dist_pix = np.sqrt(np.sum((np.array(max_loc) / np.array(image.shape))**2))
-            dist = 1 / dist_pix * apix / 10000
-            ang = degrees(atan2(*max_loc[::-1]))
-
-            if dist > smallest_distance:
-                smallest_distance = dist
-                smallest_distance_pix = np.array(max_loc)
-                angle = ang
-
-    if plot:
-        extracted_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        hp_rgb = cv2.cvtColor(to_8bits(hp), cv2.COLOR_GRAY2RGB)
-        fft_rgb = cv2.cvtColor(fft, cv2.COLOR_GRAY2RGB)
-        hist_cropped = plot_hist(cropped, size=image.shape[0], threshold=thresh)
-        crop_rgb = imutils.resize(cropped_rgb, height=image.shape[0])
-        stack = np.hstack([extracted_rgb, hp_rgb, fft_rgb, crop_rgb, hist_cropped])
-        if saveLoc is not None:
-            cv2.imwrite(saveLoc, stack)
-    if len(cnts) > 0:
-        return smallest_distance, angle, smallest_distance_pix
-    else:
-        return None, None, None
 
 
 def plot_thresholds(im, blur, thresh, thresholded, cnts, file, mu=None, sigma=None, a=None, polygon='Circle'):
@@ -320,61 +192,103 @@ def round_up_to_odd(f):
     return odd.astype(int)
 
 
-class Montage(GenericPosition):
+@dataclass
+class BaseImage(ABC):
 
-    def __init__(self, working_dir='', **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    name: str
+    working_dir: str = ''
+    # fourier_crop: bool = False
+    is_movie: bool = False
+    metadata: Union[pd.DataFrame, None] = None
 
-        self._id = self.name
-        if working_dir != '':
-            os.chdir(working_dir)
-        self.metadataFile = f'{self._id}/{self._id}_metadata.pkl'
-        self.fourier_crop = False
+    @property
+    def directory(self):
+        return Path(self.working_dir, self.name)
+
+    @property
+    def image_path(self):
+        return Path(self.directory, f'{self.name}.mrc')
+
+    @property
+    def metadataFile(self):
+        return Path(self.directory, f'{self.name}_metadata.pkl')
+
+    @property
+    def png(self):
+        return Path(self.working_dir, 'pngs', f'{self.name}.png')
+
+    @property
+    def raw(self):
+        return Path(self.working_dir, 'raw', f'{self.name}.mrc')
+
+    @property
+    def mdoc(self):
+        return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
+
+    @property
+    def shape_x(self):
+        return self.image.shape[0]
+
+    @property
+    def shape_y(self):
+        return self.image.shape[1]
+
+    @property
+    def stage_z(self):
+        return self.metadata.iloc[0].StageZ
+
+    @property
+    def pixel_size(self):
+        return self.metadata.iloc[0].PixelSpacing
+
+    @property
+    def ctf(self):
+        return Path(self.directory, 'ctf.txt')
+
+    def read_image(self):
+        with mrcfile.open(self.image_path) as mrc:
+            self.image = mrc.data
 
     def read_data(self):
-        raw = f'{self._id}/{self._id}.mrc'
-        with mrcfile.open(raw) as mrc:
-            self.raw_montage = mrc.data
-        self.montage = cv2.imread(f'pngs/{self._id}.png', cv2.IMREAD_GRAYSCALE)
-        self.read_metadata(itermeta=False)
+        self.read_image()
+        self.read_metadata()
 
-    def create_dirs(self, force_reproces=False):
-        if not os.path.isdir(self._id):
-            os.mkdir(self._id)
-        # if not os.path.isdir(os.path.join(self._id, 'targets')):
-        #     os.mkdir(os.path.join(self._id, 'targets'))
-        if not force_reproces and self.status in ['processed', 'completed']:
-            if os.path.isfile(f'{self._id}/{self._id}.mrc') and os.path.isfile(self.metadataFile):  # and self.binning_factor is not None
-                logger.info('Found metadata, reading...')
-                self.read_data()
-                return True
+    def check_metadata(self):
+        if self.image_path.exists() and self.metadataFile.exists():
+            logger.info('Found metadata, reading...')
+            self.read_data()
+            return True
         return False
 
-    def check_frames(self):
-        if 'SubFramePath' in self.metadata.columns:
-            return self.metadata.iloc[0].SubFramePath.split('\\')[-1]
+    def save_metadata(self):
+        self.metadata.to_pickle(self.metadataFile)
 
-    def align_frames(self, frames_dir, minfiletime=5):
-        file = os.path.join(frames_dir, self.frames)
-        # # while True:
-        # #     waited = 0
-        # time_elapsed = time.time() - os.path.getctime(file)
-        # #     logger.debug(time_elapsed)
-        # if time_elapsed < minfiletime:
-        #     logger.debug('File may not have finished writing, waiting 2 seconds')
-        #     time.sleep(minfiletime)
-        # waited += 2
-        # else:
-        #     break
+    def read_metadata(self):
+        self.metadata = pd.read_pickle(self.metadataFile)
 
-        com = f'alignframes -input {file} -output {self.raw} -gain {os.path.join(frames_dir,self.metadata.iloc[-1].GainReference)} -rotation -1 -dfile {self.frames}.mdoc -volt {self.metadata.iloc[-1].Voltage}'
-        logger.debug(com)
-        p = sub.run(shlex.split(com), stdout=sub.PIPE, stderr=sub.PIPE)
-        logger.debug(p.stdout.decode('utf-8'))
-        logger.debug(p.stderr.decode('utf-8'))
+    def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
+        resized = normalization(binning_method(self.image, height=height))
+        cv2.imwrite(str(self.png), resized)
 
-    def build_montage(self, raw_only=False):
+    def make_symlink(self):
+        os.symlink(f'../raw/{self.name}.mrc', self.image_path)
+
+
+@dataclass
+class Montage(BaseImage):
+
+    def __post_init__(self):
+        self.directory.mkdir(exist_ok=True)
+        if self.check_metadata():
+            return
+
+        self.metadata = parse_mdoc(self.mdoc, self.is_movie)
+
+        self.build_montage()
+        self.read_image()
+        self.save_metadata()
+
+    def build_montage(self):
 
         def piece_pos(piece):
             piece_coord = np.array(piece.PieceCoordinates[0: -1])
@@ -393,486 +307,119 @@ class Montage(GenericPosition):
             self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
             self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
             montage = img
-        else:
-            self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
-            self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-            montsize = np.array([0, 0])
-            for _, piece in enumerate(self.metadata.piece_limits):
-                for ind, i in enumerate(piece[2]):
-                    if i > montsize[ind]:
-                        montsize[ind] = i
-            montage = np.empty(np.flip(montsize), dtype='int16')
-            for ind, piece in enumerate(self.metadata.piece_limits):
-                montage[piece[0, 1]: piece[-2, 1], piece[0, 0]: piece[-2, 0]] = img[ind, :, :]
-            montage = montage[~np.all(montage == 0, axis=1)]
-            montage = montage[:, ~(montage == 0).all(0)]
+            self.image = montage
+            self.make_symlink()
+            return
 
-        self.raw_montage = montage
-        self.stage_z = self.metadata.iloc[0].StageZ
-        if self.header.mz == 1 and not os.path.isfile(os.path.join(self._id, f'{self._id}.mrc')):
-            os.symlink(f'../{self.raw}', os.path.join(self._id, f'{self._id}.mrc'))
-        else:
-            save_mrc(os.path.join(self._id, f'{self._id}.mrc'), self.raw_montage, self.pixel_size, [0, 0])
-        if not raw_only:
-            self.shape_x, self.shape_y = self.raw_montage.shape
-            # self.binning_factor = 1
-            self.montage, _, self.binned_size, self.binning_factor = self.resize_montage(fouriercrop=self.fourier_crop)
-            self.montage = self.auto_contrast(self.montage, **self.auto_contrast_kwargs)
+        self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
+        self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
+        montsize = np.array([0, 0])
+        for _, piece in enumerate(self.metadata.piece_limits):
+            for ind, i in enumerate(piece[2]):
+                if i > montsize[ind]:
+                    montsize[ind] = i
+        montage = np.empty(np.flip(montsize), dtype='int16')
+        for ind, piece in enumerate(self.metadata.piece_limits):
+            montage[piece[0, 1]: piece[-2, 1], piece[0, 0]: piece[-2, 0]] = img[ind, :, :]
+        montage = montage[~np.all(montage == 0, axis=1)]
+        montage = montage[:, ~(montage == 0).all(0)]
 
-    def resize_montage(self, apix=-1, binning_factor=-1, fouriercrop=False):
-        if binning_factor > 0:
-            apix = self.pixel_size * binning_factor
-        elif apix > 0:
-            binning_factor = apix / self.pixel_size
-        elif 'apix' in self.__dict__:
-            binning_factor = self.apix / self.pixel_size
+        self.image = montage
 
-        else:
-            binning_factor = 1
-        # self.metadata['binning_factor'] = binning_factor
-        binned_size = np.floor(np.array(self.raw_montage.shape) / binning_factor).astype(int)
-        if fouriercrop:
-            binned_img = fourier_crop(self.raw_montage, height=binned_size[0])
-        else:
-            binned_img = imutils.resize(self.raw_montage, height=binned_size[0])
-        return binned_img, apix, binned_size, round(binning_factor, 3)
-
-    def find_targets(self, methods: list, *args, save=True):
-        logger.debug(f'Using method: {methods}')
-        for method in methods:
-            if not 'args' in method.keys():
-                method['args'] = []
-            if not 'kwargs' in method.keys():
-                method['kwargs'] = dict()
-
-            import_cmd = f"from {method['package']} import {method['method']}"
-            logger.debug(import_cmd)
-            logger.debug(f"kwargs = {method['kwargs']}")
-            exec(import_cmd)
-            try:
-                output, success, self.target_class, self.centroid = locals()[method['method']](self, *method['args'], **method['kwargs'])
-
-            except Exception as err:
-                logger.exception(err)
-                continue
-            if success:
-                logger.debug(f'{method} was successful: {success}')
-                self.targets = output
-                self.finder = method['name']
-                self.classifier = method['name'] if 'Classifier' in method['targetClass'] else None
-                return
-
-    # def create_targets(self, target=None):
-    #     targets = []
-    #     if isinstance(self.targets, list):
-    #         if target is None:
-    #             T = Target
-    #         else:
-    #             T = target
-    #     else:
-    #         T = Lattice_targets
-    #     for ind, target in enumerate(self.targets):
-    #         t = T(id_num=ind, parent=self._id)
-    #         t.analyze_target(target, self, threshold=self.area_threshold)
-    #         if t.area < 100:
-    #             continue
-    #         find_tile(self, t)
-
-    #         if 'mask' in t.__dict__:
-    #             delattr(t, 'mask')
-    #         if 'image' in t.__dict__:
-    #             delattr(t, 'image')
-    #         if 'pixelpoints' in t.__dict__:
-    #             delattr(t, 'pixelpoints')
-    #         if 'thresh' in t.__dict__:
-    #             delattr(t, 'thresh')
-    #         if '_id' in t.__dict__:
-    #             delattr(t, '_id')
-
-    #         targets.append(t)
-    #     targets = pd.DataFrame([t.__dict__ for t in targets])
-    #     return targets
-
-    def CTFfind(self, scope_params):
-        img = self.raw
-        # logger.debug(f'CTFfind, img={img}, pixel_size={self.pixel_size}')
-        extraparam = ''
-
-        p = sub.run([os.getenv('CTFFIND')],
-                    input=f'{img}\n{self.name}/ctf.mrc\n{self.pixel_size}\n{self.metadata.Voltage.iloc[-1]}\n{scope_params.spherical_abberation}\n0.1\n512\n30\n10\n5000\n50000\n200\nno\nno\nno\nno\nno',
-                    encoding='ascii', capture_output=True, text=True)
-        # logger.debug(p.stdout)
-        # logger.debug(p.stderr)
-        with open(f'{self.name}/ctf.txt', 'r') as f:
-            lines = [[float(j) for j in i.split(' ')] for i in f.readlines() if '#' not in i]
-
-        ctf = pd.DataFrame.from_records(lines, columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit'], exclude=[
-            'l', 'phshift'], index=[self.metadata.index.values[-1]])
-        # ctf['astig'] = ctf.df1 - ctf.df2
-        # ctf['df'] = (ctf.df1 + ctf.df2) / 2
-
-        self.defocus = (ctf.df1 + ctf.df2) / 2
-        self.astig = ctf.df1 - ctf.df2
-        self.angast = ctf.angast
-        self.ctffit = ctf.ctffit
-
-        mrc_to_png(f'{self.name}/ctf.mrc')
-
-        # self.metadata = pd.merge(ctf, self.metadata, how='outer', left_index=True, right_index=True, on=list(self.metadata.keys() & ctf.keys()))
+        save_mrc(self.image_path, self.image, self.pixel_size, [0, 0])
 
 
-class Atlas(Montage):
+@dataclass
+class Movie(BaseImage):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.type = 'atlas'
-        self.target = "square"
-        self.apix = 2800
-        self.threshold = 30
-        self.area_threshold = [8000, 200000]
-        self.font_size = 14
-        self.auto_contrast = auto_contrast
-        self.auto_contrast_kwargs = dict(cutperc=[0.05, 0.01], to_8bits=True)
-        self.template = np.load(os.path.join(os.getenv('TEMPLATE_FILES'), 'template.npy'))
+    is_movie: bool = True
 
-    def find_grid_mesh(self):
-        pass
+    @property
+    def shifts(self):
+        return Path(self.directory, 'ali.xf')
 
-    def find_mesh_material(self):
-        pass
+    def __post_init__(self):
+        self.directory.mkdir(exist_ok=True)
 
-    def create_targets(self):
-        targets = []
-        self.target_class = eval(self.target_class)
-        if isinstance(self.targets, tuple):
-            self.targets, labels = self.targets
-            for ind, (target, label) in enumerate(zip(self.targets, labels)):
-                t = self.target_class(square_name=ind, quality=label)
-                t.analyze_target(target, self)
-                t.finder = self.finder
-                t.classifier = self.classifier
-                find_tile(self, t)
-
-                targets.append(t)
-        else:
-            for ind, target in enumerate(self.targets):
-                t = self.target_class(square_name=ind)
-                t.analyze_target(target, self, self.template)
-                if t.area > 1000000:
-                    continue
-                find_tile(self, t)
-
-                if 'mask' in t.__dict__:
-                    delattr(t, 'mask')
-                if 'image' in t.__dict__:
-                    delattr(t, 'image')
-                if 'pixelpoints' in t.__dict__:
-                    delattr(t, 'pixelpoints')
-
-                targets.append(t)
-        return targets
-
-
-class Square(Montage):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.type = 'square'
-        self.target = "hole"
-        self.apix = 600
-        self.area_threshold = [75, 1000]
-        self.font_size = 7
-        self.auto_contrast = auto_contrast
-        self.auto_contrast_kwargs = dict(cutperc=[0.05, 0.01], to_8bits=True)
-        self.target_class = HoleTarget
-
-    def save(self):
-        imlist = []
-        result = cv2.cvtColor(self.montage.copy(), cv2.COLOR_GRAY2RGB)
-
-        cv2.drawContours(result, [square_cont], -1, (0, 0, 255), cv2.LINE_AA)
-        cv2.circle(result, tuple(self.centroid), 10, (0, 0, 255), cv2.FILLED)
-
-        if len(cnts) > 0:
-            for cnt in cnts:
-                cv2.drawContours(result, [cnt], -1, (0, 255, 0), cv2.FILLED)
-        else:
-            for t in self.targets:
-                cv2.circle(result, tuple(t), 10, (0, 255, 0), cv2.FILLED)
-        mont_rgb = cv2.cvtColor(self.montage.copy(), cv2.COLOR_GRAY2RGB)
-        imlist.append(mont_rgb)
-        if fft_method:
-            filter_rgb = cv2.cvtColor(np.uint8(pattern_filter * 255), cv2.COLOR_GRAY2RGB)
-            product_rgb = cv2.cvtColor(product.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-            imlist += [filter_rgb, product_rgb]
-        imlist.append(result)
-        save_image(np.hstack(imlist), self._id, extension='png', destination=self._id)
-
-    def create_targets(self, starting_index=0):
-        # THIS NEEDS TO BE REORGANIZED AND MOVED OUT OF THE CLASS
-        targets = []
-        self.target_class = eval(self.target_class)
-        if isinstance(self.targets, tuple):
-            self.targets, labels = self.targets
-            for ind, (target, label) in enumerate(zip(self.targets, labels)):
-                t = self.target_class(hole_name=ind + starting_index, square_id=self.square_id, class_num=label)
-                t.analyze_target(target, self)
-                t.finder = self.finder
-                t.classifier = self.classifier
-                find_tile(self, t)
-                targets.append(t)
-        else:
-            for ind, target in enumerate(self.targets):
-                t = self.target_class(hole_name=ind + starting_index, square_id=self.square_id)
-                t.analyze_target(target, self, threshold=self.area_threshold)
-                t.finder = self.finder
-                t.classifier = self.classifier
-                find_tile(self, t)
-                targets.append(t)
-        return targets
-
-
-class Hole(Montage):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.type = 'hole'
-        self.target = None
-        self.apix = 88
-        self.auto_contrast = auto_contrast_hole
-        self.auto_contrast_kwargs = dict(sigmas=3, to_8bits=True)
-
-
-class High_Mag(Montage):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.type = 'hole'
-        self.target = None
-        self.apix = 4
-        self.fourier_crop = True
-        self.auto_contrast = auto_contrast
-        self.auto_contrast_kwargs = dict(cutperc=[0.5, 0.5])
-        # self.binning_factor = 1
-
-
-class Target:
-
-    def __init__(self, *args, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    def analyze_target(self, shape, montage, threshold=4000):
-        if self.type == 'square':
-            self.draw_square(shape, montage.montage)
-        elif self.type == 'hole':
-            self.draw_hole(shape, montage.montage)
-
-        if all([(montage.area_threshold[0] < self.area < montage.area_threshold[1]), self.x > montage.montage.shape[1] * 0.03,
-                self.x < montage.montage.shape[1] * 0.97,
-                self.y > montage.montage.shape[0] * 0.03,
-                self.y < montage.montage.shape[0] * 0.97]):
-            if self.type == 'square':
-                is_cracked = self.find_cracks()
-
-            else:
-                self.dist_from_center = sqrt((self.x - montage.x)**2 + (self.y - montage.y)**2)
-            if is_cracked:
-                self.quality = 'cracked'
-            else:
-                self.quality = 'good'
-        else:
-            self.quality = 'bad'
-
-    def find_cracks(self, save=True):
-        blurred = cv2.GaussianBlur(self.image, (5, 5), 0)
-
-        result = cv2.cvtColor(self.image.copy(), cv2.COLOR_GRAY2RGB)
-
-        (mu, sigma, a), is_fit = fit_gauss(blurred, min=150)
-        if not is_fit:
-            (mu, sigma, a), is_fit = fit_gauss(blurred, min=30)
-        if mu < 100:
-            sig = 3
-        else:
-            sig = 2
-
-        threshold = min([230, int(mu + sigma * sig)])
-
-        cnts, t = find_contours(blurred, threshold)
-        cnts = [cnt for cnt in cnts if (200 < cv2.contourArea(cnt))]
-        for cnt in cnts:
-            cv2.drawContours(result, [cnt], -1, (0, 255, 0), cv2.FILLED)
-
-        if len(cnts) > 0:
-            logger.debug(f'Square {self._id} is cracked')
+    def check_metadata(self):
+        if self.image_path.exists() and self.shifts.exists() and self.ctf.exists():
             return True
-        else:
-            logger.debug(f'Square {self._id} is good')
-            return False
 
 
-class SquareTarget(Target):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._id = self.square_name
-        self.extract_size = 800000  # 80 um
+def find_targets(montage: Montage, methods: list):
+    logger.debug(f'Using method: {methods}')
+    for method in methods:
+        if not 'args' in method.keys():
+            method['args'] = []
+        if not 'kwargs' in method.keys():
+            method['kwargs'] = dict()
 
-    def draw_square(self, square, image):
-        square = cv2.minAreaRect(square)
-        contour = cv2.boxPoints(square).astype(int)
-
-        self.area = cv2.contourArea(contour)
-        self.x = int(np.sum(contour[:, 0]) // contour.shape[0])
-        self.y = int(np.sum(contour[:, 1]) // contour.shape[0])
-
-    def analyze_target(self, shape, montage, template):
-        self.draw_square(shape, montage)
-        # self.unbinned_x = int(floor(self.x * montage.binning_factor))
-        # self.unbinned_y = int(floor(self.y * montage.binning_factor))
-        half_box = int(floor(self.extract_size / montage.pixel_size / 2))
-        # self.image = montage.raw_montage[max([0, self.unbinned_y - half_box]): min([montage.raw_montage.shape[0], self.unbinned_y + half_box]),
-        #                                  max([0, self.unbinned_x - half_box]): min([montage.raw_montage.shape[1], self.unbinned_x + half_box])]
-
-        self.image = montage.raw_montage[max([0, self.y - half_box]): min([montage.raw_montage.shape[0], self.y + half_box]),
-                                         max([0, self.x - half_box]): min([montage.raw_montage.shape[1], self.x + half_box])]
-
-        # save_mrc(os.path.join(montage._id, 'targets', f'{self._id}.mrc'), self.image, montage.pixel_size, [self.unbinned_x, self.unbinned_y])
-
-        if all([self.x > montage.montage.shape[1] * 0.03,
-                self.x < montage.montage.shape[1] * 0.97,
-                self.y > montage.montage.shape[0] * 0.03,
-                self.y < montage.montage.shape[0] * 0.97,
-                ]):
-
-            self.quality = decide_type(cv2.resize(self.image, (128, 128), interpolation=cv2.INTER_AREA), template)
-        else:
-            self.quality = 'bad'
+        import_cmd = f"from {method['package']} import {method['method']}"
+        logger.debug(import_cmd)
+        logger.debug(f"kwargs = {method['kwargs']}")
+        exec(import_cmd)
+        try:
+            output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
+        except Exception as err:
+            logger.exception(err)
+            continue
+        if success:
+            logger.debug(f'{method} was successful: {success}')
+            return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
 
 
-class AITarget(Target):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):
+    output_targets = []
+    if isinstance(targets, tuple):
+        targets, labels = targets
+    else:
+        labels = [None] * len(targets)
+    for target, label in zip(targets, labels):
+        t = AITarget(target, quality=label)
+        t.convert_image_coords_to_stage(montage)
+        t.set_area_radius(target_type)
+        output_targets.append(t)
 
-    # @ property
-    # def extract_size(self):
-    #     if self.shape_type == 'square':
-    #         return 800000
-    #     if self.shape_type == 'hole':
-    #         return 70000
+    output_targets.sort(key=lambda x: (x.stage_x, x.stage_y))
 
-    @ property
-    def _id(self):
-        if hasattr(self, 'square_name'):
-            return self.square_name
-        if hasattr(self, 'hole_name'):
-            return self.hole_name
+    return output_targets
 
-    # def extract_to_mrc(self, montage):
-    #     half_box = int(floor(self.extract_size / montage.pixel_size / 2))
-    #     self.image = montage.raw_montage[max([0, self.unbinned_y - half_box]): min([montage.raw_montage.shape[0], self.unbinned_y + half_box]),
-    #                                      max([0, self.unbinned_x - half_box]): min([montage.raw_montage.shape[1], self.unbinned_x + half_box])]
 
-    #     save_mrc(os.path.join(montage._id, 'targets', f'{self._id}.mrc'), self.image, montage.pixel_size, [self.unbinned_x, self.unbinned_y])
+@dataclass
+class AITarget:
 
-    def get_center(self, shape, montage, ):  # is_binned=False
+    shape: Union[list, Tensor]
+    quality: Union[str, None] = None
+    area: Union[float, None] = None
+    radius: Union[float, None] = None
+    stage_x: Union[float, None] = None
+    stage_y: Union[float, None] = None
+    stage_z: Union[float, None] = None
 
-        # if is_binned:
-        #     self.x = int((shape[2] - shape[0]) // 2)
-        #     self.y = int((shape[3] - shape[1]) // 2)
-        #     self.unbinned_x = int(floor(self.x * montage.binning_factor))
-        #     self.unbinned_y = int(floor(self.y * montage.binning_factor))
-        #     return
+    @property
+    def x(self):
+        return int(self.shape[0] + (self.shape[2] - self.shape[0]) // 2)
 
-        self.x = int(shape[0] + (shape[2] - shape[0]) // 2)
-        self.y = int(shape[1] + (shape[3] - shape[1]) // 2)
-        # self.x = int(self.unbinned_x // montage.binning_factor)
-        # self.y = int(self.unbinned_y // montage.binning_factor)
-        if self.shape_type == 'hole':
-            self.dist_from_center = round(sqrt((self.x - montage.centroid[0])**2 + (self.y - montage.centroid[1])**2), 2)
+    @property
+    def y(self):
+        return int(self.shape[1] + (self.shape[3] - self.shape[1]) // 2)
 
-    def get_area(self, shape, montage, is_binned=False,):
-        binned_shape = shape
-        # if not is_binned:
-        #     binned_shape = shape / montage.binning_factor
+    def set_area_radius(self, shape_type):
 
-        len1 = int(binned_shape[2] - binned_shape[0])
-        len2 = int(binned_shape[3] - binned_shape[1])
+        len1 = int(self.shape[2] - self.shape[0])
+        len2 = int(self.shape[3] - self.shape[1])
 
-        if self.shape_type == 'square':
+        if shape_type == 'square':
             self.area = len1 * len2
             return
 
-        if self.shape_type == 'hole':
+        if shape_type == 'hole':
 
             self.radius = min(len1, len2) / 2
             self.area = np.pi * (self.radius ** 2)
             return
 
-        raise ValueError('shape_type argument is invalid')
-
-    def analyze_target(self, shape, montage, **kwargs):
-        if isinstance(shape, list):
-            shape = np.array(shape).astype(np.float32)
-        if isinstance(shape, Tensor):
-            shape = shape.numpy().astype(np.float32)
-        self.get_center(shape, montage)
-        self.get_area(shape, montage)
-        if not hasattr(self, 'quality'):
-            self.quality = None
-            # self.quality = self.quality.replace('small', 'bad')
-            # self.quality = self.quality.replace('square', 'good')
-            # self.quality = self.quality.replace('fraction', 'fractioned')
-        # else:
-
-
-class AISquareTarget(AITarget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.shape_type = 'square'
-
-
-class AIHoleTarget(AITarget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.shape_type = 'hole'
-
-
-class HoleTarget(Target):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._id = self.hole_name
-        # self.extract_size = 70000  # 6um
-
-    def draw_hole(self, hole, image):
-        (x, y), radius = cv2.minEnclosingCircle(hole)
-        self.x = int(x)
-        self.y = int(y)
-        self.radius = int(radius)
-        self.area = np.pi * (radius ** 2)
-
-    def analyze_target(self, shape, montage, threshold=4000):
-        self.draw_hole(shape, montage.montage)
-        # self.unbinned_x = int(floor(self.x * montage.binning_factor))
-        # self.unbinned_y = int(floor(self.y * montage.binning_factor))
-        self.dist_from_center = round(sqrt((self.x - montage.centroid[0])**2 + (self.y - montage.centroid[1])**2), 2)
-
-
-class LatticeTarget(Target):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._id = self.hole_name
-        self.extract_size = 70000  # 7um
-
-    def draw_target(self, hole, pixel_size):
-        (x, y), radius = hole, 12000 // pixel_size
-        self.x = int(x)
-        self.y = int(y)
-        self.radius = radius
-        # self.mask = np.zeros(image.shape, dtype="uint8")
-        # cv2.circle(self.mask, (self.x, self.y), int(radius), 255, -1)
-        self.area = np.pi * (radius ** 2)
-
-    def analyze_target(self, shape, montage, threshold=4000):
-        self.draw_target(shape, montage.pixel_size)
-        # self.unbinned_x = int(floor(self.x * montage.binning_factor))
-        # self.unbinned_y = int(floor(self.y * montage.binning_factor))
-        # self.dist_from_center = round(sqrt((self.x - montage.centroid[0])**2 + (self.y - montage.centroid[1])**2), 2)
+    def convert_image_coords_to_stage(self, montage):
+        tile, dist = closest_node([self.x, self.y], montage.metadata.piece_center)
+        self.stage_x, self.stage_y = pixel_to_stage(dist, montage.metadata.iloc[tile], montage.metadata.iloc[tile].TiltAngle)
+        self.stage_z = montage.stage_z

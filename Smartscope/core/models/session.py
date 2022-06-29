@@ -163,7 +163,7 @@ class Microscope(BaseModel):
     voltage = models.IntegerField(default=200)
     spherical_abberation = models.FloatField(default=2.7)
     microscope_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    loader_size = models.CharField(max_length=30)
+    loader_size = models.IntegerField(default=12)
 
     # Worker location
     worker_hostname = models.CharField(max_length=30, default='localhost')
@@ -244,7 +244,7 @@ class GridCollectionParams(BaseModel):
     square_y = models.IntegerField(default=1)
     squares_num = models.IntegerField(default=3)
     holes_per_square = models.IntegerField(default=3)  # If -1 means all
-    bis_max_distance = models.FloatField(default=0)  # 0 means not BIS
+    bis_max_distance = models.FloatField(default=3)  # 0 means not BIS
     min_bis_group_size = models.IntegerField(default=1)
     target_defocus_min = models.FloatField(default=-2)
     target_defocus_max = models.FloatField(default=-2)
@@ -305,7 +305,7 @@ class ScreeningSession(BaseModel):
                 return [self.working_dir, self.working_dir]
 
         if settings.USE_STORAGE:
-            os.mkdir(cwd)
+            # os.mkdir(cwd)
             return [cwd, url]
 
     @ property
@@ -556,13 +556,13 @@ class AutoloaderGrid(BaseModel):
     def __str__(self):
         return f'{self.position}_{self.name}'
 
-    def create_dir(self):
-        for dirs in [self.directory,
-                     os.path.join(self.directory, 'raw'),
-                     os.path.join(self.directory, 'pngs')]:
-            if not os.path.isdir(dirs):
-                os.mkdir(dirs)
-        os.chdir(self.directory)
+    # def create_dir(self):
+    #     for dirs in [self.directory,
+    #                  os.path.join(self.directory, 'raw'),
+    #                  os.path.join(self.directory, 'pngs')]:
+    #         if not os.path.isdir(dirs):
+    #             os.mkdir(dirs)
+    #     os.chdir(self.directory)
 
     def export(self, working_dir=None):
         to_export = list(self.atlasmodel_set.all())
@@ -863,7 +863,7 @@ class SquareModel(Target, ExtraPropertyMixin):
 class HoleModel(Target, ExtraPropertyMixin):
 
     hole_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    dist_from_center = models.FloatField(null=True)
+    # dist_from_center = models.FloatField(null=True)
     radius = models.IntegerField()  # Can be removed and area can be put in the target class
     area = models.FloatField()
     square_id = models.ForeignKey(SquareModel, on_delete=models.CASCADE, to_field='square_id')
@@ -960,6 +960,7 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     astig = models.FloatField(null=True)
     angast = models.FloatField(null=True)
     ctffit = models.FloatField(null=True)
+    completion_time = models.DateTimeField(null=True)
 
     # aliases
     objects = HighMagImageManager()

@@ -7,9 +7,10 @@ body {
 }
 
 #body-row {
-    margin-left:0;
-    margin-right:0;
+    margin-left: 0;
+    margin-right: 0;
 }
+
 #sidebar-container {
     /* min-height: 100vh;    */
     background-color: #333;
@@ -17,7 +18,7 @@ body {
 }
 
 .highmag {
-    padding:2px;
+    padding: 2px;
     background: lightgray;
 }
 
@@ -25,9 +26,9 @@ body {
     min-height: 100vh;
 }
 
-.navbar-default{
-    max-width:100%;
-  }
+.navbar-default {
+    max-width: 100%;
+}
 
 /* Sidebar sizes when expanded and expanded */
 /* .sidebar-expanded {
@@ -45,6 +46,7 @@ body {
     height: 45px;
     padding-left: 30px;
 }
+
 .sidebar-submenu {
     font-size: 0.9rem;
 }
@@ -54,30 +56,33 @@ body {
     background-color: #333;
     height: 35px;
 }
+
 .sidebar-separator {
     background-color: #333;
     height: 25px;
 }
+
 .logo-separator {
-    background-color: #333;    
+    background-color: #333;
     height: 60px;
 }
 
 /* Closed submenu icon */
 #sidebar-container .list-group .list-group-item[aria-expanded="false"] .submenu-icon::after {
-  content: " \f0d7";
-  font-family: FontAwesome;
-  display: inline;
-  text-align: right;
-  padding-left: 10px;
+    content: " \f0d7";
+    font-family: FontAwesome;
+    display: inline;
+    text-align: right;
+    padding-left: 10px;
 }
+
 /* Opened submenu icon */
 #sidebar-container .list-group .list-group-item[aria-expanded="true"] .submenu-icon::after {
-  content: " \f0da";
-  font-family: FontAwesome;
-  display: inline;
-  text-align: right;
-  padding-left: 10px;
+    content: " \f0da";
+    font-family: FontAwesome;
+    display: inline;
+    text-align: right;
+    padding-left: 10px;
 }
 
 .close-btn {
@@ -86,110 +91,141 @@ body {
     right: 10
 }
 
-.hovered, .target:hover, .legend:hover {
+.hovered,
+.target:hover,
+.legend:hover {
     fill-opacity: 1;
     stroke-width: 10;
 }
+
 .is_area {
     stroke-dasharray: 20 10;
 }
+
 .clicked {
     stroke-width: 10;
     fill-opacity: 0.9;
-    
+
 }
+
 .good {
     stroke: blue;
     fill: blue;
     color: blue;
 }
+
 :root {
---cl0_color: blue; /*rgb(129, 173, 24)*/
---cl1_color: MediumSlateBlue; /*rgb(185, 173, 0)*/
---cl2_color: rgb(209, 209, 255); /*rgb(185, 111, 0)*/
---q0_color: #0072B2;
---q1_color: #56B4E9;
---q2_color: #009E73;
---q3_color: #E69F00;
---q4_color: #D55E00;
---q5_color: #CC79A7;
+    --cl0_color: blue;
+    /*rgb(129, 173, 24)*/
+    --cl1_color: MediumSlateBlue;
+    /*rgb(185, 173, 0)*/
+    --cl2_color: rgb(209, 209, 255);
+    /*rgb(185, 111, 0)*/
+    --q0_color: #0072B2;
+    --q1_color: #56B4E9;
+    --q2_color: #009E73;
+    --q3_color: #E69F00;
+    --q4_color: #D55E00;
+    --q5_color: #CC79A7;
 }
 
 .class_0 {
     stroke: var(--cl0_color);
     fill: var(--cl0_color);
     color: var(--cl0_color);
-    border-color: var(--cl0_color); 
+    border-color: var(--cl0_color);
     background-color: var(--cl0_color);
-    color:white;
+    color: white;
 }
+
 .class_1 {
     stroke: var(--cl1_color);
     fill: var(--cl1_color);
-    color: var(--cl1_color); 
+    color: var(--cl1_color);
     border-color: var(--cl1_color);
     background-color: var(--cl1_color);
-    color:white;
+    color: white;
 }
+
 .class_2 {
     stroke: var(--cl2_color);
     fill: var(--cl2_color);
     border-color: var(--cl2_color);
     background-color: var(--cl2_color);
-    color:white;
+    color: white;
 }
-.bad{
+
+.bad {
     stroke: red;
     fill: red;
     color: red;
 }
-.cracked, .broken {
+
+.cracked,
+.broken {
     stroke: purple;
     fill: purple;
-    color: purple; 
+    color: purple;
 }
+
 .contaminated {
     stroke: MediumAquaMarine;
     fill: MediumAquaMarine;
-    color: MediumAquaMarine;     
+    color: MediumAquaMarine;
 }
+
 .completed {
     stroke: green;
     /* fill: green; */
     color: green;
 }
-.acquired, .processed, .targets_picked, .started {
+
+.acquired,
+.processed,
+.targets_picked,
+.started,
+.selected {
     stroke: Gold;
     /* fill: Gold; */
     color: Gold;
 }
+
 .queued {
     stroke: orange;
     /* fill: orange; */
     color: orange;
 }
+
 .completed.has_queued {
     fill-opacity: 0.6;
     fill: orange;
 }
+
 .completed.has_completed {
     fill-opacity: 0.6;
     fill: Green;
 }
+
 .completed.has_active {
     fill-opacity: 0.6;
     fill: gold;
 }
+
 [class*="quality-"].completed {
     fill-opacity: 0.8;
     stroke: green;
 }
-[class*="quality-"].started, [class*="quality-"].acquired, [class*="quality-"].processed, [class*="quality-"].targets_picked {
+
+[class*="quality-"].started,
+[class*="quality-"].acquired,
+[class*="quality-"].processed,
+[class*="quality-"].targets_picked {
     fill-opacity: 0.8;
     stroke: gold;
 }
+
 .quality-0 {
-    fill:var(--q0_color);
+    fill: var(--q0_color);
     background-color: var(--q0_color);
     border-color: var(--q0_color);
     stroke: var(--q0_color);
@@ -205,47 +241,49 @@ body {
 }
 
 .quality-1 {
-    fill:var(--q1_color);
+    fill: var(--q1_color);
     background-color: var(--q1_color);
     border-color: var(--q1_color);
     stroke: var(--q1_color);
-    color:var(--q1_color);
+    color: var(--q1_color);
 }
 
 .quality-2 {
-    fill:var(--q2_color);
+    fill: var(--q2_color);
     background-color: var(--q2_color);
     stroke: var(--q2_color);
     border-color: var(--q2_color);
-    color:var(--q2_color);
+    color: var(--q2_color);
 }
 
 .quality-3 {
-    fill:var(--q3_color);
+    fill: var(--q3_color);
     background-color: var(--q3_color);
     stroke: var(--q3_color);
     border-color: var(--q3_color);
-    color:var(--q3_color);
+    color: var(--q3_color);
 }
 
 .quality-4 {
-    fill:var(--q4_color);
+    fill: var(--q4_color);
     background-color: var(--q4_color);
     stroke: var(--q4_color);
     border-color: var(--q4_color);
-    color:var(--q4_color);
+    color: var(--q4_color);
 }
+
 .quality-5 {
-    fill:var(--q5_color);
+    fill: var(--q5_color);
     background-color: var(--q5_color);
     stroke: var(--q5_color);
     border-color: var(--q5_color);
-    color:var(--q5_color);
+    color: var(--q5_color);
 }
+
 .svgtext {
-    font: bold verdana; 
+    font: bold verdana;
     stroke-linejoin: round;
-    text-anchor: middle; 
+    text-anchor: middle;
     fill: white;
     paint-order: stroke
 }
@@ -260,88 +298,108 @@ body {
     background-color: blue;
     border-color: blue;
 }
+
 .btn.good {
     color: blue;
     border-color: blue;
 }
+
 .btn.bad.active {
     color: white;
     background-color: red;
     border-color: red;
 }
+
 .btn.bad {
     color: red;
     border-color: red;
 }
+
 .btn.queued.active {
     color: white;
     background-color: orange;
     border-color: orange;
 }
+
 .btn.queued {
     color: orange;
     border-color: orange;
 }
+
 .btn.completed.active {
     color: white;
     background-color: green;
     border-color: green;
 }
+
 .btn.completed {
     color: green;
     border-color: green;
 }
-.btn.cracked.active, .btn.broken.active {
+
+.btn.cracked.active,
+.btn.broken.active {
     color: white;
     background-color: purple;
     border-color: purple;
 }
-.btn.cracked, .btn.broken  {
+
+.btn.cracked,
+.btn.broken {
     color: purple;
     border-color: purple;
 }
+
 .btn.contaminated.active {
     color: white;
     background-color: MediumAquaMarine;
     border-color: MediumAquaMarine;
 }
+
 .btn.contaminated {
     color: MediumAquaMarine;
     border-color: MediumAquaMarine;
 }
+
 .btn.fractioned.active {
     color: white;
     background-color: CornflowerBlue;
     border-color: CornflowerBlue;
 }
+
 .btn.fractioned {
     color: CornflowerBlue;
     border-color: CornflowerBlue;
 }
+
 .fractioned {
     stroke: CornflowerBlue;
     fill: CornflowerBlue;
-    color: CornflowerBlue;     
+    color: CornflowerBlue;
 }
+
 .btn.dry.active {
     color: white;
     background-color: blueviolet;
     border-color: blueviolet;
 }
+
 .btn.dry {
     color: blueviolet;
     border-color: blueviolet;
 }
+
 .dry {
     stroke: blueviolet;
     fill: blueviolet;
-    color: blueviolet;     
+    color: blueviolet;
 }
+
 .clickmenu {
     width: 200px;
     position: absolute;
     z-index: 1000;
-    background-color: gray; 
+    background-color: gray;
 
     color: l
 }

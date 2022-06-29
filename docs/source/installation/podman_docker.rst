@@ -41,6 +41,8 @@ Installation steps
 
 3. Using a text editor, open the docker-compose.yml file and edit the values to your needs. The file includes description of each entry.
 
+    `Click here <./environment.html>`_ for details about the environment variables.
+
     .. raw:: html
 
         <details>

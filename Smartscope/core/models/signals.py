@@ -1,4 +1,5 @@
 # from models import *
+from pathlib import Path
 from django.conf import settings
 import shutil
 import os
@@ -128,6 +129,7 @@ def change_group(sender, instance, **kwargs):
 def create_session_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.microscope_id.scope_path)
+        Path(instance.directory).mkdir(parents=True, exist_ok=True)
 
 
 @receiver(post_save, sender=Microscope)

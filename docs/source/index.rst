@@ -32,6 +32,7 @@ Site map
    setup.rst
    overview.rst
    run_smartscope.rst
+   testing.rst
    citation.rst
    contact.rst
    license.rst

@@ -1,12 +1,11 @@
-from cProfile import label
-import json
 import math
-import pathlib
 import shutil
 
 import yaml
 from Smartscope.core.models import AtlasModel, SquareModel, DisplayManager
 from pathlib import Path
+
+mag_level_factory = {'atlas': AtlasModel, 'square': SquareModel}
 
 
 def get_bounding_box(x, y, radius):
@@ -40,9 +39,18 @@ def export_training_data(data, instance, directory='/mnt/data/tmp/'):
     image = f'{instance.pk}.mrc'
     grid_type = instance.grid_id.meshMaterial.name
     detection_type = instance.targets_prefix
+    shape_x = instance.shape_x
+    shape_y = instance.shape_y
     output_dir = Path(directory, detection_type)
     output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_dir / 'metadata.yaml', 'a+') as file:
-        file.write(yaml.dump([dict(image=image, grid_type=grid_type, targets=data)], default_flow_style=None))
+        file.write(yaml.dump([dict(image=image, shape_x=shape_x, shape_y=shape_y,
+                   grid_type=grid_type, targets=data)], default_flow_style=None))
 
     shutil.copy(instance.mrc, output_dir / f'{instance.pk}.mrc')
+
+
+def add_to_training_set(mag_level: str, id: str, output_directory='/mnt/data/training_data/'):
+    instance = mag_level_factory[mag_level].objects.get(pk=id)
+    data = generate_training_data(instance=instance)
+    export_training_data(data, instance, directory=output_directory)

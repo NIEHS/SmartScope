@@ -1,8 +1,6 @@
 # from asyncio import protocols
 import yaml
 from django.conf import settings
-# from functools import reduce
-from collections import OrderedDict
 
 
 def load_plugins():

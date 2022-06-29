@@ -230,7 +230,7 @@ def calc_angle_spacing(img):
         freq = v['freq']
         if freq > max_freq:
             max_freq = freq
-            print(freq)
+            # print(freq)
             spacing = np.mean(v['dist'])
             orientation = np.mean(v['angle'])
     return orientation, spacing, square, ratio

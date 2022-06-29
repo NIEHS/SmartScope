@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
-__version__ = "0.6"
+__version__ = "0.62"
 
 import logging
 import logging.config
 import os
 import sys
+
+LOGLEVEL = os.getenv('LOGLEVEL') if os.getenv('LOGLEVEL') is not None else 'DEBUG'
+
 LOG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -21,26 +24,32 @@ LOG = {
             'formatter': 'generic',
             'stream': sys.stdout,
         },
-        'file': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'formatter': 'generic',
-            'filename': os.path.join(os.getenv('LOGDIR'), 'smartscope.log'),
-            'when': 'midnight',
-            'interval': 1,
-            'backupCount': 90,
-            'encoding': 'utf-8',
-        },
     },
     'loggers': {
         # '': {
-        #     'level': os.getenv('LOGLEVEL'),
+        #     'level': LOGLEVEL,
         #     'handlers': ['console', ],
         # },
         __name__: {
-            'level': os.getenv('LOGLEVEL'),
-            'handlers': ['console', 'file', ],
-            'propagate': True
+            'level': LOGLEVEL,
+            'handlers': ['console', ],
+            # 'propagate': True
         },
     }
 }
+
+if os.getenv('LOGDIR') is not None:
+    LOG['handlers']['file'] = {
+        'class': 'logging.handlers.TimedRotatingFileHandler',
+        'formatter': 'generic',
+        'filename': os.path.join(os.getenv('LOGDIR'), 'smartscope.log'),
+        'when': 'midnight',
+        'interval': 1,
+        'backupCount': 90,
+        'encoding': 'utf-8',
+    }
+    LOG['loggers'][__name__]['handlers'].append('file')
+
+# print(LOG)
+
 logging.config.dictConfig(LOG)
