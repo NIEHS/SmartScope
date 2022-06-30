@@ -148,8 +148,8 @@ def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('
                 highmagframes=os.path.join(TEST_FILES_ROOT, 'highmag_frames'),
                 )
     dirname = dirs[funcname]
-    if 'frames' in kwargs.keys() and kwargs['frames']:
-        dirname = dir[f'{funcname}_frames']
+    # if 'frames' in kwargs.keys() and kwargs['frames']:
+    #     dirname = dir[f'{funcname}_frames']
 
     randomfile = random.choice(glob.glob(f'{dirname}/*.???'))
     destination = os.path.join(destination_dir, file)

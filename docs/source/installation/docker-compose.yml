@@ -1,7 +1,7 @@
 version: "3"
 services:
   smartscope:
-    image: localhost/smartscope:0.6
+    image: localhost/smartscope:0.62
     container_name: smartscope
     build:
       context: .
@@ -11,9 +11,9 @@ services:
     restart: always
     volumes:
       #Volumes are spelled /path/on/host/:/path/in/container/
-      - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
-      - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
-      - /home/bouvettej2/Smartscope-beta/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
+      - /datastaging/data/smartscope/:/mnt/data/ #Where the data is to be saved (required)
+      - /auto_screening/log_dev/:/opt/logs/ #Where the log files are to be saved (required)
+      - /home/bouvettej2/Smartscope-dev/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
       - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True
       - /auto_screening/tmp/scope/smartscope_testfiles/:/mnt/testfiles/ #Use to mount test files directory for testing
       ### Microscopes ### One mount per microscope to /mnt/{micoscope_name}/
@@ -21,44 +21,21 @@ services:
       - /mnt/krios_Raid_X:/mnt/krios/
       - /auto_screening/tmp/scope/:/mnt/fake_scope/
       - /home/bouvettej2/Template_files/:/opt/Template_files/
+      ### Extra locations ###
+      - /datastaging/data/gatan_movies/:/mnt/preprocess/
     environment:
-      ALLOWED_HOSTS: localhost,domain.com #List of allowed hostnames for connection
-      DJANGO_SETTINGS_MODULE: Smartscope.core.settings.server_docker #Shouldn't need to be changed, here for testing
-      USE_STORAGE: True #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
-      USE_LONGTERMSTORAGE: True #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
-      USE_MICROSCOPE: True #Set to false to disable creating and starting workflow. Useful for a 'viewer' only server
-      DEFAULT_UMASK: '003' #default=003. Will set 774(rwxrwxr--) permission on all the files created by smartscope
+      ALLOWED_HOSTS: localhost,lxd-02012614,192.168.0.198 #List of allowed hostnames for connection, comma separated without spaces
+      USE_STORAGE: 'True' #Usually set to True, can be turned off for a server that would only read from long-term storage. Need to have a volume mounted to /mnt/data/
+      USE_LONGTERMSTORAGE: 'True' #True if the data gets transfered and read from another storage areas. Shoud have volume mounted to /mnt/longterm 
       LOGLEVEL: DEBUG #Log level, choices are INFO, WARNING, CRITICAL, DEBUG. default:INFO
-      DEBUG: True #set to True to get a django debug page whenever a page isn't found or an error occurs while loading assets to the web browser.
-      SECRET_KEY: 'd41d8cd98f00b204e9800998e' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
-      TEMPLATE_FILES: /opt/Template_files/
-      ###SerialEM variables###
-      SEM_PYTHON: False #Set to False skip connection to serialEM
-      NO_TEM_TESTMODE: True #Set to True to test the workflow on sample images. SEM_PYTHON needs to also be False to work.
-      TEST_FILES: /mnt/testfiles/ #Shouldn't need to be changed.Along the SEM_PYTHON: False and NO_TEM_TESTMODE: True. This is the location of the test images.
-      ####Database###
-      MYSQL_HOST: db #Shouldn't need to be changed
-      MYSQL_PORT: 3306 #Shouldn't need to be changed
-      MYSQL_USERNAME: root #Needs to match with the value set in the db service
-      MYSQL_ROOT_PASSWORD: pass #Needs to match with the value set in the db service
-      DB_NAME: smartscope #Needs to match with the value set in the db service
-      DB_PATH: '' #Not currently used since it connects to db via socket.
-      ####Cache###
-      REDIS_HOST: cache #Shouldn't need to be changed
-      REDIS_PORT: 6379 #Shouldn't need to be changed
-      ###AWS###
-      USE_AWS: False # If the data is to be moved and read to/from S3 bucket. Complete all the AWS fields for connection
-      AWS_STORAGE_BUCKET_NAME:
-      AWS_DATA_PREFIX: data
-      AWS_S3_REGION_NAME: us-east-1
-      AWS_ACCESS_KEY_ID:
-      AWS_SECRET_ACCESS_KEY:
+      DEBUG: 'True' #set to True to get a django debug page whenever a page isn't found or an error occurs while loading assets to the web browser.
+      SECRET_KEY: 'd41d8cd98f00b204e9800998eag' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
     depends_on:
       - db
       - cache
     networks:
       - smartscopenet
-    command: gunicorn -c /opt/smartscope/config/singularity/gunicorn_singularity.conf.py
+    command: gunicorn -c /opt/smartscope/config/docker/gunicorn.conf.py
     deploy:
       #Used to pass the GPU through. Also need to install the nvidia-container-toolkit.
       resources:
@@ -69,11 +46,12 @@ services:
               capabilities: [ gpu ]
   db:
     image: mariadb:10.5
+    container_name: smartscope-db
     restart: always
     ports:
       - 6603:3306
     volumes:
-      - /auto_screening/tmp/test_db2/:/var/lib/mysql
+      - /auto_screening/tmp/test_db3/:/var/lib/mysql
     environment:
       MYSQL_DATABASE: smartscope #Name of the database to use. Will be created automatically if doesn't exist
       MYSQL_USER: root #Username to use for database connection. Currently needs to be root (needs to be changed)
@@ -84,26 +62,26 @@ services:
   cache:
     image: redis:6.2-alpine
     restart: always
-    ports:
-      - 6379:6379
+    # ports:
+    #   - 6379:6379
     command: redis-server --save 20 1 --loglevel warning
     networks:
       - smartscopenet
   nginx:
     image: nginx
     ports:
-      - 48000:80 #Bind a different port on host by changing the first value. i.e. 8080:80.
+      - 58000:80 #Bind a different port on host by changing the first value. i.e. 8080:80.
       # - 443:443 #Use if you choose to use ssl. RECOMMENDED
     volumes:
       - ./config/docker/templates_noSSL/:/etc/nginx/templates/ #Change to ./config/docker/templates_SSL to use SSL
-      #- /path/to/certs:/etx/nginx/certs/ #Uncomment to mount the ssl certificate from the host
-      - /auto_screening/:/mnt/data/ #Where the data is to be saved (required)
-      - /auto_screening/log_test/:/opt/logs/ #Where the log files are to be saved (required)
-      - /home/bouvettej2/Smartscope-beta/:/opt/smartscope/ #Path to the Repo. It's technically already in the container. Useful for development/troubleshooting
+      #- /path/to/certs/cert.pem:/opt/certs/smartscope.crt #Uncomment to mount the ssl certificate from the host
+      #- /path/to/certs/privkey.pem:/opt/certs/smartscope.key #Uncomment to mount the ssl certificate from the host
+      - /datastaging/data/smartscope/:/mnt/data/ #Where the data is to be saved (required)
+      - /auto_screening/log_dev:/opt/logs/ #Where the log files are to be saved (required)
+      - /home/bouvettej2/Smartscope-dev/static/:/opt/smartscope/static/ #Path to the Repo static files. It's technically for the javascript assets
       - /ddn/cryoemCore/data/auto_screening/:/mnt/longterm/ #Use if USE_LONGTERMSTORAGE: True
     environment:
       SERVER_NAME: lxd-02012614 #Should match the ALLOWED_HOSTS from the smartscope service
-      CERT_FILENAME: filename #ROOT name of the certs without extension.
     networks:
       - smartscopenet
     depends_on:

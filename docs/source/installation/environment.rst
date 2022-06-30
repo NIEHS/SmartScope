@@ -11,7 +11,7 @@ General
     Comma separated list of hostsnames that are allowed to be used to connect to the server.
     *e.g.* locahost,myhostname,mydomain.com,
 
-* DJANGO_SETTINGS_MODULE *Default: Smartscope.settings.server_singularity*
+* DJANGO_SETTINGS_MODULE *Default: Smartscope.settings.server_docker*
 
     Useful to change if an instance will only be used as a worker.
     More details coming soon.
@@ -58,16 +58,8 @@ General
 
     Sets the server in debug mode to return traceback of the error on webpage loading instead of the regular return code.
 
-SerialEM-related variables
-**************************
-
-* SEM_PYTHON *Default:True*
-
-    Whether SmartScope will try to connect to SerialEM to run a session. Useful to turn off when testing in "fake scope" mode
-
-* NO_TEM_TESTMODE *Default:False*
-
-    To turn on "fake scope" mode. The SEM_PYTHON option needs to also be turned off to take effect.
+Fake-scope mode
+***************************************
 
 * TEST_FILES *Default:/mnt/data/tmp/smartscope_testfiles/*
 
