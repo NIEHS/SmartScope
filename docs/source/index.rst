@@ -29,6 +29,7 @@ Site map
    news.rst
    beta.rst
    installation.rst
+   update.rst
    setup.rst
    overview.rst
    run_smartscope.rst

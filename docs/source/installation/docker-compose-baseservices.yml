@@ -1,0 +1,10 @@
+version: "3"
+services:
+  smartscope: 
+    ...smartscope settings here
+  db: 
+    ...db settings here
+  cache: 
+    ...cache settings here
+  nginx: 
+    ...nginx settings here

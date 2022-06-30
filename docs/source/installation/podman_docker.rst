@@ -6,7 +6,7 @@ This is the fastest way to get started with SmartScope.
 Requirements
 ************
 
-.. warning:: This has been tested only with Podman thus far. We assume that it will work with Docker as well using the same commands and simply replacing podman with docker.
+.. warning:: This has been tested with both Podman and Docker. Simply replace podman with docker and podman-compose with docker-compose.
 
 .. note:: The installation requires Podman version >=3.0 and podman-compose 0.1.x. If you are using podman >=3.4, you can use podman-compose from the main branch on github.
 
@@ -39,32 +39,40 @@ Installation steps
         wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz
         tar -xvf SmartScope0.6.tar.gz
 
-3. Using a text editor, open the docker-compose.yml file and edit the values to your needs. The file includes description of each entry.
+3. Using a text editor, open the docker-compose.yml file and edit the values in the volumes and environment to your needs. The file includes description of each entry.
+
+    `Click here <./docker-compose_details.html>`_ for details about the docker-compose.yml sections.
 
     `Click here <./environment.html>`_ for details about the environment variables.
 
-    .. raw:: html
-
-        <details>
-        <summary><a>docker-compose.yml</a></summary>
-
-    .. literalinclude:: docker-compose.yml
-        :language: yaml
-        :linenos:
-
-    .. raw:: html
-
-        </details>
-
-
 4. Run the docker-compose file. On the first run, this should build the images and start the pods.
 
-    .. note:: This process takes a few minutes to complete when the smartscope images needs to be built.
+    .. note:: 
+        This process takes a few minutes to complete when the smartscope images needs to be built. 
+        You may be promtped to download images with multiple choices. Select the option that would pull from docker.io.
 
     .. code-block:: bash
 
-        #This will build and run all the pods as a daemon
+        #This will build and run the pod as a daemon
         sudo podman-compose up -d
+
+    After the process is finished, you can list the running containers using the following command:
+
+    .. code-block:: bash
+
+        sudo podman ps
+        #Should produce the following output
+        CONTAINER ID  IMAGE                               COMMAND               CREATED       STATUS           PORTS                  NAMES
+        c4eaa0478684  k8s.gcr.io/pause:3.2                                      6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  3e292605506f-infra
+        7bb77fe800e6  docker.io/library/mariadb:10.5      mysqld                6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  smartscope-db
+        345730a43ad1  docker.io/library/redis:6.2-alpine  redis-server --sa...  6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  smartscope-beta_cache_1
+        53310f8baf12  localhost/smartscope:0.62           gunicorn -c /opt/...  6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  smartscope
+        ed4cf9175516  docker.io/library/nginx:latest      nginx -g daemon o...  6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  smartscope-beta_nginx_1
+
+    .. note:: 
+        Anytime the docker-compose.yml is changed, the pod needs to be stopped and restarted.
+        Stop with `sudo podman-compose down` and start `sudo podman-compose up -d`
+
 
     Altenatively, it is possible to build separately. To rebuild, add the --no-cache argument to the following command:
 
@@ -83,7 +91,7 @@ Installation steps
 
         #First copy the dump into the location were your database is. This is the same directory specified in the volumes section of the docker-compose file for the db service.
         cp SmartScope/config/docker/initialdb.sql /path/to/db/
-        sudo podman exec smartscope-db /bin/bash -c 'mysql -p$MYSQL_ROOT_PASSWORD init_smartscope < /var/lib/mysql/initialdb.sql'
+        sudo podman exec smartscope-db /bin/bash -c 'mysql --user=$MYSQL_USER --password=$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /var/lib/mysql/initialdb.sql'
 
 6. Log in to the web interface with the initial admin account.
 

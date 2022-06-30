@@ -2,6 +2,7 @@ Additionnal information on installation
 =======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    ./environment.rst
+   ./docker-compose_details.rst

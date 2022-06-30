@@ -1,7 +1,7 @@
 Installation with Anaconda/Miniconda
 ####################################
 
-.. warning:: This Section is still a work in progress and will only work with SmartScope >=0.61
+.. warning:: This Section is still a work in progress and will only work with SmartScope >=0.62
 
 Requirements
 ************

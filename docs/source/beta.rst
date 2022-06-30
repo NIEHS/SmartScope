@@ -20,8 +20,8 @@ Here is the expected timeline of SmartScope beta program and release:
    :header: "Phase", "Start", "End", "Source code"
    :widths: 20, 20, 20, 20
 
-   "Closed beta", "2022-05-27", "2022-06-30", "Private"
-   "Open beta", "2022-07-01", "2022-08-30", "Public"
+   "Closed beta", "2022-05-27", "2022-07-15", "Private"
+   "Open beta", "2022-07-15", "2022-08-30", "Public"
    "Release", "2022-09-01", "*null*", "Public" 
 *Dates are subject to change*
 
