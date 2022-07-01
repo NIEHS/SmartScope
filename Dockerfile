@@ -21,7 +21,7 @@ RUN addgroup --gid $GROUP_ID smartscope_group &&\
 
 RUN chown smartscope_user /mnt/ && \
 	chown -R smartscope_user /opt/ && \
-	mkdir /opt/logs/
+	mkdir /opt/logs/ /mnt/fake_scope/
 
 ADD . /opt/smartscope/
 
@@ -41,8 +41,8 @@ ENV	ALLOWED_HOSTS=localhost \
 	USE_LONGTERMSTORAGE=False \
 	USE_MICROSCOPE=True \ 
 	DEFAULT_UMASK=003 \
-	LOGLEVEL=DEBUG \
-	DEBUG=True \
+	LOGLEVEL=INFO \
+	DEBUG=False \
 	TEST_FILES=/mnt/testfiles/ \
 	MYSQL_HOST=db \
 	MYSQL_PORT=3306 \
@@ -70,3 +70,5 @@ RUN --mount=type=cache,target=/opt/conda/pkgs --mount=type=cache,target=/root/.c
 USER smartscope_user
 
 WORKDIR /opt/smartscope/
+
+ENTRYPOINT [ "gunicorn", "-c", "/opt/smartscope/config/docker/gunicorn.conf.py" ]
