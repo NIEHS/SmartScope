@@ -110,7 +110,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    filter_fields = ['session', 'group', 'date', 'microscope_id', 'detector_id']
+    filterset_fields = ['session', 'group', 'date', 'microscope_id', 'detector_id']
 
     @ action(detail=True, methods=['post'],)
     def run_session(self, request, **kwargs):
@@ -281,7 +281,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     queryset = AutoloaderGrid.objects.all()
     serializer_class = AutoloaderGridSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_fields = ('session_id', 'holeType', 'meshSize', 'meshMaterial', 'quality', 'status')
+    filterset_fields = ('session_id', 'holeType', 'meshSize', 'meshMaterial', 'quality', 'status')
 
     @ action(detail=True, methods=['get'])
     def fullmeta(self, request, **kwargs):
@@ -332,8 +332,8 @@ class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = AtlasModel.objects.all()
     serializer_class = AtlasSerializer
-    filter_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType',
-                     'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id', 'status']
+    filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType',
+                        'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id', 'status']
 
     @ action(detail=True, methods=['get'])
     def load(self, request, **kwargs):
@@ -347,8 +347,8 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     queryset = SquareModel.objects.all()
     serializer_class = SquareSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
-                     'atlas_id', 'selected', 'grid_id__session_id', 'status']
+    filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
+                        'atlas_id', 'selected', 'grid_id__session_id', 'status']
 
     @ action(detail=True, methods=['get'])
     def load(self, request, **kwargs):
@@ -404,8 +404,8 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     queryset = HoleModel.objects.all()
     serializer_class = HoleSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id',
-                     'square_id', 'status']
+    filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id',
+                        'square_id', 'status']
 
     @ action(detail=False, methods=['get'])
     def simple(self, request, *args, **kwargs):
@@ -453,8 +453,8 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     queryset = HighMagModel.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = HighMagSerializer
-    filter_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
-                     'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id']
+    filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
+                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id']
 
     @ action(detail=True, methods=['get'])
     def fft(self, request, *args, **kwargs):
