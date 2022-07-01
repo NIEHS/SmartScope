@@ -35,6 +35,8 @@ DEPLOY = True
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+CSRF_TRUSTED_ORIGINS = [f'https://*.{host}' for host in ALLOWED_HOSTS]
+
 APP = os.getenv('APP')
 # Application definition
 # Storage locations
