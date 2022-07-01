@@ -5,4 +5,3 @@ Additionnal information on installation
    :maxdepth: 3
 
    ./environment.rst
-   ./docker-compose_details.rst

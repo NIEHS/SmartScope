@@ -1,5 +1,5 @@
-Environment variables
-#####################
+Complete list of environment variables
+######################################
 
 This section explains how to set up the environment variables for SmartScope
 

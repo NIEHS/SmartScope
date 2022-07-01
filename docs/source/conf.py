@@ -34,7 +34,8 @@ extensions = [
     'm2r2',
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
-    'sphinx.ext.todo'
+    'sphinx.ext.todo',
+    'sphinx.ext.autosectionlabel',
 ]
 
 # source_suffix = '.rst'

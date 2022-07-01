@@ -30,6 +30,8 @@ Installation steps
         git clone https://github.com/NIEHS/SmartScope.git
         cd SmartScope
 
+.. _installation models download:
+
 2. Download the AI models
 
     The AI models can be download by clicking the following :download:`this link <https://docs.smartscope.org/downloads/Smartscope0.6.tar.gz>` or via the wget command.
@@ -39,11 +41,21 @@ Installation steps
         wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz
         tar -xvf SmartScope0.6.tar.gz
 
-3. Using a text editor, open the docker-compose.yml file and edit the values in the volumes and environment to your needs. The file includes description of each entry.
+3. Using a text editor, copy the :code:`docker-compose-template.yml` to :code:`docker-compose.yml` and edit the values in the volumes and environment to your needs. The file includes description of each entry.
+    
+    .. code-block:: bash
+        
+        #Copy the template file
+        cp docker-compose-template.yml docker-compose.yml
+        #Open and edit with vim or other text editor
+        vim docker-compose.yml
 
-    `Click here <./docker-compose_details.html>`_ for details about the docker-compose.yml sections.
+    .. toctree::
+        :maxdepth: 1
 
-    `Click here <./environment.html>`_ for details about the environment variables.
+        ./docker-compose_details.rst
+        ./environment.rst
+
 
 4. Run the docker-compose file. On the first run, this should build the images and start the pods.
 
