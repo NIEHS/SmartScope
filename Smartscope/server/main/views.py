@@ -1,20 +1,19 @@
-from django.shortcuts import render
 
-from django.contrib.auth import logout, authenticate, login, REDIRECT_FIELD_NAME
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User, Group
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-from django.http import JsonResponse, HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
-# from django.core.urlresolvers import reverse
-from django.views import generic
-from django.views.generic import View, TemplateView, RedirectView
-from django.shortcuts import redirect
+from django.views.generic import TemplateView
 import os
-import glob
-import json
+import Smartscope
+
+from django.contrib.auth import views as auth_views
+
+
+class MyLoginView(auth_views.LoginView):
+    template_name = 'login.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({'version': Smartscope.__version__})
+        return context
 
 
 class ChangeLog(LoginRequiredMixin, TemplateView):
