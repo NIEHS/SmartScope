@@ -65,7 +65,7 @@ RUN --mount=type=cache,target=/opt/conda/pkgs --mount=type=cache,target=/root/.c
 	pip install /opt/smartscope/SerialEM-python --no-dependencies && \
 	wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.15_RHEL7-64_CUDA10.1.sh && \
 	yes | bash imod_4.11.15_RHEL7-64_CUDA10.1.sh -name IMOD && \
-	rm imod_4.11.15_RHEL7-64_CUDA10.1.sh && conda clean --all && rm -rf /root/.cache 
+	rm imod_4.11.15_RHEL7-64_CUDA10.1.sh && conda clean --all
 
 USER smartscope_user
 
