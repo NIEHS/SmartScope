@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.5.15-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.5.16-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: smartscope
 -- ------------------------------------------------------
--- Server version	10.5.15-MariaDB-1:10.5.15+maria~focal
+-- Server version	10.5.16-MariaDB-1:10.5.16+maria~focal
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -463,7 +463,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -472,7 +472,7 @@ CREATE TABLE `django_migrations` (
 
 LOCK TABLES `django_migrations` WRITE;
 /*!40000 ALTER TABLE `django_migrations` DISABLE KEYS */;
-INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446');
+INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192');
 /*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -592,6 +592,7 @@ CREATE TABLE `highmagmodel` (
   `ctffit` double DEFAULT NULL,
   `grid_id_id` varchar(30) NOT NULL,
   `hole_id_id` varchar(30) NOT NULL,
+  `completion_time` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`hm_id`),
   KEY `highmagmodel_grid_id_id_8f8f1849_fk_autoloadergrid_grid_id` (`grid_id_id`),
   KEY `highmagmodel_hole_id_id_0259a98e_fk_holemodel_hole_id` (`hole_id_id`),
@@ -626,7 +627,6 @@ CREATE TABLE `holemodel` (
   `status` varchar(20) DEFAULT NULL,
   `completion_time` datetime(6) DEFAULT NULL,
   `hole_id` varchar(30) NOT NULL,
-  `dist_from_center` double DEFAULT NULL,
   `radius` int(11) NOT NULL,
   `area` double NOT NULL,
   `bis_group` varchar(30) DEFAULT NULL,
@@ -738,7 +738,7 @@ CREATE TABLE `microscope` (
   `voltage` int(11) NOT NULL,
   `spherical_abberation` double NOT NULL,
   `microscope_id` varchar(30) NOT NULL,
-  `loader_size` varchar(30) NOT NULL,
+  `loader_size` int(11) NOT NULL,
   `worker_hostname` varchar(30) NOT NULL,
   `executable` varchar(30) NOT NULL,
   `serialem_IP` varchar(30) NOT NULL,
@@ -755,7 +755,7 @@ CREATE TABLE `microscope` (
 
 LOCK TABLES `microscope` WRITE;
 /*!40000 ALTER TABLE `microscope` DISABLE KEYS */;
-INSERT INTO `microscope` VALUES ('fake_scope','test',200,2.7,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n','12','localhost','smartscope.py','xxx.xxx.xxx.xxx',48888,'X:\\\\auto_screening\\','/mnt/fake_scope');
+INSERT INTO `microscope` VALUES ('fake_scope','test',200,2.7,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',12,'localhost','smartscope.py','xxx.xxx.xxx.xxx',48888,'X:\\\\auto_screening\\','/mnt/fake_scope');
 /*!40000 ALTER TABLE `microscope` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -898,4 +898,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-05-27 13:13:13
+-- Dump completed on 2022-07-02 11:05:09
