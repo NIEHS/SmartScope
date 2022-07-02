@@ -11,17 +11,7 @@ RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &
 	bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && \
 	rm Miniconda3-latest-Linux-x86_64.sh
 
-# create a non-root user
-ARG USER_ID=1000
-ARG GROUP_ID=1001
-
-RUN addgroup --gid $GROUP_ID smartscope_group &&\
-	useradd -m --no-log-init --system  --uid $USER_ID smartscope_user -g smartscope_group &&\
-	echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-RUN chown smartscope_user /mnt/ && \
-	chown -R smartscope_user /opt/ && \
-	mkdir /opt/logs/ /mnt/fake_scope/
+RUN	mkdir /opt/logs/ /mnt/fake_scope/
 
 ADD . /opt/smartscope/
 
@@ -66,6 +56,18 @@ RUN --mount=type=cache,target=/opt/conda/pkgs --mount=type=cache,target=/root/.c
 	wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.15_RHEL7-64_CUDA10.1.sh && \
 	yes | bash imod_4.11.15_RHEL7-64_CUDA10.1.sh -name IMOD && \
 	rm imod_4.11.15_RHEL7-64_CUDA10.1.sh && conda clean --all
+
+
+# create a non-root user
+ARG USER_ID=1000
+ARG GROUP_ID=1001
+
+RUN addgroup --gid $GROUP_ID smartscope_group &&\
+	useradd -m --no-log-init --system  --uid $USER_ID smartscope_user -g smartscope_group
+
+RUN chown smartscope_user /mnt/ && \
+	chown -R smartscope_user /opt/logs && \
+	chown -R smartscope_user /mnt/fake_scope
 
 USER smartscope_user
 
