@@ -45,8 +45,7 @@ ENV	ALLOWED_HOSTS=localhost \
 
 ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:$IMOD_DIR/bin:/opt/miniconda3/bin
 
-RUN --mount=type=cache,target=/opt/conda/pkgs --mount=type=cache,target=/root/.cache \
-	conda update -y conda && \
+RUN conda update -y conda && \
 	yes | conda install cudatoolkit=10.2 cudnn=7.6 && \
 	yes | pip install numpy==1.21.0 && \
 	yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu102 && \
