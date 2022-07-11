@@ -234,8 +234,8 @@ nginx
         To enable SSL in your server:
             Replace by: :code:`./config/docker/templates_SSL/:/etc/nginx/templates/`
             Add certificate and private key to the volumes:
-                `/path/to/certs/cert.pem:/opt/certs/smartscope.crt`
-                `/path/to/certs/privkey.pem:/opt/certs/smartscope.key`
+                :code:`/path/to/certs/cert.pem:/opt/certs/smartscope.crt`
+                :code:`/path/to/certs/privkey.pem:/opt/certs/smartscope.key`
         
     
     **Optional mounts**

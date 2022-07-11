@@ -1,4 +1,4 @@
-Installation with Podman or Docker
+Installation with Docker or Podman
 ###################################
 
 This is the fastest way to get started with SmartScope.
@@ -6,7 +6,17 @@ This is the fastest way to get started with SmartScope.
 Requirements
 ************
 
-.. warning:: This has been tested with both Podman and Docker. Simply replace podman with docker and podman-compose with docker-compose.
+.. warning:: This has been tested with both Podman and Docker. In all the commands below, :code:`docker` can be replaced by :code:`podman` and :code:`docker-compose` by :code:`podman-compose`.
+
+Docker
+======
+
+Docker is much easier to set up on most linux distributions and is therefore recommended.
+
+.. note:: The latest versions of docker ship with docker-compose included. The commands shown below as :code:`docker-compose` may have to be replaced with :code:`docker compose`
+
+Podman
+======
 
 .. note:: The installation requires Podman version >=3.0 and podman-compose 0.1.x. If you are using podman >=3.4, you can use podman-compose from the main branch on github.
 
@@ -39,10 +49,12 @@ Installation steps
     .. code-block:: bash
 
         wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz
-        tar -xvf SmartScope0.6.tar.gz
+        tar -xvf Smartscope0.6.tar.gz
 
 3. Using a text editor, copy the :code:`docker-compose-template.yml` to :code:`docker-compose.yml` and edit the values in the volumes and environment to your needs. The file includes description of each entry.
     
+    .. warning:: This is the most important step. Please follow the link below for a full description or the docker-compose file requirements.
+
     .. code-block:: bash
         
         #Copy the template file
@@ -66,13 +78,13 @@ Installation steps
     .. code-block:: bash
 
         #This will build and run the pod as a daemon
-        sudo podman-compose up -d
+        docker-compose up -d
 
     After the process is finished, you can list the running containers using the following command:
 
     .. code-block:: bash
 
-        sudo podman ps
+        docker ps
         #Should produce the following output
         CONTAINER ID  IMAGE                               COMMAND               CREATED       STATUS           PORTS                  NAMES
         c4eaa0478684  k8s.gcr.io/pause:3.2                                      6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  3e292605506f-infra
@@ -83,7 +95,7 @@ Installation steps
 
     .. note:: 
         Anytime the docker-compose.yml is changed, the pod needs to be stopped and restarted.
-        Stop with `sudo podman-compose down` and start `sudo podman-compose up -d`
+        Stop with `docker-compose down` and start `docker-compose up -d`
 
 
     Altenatively, it is possible to build separately. To rebuild, add the --no-cache argument to the following command:
@@ -91,9 +103,9 @@ Installation steps
     .. code-block:: bash
 
         #This will only the image building
-        sudo podman-compose build
+        docker-compose build
         #To force rebuilding an existing image
-        sudo podman-compose build --no-cache
+        docker-compose build --no-cache
 
 5. Set up the initial database (only once)
 
@@ -103,11 +115,13 @@ Installation steps
 
         #First copy the dump into the location were your database is. This is the same directory specified in the volumes section of the docker-compose file for the db service.
         cp SmartScope/config/docker/initialdb.sql /path/to/db/
-        sudo podman exec smartscope-db /bin/bash -c 'mysql --user=$MYSQL_USER --password=$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /var/lib/mysql/initialdb.sql'
+        docker exec smartscope-db /bin/bash -c 'mysql --user=$MYSQL_USER --password=$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /var/lib/mysql/initialdb.sql'
 
 6. Log in to the web interface with the initial admin account.
 
-    You should now be able to access the smartscope interface at `<https://localhost:48000/>`_.
+    You should now be able to access the smartscope interface at `<http://localhost:48000/>`_.
+
+    The initial account is :code:`admin` with password :code:`smartscope`. 
 
     .. note:: You may need to change the domain and port number to reflect the docker-compose file with the port specified in the nginx service and one of the domains specified in the ALLOWED_HOSTS of the smartscope service.
 
