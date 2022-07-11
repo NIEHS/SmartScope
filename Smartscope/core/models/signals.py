@@ -59,17 +59,18 @@ def pre_update(sender, instance, **kwargs):
 @ receiver(pre_save, sender=AutoloaderGrid)
 def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
-        original = sender.objects.get(pk=instance.pk)
         if instance.status == 'aborting':
             targets = list(instance.squaremodel_set.filter(status='queued'))
             targets += list(instance.holemodel_set.filter(status='queued'))
             for target in targets:
                 target.selected = False
                 target.save()
-
+            return
+        original = sender.objects.get(pk=instance.pk)
         if instance.name != original.name:
             print(f'Changing grid name.\nMoving the grid from:\n\t{original.directory}\nTo:\n\t{instance.directory}')
             os.rename(original.directory, instance.directory)
+            return
 
         if instance.status == 'complete' and original.status != 'complete':
             instance.export()
