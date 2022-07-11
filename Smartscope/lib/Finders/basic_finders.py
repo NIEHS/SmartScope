@@ -97,7 +97,7 @@ def find_square(image):
     thresh = np.mean(image)
     hist = plot_hist_gauss(image, thresh, size=image.shape[0])
     contours, _ = find_contours(image, thresh)
-    contour = [cnt for cnt in contours if (1000 < cv2.contourArea(cnt))][0]
+    contour = max(contours, key=cv2.contourArea)
     M = cv2.moments(contour)
     cX = int(M["m10"] / M["m00"])
     cY = int(M["m01"] / M["m00"])
