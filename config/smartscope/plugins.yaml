@@ -76,7 +76,7 @@ holeFinders:
         method: regular_pattern
         package: Smartscope.lib.Finders.basic_finders
         kwargs: 
-            spacing: 5
+            spacing_in_um: 5
         targetClass:
             - Finder
         description: |
