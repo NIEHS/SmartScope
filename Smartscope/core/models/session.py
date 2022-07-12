@@ -252,6 +252,8 @@ class GridCollectionParams(BaseModel):
     drift_crit = models.FloatField(default=-1)
     tilt_angle = models.FloatField(default=0)
     save_frames = models.BooleanField(default=True)
+    offset_targeting = models.BooleanField(default=True)
+    offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
 
     class Meta(BaseModel.Meta):
@@ -955,6 +957,7 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
     is_x = models.FloatField(null=True)
     is_y = models.FloatField(null=True)
+    offset = models.FloatField(default=0)
     frames = models.CharField(max_length=120, null=True, default=None)
     defocus = models.FloatField(null=True)
     astig = models.FloatField(null=True)

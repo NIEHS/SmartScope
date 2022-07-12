@@ -38,10 +38,12 @@
             </div>
         </div>
         <div class="card-body">
+            <p class="card-text text-left m-0">Pixel size: {{hole.pixel_size|floatformat:2}} &#8491;</p>
             <p class="card-text text-left m-0">Defocus: {{hole.defocus|floatformat:0}} &#8491;</p>
             <p class="card-text text-left m-0">CTFfit: {{hole.ctffit|floatformat:1}} &#8491;</p>
             <p class="card-text text-left m-0">Astig: {{hole.astig|floatformat:0}} &#8491;</p>
-            <p class="card-text text-left m-0">Angle: {{hole.angast|floatformat:1}} &#176;</p>
+            <p class="card-text text-left m-0">Angle: {{hole.angast|floatformat:0}} &#176;</p>
+            <p class="card-text text-left m-0">Targeting offset: {{hole.offset|floatformat:1}} &mu;m;</p>
         </div>
         <div class="card-footer py-1">
             <p class="card-text text-left m-0"><small class="text-muted">Frames: {{hole.frames}}</small></p>

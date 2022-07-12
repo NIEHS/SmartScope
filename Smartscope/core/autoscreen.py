@@ -1,9 +1,10 @@
 
 import os
+from random import random
 import sys
 import time
 import shlex
-
+from typing import Union
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, SerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import AutoloaderGrid, ScreeningSession, HoleModel, SquareModel, Process
@@ -95,6 +96,18 @@ def is_stop_file(sessionid: str) -> bool:
         raise KeyboardInterrupt()
 
 
+def add_IS_offset(hole_size_in_um: float, mesh_type: str, offset_in_um: float = -1) -> float:
+    if offset_in_um != -1:
+        return offset_in_um
+    hole_radius = hole_size_in_um / 2
+    max_offset_factor = 0.5
+    if mesh_type == 'Carbon':
+        max_offset_factor = 0.8
+    offset_in_um = round(random() * hole_radius * max_offset_factor, 1)
+    logger.info(f'Adding a {offset_in_um} \u03BCm offset to sample ice gradient along the hole.')
+    return offset_in_um
+
+
 def run_grid(grid, session, processing_queue, scope):
     """Main logic for the SmartScope process
 
@@ -136,6 +149,8 @@ def run_grid(grid, session, processing_queue, scope):
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
     scope.setup(params.save_frames, params.zeroloss_delay)
+    grid_type = grid.holeType
+    grid_mesh = grid.meshMaterial
     if atlas.status == 'queued' or atlas.status == 'started':
         atlas = update(atlas, status='started')
         print('Waiting on atlas file')
@@ -213,9 +228,12 @@ def run_grid(grid, session, processing_queue, scope):
                     logger.debug(f'Just created:{created} {hm}, {hm.pk}')
                     if hm.status in [None, 'started']:
                         finder = list(h.finders.all())[0]
-                        isX, isY = stage_x - finder.stage_x, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
+                        offset = 0
+                        if grid.collection_mode == 'screening' or params.offset_distance != -1:
+                            offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
+                        isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
                         frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw, frames=params.save_frames)
-                        hm = update(hm, is_x=isX, is_y=isY, frames=frames, status='acquired', completion_time=timezone.now())
+                        hm = update(hm, is_x=isX, is_y=isY, offset=offset, frames=frames, status='acquired', completion_time=timezone.now())
                         if h != hole:
                             update(h, status='acquired', completion_time=timezone.now())
                         # transaction.on_commit(lambda: processing_queue.put([process_hm_image, [hm, microscope]]))
@@ -304,7 +322,6 @@ def process_square_image(square, grid, microscope_id):
             for hole in holes:
                 hole.save()
         logger.info(f'Picking holes on {square}')
-
         select_n_areas(square, grid.params_id.holes_per_square, is_bis=is_bis)
         square = update(square, status='targets_picked')
     if square.status == 'targets_picked':
