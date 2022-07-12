@@ -14,10 +14,14 @@ def add_scale_bar(pixelsize, w, h, id_type='atlas'):
     startpoint = w * 0.98
     if pixelsize > 500:
         text = '100 \u03BCm'
-        lineLenght = 1000000 / pixelsize
+        lineLenght = 1_000_000 / pixelsize
     elif pixelsize > 10:
         text = '10 \u03BCm'
-        lineLenght = 100000 / pixelsize
+        lineLenght = 100_000 / pixelsize
+    else:
+        text = '100 nm'
+        ft_sz = floor(w / 20)
+        lineLenght = 1_000 / pixelsize
     line = draw.Line(startpoint - lineLenght, h * 0.02, startpoint, h * 0.02, stroke='white', stroke_width=ft_sz / 2, id=f'line_{id_type}')
     text = draw.Text(text, ft_sz, path=line, fill='white', text_anchor='middle', lineOffset=-0.5, id=f'text_{id_type}')
     scalebarGroup.append(line)
@@ -201,6 +205,14 @@ def drawSquare(square, targets, display_type, method):
     # d.setRenderSize()
     # print(d.asSvg())
     return d.asSvg()
+
+
+def drawHighMag(highmag):
+    d = myDrawging(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False)
+    d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png['url'], embed=False))
+    d.append(add_scale_bar(highmag.pixel_size, d.width, d.height, id_type=highmag.name))
+
+    return d.asSvg
 
 
 if __name__ == "__main__":
