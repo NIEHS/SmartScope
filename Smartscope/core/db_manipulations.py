@@ -1,6 +1,6 @@
 
 from typing import Any, Callable, List, Union
-from Smartscope.lib.config import load_plugins
+from Smartscope.lib.config import load_plugins, load_protocol
 from Smartscope.core.models import *
 from scipy.spatial.distance import cdist
 import numpy as np
