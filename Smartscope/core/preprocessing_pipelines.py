@@ -113,6 +113,8 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 continue
             data = get_CTFFIN4_data(movie.ctf)
             data['status'] = 'completed'
+            data['shape_x'] = movie.shape_x
+            data['shape_y'] = movie.shape_y
             logger.debug(f'Updating {movie.name}')
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id

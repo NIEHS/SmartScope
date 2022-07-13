@@ -13,7 +13,7 @@ from django.core import serializers
 from django.conf import settings
 from django.apps import apps
 from Smartscope.server.lib.s3functions import *
-from Smartscope.lib.svg_plots import *
+from Smartscope.lib.svg_plots import drawAtlas, drawSquare, drawHighMag
 from Smartscope.lib.config import deep_get, load_plugins
 
 import logging
@@ -252,6 +252,8 @@ class GridCollectionParams(BaseModel):
     drift_crit = models.FloatField(default=-1)
     tilt_angle = models.FloatField(default=0)
     save_frames = models.BooleanField(default=True)
+    offset_targeting = models.BooleanField(default=True)
+    offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
 
     class Meta(BaseModel.Meta):
@@ -950,11 +952,14 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     number = models.IntegerField()
     name = models.CharField(max_length=100, null=False)
     pixel_size = models.FloatField(null=True)
+    shape_x = models.IntegerField(null=True)
+    shape_y = models.IntegerField(null=True)
     hole_id = models.ForeignKey(HoleModel, on_delete=models.CASCADE, to_field='hole_id')
     status = models.CharField(max_length=20, null=True, default=None)
     grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
     is_x = models.FloatField(null=True)
     is_y = models.FloatField(null=True)
+    offset = models.FloatField(default=0)
     frames = models.CharField(max_length=120, null=True, default=None)
     defocus = models.FloatField(null=True)
     astig = models.FloatField(null=True)
@@ -981,12 +986,18 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
         self.hole_id = parent
     # endaliases
 
+    @property
+    def SVG(self):
+        return drawHighMag(self)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.hm_id:
             self.name = f'{self.parent.name}_hm'
             self.hm_id = generate_unique_id(extra_inputs=[self.name[:20]])
         self.raw = os.path.join('raw', f'{self.name}.mrc')
+        if self.status == 'completed' and self.shape_x is None:
+            set_shape_values(self)
 
     def save(self, *args, **kwargs):
 

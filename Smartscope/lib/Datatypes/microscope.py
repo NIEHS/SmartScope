@@ -1,11 +1,5 @@
 from dataclasses import dataclass
 import serialem as sem
-import time
-import math
-import os
-import logging
-import numpy as np
-from Smartscope.lib.file_manipulations import generate_fake_file
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -63,8 +57,6 @@ class MicroscopeInterface(ABC):
         defocusTarget = round(sem.ReportTargetDefocus() - abs(step), 2)
         if defocusTarget < maxdef or defocusTarget > mindef:
             defocusTarget = mindef
-
-        # sem.SetTargetDefocus(defocusTarget)
         self.state.defocusTarget = defocusTarget
 
     @abstractmethod
