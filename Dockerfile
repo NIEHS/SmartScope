@@ -11,9 +11,11 @@ RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &
 	bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && \
 	rm Miniconda3-latest-Linux-x86_64.sh
 
-RUN	mkdir /opt/logs/ /mnt/fake_scope/
+RUN wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.15_RHEL7-64_CUDA10.1.sh && \
+	yes | bash imod_4.11.15_RHEL7-64_CUDA10.1.sh -name IMOD && \
+	rm imod_4.11.15_RHEL7-64_CUDA10.1.sh
 
-ADD . /opt/smartscope/
+RUN	mkdir /opt/logs/ /mnt/fake_scope/
 
 #General environment variables
 ENV IMOD_DIR=/usr/local/IMOD \	
@@ -45,17 +47,19 @@ ENV	ALLOWED_HOSTS=localhost \
 
 ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:$IMOD_DIR/bin:/opt/miniconda3/bin
 
+ADD ./config/docker/requirements.txt /opt/
+
 RUN conda update -y conda && \
 	yes | conda install cudatoolkit=10.2 cudnn=7.6 && \
 	yes | pip install numpy==1.21.0 && \
 	yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu102 && \
-	yes | pip install -r /opt/smartscope/config/docker/requirements.txt && \
-	pip install -e /opt/smartscope/ --no-dependencies && \
-	pip install /opt/smartscope/SerialEM-python --no-dependencies && \
-	wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.15_RHEL7-64_CUDA10.1.sh && \
-	yes | bash imod_4.11.15_RHEL7-64_CUDA10.1.sh -name IMOD && \
-	rm imod_4.11.15_RHEL7-64_CUDA10.1.sh && conda clean --all
+	yes | pip install -r /opt/equirements.txt && \
+	conda clean --all
 
+ADD . /opt/smartscope/
+
+RUN pip install -e /opt/smartscope/ --no-dependencies && \
+	pip install /opt/smartscope/SerialEM-python --no-dependencies
 
 # create a non-root user
 ARG USER_ID=1000
@@ -72,4 +76,4 @@ USER smartscope_user
 
 WORKDIR /opt/smartscope/
 
-ENTRYPOINT [ "gunicorn", "-c", "/opt/smartscope/config/docker/gunicorn.conf.py" ]
+CMD [ "gunicorn", "-c", "/opt/smartscope/config/docker/gunicorn.conf.py" ]

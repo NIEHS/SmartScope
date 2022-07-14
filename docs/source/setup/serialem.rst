@@ -1,9 +1,8 @@
 SerialEM setup
 ==============
 
-In this section, you'll find guidance about how to set up SerialEM for SmartScope use. 
+In this section, you'll find how to set up SerialEM for SmartScope use. 
 
-The idea is to generate a settings file with low-dose mode presets that will work well with the current version of SmartScope.
 
 Calibrations
 ************
@@ -11,8 +10,136 @@ Calibrations
 To ensure maximal precision of targeting and coordinate conversion, it is crucial that LM pixel size and rotation angle calibrations are verified before using SmartScope.
 In the event of targeting problems between the atlas and squares, where squares are off-centered, it is very likely due these calibrations being off.
 
-Low-dose Presets
-****************
+1- Setting up external python for SerialEM
+******************************************
+
+Documentation on how to set up can be found on the `SerialEM website <https://bio3d.colorado.edu/SerialEM/hlp/html/about_scripts.htm#Python>`_. We have now installed on a few systems and here are some examples for setting up the :code:`SerialEMproperties.txt`.
+
+If the property file has a :code:`SocketServerIP 1 xxx.xxx.xxx.xxx`, then that same IP should be used to set the :code:`SocketServerIP 7` for external python.
+
+Otherwise, :code:`SockerServerIP 7` should be the IP of the SerialEM PC.
+
+
+**Example 1: Talos Arctica with K2 or K3**
+
+    * Microscope PC IP: 192.168.0.3
+    * Gatan PC IP: 192.168.0.32
+    * SerialEM is installed on the Gatan PC
+
+    The following lines should be added to :code:`SerialEMproperties.txt`.
+
+    .. code-block::
+
+        SocketServerIP                  1 192.168.0.3
+        SocketServerPort                1 48892
+        SocketServerIP                  7 192.168.0.3
+        SocketServerPort                7 48888
+        EnableExternalPython            1
+
+
+**Example 2: Titan Krios with embeded BioContinuum and K3**
+
+    * Microscope PC IP: 192.168.0.1
+    * Gatan PC IP: 192.168.0.31
+    * SerialEM is installed on the Gatan PC
+
+    The following lines should be added to :code:`SerialEMproperties.txt`.
+
+    .. code-block::
+
+        SocketServerIP                  7 192.168.0.31
+        SocketServerPort                7 48888
+        EnableExternalPython            1
+
+.. note:: SerialEM needs to be restarted after changing properties.
+
+Testing the connection to serialEM
+##################################
+
+To quickly test if your settings are good for the python connection to SerialEM, you can use the following commands and replace IP by the gatan PC address and port by 48888.
+
+From our examples above, the Talos Arctica IP would be 192.168.0.32 and port would be 48888.
+
+.. code-block::
+
+    docker exec smartscope smartscope.py test_serialem_connection IP port
+
+    ### EXAMPLE ###
+    docker exec smartscope smartscope.py test_serialem_connection 192.138.0.32 48888
+
+If the connection is successful, a :code:`Hello from smartscope` message should appear in the SerialEM log window. Now, you can proceed to adding a microscope.
+
+2- Register a microscope to the SmartScope database
+****************************************************************
+
+Now that the connection to SerialEM works, we can add our microscope to the database.
+
+To do so, navigate to the admin portal and then the Microscopes section and add microscope. It should bring you to `<localhost:48000/admin/API/microscope/add/>`_.
+
+.. figure:: /_static/add_scope.png
+   :width: 90%
+   :align: center
+   :figclass: align-center
+
+General
+#######
+* **Name:** Should be however your facility calls the microscope. i.e. Arctica, Krios-1
+* **Location:** Usually the name of the center. i.e. NIEHS
+
+Hardware constants
+##################
+* **Voltage:** Microscope Voltage on kV
+* **Spherical abberation:** Microscope spherical abberation
+* **Loader Size:** For Autloader microscopes, the value should be 12. Side entry should be 1. If you have a JOEL scope and cannot run a LoadCartridge command from SerialEM, it should be set to 1
+
+Smartscope Worker
+#################
+
+* **Worker Hostname:** Should remain localhost unless SmartScope is set up as a master-worker configuration. *More details soon*
+* **Executable:** Should remain smartscope.py unless SmartScope is set up as a master-worker configuration. *More details soon* 
+
+SerialEM external python connection
+###################################
+
+* **Serialem IP:** IP of the SerialEM computer. 
+* **Serialem PORT:** Port of the serialEM python socket. default is 48888. It depends on how is was set up in :code:`SerialEMproperties.txt` in :ref:`step 1 <1- Setting up external python for SerialEM>`. 
+
+Filesystem Paths
+################
+
+These two paths should be pointing to the same directory. One is for SerialEM to save the files in the windows computer. The other is for SmartScope to find the files saved by SerialEM.
+
+* **Windows path:** Path of the directory where SerialEM will save the files, viewed from the SerialEM PC
+* **Scope path:** Path of the directory where SerialEM will save the files, viewed from the SmartScope container.
+
+Here's a example:
+
+    Let's say the data is going to be saved in :code:`X:\\smartscope` and the :code:`X:\\` drive is mounted to the linux computer at :code:`/mnt/gatan_RaidX/`. 
+
+    Also, let's assume that the :code:`/mnt/gatan_RaidX/:/mnt/krios/` bind was set up in the volumes of the smartscope service in the :code:`docker-compose.yaml`. 
+
+    In that case, :code:`X:\\smartscope` is equivalent to :code:`/mnt/krios/smartscope` in the smartscope container.
+
+    Then, the microscope :code:`Windows path= X:\\smartscope` and :code:`Scope path= /mnt/krios/smartscope`
+
+.. note:: Please make sure that this path is writable by both SerialEM and SmartScope.
+
+3- Register a microscope to the SmartScope database
+****************************************************************
+
+Similarly to adding a microscope, navigate to the admin portal and then the Detectors section and add. It should bring you to `<localhost:48000/admin/detector/add/>`_.
+
+.. figure:: /_static/add_detector.png
+   :width: 90%
+   :align: center
+   :figclass: align-center
+
+Details coming soon.
+
+4- Low-dose Presets
+*******************
+
+The idea is to generate a settings file with low-dose mode presets that will work well with the current version of SmartScope.
 
 Search
 #######
@@ -46,8 +173,6 @@ Non Low-dose Presets
 ********************
 
 The easiest way to set up for the atlas is to create an imaging state for mont-mapping. This way, when acquiring the atlas, it will use the mont-map setting instead of Record.
-
-.. note:: There is a workaround that needs to be executed prior to starting SmartScope for this to happen successfully. `Click here for more details <>`_
 
 Hole Reference Image
 ********************
