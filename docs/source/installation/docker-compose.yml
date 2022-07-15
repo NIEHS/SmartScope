@@ -51,8 +51,6 @@ services:
       - :/mnt/data/
       - ./static/:/opt/smartscope/static/
       - ./config/docker/templates_noSSL/:/etc/nginx/templates/
-    environment:
-      SERVER_NAME: localhost
     networks:
       - smartscopenet
     depends_on:
