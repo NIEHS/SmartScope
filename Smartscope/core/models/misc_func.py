@@ -59,4 +59,6 @@ def set_shape_values(instance):
     logger.info(f'No shape found for completed image. Setting values to {montage.shape_x} X {montage.shape_y}')
     instance.shape_x = montage.shape_x
     instance.shape_y = montage.shape_y
+    if instance.pixel_size is None:
+        instance.pixel_size = montage.pixel_size
     instance.save()
