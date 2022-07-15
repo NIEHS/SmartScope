@@ -21,7 +21,7 @@ import psutil
 import signal
 from django.utils.timezone import now
 from Smartscope.core.db_manipulations import viewer_only
-import datetime
+from datetime import datetime
 
 
 def signup(request):
