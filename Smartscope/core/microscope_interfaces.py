@@ -71,6 +71,8 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetMag(int(mag))
         sem.SetPercentC2(float(c2))
         sem.SetSpotSize(int(spotsize))
+        if self.energyfilter:
+            sem.SetSlitIn(0)
         self.eucentricHeight()
         sem.OpenNewMontage(tileX, tileY, file)
         logger.info('Starting Atlas acquisition')
