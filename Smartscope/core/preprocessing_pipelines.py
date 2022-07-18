@@ -113,6 +113,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 continue
             data = get_CTFFIN4_data(movie.ctf)
             data['status'] = 'completed'
+            movie.read_image()
             data['shape_x'] = movie.shape_x
             data['shape_y'] = movie.shape_y
             logger.debug(f'Updating {movie.name}')
