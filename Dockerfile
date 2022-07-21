@@ -45,7 +45,7 @@ ENV	ALLOWED_HOSTS=localhost \
 	REDIS_PORT=6379 \
 	USE_AWS=False 
 
-ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:$IMOD_DIR/bin:/opt/miniconda3/bin
+ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:/opt/miniconda3/bin:$IMOD_DIR/bin
 
 ADD ./config/docker/requirements.txt /opt/
 
@@ -53,13 +53,17 @@ RUN conda update -y conda && \
 	yes | conda install cudatoolkit=10.2 cudnn=7.6 && \
 	yes | pip install numpy==1.21.0 && \
 	yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu102 && \
-	yes | pip install -r /opt/equirements.txt && \
+	yes | pip install -r /opt/requirements.txt && \
 	conda clean --all
 
 ADD . /opt/smartscope/
 
 RUN pip install -e /opt/smartscope/ --no-dependencies && \
 	pip install /opt/smartscope/SerialEM-python --no-dependencies
+
+RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate &&\
+	tar -xvf Smartscope0.6.tar.gz -C /opt/ &&\
+	rm Smartscope0.6.tar.gz
 
 # create a non-root user
 ARG USER_ID=1000

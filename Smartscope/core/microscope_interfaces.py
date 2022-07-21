@@ -4,6 +4,9 @@ import serialem as sem
 import time
 import logging
 import math
+import numpy as np
+from Smartscope.lib.Finders.basic_finders import find_square
+
 
 from Smartscope.lib.file_manipulations import generate_fake_file
 
@@ -87,6 +90,7 @@ class SerialemInterface(MicroscopeInterface):
         logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
         time.sleep(0.2)
         sem.MoveStageTo(stageX, stageY, stageZ)
+        # realign_to_square()
         self.eucentricHeight()
         self.checkDewars()
         self.checkPump()
@@ -97,6 +101,23 @@ class SerialemInterface(MicroscopeInterface):
         sem.Save()
         sem.CloseFile()
         logger.info('Square acquisition finished')
+
+    def realign_to_square(self):
+        while True:
+            logger.info('Running square realignment')
+            sem.Search()
+            square = np.asarray(sem.bufferImage('A'))
+            _, square_center, _ = find_square(square)
+            im_center = (square.shape[1] // 2, square.shape[0] // 2)
+            diff = square_center - np.array(im_center)
+            sem.ImageShiftByPixels(int(diff[0]), int(diff[1]))
+            sem.ResetImageShift()
+            if max(diff) < max(square.shape) // 4:
+                logger.info('Done.')
+                sem.Search()
+                break
+            logger.info('Iterating.')
+        return sem.ReportStageXYZ()
 
     def align(self):
         sem.View()

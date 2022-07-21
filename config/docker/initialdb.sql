@@ -159,7 +159,7 @@ CREATE TABLE `auth_user` (
 
 LOCK TABLES `auth_user` WRITE;
 /*!40000 ALTER TABLE `auth_user` DISABLE KEYS */;
-INSERT INTO `auth_user` VALUES (56,'pbkdf2_sha256$216000$rvBPT3bYjHj3$1G6/eYz68A83ez28r2OT37sRSfMlrcjTid0t02Ic1QY=','2022-05-27 13:08:17.059077',1,'admin','','','',1,1,'2022-05-27 13:07:14.000000');
+INSERT INTO `auth_user` VALUES (56,'pbkdf2_sha256$320000$QgE4VdjFNhpVdEJSNd3heF$gQjO88hB6TkSGvBpuzMWsEpGUP30ID52CESg7SvRGVs=','2022-07-21 15:14:08.963283',1,'admin','','','',1,1,'2022-05-27 13:07:14.000000');
 /*!40000 ALTER TABLE `auth_user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -463,7 +463,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -472,7 +472,7 @@ CREATE TABLE `django_migrations` (
 
 LOCK TABLES `django_migrations` WRITE;
 /*!40000 ALTER TABLE `django_migrations` DISABLE KEYS */;
-INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192');
+INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192'),(27,'API','0004_v07','2022-07-21 15:57:10.854652'),(28,'API','0005_v07_2','2022-07-21 15:57:10.980773');
 /*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -498,6 +498,7 @@ CREATE TABLE `django_session` (
 
 LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
+INSERT INTO `django_session` VALUES ('v88l0mjgrjjqfxc1eb88pehgl1uwisqd','.eJxVjMsOwiAURP-FtSFAebp07zeQy70oVQNJaVfGf5cmXWhmN-fMvFmEbS1x63mJM7EzM5adfssE-Mx1J_SAem8cW12XOfFd4Qft_Noovy6H-3dQoJex1kTJSSGcUFrdUh6ZgnKehCUMzgXIClFbp72cwHgNftJCUjZDA4Xs8wUE6zek:1oEXsO:DzXWo_m3rXR3b4z9Oq4ZeYyWIuEnwGYhA6IIv22lfLU','2022-08-04 15:14:08.973010');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -557,6 +558,8 @@ CREATE TABLE `gridcollectionparams` (
   `tilt_angle` double NOT NULL,
   `save_frames` tinyint(1) NOT NULL,
   `zeroloss_delay` int(11) NOT NULL,
+  `offset_distance` double NOT NULL,
+  `offset_targeting` tinyint(1) NOT NULL,
   PRIMARY KEY (`params_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -593,6 +596,9 @@ CREATE TABLE `highmagmodel` (
   `grid_id_id` varchar(30) NOT NULL,
   `hole_id_id` varchar(30) NOT NULL,
   `completion_time` datetime(6) DEFAULT NULL,
+  `offset` double NOT NULL,
+  `shape_x` int(11) DEFAULT NULL,
+  `shape_y` int(11) DEFAULT NULL,
   PRIMARY KEY (`hm_id`),
   KEY `highmagmodel_grid_id_id_8f8f1849_fk_autoloadergrid_grid_id` (`grid_id_id`),
   KEY `highmagmodel_hole_id_id_0259a98e_fk_holemodel_hole_id` (`hole_id_id`),
@@ -898,4 +904,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-07-02 11:05:09
+-- Dump completed on 2022-07-21 16:45:25

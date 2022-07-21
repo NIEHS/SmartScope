@@ -188,9 +188,7 @@ smartscope
               volumes:
                 - /mnt/microscope_glacios/Smartscope/:/mnt/glacios/
 
-    * AI models and other template files:
-        That is the directory downloaded in the `installation <./podman_docker.html#installation-models-download>`_ procedure which contains the current AI models for the squares and holes detectors and some other template files.
-        It should be bound to :code:`/opt/Template_files/`
+
 
     **Optional mounts**
 
@@ -204,6 +202,9 @@ smartscope
     * SmartScope source code:
         Although the image contains the SmartScope source code already. Most small updates and hotfixes can be pulled without having to re-build the entire image.
         Mounting the downloaded repository to the container serves that purpose. Mount to :code:`/opt/smartscope/` and it will override the default version.
+    * AI models and other template files:
+        That is the directory downloaded in the `installation <./podman_docker.html#installation-models-download>`_ procedure which contains the current AI models for the squares and holes detectors and some other template files.
+        It should be bound to :code:`/opt/Template_files/`
 
 .. _db volumes:
 db
