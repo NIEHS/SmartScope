@@ -119,6 +119,10 @@ def run_grid(grid, session, processing_queue, scope):
     if grid.status == 'complete':
         logger.info(f'{grid.name} already complete')
         return
+    if grid.status == 'aborting':
+        logger.info(f'Aborting {grid.name}')
+        return
+
     session_id = session.pk
     microscope = session.microscope_id
 
