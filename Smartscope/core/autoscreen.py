@@ -229,7 +229,7 @@ def run_grid(grid, session, processing_queue, scope):
                     if hm.status in [None, 'started']:
                         finder = list(h.finders.all())[0]
                         offset = 0
-                        if params.offset_targeting and (grid.collection_mode == 'screening' or params.offset_distance != -1):
+                        if params.offset_targeting and (grid.collection_mode == 'screening' or params.offset_distance != -1) and grid_type.hole_size is not None:
                             offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
                         isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
                         frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw, frames=params.save_frames)
