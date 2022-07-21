@@ -15,12 +15,12 @@ In the event of targeting problems between the atlas and squares, where squares 
 
 Documentation on how to set up can be found on the `SerialEM website <https://bio3d.colorado.edu/SerialEM/hlp/html/about_scripts.htm#Python>`_. We have now installed on a few systems and here are some examples for setting up the :code:`SerialEMproperties.txt`.
 
-If the property file has a :code:`SocketServerIP 1 xxx.xxx.xxx.xxx`, then that same IP should be used to set the :code:`SocketServerIP 7` for external python.
+:code:`SocketServerIP 1 xxx.xxx.xxx.xxx`, is the IP where the :code:`FEI-SEM-server.exe` is running
 
 Otherwise, :code:`SockerServerIP 7` should be the IP of the SerialEM PC.
 
 
-**Example 1: Talos Arctica with K2 or K3**
+**Example: Talos Arctica with K2 or K3**
 
     * Microscope PC IP: 192.168.0.3
     * Gatan PC IP: 192.168.0.32
@@ -36,20 +36,6 @@ Otherwise, :code:`SockerServerIP 7` should be the IP of the SerialEM PC.
         SocketServerPort                7 48888
         EnableExternalPython            1
 
-
-**Example 2: Titan Krios with embeded BioContinuum and K3**
-
-    * Microscope PC IP: 192.168.0.1
-    * Gatan PC IP: 192.168.0.31
-    * SerialEM is installed on the Gatan PC
-
-    The following lines should be added to :code:`SerialEMproperties.txt`.
-
-    .. code-block::
-
-        SocketServerIP                  7 192.168.0.31
-        SocketServerPort                7 48888
-        EnableExternalPython            1
 
 .. note:: SerialEM needs to be restarted after changing properties.
 
@@ -77,7 +63,7 @@ Now that the connection to SerialEM works, we can add our microscope to the data
 To do so, navigate to the admin portal and then the Microscopes section and add microscope. It should bring you to `<localhost:48000/admin/API/microscope/add/>`_.
 
 .. figure:: /_static/add_scope.png
-   :width: 90%
+   :width: 60%
    :align: center
    :figclass: align-center
 
@@ -130,7 +116,7 @@ Here's a example:
 Similarly to adding a microscope, navigate to the admin portal and then the Detectors section and add. It should bring you to `<localhost:48000/admin/detector/add/>`_.
 
 .. figure:: /_static/add_detector.png
-   :width: 90%
+   :width: 60%
    :align: center
    :figclass: align-center
 
@@ -140,6 +126,35 @@ Details coming soon.
 *******************
 
 The idea is to generate a settings file with low-dose mode presets that will work well with the current version of SmartScope.
+
+The following table provides guidelines on how to set up the low-dose mode settings for different microscopes:
+
+.. csv-table::
+   :widths: 20, 20, 20
+   :align: center
+
+   "", "**Example 1**", "**Example 2**"
+   "**Instrument**", "",""
+   "Microscope", "Talos Arctica", "Titan Krios G4"
+   "Detector", "Gatan K2 Summit", "Gatan K3"
+   "Energy Filter", "","Gatan Bioquantum"
+   "**Low Dose Preset**", "", ""
+   "**Search**", "", "" 
+   "magnification", 210, 580
+   "Pixel size (A/pix)", 196, 152
+   "Mode", "Linear", "Counting"
+   "**View**", "", "" 
+   "magnification", 2600,8700
+   "Pixel size (A/pix)", 16.1, 10.1
+   "Mode", "Linear", "Counting"
+   "**Focus/Record**", "", "" 
+   "magnification", "36,000","81,000"
+   "Pixel size (A/pix)", 1.19, 1.08
+   "Mode", "Counting", "Counting"
+   "**Mont-map/Full grid montage**", "", ""
+   "magnification", 62, 135
+   "Pixel size (A/pix)", 644, 654
+   "Mode", "Linear", "Counting"
 
 Search
 #######
@@ -169,13 +184,13 @@ Used for autofocus and drift correction. For autofocus, the specified image-shif
 
 .. note:: This will also be changed in the near future. We plan on including automatic focus positioning relative to the mesh spacing and orientation.
 
-Non Low-dose Presets
-********************
+5- Non Low-dose Presets
+************************
 
 The easiest way to set up for the atlas is to create an imaging state for mont-mapping. This way, when acquiring the atlas, it will use the mont-map setting instead of Record.
 
-Hole Reference Image
-********************
+6- Hole Reference Image
+************************
 
 .. note:: This procedure will need to be repeated if a different hole size or the View preset is modified.
 
