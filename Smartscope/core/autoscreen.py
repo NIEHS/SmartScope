@@ -300,7 +300,7 @@ def process_square_image(square, grid, microscope_id):
     if square.status == 'acquired':
         montage = get_file_and_process(raw=square.raw, name=square.name, directory=microscope_id.scope_path)
         montage.export_as_png()
-        targets, finder_method, classifier_method = find_targets(montage, load_protocol()['holeFinders'])
+        targets, finder_method, classifier_method = find_targets(montage, protocol['holeFinders'])
         targets = create_targets(targets, montage, target_type='hole')
         holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
 
