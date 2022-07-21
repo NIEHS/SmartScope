@@ -421,9 +421,10 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
-            queryset = list(HighMagModel.objects.all().filter(hole_id=kwargs['pk']))
+            queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk']))
         else:
-            queryset = list(HighMagModel.objects.all().filter(grid_id=obj.grid_id, hole_id__bis_group=obj.bis_group))
+            queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
+                            hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
         context = dict(holes=queryset)
         context['classifier'] = load_plugins()['Micrographs curation']
         resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
