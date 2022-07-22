@@ -1,7 +1,7 @@
 import logging
 import os
 import json
-from Smartscope.lib.file_manipulations import clean_source_dir  # , process_montage
+from Smartscope.lib.file_manipulations import clean_source_dir
 from Smartscope.core.export_optics import export_optics
 from Smartscope.core.models import *
 from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
@@ -9,7 +9,7 @@ from django.db import transaction
 from Smartscope.lib.Finders.basic_finders import find_square_center
 from Smartscope.core.autoscreen import autoscreen
 from Smartscope.lib.config import *
-from Smartscope.core.test_commands import is_gpu_enabled, test_serialem_connection, test_realign_to_square
+from Smartscope.core.test_commands import is_gpu_enabled, test_serialem_connection, test_realign_to_square, refine_pixel_size
 from Smartscope.core.utils.training_data import add_to_training_set
 from Smartscope.core.preprocessing_pipelines import highmag_processing
 from Smartscope.lib.montage import Montage, create_targets
