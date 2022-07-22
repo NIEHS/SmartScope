@@ -403,6 +403,10 @@ class HoleType(BaseModel):
     hole_size = models.FloatField(null=True, blank=True, default=None)
     hole_spacing = models.FloatField(null=True, blank=True, default=None)
 
+    @property
+    def pitch(self):
+        return self.hole_size + self.hole_spacing
+
     class Meta(BaseModel.Meta):
         db_table = 'holetype'
 
