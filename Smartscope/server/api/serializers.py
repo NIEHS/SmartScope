@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers as RESTserializers
 from Smartscope.core.models import *
-from Smartscope.server.lib.s3functions import *
+from Smartscope.lib.s3functions import *
 from Smartscope.lib.converters import *
 
 

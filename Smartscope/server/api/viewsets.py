@@ -1,5 +1,3 @@
-from itertools import count
-from turtle import st
 from django.contrib.auth.models import User, Group
 import mrcfile
 import mrcfile.mrcinterpreter

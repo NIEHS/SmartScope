@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.core import serializers
 from django.conf import settings
 from django.apps import apps
-from Smartscope.server.lib.s3functions import *
+from Smartscope.lib.s3functions import *
 from Smartscope.lib.svg_plots import drawAtlas, drawSquare, drawHighMag
 from Smartscope.lib.config import deep_get, load_plugins
 
