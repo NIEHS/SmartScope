@@ -21,7 +21,7 @@ import math
 from Smartscope.lib.generic_position import parse_mdoc
 from Smartscope.lib.Classifiers.basic_pred import decide_type
 from Smartscope.lib.Finders.basic_finders import *
-from Smartscope.lib.s3functions import SmartscopeStorage
+from Smartscope.lib.s3functions import TemporaryS3File
 from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma, save_image, mrc_to_png, fourier_crop
 from torch import Tensor
 import logging
@@ -278,10 +278,11 @@ class BaseImage(ABC):
             return True
 
         if not eval(os.getenv('USE_STORAGE')) and eval(os.getenv('USE_AWS')):
-            storage = SmartscopeStorage()
             logger.debug(f'{self.image_path}, {self.metadataFile}')
-            self.image_path = storage.download_temp(self.image_path)
-            self.metadataFile = storage.download_temp(self.metadataFile)
+            with TemporaryS3File([self.image_path, self.metadataFile]) as temp:
+                self.image_path, self.metadataFile = temp.temporary_files
+                self.read_data()
+
             return True
         return False
 

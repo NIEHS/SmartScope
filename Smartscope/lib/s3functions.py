@@ -1,3 +1,4 @@
+from typing import List
 from storages.backends.s3boto3 import S3Boto3Storage
 from pathlib import Path
 import logging
@@ -21,10 +22,32 @@ class SmartscopeStorage(S3Boto3Storage):
         return False
 
     def download_temp(self, path):
-        # name = self._normalize_name(self._clean_name(str(name)))
-        logger.debug(path)
         name = path.name
-        download_path = Path('/tmp', name)
-        # with open(download_path, 'wb') as f:
-        self.connection.meta.client.download_file(self.bucket_name, str(path), str(download_path))
+        object_path = Path(self.location, path)
+        download_path = Path(os.getenv('TEMPDIR'), name)
+        if not download_path.exists():
+            self.connection.meta.client.download_file(self.bucket_name, str(object_path), str(download_path))
         return download_path
+
+
+class TemporaryS3File:
+
+    def __init__(self, files: List) -> None:
+        self.files = files
+        self.temporary_files = []
+
+    def __enter__(self):
+        self.download_temporary_files_from_s3()
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        self.remove_temporary_files()
+
+    def download_temporary_files_from_s3(self) -> None:
+        storage = SmartscopeStorage()
+        for file in self.files:
+            self.temporary_files.append(storage.download_temp(file))
+
+    def remove_temporary_files(self) -> None:
+        logger.debug(f'Removing temprary files {self.temporary_files}')
+        [file.unlink() for file in self.temporary_files]

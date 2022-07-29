@@ -1,6 +1,9 @@
 # from asyncio import protocols
+import os
+from pathlib import Path
 import yaml
 from django.conf import settings
+from Smartscope.lib.s3functions import TemporaryS3File
 
 
 def load_plugins():
@@ -35,8 +38,15 @@ def load_default_protocol(protocol):
 
 
 def load_protocol(file='protocol.yaml'):
-    with open(file) as f:
-        return yaml.safe_load(f)
+    file = Path(file)
+    if file.exists():
+        with open(file) as f:
+            return yaml.safe_load(f)
+
+    if eval(os.getenv('USE_AWS')):
+        with TemporaryS3File([file]) as temp:
+            with open(temp.temporary_files[0]) as f:
+                return yaml.safe_load(f)
 
 
 def save_protocol(protocol, file='protocol.yaml'):
