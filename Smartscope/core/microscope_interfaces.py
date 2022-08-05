@@ -196,7 +196,7 @@ class SerialemInterface(MicroscopeInterface):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.directory, 'movies').as_posix().replace('/', '\\')
+            movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
             # sem.EarlyReturnNextShot(0)

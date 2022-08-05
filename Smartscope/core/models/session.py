@@ -42,7 +42,6 @@ class DetectorManager(models.Manager):
 
 class GridManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("Grid Manager")
         return super().get_queryset().prefetch_related('session_id')
 
 
@@ -56,49 +55,34 @@ class ImageManager(models.Manager):
 
 class HoleImageManager(models.Manager):
     use_for_related_fields = True
-    # def get_prefetch_queryset(self, instances, queryset=None):
-    #     super().get_prefetch_queryset()
-    #     image_ids = [image.pk for images in instances]
-    #     return
 
     def __init__(self):
         super().__init__()
 
     def get_queryset(self):
-        # logger.debug("Image Manager")
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('highmagmodel_set')
 
 
 class DisplayManager(models.Manager):
-    # use_for_related_fields = True
-    # def get_prefetch_queryset(self, instances, queryset=None):
-    #     super().get_prefetch_queryset()
-    #     image_ids = [image.pk for images in instances]
-    #     return
-
     def __init__(self):
         super().__init__()
 
     def get_queryset(self):
-        # logger.debug("Image Manager")
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
 
 
 class SquareImageManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("Square Image Manager")
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('holemodel_set')
 
 
 class HighMagImageManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("hm Manager")
         return super().get_queryset().prefetch_related('grid_id__session_id')
 
 
 class ScreeningSessionManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("hm Manager")
         return super().get_queryset().prefetch_related('microscope_id').prefetch_related('detector_id')
 
 
@@ -149,12 +133,7 @@ class ExtraPropertyMixin:
 
     @ property
     def ctf_img(self):
-        # img_path = os.path.join(self.directory, 'ctf.png')
-        # if os.path.isfile(img_path):
         return self.get_full_path(os.path.join(self.grid_id.url, self.name, 'ctf.png'))
-    # @property
-    # def files(self):
-    #     return {}
 
 
 class Microscope(BaseModel):
@@ -215,6 +194,11 @@ class Detector(BaseModel):
     gain_rot = models.IntegerField(default=0, null=True)
     gain_flip = models.BooleanField(default=True)
     energy_filter = models.BooleanField(default=False)
+
+    frames_windows_directory = models.CharField(
+        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command. Should not need change for K2/K3 setups.')
+    frames_directory = models.CharField(max_length=200, default='/mnt/scope/movies/',
+                                        help_text='Location of the frames directory from the smartscope container. Should not need change for K2/K3 detectors.')
 
     objects = DetectorManager()
 

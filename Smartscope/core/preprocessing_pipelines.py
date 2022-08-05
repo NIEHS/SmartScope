@@ -58,7 +58,8 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     def __init__(self, grid: AutoloaderGrid, frames_directory=None):
         super().__init__(grid=grid)
         self.microscope = self.grid.session_id.microscope_id
-        self.frames_directory = [Path(self.microscope.scope_path, 'movies')]
+        self.detector = self.grid.session_id.detector_id
+        self.frames_directory = [Path(self.detector.frames_directory)]
 
         if frames_directory is not None:
             self.frames_directory.append(frames_directory)
@@ -98,18 +99,15 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 self.to_process_queue.put([from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)])
 
     def stop(self):
-
         for proc in self.child_process:
             self.to_process_queue.put('exit')
             proc.join()
         logger.debug('Process joined')
-        # os.killpg(0, signal.SIGINT)
 
     def check_for_update(self):
         while self.processed_queue.qsize() > 0:
             movie = self.processed_queue.get()
             if not movie.check_metadata():
-                # self.processed_queue.task_done()
                 continue
             data = get_CTFFIN4_data(movie.ctf)
             data['status'] = 'completed'
@@ -120,7 +118,6 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
             self.to_update += [update_fields(instance, data), update_fields(parent, dict(status='completed'))]
-            # self.processed_queue.task_done()
 
     def update_processes(self):
         logger.info(f'Updating {len(self.to_update)} items in the database')
@@ -129,7 +126,6 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             return time.sleep(30)
         with transaction.atomic():
             [obj.save() for obj in self.to_update]
-            # map(lambda obj: obj.save(), self.to_update)
         websocket_update(self.to_update, self.grid.grid_id)
         self.to_update = []
 
