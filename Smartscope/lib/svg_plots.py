@@ -44,7 +44,7 @@ def add_legend(label_list, w, h, prefix):
         startpoint -= step
         t = draw.Text(f"{prefix} {label}", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                       stroke_width=floor(ft_sz / 5), stroke='black', class_='legend', label=label, fill=color)
-        logger.debug(t.__dict__)
+        # logger.debug(t.__dict__)
 
         legend.append(t)
     return legend

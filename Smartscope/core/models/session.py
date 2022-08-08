@@ -465,6 +465,10 @@ class AutoloaderGrid(BaseModel):
     def parent(self):
         return self.session_id
 
+    @property
+    def group(self):
+        return self.session_id.group
+
     @ parent.setter
     def set_parent(self, parent):
         self.session_id = parent
@@ -596,6 +600,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     # aliases
 
+    @property
+    def group(self):
+        return self.grid_id.session_id.group
+
     @ property
     def alias_name(self):
         return 'Atlas'
@@ -717,6 +725,10 @@ class Target(BaseModel):
 
     class Meta:
         abstract = True
+
+    @property
+    def group(self):
+        return self.grid_id.session_id.group
 
     def is_excluded(self, protocol, targets_prefix):
         protocolselectors = protocol[f'{targets_prefix}Selectors']

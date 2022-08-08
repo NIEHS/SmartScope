@@ -5,6 +5,7 @@ import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
 from Smartscope.core.models.models_actions import targets_methods
+from Smartscope.server.api.permissions import HasGroupPermission
 from .serializers import *
 from Smartscope.core.models import *
 from Smartscope.server.frontend.forms import *
@@ -70,7 +71,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -79,7 +80,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class MicroscopeViewSet(viewsets.ModelViewSet):
@@ -88,7 +89,7 @@ class MicroscopeViewSet(viewsets.ModelViewSet):
     """
     queryset = Microscope.objects.all()
     serializer_class = MicroscopeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class DetectorViewSet(viewsets.ModelViewSet):
@@ -97,7 +98,7 @@ class DetectorViewSet(viewsets.ModelViewSet):
     """
     queryset = Detector.objects.all()
     serializer_class = DetectorSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class ScreeningSessionsViewSet(viewsets.ModelViewSet):
@@ -106,7 +107,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
     """
     queryset = ScreeningSession.objects.all()
     serializer_class = SessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
 
     filterset_fields = ['session', 'group', 'date', 'microscope_id', 'detector_id']
 
@@ -278,7 +279,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = AutoloaderGrid.objects.all()
     serializer_class = AutoloaderGridSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ('session_id', 'holeType', 'meshSize', 'meshMaterial', 'quality', 'status')
 
     @ action(detail=True, methods=['get'])
@@ -330,6 +331,7 @@ class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = AtlasModel.objects.all()
     serializer_class = AtlasSerializer
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType',
                         'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id', 'status']
 
@@ -344,7 +346,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = SquareModel.objects.all()
     serializer_class = SquareSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
                         'atlas_id', 'selected', 'grid_id__session_id', 'status']
 
@@ -401,7 +403,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = HoleModel.objects.all()
     serializer_class = HoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id',
                         'square_id', 'status']
 
@@ -450,7 +452,7 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     API endpoint that allows Atlases to be viewed or edited.
     """
     queryset = HighMagModel.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
                         'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id']
