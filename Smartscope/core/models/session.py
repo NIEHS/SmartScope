@@ -14,7 +14,8 @@ from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
 from Smartscope.lib.svg_plots import drawAtlas, drawSquare, drawHighMag
-from Smartscope.lib.config import deep_get, load_plugins
+# from Smartscope.lib.config import deep_get, load_pluginsa
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 import logging
 
@@ -465,6 +466,10 @@ class AutoloaderGrid(BaseModel):
     def parent(self):
         return self.session_id
 
+    @property
+    def group(self):
+        return self.session_id.group
+
     @ parent.setter
     def set_parent(self, parent):
         self.session_id = parent
@@ -596,6 +601,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     # aliases
 
+    @property
+    def group(self):
+        return self.grid_id.session_id.group
+
     @ property
     def alias_name(self):
         return 'Atlas'
@@ -718,18 +727,21 @@ class Target(BaseModel):
     class Meta:
         abstract = True
 
-    def is_excluded(self, protocol, targets_prefix):
-        protocolselectors = protocol[f'{targets_prefix}Selectors']
+    @property
+    def group(self):
+        return self.grid_id.session_id.group
+
+    def is_excluded(self):
+        # protocolselectors = protocol[f'{targets_prefix}Selectors']
         for selector in self.selectors.all():
 
-            protocol = [protocol for protocol in protocolselectors if protocol['name'] == selector.method_name]
-            if len(protocol) > 0 and selector.label in protocol[0]['exclude']:
-                # logger.debug(f'{self.name}: Excluded. Label={selector.label}')
+            plugin = PLUGINS_FACTORY[selector.method_name]
+            if selector.label in plugin.exclude:
                 return True, selector.label
 
         return False, selector.label
 
-    def is_good(self, plugins):
+    def is_good(self):
         """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
 
         Args:
@@ -739,29 +751,24 @@ class Target(BaseModel):
             boolean: Whether the target is good for selection or not.
         """
         for label in self.classifiers.all():
-            plugin = deep_get(plugins, label.method_name)
-            if plugin['classes'][label.label]['value'] < 1:
+            # plugin = deep_get(plugins, label.method_name)
+            if PLUGINS_FACTORY[label.method_name].classes[label.label].value < 1:
                 return False
         return True
 
-    def css_color(self, plugins, display_type, method):
-        display_type = 'classifiers' if display_type is None else display_type
+    def css_color(self, display_type, method):
+        # display_type = 'classifiers' if display_type is None else display_type
 
-        # logger.debug(f'{display_type}, {method}, {plugins}')
-        for label in getattr(self, display_type).all():
-            method = label.method_name if method is None else method
-            # logger.debug(f'{self.name}: {label.method_name}, {method}')
-            if label.method_name == method:
-                plugin = deep_get(plugins, label.method_name)
-                if display_type == 'classifiers':
-                    return plugin['classes'][label.label]['color'], plugin['classes'][label.label]['name'], ''
-                elif display_type == 'selectors':
-                    # logger.debug(plugin)
-                    return plugin['clusters']['colors'][int(label.label)], label.label, 'Cluster'
-        if display_type == 'selectors':
-            # logger.debug(f'{self.name}: Color none')
-            return None, None, ''
-        return 'blue', 'target', ''
+        if method is None:
+            return 'blue', 'target', ''
+
+        # Must use list comprehension instead of a filter query to use the prefetched data
+        # Reduces the amount of queries subsitancially.
+        labels = list(getattr(self, display_type).all())
+        label = [i for i in labels if i.method_name == method]
+        if len(label) == 0:
+            return 'blue', 'target', ''
+        return PLUGINS_FACTORY[method].get_label(label[0].label)
 
 
 class SquareModel(Target, ExtraPropertyMixin):

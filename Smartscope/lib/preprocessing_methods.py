@@ -1,4 +1,3 @@
-from re import A
 from typing import List
 import pandas as pd
 from pathlib import Path

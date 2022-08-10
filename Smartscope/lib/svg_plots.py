@@ -2,7 +2,7 @@ import drawSvg as draw
 from drawSvg import elements as elementsModule
 from math import floor, sqrt
 from io import StringIO
-from Smartscope.lib.config import *
+# from Smartscope.lib.config import *
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def add_legend(label_list, w, h, prefix):
         startpoint -= step
         t = draw.Text(f"{prefix} {label}", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                       stroke_width=floor(ft_sz / 5), stroke='black', class_='legend', label=label, fill=color)
-        logger.debug(t.__dict__)
+        # logger.debug(t.__dict__)
 
         legend.append(t)
     return legend
@@ -110,7 +110,7 @@ class myDrawging(draw.Drawing):
 
 
 def drawAtlas(atlas, targets, display_type, method):
-    plugins = load_plugins()
+    # plugins = load_plugins()
 
     # d = myDrawging(atlas.shape_y // atlas.binning_factor, atlas.shape_x // atlas.binning_factor, id='square-svg', displayInline=False)
     d = myDrawging(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False)
@@ -121,7 +121,7 @@ def drawAtlas(atlas, targets, display_type, method):
 
     labels_list = []
     for i in targets:
-        color, label, prefix = i.css_color(plugins, display_type, method)
+        color, label, prefix = i.css_color(display_type, method)
         if color is not None:  # style = f"stroke: {color}; fill: {color}; color: {color}; "
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
@@ -156,7 +156,7 @@ def drawAtlas(atlas, targets, display_type, method):
 
 
 def drawSquare(square, targets, display_type, method):
-    plugins = load_plugins()
+    # plugins = load_plugins()
     d = myDrawging(square.shape_y, square.shape_x, id='square-svg', displayInline=False)
     # d = myDrawging(square.shape_y // square.binning_factor, square.shape_x // square.binning_factor, displayInline=False)
     # print(square.png)
@@ -166,7 +166,7 @@ def drawSquare(square, targets, display_type, method):
     labels_list = []
     bis_groups = {}
     for i in targets:
-        color, label, prefix = i.css_color(plugins, display_type, method)
+        color, label, prefix = i.css_color(display_type, method)
         if color is not None:
             finder = list(i.finders.all())[0]
             x = finder.x

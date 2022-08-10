@@ -1,0 +1,15 @@
+name: AI hole finder
+method: find_holes
+module: Smartscope.lib.Finders.AIFinder.wrapper
+kwargs: 
+  imgsz: 1280
+  thresh: 0.2
+  iou: 0.15
+  device: 0
+  weights_circle: circle_weights/circle_weight_12_7_21.pt
+  method: yolo
+targetClass:
+  - Finder
+description: |
+  Hole finder that uses the YOLO architecture to identify the holes.
+  Has a built-in classifier to sort out the dark contamination spots that are often labeled as holes on carbon mesh grids.

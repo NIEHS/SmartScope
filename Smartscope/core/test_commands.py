@@ -95,3 +95,8 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
     average = np.mean(pixel_sizes)
     std = np.std(pixel_sizes)
     return average, std
+
+
+def list_plugins():
+    from Smartscope.core.settings.worker import PLUGINS_FACTORY
+    logger.info(f'Registered:\n{PLUGINS_FACTORY}')

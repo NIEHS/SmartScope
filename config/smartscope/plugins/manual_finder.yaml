@@ -1,0 +1,5 @@
+name: Manual finder
+targetClass:
+  - Finder
+description: |
+  Targets that are added manually
