@@ -1,0 +1,38 @@
+name: Micrographs curation
+targetClass:
+  - Classifier
+description: |
+  Classes for manual micrographs curation
+classes:
+  Not Bad:
+    value: 1
+    name: Not Bad
+    color: "MediumSlateBlue"
+  Decent:
+    value: 2
+    name: Decent
+    color: "#56B4E9"
+  Great:
+    value: 3
+    name: Great
+    color: "#0072B2"        
+  Cracked:
+    value: -1
+    name: Cracked
+    color: "#CC79A7"
+  Empty:
+    value: -1
+    name: No particles, Empty hole
+    color: "#E69F00"
+  Contaminated:
+    value: -1
+    name: Contamination, Aggregate
+    color: "#009E73"
+  Icy:
+    value: -1
+    name: Bad/Crystalline/Thick ice
+    color: "#D55E00"
+  Missed Target:
+    value: -1
+    name: Missed Target
+    color: "gray"

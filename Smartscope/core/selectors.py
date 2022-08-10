@@ -1,8 +1,8 @@
-from Smartscope.lib.config import load_plugins
 from Smartscope.core.models import Selector
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.query import prefetch_related_objects
 from Smartscope.lib.montage import Montage
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
 import numpy as np
 from django.db import transaction
 import cv2
@@ -25,12 +25,9 @@ def generate_equal_clusters(parent, targets, n_groups):
 
 
 def cluster_by_field(parent, n_groups, field='area', **kwargs):
-    plugins = load_plugins()
 
     targets = np.array(parent.targets.order_by(field))
     output = []
-    logger.debug(plugins)
-    # targets = [t for t in targets if t.is_good(plugins=plugins)]
 
     return generate_equal_clusters(parent, targets, n_groups)
 
@@ -63,23 +60,16 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
 
 
 def selector_wrapper(selectors, selection, *args, **kwargs):
-
+    logger.info(f'Running selectors {selectors} on {selection}')
     for method in selectors:
-        if not 'args' in method.keys():
-            method['args'] = []
-        if not 'kwargs' in method.keys():
-            method['kwargs'] = dict()
+        method = PLUGINS_FACTORY[method]
 
-        import_cmd = f"from {method['package']} import {method['method']}"
-        logger.debug(import_cmd)
-        logger.debug(f"kwargs = {method['kwargs']}")
-        exec(import_cmd)
-        try:
-            outputs = locals()[method['method']](selection, *args, *method['args'], **method['kwargs'], **kwargs)
-            with transaction.atomic():
-                for obj in outputs:
-                    # obj['method_name'] = method['name']
-                    Selector(**obj, method_name=method['name']).save()
-                    # obj.save()
-        except Exception as err:
-            logger.exception(err)
+        # try:
+        outputs = method.run(selection, *args, **kwargs)
+        with transaction.atomic():
+            for obj in outputs:
+                # obj['method_name'] = method['name']
+                Selector(**obj, method_name=method.name).save()
+                # obj.save()
+        # except Exception as err:
+        #     logger.exception(err)

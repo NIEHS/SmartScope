@@ -1,0 +1,39 @@
+name: AI square finder
+method: find_squares
+module: Smartscope.lib.Finders.AIFinder.wrapper
+kwargs: 
+  device: 0
+  imgsz: 2048
+  thresh: 0.2
+  iou: 0.3
+  weights: square_weights/model_new_weights_env.pth
+targetClass:
+  - Finder
+  - Classifier
+description: |
+  Square finder using RCNN identification and classification.
+classes:
+  square:
+    value: 1
+    name: Good
+    color: blue
+  small:
+    value: -1
+    name: Small
+    color: red
+  fraction:
+    value: -1
+    name: Partial
+    color: MediumAquaMarine        
+  dry:
+    value: -1
+    name: Dry
+    color: blueviolet
+  cracked:
+    value: -1
+    name: Cracked
+    color: purple
+  contaminated:
+    value: -1
+    name: Contaminated
+    color: CornflowerBlue

@@ -49,13 +49,11 @@ class ExtraActionsMixin:
         if context['method'] is None:
             methods = context['targets_methods'][context['display_type']]
             if len(methods) > 0:
-                context['method'] = methods[0]['name']
+                context['method'] = methods[0].name
         serializer = SvgSerializer(instance=obj, display_type=context['display_type'], method=context['method'])
         context = {**context, **serializer.data}
-        # if context['method'] is None:
-        #     context['method'] = context['targets_methods'][context['display_type']][0]['name']
         context['card'] = render_to_string('mapcard.html', context=context, )
-        logger.debug(f"{context['method']}, {context['display_type']}, {context['targets_methods']}")
+        logger.debug(f"{context['method']}, {context['display_type']}")
         return Response(dict(fullmeta=context['fullmeta'], card=context['card']))
 
     @ action(detail=True, methods=['get'])
@@ -89,7 +87,7 @@ class MicroscopeViewSet(viewsets.ModelViewSet):
     """
     queryset = Microscope.objects.all()
     serializer_class = MicroscopeSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class DetectorViewSet(viewsets.ModelViewSet):
@@ -98,7 +96,7 @@ class DetectorViewSet(viewsets.ModelViewSet):
     """
     queryset = Detector.objects.all()
     serializer_class = DetectorSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class ScreeningSessionsViewSet(viewsets.ModelViewSet):
@@ -331,7 +329,7 @@ class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = AtlasModel.objects.all()
     serializer_class = AtlasSerializer
-    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
+    permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType',
                         'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id', 'status']
 
@@ -426,7 +424,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
                             hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
         context = dict(holes=queryset)
-        context['classifier'] = load_plugins()['Micrographs curation']
+        context['classifier'] = PLUGINS_FACTORY['Micrographs curation']
         resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
         logger.debug(resp)
         return resp

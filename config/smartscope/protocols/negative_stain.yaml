@@ -1,0 +1,9 @@
+name: NegativeStain
+squareFinders:
+  - AI square finder
+holeFinders:
+  - Regular pattern
+squareSelectors:
+  - Size selector
+holeSelectors:
+  - Graylevel selector
