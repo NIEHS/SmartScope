@@ -33,6 +33,7 @@ class MicroscopeInterface(ABC):
     state: MicroscopeState = MicroscopeState()
     imageHandler: Any = Montage
     loader_size: int = 12
+    detector_type: str = 'K2'
 
     def __enter__(self):
         self.connect(self.directory)

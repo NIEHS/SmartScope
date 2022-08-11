@@ -166,17 +166,19 @@ class SerialemInterface(MicroscopeInterface):
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
-        # checkDewars()
-        # checkPump()
+        
         if not frames:
-            sem.EarlyReturnNextShot(-1)
+            if self.detector_type in ['K2', 'K3']:
+                sem.EarlyReturnNextShot(-1)
             sem.Preview()
             sem.OpenNewFile(file)
             sem.Save()
             sem.CloseFile()
             return None
 
-        sem.EarlyReturnNextShot(0)
+        if self.detector_type in ['K2', 'K3']:
+            sem.EarlyReturnNextShot(0)
+
         sem.Preview()  # Seems possible to change this to Record in 4.0, needs testing
         frames = sem.ReportLastFrameFile()
         if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify

@@ -375,6 +375,7 @@ def autoscreen(session_id):
                             energyfilter=session.detector_id.energy_filter,
                             directory=microscope.windows_path,
                             frames_directory=session.detector_id.frames_windows_directory,
+                            detector_type=session.detector_id.detector_model,
                             scope_path=microscope.scope_path,
                             loader_size=microscope.loader_size) as scope:
             # START image processing processes
