@@ -370,6 +370,7 @@ class Movie(BaseImage):
         return Path(self.directory, 'ali.xf')
 
     def __post_init__(self):
+        super().__post_init__()
         self.directory.mkdir(exist_ok=True)
 
     def check_metadata(self):
