@@ -5,7 +5,7 @@ import sys
 import time
 import shlex
 from typing import Union
-from Smartscope.core.microscope_interfaces import FakeScopeInterface, SerialemInterface
+from Smartscope.core.microscope_interfaces import FakeScopeInterface, GatanSerialemInterface, FalconSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import AutoloaderGrid, ScreeningSession, HoleModel, SquareModel, Process
 from Smartscope.lib.image_manipulations import auto_contrast, auto_contrast_sigma, fourier_crop
@@ -365,17 +365,20 @@ def autoscreen(session_id):
         logger.info(f'Process: {process}')
         logger.info(f'Session: {session}')
         logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
-        scopeInterface = SerialemInterface
+        scopeInterface = GatanSerialemInterface
         if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
             logger.info('Setting scope into test mode')
             scopeInterface = FakeScopeInterface
+
+        if session.detector_id.detector_model in ['Falcon3', 'Falcon4', 'Ceta']:
+            logger.info('Using the Falcon interface')
+            scopeInterface = FalconSerialemInterface
 
         with scopeInterface(ip=microscope.serialem_IP,
                             port=microscope.serialem_PORT,
                             energyfilter=session.detector_id.energy_filter,
                             directory=microscope.windows_path,
                             frames_directory=session.detector_id.frames_windows_directory,
-                            detector_type=session.detector_id.detector_model,
                             scope_path=microscope.scope_path,
                             loader_size=microscope.loader_size) as scope:
             # START image processing processes

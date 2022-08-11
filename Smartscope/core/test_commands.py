@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 import torch
-from Smartscope.core.microscope_interfaces import SerialemInterface
+from Smartscope.core.microscope_interfaces import GatanSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 import logging
 
