@@ -74,7 +74,7 @@ class Selector(BaseFeatureAnalyzer):
     kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     def get_label(self, label):
-        return self.clusters['colors'][int(label)], label, 'Cluster'
+        return self.clusters['colors'][int(label)], int(label), 'Cluster'
 
 
 class ImagingProtocol(BaseModel):
