@@ -13,7 +13,7 @@ from django.core import serializers
 from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
-from Smartscope.lib.svg_plots import drawAtlas, drawSquare, drawHighMag
+from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag
 # from Smartscope.lib.config import deep_get, load_pluginsa
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
@@ -71,18 +71,15 @@ class HoleImageManager(models.Manager):
 
 
 class DisplayManager(models.Manager):
-    # use_for_related_fields = True
-    # def get_prefetch_queryset(self, instances, queryset=None):
-    #     super().get_prefetch_queryset()
-    #     image_ids = [image.pk for images in instances]
-    #     return
-
-    def __init__(self):
-        super().__init__()
 
     def get_queryset(self):
-        # logger.debug("Image Manager")
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
+
+
+class HoleDisplayManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors').prefetch_related('highmagmodel_set')
 
 
 class SquareImageManager(models.Manager):
@@ -757,7 +754,6 @@ class Target(BaseModel):
         return True
 
     def css_color(self, display_type, method):
-        # display_type = 'classifiers' if display_type is None else display_type
 
         if method is None:
             return 'blue', 'target', ''
@@ -886,6 +882,7 @@ class HoleModel(Target, ExtraPropertyMixin):
 
     objects = HoleImageManager()
     just_holes = models.Manager()
+    display = HoleDisplayManager()
 
     def generate_bis_group_name(self):
         if self.bis_group is None:

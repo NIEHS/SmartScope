@@ -343,17 +343,7 @@ class SvgSerializer(RESTserializers.Serializer):
         return update_to_fullmeta(targets)
 
     def to_representation(self, instance):
-        # try:
-        #     if self.context['request'].query_params['metaonly'] == 'true':
-        #         return {
-        #             'fullmeta': self.load_meta(),
-        #         }
-        # except:
-        #     pass
-        # display_type = isnull_to_none(self.context['request'].query_params['display_type'])
-        # display_type = 'classifiers' if display_type is None else display_type
-        # method = isnull_to_none(self.context['request'].query_params['method'])
-        # logger.debug(self.context['request'].query_params)
+
         return {
             'type': 'reload',
             'display_type': self.display_type,

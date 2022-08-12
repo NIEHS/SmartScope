@@ -2,7 +2,7 @@ import drawSvg as draw
 from drawSvg import elements as elementsModule
 from math import floor, sqrt
 from io import StringIO
-# from Smartscope.lib.config import *
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,10 @@ def add_scale_bar(pixelsize, w, h, id_type='atlas'):
     elif pixelsize > 10:
         text = '10 \u03BCm'
         lineLenght = 100_000 / pixelsize
+    elif pixelsize > 3:
+        text = '1 \u03BCm'
+        ft_sz = floor(w / 20)
+        lineLenght = 10_000 / pixelsize
     else:
         text = '100 nm'
         ft_sz = floor(w / 20)
@@ -40,7 +44,7 @@ def add_legend(label_list, w, h, prefix):
     t = draw.Text(f"Legend", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                   stroke_width=floor(ft_sz / 5), stroke='black', fill="white")
     legend.append(t)
-    for (color, label, prefix) in label_list:
+    for (color, label, prefix) in sorted(label_list, key=lambda x: x[1] if isinstance(x[1], (int, float)) else 9999):
         startpoint -= step
         t = draw.Text(f"{prefix} {label}", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                       stroke_width=floor(ft_sz / 5), stroke='black', class_='legend', label=label, fill=color)
@@ -48,6 +52,26 @@ def add_legend(label_list, w, h, prefix):
 
         legend.append(t)
     return legend
+
+
+def css_color(obj, display_type, method):
+
+    if method is None:
+        return 'blue', 'target', ''
+
+    # Must use list comprehension instead of a filter query to use the prefetched data
+    # Reduces the amount of queries subsitancially.
+    if display_type != 'metadata':
+        labels = list(getattr(obj, display_type).all())
+        label = [i for i in labels if i.method_name == method]
+        if len(label) == 0:
+            return 'blue', 'target', ''
+        return PLUGINS_FACTORY[method].get_label(label[0].label)
+    if method == 'CTF Viewer':
+        labels = obj.highmagmodel_set.values_list('ctffit', flat=True)
+        if len(labels) == 0:
+            return 'blue', 'N.D.', ''
+        return PLUGINS_FACTORY[method].get_label(labels[0])
 
 
 class myDrawging(draw.Drawing):
@@ -156,22 +180,19 @@ def drawAtlas(atlas, targets, display_type, method):
 
 
 def drawSquare(square, targets, display_type, method):
-    # plugins = load_plugins()
     d = myDrawging(square.shape_y, square.shape_x, id='square-svg', displayInline=False)
-    # d = myDrawging(square.shape_y // square.binning_factor, square.shape_x // square.binning_factor, displayInline=False)
-    # print(square.png)
     d.append(draw.Image(0, 0, d.width, d.height, path=square.png['url'], embed=False))
     shapes = draw.Group(id='squareShapes')
     text = draw.Group(id='squareText')
     labels_list = []
     bis_groups = {}
     for i in targets:
-        color, label, prefix = i.css_color(display_type, method)
+
+        color, label, prefix = css_color(i, display_type, method)
         if color is not None:
             finder = list(i.finders.all())[0]
             x = finder.x
             y = -(finder.y) + d.height
-            # qualityClass = f'quality-{i.quality}' if i.quality is not None else ''
             c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,
                             class_=f'target', number=i.number, onclick="clickHole(this)")
 
