@@ -6,6 +6,7 @@ import logging
 import math
 import numpy as np
 from Smartscope.lib.Finders.basic_finders import find_square
+from Smartscope.lib.image_manipulations import generate_hole_ref
 
 
 from Smartscope.lib.file_manipulations import generate_fake_file
@@ -121,11 +122,25 @@ class SerialemInterface(MicroscopeInterface):
 
     def align(self):
         sem.View()
-        sem.CropCenterToSize('A', 1700, 1700)
+        sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
         return sem.ReportAlignShift()
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
+    def make_hole_ref(self, hole_size_in_um):
+        sem.View()
+        img = np.asarray(sem.bufferImage('A'))
+        dtype = img.dtype
+        shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
+        logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
+        ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
+        self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
+        sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
+        self.has_hole_ref = True
+
+    def clear_hole_ref(self):
+        self.has_hole_ref = False
+
+    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
 
         sem.TiltTo(tiltAngle)
 
@@ -133,8 +148,10 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stageX, stageY, stageZ)
         time.sleep(0.2)
-        if not is_negativestain:
-            sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+        if hole_size_in_um is not None:
+            if not self.has_hole_ref:
+                self.make_hole_ref(hole_size_in_um=hole_size_in_um)
+            # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
             aligned = self.align()
             holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
             if holeshift > aliThreshold:
@@ -144,6 +161,7 @@ class SerialemInterface(MicroscopeInterface):
                     iShift = sem.ReportImageShift()
                     sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
                     time.sleep(0.2)
+                sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
                 aligned = self.align()
         self.checkDewars()
         self.checkPump()

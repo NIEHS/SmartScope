@@ -45,6 +45,19 @@ def test_realign_to_square(microscope_id):
         scope.realign_to_square()
 
 
+def test_realign_to_hole(microscope_id):
+    from Smartscope.core.models import Microscope
+    microscope = Microscope.objects.get(pk=microscope_id)
+    with SerialemInterface(ip=microscope.serialem_IP,
+                           port=microscope.serialem_PORT,
+                           directory=microscope.windows_path,
+                           scope_path=microscope.scope_path,
+                           energyfilter=False,
+                           loader_size=microscope.loader_size) as scope:
+        scope.make_hole_ref(1.2)
+        scope.align()
+
+
 def refine_atlas_pixel_size(grids: List[str]):
     logger.info('Running atlas pixel size refinement')
     from Smartscope.core.models import AtlasModel
