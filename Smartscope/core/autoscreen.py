@@ -154,6 +154,7 @@ def run_grid(grid, session, processing_queue, scope):
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
     scope.setup(params.save_frames, params.zeroloss_delay)
+    scope.clear_hole_ref()
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
     if atlas.status == 'queued' or atlas.status == 'started':
@@ -212,7 +213,7 @@ def run_grid(grid, session, processing_queue, scope):
                 hole = update(hole, status='started')
 
                 scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                 file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
+                                 file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
                 scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
                 hole = update(hole, status='acquired', completion_time=timezone.now())
                 process_hole_image(hole, microscope)
@@ -222,7 +223,7 @@ def run_grid(grid, session, processing_queue, scope):
                     restarting = False
                     logger.info(f'Restarting run, recentering on {hole} area before taking high-mag images')
                     scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                     file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
+                                     file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
                     scope.focusDrift(params.target_defocus_min, params.target_defocus_max,
                                      params.step_defocus, params.drift_crit)
 

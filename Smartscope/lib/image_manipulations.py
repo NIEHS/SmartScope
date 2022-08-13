@@ -120,3 +120,18 @@ def fourier_crop(img, height=500):
 
     reversed = np.real(np.fft.ifft2(np.fft.ifftshift(cropped)))
     return reversed
+
+
+def generate_hole_ref(hole_size_in_um: float, pixel_size: float, out_type: str = 'int16'):
+    radius = int(hole_size_in_um / (pixel_size / 10_000) / 2)
+    im_size = int(radius * 2.5)
+    fill_value = 2 ** np.dtype(out_type).itemsize
+    color = 0
+    if np.issubdtype(out_type, np.signedinteger):
+        fill_value /= 2
+        color = -fill_value
+
+    im = np.ones((im_size, im_size)) * int(fill_value)
+
+    cv2.circle(im, (im_size // 2, im_size // 2), radius=radius, color=int(color), thickness=5)
+    return im.astype(out_type)
