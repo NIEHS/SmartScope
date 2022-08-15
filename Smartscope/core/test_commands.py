@@ -36,13 +36,26 @@ def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'te
 def test_realign_to_square(microscope_id):
     from Smartscope.core.models import Microscope
     microscope = Microscope.objects.get(pk=microscope_id)
-    with SerialemInterface(ip=microscope.serialem_IP,
-                           port=microscope.serialem_PORT,
-                           directory=microscope.windows_path,
-                           scope_path=microscope.scope_path,
-                           energyfilter=False,
-                           loader_size=microscope.loader_size) as scope:
+    with GatanSerialemInterface(ip=microscope.serialem_IP,
+                                port=microscope.serialem_PORT,
+                                directory=microscope.windows_path,
+                                scope_path=microscope.scope_path,
+                                energyfilter=False,
+                                loader_size=microscope.loader_size) as scope:
         scope.realign_to_square()
+
+
+def test_realign_to_hole(microscope_id):
+    from Smartscope.core.models import Microscope
+    microscope = Microscope.objects.get(pk=microscope_id)
+    with GatanSerialemInterface(ip=microscope.serialem_IP,
+                                port=microscope.serialem_PORT,
+                                directory=microscope.windows_path,
+                                scope_path=microscope.scope_path,
+                                energyfilter=False,
+                                loader_size=microscope.loader_size) as scope:
+        scope.make_hole_ref(1.2)
+        scope.align()
 
 
 def refine_atlas_pixel_size(grids: List[str]):
@@ -95,3 +108,8 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
     average = np.mean(pixel_sizes)
     std = np.std(pixel_sizes)
     return average, std
+
+
+def list_plugins():
+    from Smartscope.core.settings.worker import PLUGINS_FACTORY
+    logger.info(f'Registered:\n{PLUGINS_FACTORY}')

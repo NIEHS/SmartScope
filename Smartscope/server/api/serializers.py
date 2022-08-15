@@ -3,6 +3,9 @@ from rest_framework import serializers as RESTserializers
 from Smartscope.core.models import *
 from Smartscope.lib.s3functions import *
 from Smartscope.lib.converters import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # class ImageModelSerializer(RESTserializers.ModelSerializer):
@@ -340,17 +343,7 @@ class SvgSerializer(RESTserializers.Serializer):
         return update_to_fullmeta(targets)
 
     def to_representation(self, instance):
-        # try:
-        #     if self.context['request'].query_params['metaonly'] == 'true':
-        #         return {
-        #             'fullmeta': self.load_meta(),
-        #         }
-        # except:
-        #     pass
-        # display_type = isnull_to_none(self.context['request'].query_params['display_type'])
-        # display_type = 'classifiers' if display_type is None else display_type
-        # method = isnull_to_none(self.context['request'].query_params['method'])
-        # logger.debug(self.context['request'].query_params)
+
         return {
             'type': 'reload',
             'display_type': self.display_type,
@@ -372,7 +365,7 @@ def update_to_fullmeta(objects: list):
             updateDict[models_to_serializers[classname]['key']].append(obj)
         if classname == 'HoleModel' and (square := obj.square_id) not in updateDict['squares']:
             updateDict['squares'].append(square)
-    logger.debug(f'Update dict = {updateDict}')
+    # logger.debug(f'Update dict = {updateDict}')
     updateDict['atlas'] = list_to_dict(models_to_serializers['AtlasModel']['serializer'](updateDict['atlas'], many=True).data)
     updateDict['squares'] = list_to_dict(models_to_serializers['SquareModel']['serializer'](updateDict['squares'], many=True).data)
     updateDict['holes'] = list_to_dict(models_to_serializers['HoleModel']['serializer'](updateDict['holes'], many=True).data)

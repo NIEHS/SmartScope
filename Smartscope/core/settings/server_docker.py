@@ -178,11 +178,6 @@ REST_FRAMEWORK = {
 
 
 # Enable finders. List of tuples, where first value is the name and the is the method import path relative to Smartscope.Finders. Third value is the optional keyword arguments that can be supplemented to the function.
-SMARTSCOPE_CONFIG = os.path.join(os.getenv('APP'), 'config/smartscope/')
-SMARTSCOPE_PLUGINS = SMARTSCOPE_CONFIG + 'plugins.yaml'
-SMARTSCOPE_PROTOCOLS = SMARTSCOPE_CONFIG + 'protocols.yaml'
-
-# Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'

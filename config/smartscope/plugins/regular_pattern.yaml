@@ -1,0 +1,11 @@
+name: Regular pattern
+method: regular_pattern
+module: Smartscope.lib.Finders.basic_finders
+kwargs: 
+    spacing_in_um: 5
+targetClass:
+    - Finder
+description: |
+    Hole finder that just places a regularly spaced pattern on the square.
+    This method doesn't identify holes and is used a fallback.
+    Also, this method is currently preffered on non-holey grids such as negative stain.

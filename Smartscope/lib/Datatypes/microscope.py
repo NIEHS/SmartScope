@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import serialem as sem
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 
 from Smartscope.lib.montage import Montage
 
@@ -33,6 +33,8 @@ class MicroscopeInterface(ABC):
     state: MicroscopeState = MicroscopeState()
     imageHandler: Any = Montage
     loader_size: int = 12
+    has_hole_ref: bool = False
+    hole_crop_size: int = 0
 
     def __enter__(self):
         self.connect(self.directory)

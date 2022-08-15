@@ -8,12 +8,14 @@ from typing import Union
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, GatanSerialemInterface, FalconSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import AutoloaderGrid, ScreeningSession, HoleModel, SquareModel, Process
+from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast, auto_contrast_sigma, fourier_crop
-from Smartscope.lib.montage import Montage, Movie, create_targets, find_targets
+from Smartscope.lib.montage import Montage, Movie, create_targets
+from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, add_high_mag
-from Smartscope.lib.config import load_plugins, save_protocol, load_default_protocol, load_protocol
+# from Smartscope.lib.config import save_protocol, load_default_protocol, load_protocol
 from Smartscope.lib.logger import add_log_handlers
 from django.db import transaction
 from django.utils import timezone
@@ -81,11 +83,11 @@ def print_queue(squares, holes, session):
         f.write(string)
 
 
-def load_protocol_wrapper(protocol):
-    protocol_file = 'protocol.yaml'
-    if not os.path.isfile(protocol_file):
-        return load_default_protocol(protocol)
-    return load_protocol()
+# def load_protocol_wrapper(protocol):
+#     protocol_file = 'protocol.yaml'
+#     if not os.path.isfile(protocol_file):
+#         return load_default_protocol(protocol)
+#     return load_protocol()
 
 
 def is_stop_file(sessionid: str) -> bool:
@@ -142,8 +144,7 @@ def run_grid(grid, session, processing_queue, scope):
     processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
     # ADD the new protocol loader
-    protocol = load_protocol_wrapper(grid.protocol)
-    save_protocol(protocol)
+    protocol = PROTOCOLS_FACTORY[grid.protocol]
 
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
     subprocess.Popen(shlex.split(f'smartscope.py highmag_processing smartscopePipeline {grid.grid_id} 1'))
@@ -153,6 +154,7 @@ def run_grid(grid, session, processing_queue, scope):
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
     scope.setup(params.save_frames, params.zeroloss_delay)
+    scope.clear_hole_ref()
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
     if atlas.status == 'queued' or atlas.status == 'started':
@@ -167,13 +169,13 @@ def run_grid(grid, session, processing_queue, scope):
         logger.info('Atlas acquired')
         montage = get_file_and_process(raw=atlas.raw, name=atlas.name, directory=microscope.scope_path)
         montage.export_as_png()
-        targets, finder_method, classifier_method = find_targets(montage, load_protocol()['squareFinders'])
+        targets, finder_method, classifier_method = find_targets(montage, protocol.squareFinders)
         targets = create_targets(targets, montage, target_type='square')
         squares = add_targets(grid, atlas, targets, SquareModel, finder_method, classifier_method)
         atlas = update(atlas, status='processed', pixel_size=montage.pixel_size,
                        shape_x=montage.shape_x, shape_y=montage.shape_y, stage_z=montage.stage_z)
     if atlas.status == 'processed':
-        selector_wrapper(protocol[f'{atlas.targets_prefix}Selectors'], atlas, n_groups=5)
+        selector_wrapper(protocol.squareSelectors, atlas, n_groups=5)
         select_n_areas(atlas, grid.params_id.squares_num)
         atlas = update(atlas, status='completed')
 
@@ -211,7 +213,7 @@ def run_grid(grid, session, processing_queue, scope):
                 hole = update(hole, status='started')
 
                 scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                 file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
+                                 file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
                 scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
                 hole = update(hole, status='acquired', completion_time=timezone.now())
                 process_hole_image(hole, microscope)
@@ -221,7 +223,7 @@ def run_grid(grid, session, processing_queue, scope):
                     restarting = False
                     logger.info(f'Restarting run, recentering on {hole} area before taking high-mag images')
                     scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                     file=hole.raw, is_negativestain=grid.holeType.name in ['NegativeStain', 'Lacey'])
+                                     file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
                     scope.focusDrift(params.target_defocus_min, params.target_defocus_max,
                                      params.step_defocus, params.drift_crit)
 
@@ -296,15 +298,14 @@ def create_process(session):
 
 
 def process_square_image(square, grid, microscope_id):
-    protocol = load_protocol(os.path.join(grid.directory, 'protocol.yaml'))
-    plugins = load_plugins()
+    protocol = PROTOCOLS_FACTORY[grid.protocol]
     params = grid.params_id
     is_bis = params.bis_max_distance > 0
     montage = None
     if square.status == 'acquired':
         montage = get_file_and_process(raw=square.raw, name=square.name, directory=microscope_id.scope_path)
         montage.export_as_png()
-        targets, finder_method, classifier_method = find_targets(montage, protocol['holeFinders'])
+        targets, finder_method, classifier_method = find_targets(montage, protocol.holeFinders)
         targets = create_targets(targets, montage, target_type='hole')
         holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
 
@@ -314,14 +315,14 @@ def process_square_image(square, grid, microscope_id):
     if square.status == 'processed':
         if montage is None:
             montage = Montage(name=square.name)
-        selector_wrapper(protocol[f'{square.targets_prefix}Selectors'], square, n_groups=5, montage=montage)
+        selector_wrapper(protocol.holeSelectors, square, n_groups=5, montage=montage)
 
         square = update(square, status='selected')
         transaction.on_commit(lambda: logger.debug('Selectors added'))
     if square.status == 'selected':
         if is_bis:
             holes = list(HoleModel.display.filter(square_id=square.square_id))
-            holes = group_holes_for_BIS([h for h in holes if h.is_good(plugins=plugins) and not h.is_excluded(protocol, square.targets_prefix)[0]],
+            holes = group_holes_for_BIS([h for h in holes if h.is_good() and not h.is_excluded()[0]],
                                         max_radius=grid.params_id.bis_max_distance, min_group_size=grid.params_id.min_bis_group_size)
             for hole in holes:
                 hole.save()

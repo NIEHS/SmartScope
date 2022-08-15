@@ -19,3 +19,4 @@ config/singularity/resolv.conf
 config/singularity/env.sh
 Smartscope/lib/Finders/AIFinder/detectors/AR3-0528-3_atlas.png
 docker-compose.yml
+test.ipynb
