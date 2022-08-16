@@ -113,3 +113,8 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
 def list_plugins():
     from Smartscope.core.settings.worker import PLUGINS_FACTORY
     logger.info(f'Registered:\n{PLUGINS_FACTORY}')
+
+
+def list_protocols():
+    from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
+    logger.info(f'Registered:\n{PROTOCOLS_FACTORY}')
