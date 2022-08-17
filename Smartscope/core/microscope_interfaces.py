@@ -18,7 +18,7 @@ class CartridgeLoadingError(Exception):
     pass
 
 
-class SerialemInterface(MicroscopeInterface):
+class GatanSerialemInterface(MicroscopeInterface):
 
     def checkDewars(self, wait=30):
         while True:
@@ -184,8 +184,7 @@ class SerialemInterface(MicroscopeInterface):
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
-        # checkDewars()
-        # checkPump()
+
         if not frames:
             sem.EarlyReturnNextShot(-1)
             sem.Preview()
@@ -195,6 +194,7 @@ class SerialemInterface(MicroscopeInterface):
             return None
 
         sem.EarlyReturnNextShot(0)
+
         sem.Preview()  # Seems possible to change this to Record in 4.0, needs testing
         frames = sem.ReportLastFrameFile()
         if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
@@ -214,14 +214,12 @@ class SerialemInterface(MicroscopeInterface):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.directory, 'movies').as_posix().replace('/', '\\')
+            movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
-            # sem.EarlyReturnNextShot(0)
         else:
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
-            # sem.EarlyReturnNextShot(-1)
 
         if self.energyfilter and zerolossDelay > 0:
             sem.RefineZPL(zerolossDelay * 60, 1)
@@ -253,6 +251,46 @@ class SerialemInterface(MicroscopeInterface):
             if sem.ReportSlotStatus(position) != 0:
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
+
+
+class FalconSerialemInterface(GatanSerialemInterface):
+
+    def square(self, stageX, stageY, stageZ, file=''):
+        sem.SetLowDoseMode(1)
+        logger.info(f'Starting Square acquisition of: {file}')
+        logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
+        time.sleep(0.2)
+        sem.MoveStageTo(stageX, stageY, stageZ)
+        sem.Eucentricity()
+        self.checkDewars()
+        self.checkPump()
+        sem.MoveStageTo(stageX, stageY)
+        time.sleep(0.2)
+        sem.Search()
+        sem.OpenNewFile(file)
+        sem.Save()
+        sem.CloseFile()
+        logger.info('Square acquisition finished')
+
+    def highmag(self, isX, isY, tiltAngle, file='', frames=True):
+
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
+        self.state.imageShiftX = isX
+        self.state.imageShiftY = isY
+        sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
+
+        sem.Preview()
+        sem.OpenNewFile(file)
+        sem.Save()
+        sem.CloseFile()
+        if not frames:
+            return None
+
+        frames = sem.ReportLastFrameFile()
+        if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
+            frames = frames[0]
+        logger.debug(f"Frames: {frames},")
+        return frames.split('\\')[-1]
 
 
 class FakeScopeInterface(MicroscopeInterface):

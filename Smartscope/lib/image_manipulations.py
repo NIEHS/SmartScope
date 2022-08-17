@@ -133,5 +133,5 @@ def generate_hole_ref(hole_size_in_um: float, pixel_size: float, out_type: str =
 
     im = np.ones((im_size, im_size)) * int(fill_value)
 
-    cv2.circle(im, (im_size // 2, im_size // 2), radius=radius, color=int(color), thickness=5)
+    cv2.circle(im, (im_size // 2, im_size // 2), radius=radius, color=int(color), thickness=max([1, int(80 / pixel_size)]))
     return im.astype(out_type)

@@ -47,20 +47,6 @@ USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
 
 WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
 
-# AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-# AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
-# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-# AWS_DATA_PREFIX = os.getenv('AWS_DATA_PREFIX')
-
-# Tell django-storages the domain to use to refer to static files.
-# AWS_STATIC_LOCATION = 'static'
-# AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com/%s' % (AWS_STORAGE_BUCKET_NAME, AWS_STATIC_LOCATION)
-
-# Tell the staticfiles app to use S3Boto3 storage when writing the collected static files (when
-# you run `collectstatic`).
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
     AUTOSCREENINGSTORAGE_URL = '/autoscreeningstorage/'

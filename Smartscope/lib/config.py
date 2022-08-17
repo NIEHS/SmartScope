@@ -30,7 +30,7 @@ def register_protocols(directory, factory):
         with open(file) as f:
             data = yaml.safe_load(f)
 
-    factory[data['name']] = ImagingProtocol.parse_obj(data)
+        factory[data['name']] = ImagingProtocol.parse_obj(data)
 # def load_plugins():
 #     with open(settings.SMARTSCOPE_PLUGINS) as f:
 #         return yaml.safe_load(f)
