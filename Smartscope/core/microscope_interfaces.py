@@ -127,14 +127,18 @@ class GatanSerialemInterface(MicroscopeInterface):
         return sem.ReportAlignShift()
 
     def make_hole_ref(self, hole_size_in_um):
-        sem.View()
-        img = np.asarray(sem.bufferImage('A'))
-        dtype = img.dtype
-        shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
-        logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
-        ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
-        self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
-        sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
+
+        # sem.View()
+        # img = np.asarray(sem.bufferImage('A'))
+        # dtype = img.dtype
+        # shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
+        # logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
+        # ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
+        # self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
+        # sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
+        sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+        shape_x, _, _, _, _, _ = sem.ImageProperties('T')
+        self.hole_crop_size = int(shape_x)
         self.has_hole_ref = True
 
     def clear_hole_ref(self):
