@@ -248,6 +248,7 @@ def run_grid(grid, session, processing_queue, scope):
             is_done = False
             square = squares[0]
             if square.status == 'queued' or square.status == 'started':
+                square = update(square, status='started')
                 logger.info('Waiting on square file')
                 path = os.path.join(microscope.scope_path, square.raw)
                 finder = square.finders.first()
