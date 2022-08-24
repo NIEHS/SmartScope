@@ -99,7 +99,7 @@ def update_target(data):
                                                     content_type=content_type, defaults=dict(label=new_value))
     try:
         instance = model.objects.get(pk=ids[0]).parent
-        response = SvgSerializer(instance=instance, display_type=display_type, method=None).data
+        response = SvgSerializer(instance=instance, display_type=display_type, method=method).data
 
         response['success'] = True
         return response
