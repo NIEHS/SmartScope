@@ -69,8 +69,6 @@ def toggle_pause(microscope_id: str):
 def regroup_bis(grid_id, square_id):
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     square = SquareModel.objects.get(square_id=square_id)
-    plugins = load_plugins()
-    protocol = load_protocol(os.path.join(grid.directory, 'protocol.yaml'))
     logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
     all_holes = list(HoleModel.objects.filter(square_id=square_id))
@@ -88,7 +86,7 @@ def regroup_bis(grid_id, square_id):
         h.bis_group = None
         h.bis_type = None
         h.selected = False
-        if h.is_good(plugins=plugins) and not h.is_excluded(protocol, square.targets_prefix)[0]:
+        if h.is_good() and not h.is_excluded()[0]:
             holes_for_grouping.append(h)
         else:
             other_holes.append(h)
