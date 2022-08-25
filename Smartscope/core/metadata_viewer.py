@@ -16,7 +16,7 @@ class CTFFitViewer():
         colors = list()
         steps = range(int(self.range[0] / self.step), int(self.range[1] / self.step) + 1)
         n_steps = len(steps)
-        print(n_steps)
+        # print(n_steps)
         cmap = cm.plasma
         cmap_step = int(floor(cmap.N / n_steps))
         for c, v in zip(range(cmap.N, 0, -cmap_step), steps):
@@ -26,7 +26,7 @@ class CTFFitViewer():
                 prefix = '\u2264'
             if val == self.range[1]:
                 prefix = '\u2265'
-            print(f'From CTF {prefix}{v*self.step}, color is {rgb2hex(cmap(c))}')
+            # print(f'From CTF {prefix}{v*self.step}, color is {rgb2hex(cmap(c))}')
             colors.append((rgb2hex(cmap(c)), v * self.step, prefix))
 
         return colors

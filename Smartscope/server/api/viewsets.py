@@ -387,12 +387,12 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             obj = self.get_object()
             microscope = obj.grid_id.session_id.microscope_id
             out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
-                                      'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True)
+                                      'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True, timeout=30)
             out = out.decode("utf-8").strip().split('\n')[-1]
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
-            return Response(dict(succes=False))
+            return Response(dict(success=False))
 
 
 class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):

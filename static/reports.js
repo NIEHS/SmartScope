@@ -707,7 +707,7 @@ async function addTargets(btn, selection) {
 async function regroupBIS(square_id) {
     let url = `/api/squares/${square_id}/regroup_bis/`
     let res = await apifetchAsync(url, {}, 'PATCH')
-    console.log(res)
+    console.log('regroupBIS: ', res)
     await loadSquare(currentState.square, false)
 }
 

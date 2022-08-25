@@ -75,7 +75,7 @@ def regroup_bis(grid_id, square_id):
     excluded_groups = []
     for hole in all_holes:
         if hole.bis_type == 'center' and hole.status not in [None, 'queued']:
-            print('Excluding group:', hole.bis_group)
+            logger.info(f'Excluding group: {hole.bis_group}')
             excluded_groups.append(hole.bis_group)
 
     filtered_holes = [h for h in all_holes if h.bis_group not in excluded_groups and h.status in [None, 'queued']]
@@ -91,7 +91,7 @@ def regroup_bis(grid_id, square_id):
         else:
             other_holes.append(h)
 
-    logger.debug(f'\nAll Holes = {len(all_holes)}\nFiltered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
+    logger.info(f'\nAll Holes = {len(all_holes)}\nFiltered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 
     holes = group_holes_for_BIS(holes_for_grouping, max_radius=collection_params.bis_max_distance,
                                 min_group_size=collection_params.min_bis_group_size, queue_all=collection_params.holes_per_square == -1)
@@ -99,6 +99,8 @@ def regroup_bis(grid_id, square_id):
     with transaction.atomic():
         for hole in holes + other_holes:
             hole.save()
+    
+    logger.info('Regrouping BIS done.')
 
 
 def continue_run(next_or_continue, microscope_id):
