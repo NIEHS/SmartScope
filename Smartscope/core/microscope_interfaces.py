@@ -79,6 +79,8 @@ class GatanSerialemInterface(MicroscopeInterface):
             sem.SetSlitIn(0)
         self.eucentricHeight()
         sem.OpenNewMontage(tileX, tileY, file)
+        self.checkDewars()
+        self.checkPump()
         logger.info('Starting Atlas acquisition')
         sem.Montage()
         sem.CloseFile()
