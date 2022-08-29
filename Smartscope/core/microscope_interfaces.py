@@ -216,13 +216,15 @@ class GatanSerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, zerolossDelay):
+    def setup(self, saveframes, zerolossDelay, framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
             movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
+            if framesName is not None:
+                sem.SetFrameBaseName(0, 0, 0, framesName)
         else:
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)

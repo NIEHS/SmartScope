@@ -153,7 +153,7 @@ def run_grid(grid, session, processing_queue, scope):
 
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
-    scope.setup(params.save_frames, params.zeroloss_delay)
+    scope.setup(params.save_frames, params.zeroloss_delay, framesName=f'{session.date}_{grid.name}')
     scope.clear_hole_ref()
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
