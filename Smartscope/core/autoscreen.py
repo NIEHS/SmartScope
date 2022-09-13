@@ -9,13 +9,12 @@ from Smartscope.core.microscope_interfaces import FakeScopeInterface, GatanSeria
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import AutoloaderGrid, ScreeningSession, HoleModel, SquareModel, Process
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
-from Smartscope.lib.image_manipulations import auto_contrast, auto_contrast_sigma, fourier_crop
+from Smartscope.lib.image_manipulations import auto_contrast, auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage, Movie, create_targets
 from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, add_high_mag
-# from Smartscope.lib.config import save_protocol, load_default_protocol, load_protocol
 from Smartscope.lib.logger import add_log_handlers
 from django.db import transaction
 from django.utils import timezone
@@ -83,11 +82,6 @@ def print_queue(squares, holes, session):
         f.write(string)
 
 
-# def load_protocol_wrapper(protocol):
-#     protocol_file = 'protocol.yaml'
-#     if not os.path.isfile(protocol_file):
-#         return load_default_protocol(protocol)
-#     return load_protocol()
 
 
 def is_stop_file(sessionid: str) -> bool:
@@ -168,7 +162,7 @@ def run_grid(grid, session, processing_queue, scope):
     if atlas.status == 'acquired':
         logger.info('Atlas acquired')
         montage = get_file_and_process(raw=atlas.raw, name=atlas.name, directory=microscope.scope_path)
-        montage.export_as_png()
+        export_as_png(montage.image,montage.png)
         targets, finder_method, classifier_method = find_targets(montage, protocol.squareFinders)
         targets = create_targets(targets, montage, target_type='square')
         squares = add_targets(grid, atlas, targets, SquareModel, finder_method, classifier_method)
@@ -305,7 +299,7 @@ def process_square_image(square, grid, microscope_id):
     montage = None
     if square.status == 'acquired':
         montage = get_file_and_process(raw=square.raw, name=square.name, directory=microscope_id.scope_path)
-        montage.export_as_png()
+        export_as_png(montage.image,montage.png)
         targets, finder_method, classifier_method = find_targets(montage, protocol.holeFinders)
         targets = create_targets(targets, montage, target_type='hole')
         holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
@@ -338,7 +332,7 @@ def process_square_image(square, grid, microscope_id):
 
 def process_hole_image(hole, microscope_id):
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path)
-    montage.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    export_as_png(montage.image,montage.png,normalization=auto_contrast_sigma, binning_method=fourier_crop)
     update(hole, status='processed',
            pixel_size=montage.pixel_size,)
 

@@ -29,6 +29,14 @@ class SmartscopeStorage(S3Boto3Storage):
             self.connection.meta.client.download_file(self.bucket_name, str(object_path), str(download_path))
         return download_path
 
+    def upload_file(self, file, path):
+        object_path = Path(self.location, path)
+        self.connection.meta.client.upload_file(file, self.bucket_name, str(object_path))
+
+
+def get_S3_path(working_dir, file):
+    return Path(working_dir, file)
+
 
 class TemporaryS3File:
 

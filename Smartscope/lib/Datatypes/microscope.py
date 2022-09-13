@@ -62,6 +62,9 @@ class MicroscopeInterface(ABC):
             defocusTarget = mindef
         self.state.defocusTarget = defocusTarget
 
+    def clear_hole_ref(self):
+        self.has_hole_ref = False
+
     @abstractmethod
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
         pass

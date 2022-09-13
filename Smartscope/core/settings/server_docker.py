@@ -25,11 +25,7 @@ TEMPDIR = os.getenv('TEMPDIR')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# with open('/mnt/mariadb/secretkey.txt') as f:
-#     SECRET_KEY = open('/mnt/mariadb/secretkey.txt').read()
 SECRET_KEY = os.getenv('SECRET_KEY')
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
 DEPLOY = True
 
