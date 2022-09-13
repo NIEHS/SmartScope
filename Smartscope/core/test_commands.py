@@ -4,7 +4,9 @@ from typing import List, Tuple
 import torch
 from Smartscope.core.microscope_interfaces import GatanSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
+from Smartscope.core.finders import find_targets
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +110,23 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
     average = np.mean(pixel_sizes)
     std = np.std(pixel_sizes)
     return average, std
+
+def test_finder(plugin_name: str, raw_image_path:str,): #output_dir='/mnt/data/testing/'
+    from Smartscope.lib.montage import Montage
+    from Smartscope.lib.image_manipulations import auto_contrast, save_image
+    import cv2
+    image = Path(raw_image_path)
+    logger.info(f'Testing finder {plugin_name} on image {raw_image_path}')
+    logger.debug(f'{image.name}, {image.parent}')
+    montage = Montage(image.stem, working_dir=image.parents[1])
+    output, _, _ = find_targets(montage, [plugin_name])
+    bit8_montage = auto_contrast(montage.image)
+    bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
+    for i in output:
+        cv2.rectangle(bit8_color, list(i[0:2]),list(i[2:]), (0, 0, 255), cv2.FILLED)
+    logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name + '.png')}")
+    save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
+    
 
 
 def list_plugins():

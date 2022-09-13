@@ -202,23 +202,23 @@ def regular_pattern(montage, spacing_in_um=3, diameter_in_um=1.2):
     n_pt_y = int(montage.shape_y // pixel_spacing)
     logger.info(f'Initiaing a {n_pt_x*n_pt_y} points lattice')
     bit8_montage = auto_contrast(montage.image)
-    bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
+    # bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
     square, _, _ = find_square(bit8_montage)
     output = []
-    mask = np.zeros(bit8_montage.shape, dtype="uint8")
+    mask = np.zeros([montage.shape_y,montage.shape_x] , dtype="uint8")
     cv2.drawContours(mask, [square], -1, 255, cv2.FILLED)
-    cv2.drawContours(bit8_color, [square], -1, (255, 0, 0), 20)
+    # cv2.drawContours(bit8_color, [square], -1, (255, 0, 0), 20)
 
     for x in range(n_pt_x):
         x *= pixel_spacing
         for y in range(n_pt_y):
             y *= pixel_spacing
-            cv2.circle(bit8_color, [y, x], radius_in_pix, (0, 0, int(mask[x, y])), cv2.FILLED)
-            if mask[y, x] == 255:
+            # cv2.circle(bit8_color, [y, x], radius_in_pix, (0, 0, int(mask[x, y])), cv2.FILLED)
+            if mask[y,x] == 255:
                 output.append(convert_centers_to_boxes(np.array([x, y]), montage.pixel_size,
                               montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
     logger.info(f'Filtered a total of {len(output)} targets within the square')
-    save_image(bit8_color, 'regular_pattern', destination=montage.directory, resize_to=512)
+    # save_image(bit8_color, 'regular_pattern', destination=montage.directory, resize_to=512)
     # logger.debug(output)
     return output, True
 

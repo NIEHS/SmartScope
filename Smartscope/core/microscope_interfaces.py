@@ -143,9 +143,6 @@ class GatanSerialemInterface(MicroscopeInterface):
         self.hole_crop_size = int(shape_x)
         self.has_hole_ref = True
 
-    def clear_hole_ref(self):
-        self.has_hole_ref = False
-
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
 
         sem.TiltTo(tiltAngle)
@@ -216,13 +213,15 @@ class GatanSerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, zerolossDelay):
+    def setup(self, saveframes, zerolossDelay, framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
             movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
+            if framesName is not None:
+                sem.SetFrameBaseName(0, 0, 0, framesName)
         else:
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
@@ -333,7 +332,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def connect(self, directory: str):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, zerolossDelay):
+    def setup(self, saveframes, zerolossDelay, framesName=None):
         pass
 
     def disconnect(self, close_valves=True):
