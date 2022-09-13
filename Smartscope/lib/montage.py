@@ -202,10 +202,6 @@ class BaseImage(ABC):
     is_movie: bool = False
     metadata: Union[pd.DataFrame, None] = None
 
-    # _directory = Path(working_dir, name)
-    # _image_path = Path(_directory, f'{name}.mrc')
-    # _metadataFile = Path(_directory, f'{name}_metadata.pkl')
-
     @property
     def directory(self):
         return self._directory
@@ -292,9 +288,9 @@ class BaseImage(ABC):
     def read_metadata(self):
         self.metadata = pd.read_pickle(self.metadataFile)
 
-    def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
-        resized = normalization(binning_method(self.image, height=height))
-        cv2.imwrite(str(self.png), resized)
+    # def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
+    #     resized = normalization(binning_method(self.image, height=height))
+    #     cv2.imwrite(str(self.png), resized)
 
     def make_symlink(self):
         os.symlink(f'../raw/{self.name}.mrc', self.image_path)
@@ -378,26 +374,26 @@ class Movie(BaseImage):
             return True
 
 
-def find_targets(montage: Montage, methods: list):
-    logger.debug(f'Using method: {methods}')
-    for method in methods:
-        if not 'args' in method.keys():
-            method['args'] = []
-        if not 'kwargs' in method.keys():
-            method['kwargs'] = dict()
+# def find_targets(montage: Montage, methods: list):
+#     logger.debug(f'Using method: {methods}')
+#     for method in methods:
+#         if not 'args' in method.keys():
+#             method['args'] = []
+#         if not 'kwargs' in method.keys():
+#             method['kwargs'] = dict()
 
-        import_cmd = f"from {method['package']} import {method['method']}"
-        logger.debug(import_cmd)
-        logger.debug(f"kwargs = {method['kwargs']}")
-        exec(import_cmd)
-        try:
-            output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
-        except Exception as err:
-            logger.exception(err)
-            continue
-        if success:
-            logger.debug(f'{method} was successful: {success}')
-            return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
+#         import_cmd = f"from {method['package']} import {method['method']}"
+#         logger.debug(import_cmd)
+#         logger.debug(f"kwargs = {method['kwargs']}")
+#         exec(import_cmd)
+#         try:
+#             output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
+#         except Exception as err:
+#             logger.exception(err)
+#             continue
+#         if success:
+#             logger.debug(f'{method} was successful: {success}')
+#             return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
 
 
 def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):

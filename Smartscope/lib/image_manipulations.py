@@ -100,6 +100,10 @@ def save_image(img, filename, extension='png', resize_to: int = None, destinatio
     if os.path.isfile(file):
         os.rename(file, os.path.join(destination, f'{filename}_old.{extension}'))
     cv2.imwrite(file, img)
+    
+def export_as_png(image, output, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
+    resized = normalization(binning_method(image, height=height))
+    cv2.imwrite(str(output), resized)
 
 
 def mrc_to_png(mrc_file, ):

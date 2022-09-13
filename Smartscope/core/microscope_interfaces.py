@@ -143,9 +143,6 @@ class GatanSerialemInterface(MicroscopeInterface):
         self.hole_crop_size = int(shape_x)
         self.has_hole_ref = True
 
-    def clear_hole_ref(self):
-        self.has_hole_ref = False
-
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
 
         sem.TiltTo(tiltAngle)
@@ -335,7 +332,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def connect(self, directory: str):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, zerolossDelay):
+    def setup(self, saveframes, zerolossDelay, framesName=None):
         pass
 
     def disconnect(self, close_valves=True):
