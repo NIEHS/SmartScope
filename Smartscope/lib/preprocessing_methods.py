@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 import logging
 from Smartscope.lib.file_manipulations import locate_file_in_directories, get_file_and_process
-from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop
+from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage, Movie
 from Smartscope.lib.logger import add_log_handlers
 from Smartscope.lib.generic_position import parse_mdoc
@@ -76,7 +76,7 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         CTFfind(input_mrc=movie.image_path, output_directory=movie.name,
                 voltage=movie.metadata.Voltage.iloc[-1], pixel_size=movie.pixel_size, spherical_abberation=spherical_abberation)
     movie.read_image()
-    movie.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     movie.save_metadata()
 
     return movie
@@ -84,7 +84,7 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
 
 def process_hm_from_average(raw, name, scope_path_directory, spherical_abberation: float = 2.7):
     montage = get_file_and_process(raw, name, directory=scope_path_directory)
-    montage.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     if not montage.ctf.exists():
         CTFfind(input_mrc=montage.image_path, output_directory=montage.name,
                 voltage=montage.metadata.Voltage.iloc[-1], pixel_size=montage.pixel_size, spherical_abberation=spherical_abberation)
