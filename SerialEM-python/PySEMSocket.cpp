@@ -755,6 +755,11 @@ int CPySEMSocket::RegularCommand(void)
   mScriptData->highestReportInd = mLongArgs[1];
   mScriptData->errorOccurred = mLongArgs[2];
   numLongs = mLongArgs[1] + 1;
+  if (numLongs > MAX_REPORTED_VALS) {
+    sprintf_s(mErrorBuf, ERR_BUF_SIZE, "Too many reported values for array size; the "
+              "Python serialem module needs to be updated");
+    return 1;
+  }
 
   // Unpack the arrays and strings from the long arrays
   dblArray = (double *)(&mLongArray[numLongs]);

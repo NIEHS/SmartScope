@@ -221,7 +221,7 @@ class GatanSerialemInterface(MicroscopeInterface):
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
             if framesName is not None:
-                sem.SetFrameBaseName(0, 0, 0, framesName)
+                sem.SetFrameBaseName(0, 1, 0, framesName)
         else:
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)

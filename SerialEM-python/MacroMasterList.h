@@ -12,7 +12,7 @@
 // Bit 3 (4) signifies that looping in OnIdle is allowed for a command, it is redundant
 // to set this for a Report command.
 // Bit 4 (8) indicates that a command is NOT available in external scripting and it is
-// added in the macros that construct, so not specified here
+// added in the macros that construct the command table, so not specified here
 // In sum:
 // # of args, 1 for arith allowed + 2 for not allowed in Set... + 4 looping in OnIdle OK
 //
@@ -39,6 +39,9 @@
 // new Python-only commands need to be added to pythonOnlyCmds in ::CMacroProcessor
 //
 // The longest command name is now 25 characters but 23 is a more common limit
+
+#pragma push_macro("CreateProcess")
+#undef CreateProcess
 
 MAC_SAME_NAME(ScriptEnd, 0, 0, SCRIPTEND)
 MAC_DIFF_NAME(Label, 0, 0, NoOperation, LABEL)
@@ -130,7 +133,7 @@ MAC_SAME_NAME_ARG(AcquireToMatchBuffer, 1, 0, ACQUIRETOMATCHBUFFER, S)
 MAC_SAME_NAME_ARG(StepFocusNextShot, 2, 5, STEPFOCUSNEXTSHOT, DDdd)
 MAC_SAME_NAME_ARG(SmoothFocusNextShot, 2, 5, SMOOTHFOCUSNEXTSHOT, DD)
 MAC_SAME_NAME_NOARG(DeferStackingNextShot, 0, 4, DEFERSTACKINGNEXTSHOT)
-MAC_SAME_NAME_ARG(EarlyReturnNextShot, 1, 5, EARLYRETURNNEXTSHOT, Ii)
+MAC_SAME_NAME_ARG(EarlyReturnNextShot, 1, 5, EARLYRETURNNEXTSHOT, Iii)
 MAC_SAME_NAME_NOARG(GetDeferredSum, 0, 0, GETDEFERREDSUM)
 MAC_SAME_NAME_ARG(FrameThresholdNextShot, 1, 5, FRAMETHRESHOLDNEXTSHOT, Dddd)
 MAC_SAME_NAME_ARG(QueueFrameTiltSeries, 3, 4, QUEUEFRAMETILTSERIES, DDIdddddd)
@@ -207,7 +210,7 @@ MAC_SAME_FUNC_NOARG(ReportLastFrameFile, 0, 4, ReportCurrentFilename, REPORTLAST
 MAC_SAME_FUNC_ARG(ReportNavFile, 0, 0, ReportCurrentFilename, REPORTNAVFILE, i)
 MAC_SAME_NAME_NOARG(ReportFrameBaseName, 0, 0, REPORTFRAMEBASENAME)
 MAC_SAME_NAME_ARG(GetFileInWatchedDir, 1, 4, GETFILEINWATCHEDDIR, S)
-MAC_SAME_FUNC_ARG(RunScriptInWatchedDir, 1, 4, GetFileInWatchedDir, RUNSCRIPTINWATCHEDDIR, S)
+MAC_SAME_FUNC(RunScriptInWatchedDir, 1, 4, GetFileInWatchedDir, RUNSCRIPTINWATCHEDDIR)
 MAC_SAME_NAME_ARG(AllowFileOverwrite, 1, 4, ALLOWFILEOVERWRITE, I)
 MAC_SAME_NAME_ARG(SetDirectory, 1, 6, SETDIRECTORY, S)
 MAC_SAME_FUNC_ARG(MakeDirectory, 1, 4, SetDirectory, MAKEDIRECTORY, S)
@@ -410,7 +413,7 @@ MAC_SAME_NAME_ARG(OKBox, 1, 4, OKBOX, S)
 MAC_SAME_NAME_ARG(EnterOneNumber, 1, 4, ENTERONENUMBER, S)
 MAC_SAME_FUNC_ARG(EnterDefaultedNumber, 3, 4, EnterOneNumber, ENTERDEFAULTEDNUMBER, DIS)
 MAC_SAME_NAME_ARG(EnterString, 2, 4, ENTERSTRING, SS)
-MAC_SAME_NAME_ARG(ThreeChoiceBox, 4, 4, THREECHOICEBOX, SSSSs)
+MAC_SAME_NAME_ARG(ThreeChoiceBox, 3, 4, THREECHOICEBOX, SSSSs)
 MAC_SAME_NAME_ARG(CompareNoCase, 2, 4, COMPARENOCASE, SS)
 MAC_SAME_FUNC_ARG(CompareStrings, 2, 4, CompareNoCase, COMPARESTRINGS, SS)
 MAC_SAME_NAME_ARG(StripEndingDigits, 2, 4, STRIPENDINGDIGITS, SS)
@@ -430,7 +433,7 @@ MAC_SAME_NAME_ARG(ConditionPhasePlate, 0, 0, CONDITIONPHASEPLATE, i)
 MAC_SAME_NAME_NOARG(GetWaitTaskDrift, 0, 0, GETWAITTASKDRIFT)
 MAC_SAME_NAME_NOARG(BacklashAdjust, 0, 0, BACKLASHADJUST)
 MAC_SAME_NAME_ARG(CenterBeamFromImage, 0, 0, CENTERBEAMFROMIMAGE, id)
-MAC_SAME_NAME_ARG(AutoCenterBeam, 0, 0, AUTOCENTERBEAM, d)
+MAC_SAME_NAME_ARG(AutoCenterBeam, 0, 0, AUTOCENTERBEAM, di)
 MAC_SAME_NAME_NOARG(CookSpecimen, 0, 0, COOKSPECIMEN)
 MAC_SAME_NAME_NOARG(SetIntensityByLastTilt, 0, 2, SETINTENSITYBYLASTTILT)
 MAC_SAME_FUNC_ARG(ChangeIntensityBy, 1, 1, SetIntensityByLastTilt, CHANGEINTENSITYBY, D)
@@ -602,7 +605,7 @@ MAC_SAME_NAME_NOARG(ReportFEGEmissionState, 0, 4, REPORTFEGEMISSIONSTATE)
 MAC_SAME_NAME_ARG(SetFEGEmissionState, 1, 4, SETFEGEMISSIONSTATE, I)
 MAC_SAME_NAME_ARG(SetImageBeamTilt, 2, 0, SETIMAGEBEAMTILT, DD)
 MAC_SAME_NAME_NOARG(ReportImageBeamTilt, 0, 0, REPORTIMAGEBEAMTILT)
-MAC_SAME_NAME_NOARG(ListCalibrations, 0, 4, LISTCALIBRATIONS)
+MAC_SAME_NAME_ARG(SetCondenserStigmator, 2, 0, SETCONDENSERSTIGMATOR, DD)
 MAC_SAME_NAME_NOARG(ReportCurrentBuffer, 0, 0, REPORTCURRENTBUFFER)
 MAC_SAME_FUNC_ARG(ChangeItemDraw, 1, 4, ChangeItemRegistration, CHANGEITEMDRAW, Ii)
 MAC_SAME_NAME_ARG(IsFEGFlashingAdvised, 1, 4, ISFEGFLASHINGADVISED, I)
@@ -611,8 +614,65 @@ MAC_SAME_NAME_NOARG(SimpleOriginStatus, 0, 4, SIMPLEORIGINSTATUS)
 MAC_SAME_NAME_ARG(AlignToTemplate, 0, 0, ALIGNTOTEMPLATE, ddiis)
 MAC_SAME_NAME_ARG(ManageDewarsAndPumps, 0, 0, MANAGEDEWARSANDPUMPS, i)
 MAC_SAME_NAME_ARG(ImageMetadataToVar, 2, 4, IMAGEMETADATATOVAR, SS)
+MAC_SAME_NAME_NOARG(ReportHoleFinderParams, 0, 4, REPORTHOLEFINDERPARAMS)
+MAC_SAME_NAME_NOARG(ReportDiffractionShift, 0, 0, REPORTDIFFRACTIONSHIFT)
+MAC_SAME_NAME_ARG(SetDiffractionShift, 2, 0, SETDIFFRACTIONSHIFT, DD)
+MAC_SAME_NAME_ARG(ReportExposure, 1, 4, REPORTEXPOSURE, S)
+MAC_SAME_NAME_ARG(ReportBinning, 1, 4, REPORTBINNING, S)
+MAC_SAME_NAME_ARG(ReportReadMode, 1, 4, REPORTREADMODE, S)
+MAC_SAME_NAME_ARG(ReportCameraSetArea, 1, 4, REPORTCAMERASETAREA, S)
+MAC_SAME_NAME_ARG(ReportCurrentPixelSize, 1, 4, REPORTCURRENTPIXELSIZE, S)
+MAC_SAME_NAME_ARG(SetSimpleOriginActive, 1, 4, SETSIMPLEORIGINACTIVE, I)
+MAC_SAME_NAME_ARG(SetFrameBaseName, 4, 4, SETFRAMEBASENAME, IIIS)
+MAC_SAME_NAME_ARG(AutoCorrPeakVectors, 2, 4, AUTOCORRPEAKVECTORS, SDii)
+MAC_SAME_NAME_NOARG(ReportCondenserStigmator, 0, 0, REPORTCONDENSERSTIGMATOR)
+MAC_SAME_NAME_ARG(AddTitleToFile, 2, 4, ADDTITLETOFILE, IS)
+MAC_SAME_NAME_ARG(ReportLastHoleVectors, 1, 4, REPORTLASTHOLEVECTORS, I)
+MAC_SAME_NAME_NOARG(ReportActiveViewTitle, 0, 4, REPORTACTIVEVIEWTITLE)
+MAC_SAME_NAME_ARG(SetActiveViewByTitle, 1, 4, SETACTIVEVIEWBYTITLE, S)
+MAC_SAME_NAME_ARG(LimitNextRoughEucen, 1, 5, LIMITNEXTROUGHEUCEN, D)
+MAC_SAME_NAME_NOARG(ReportRoughEucenFailed, 0, 4, REPORTROUGHEUCENFAILED)
+MAC_SAME_NAME_ARG(RunGatanScript, 1, 0, RunGatanScript, S)
+MAC_SAME_FUNC_ARG(EchoBreakLines, 0, 4, Echo, ECHOBREAKLINES, s)
+MAC_SAME_NAME_ARG(NoLineWrapInMessageBox, 0, 4, NOLINEWRAPINMESSAGEBOX, i)
+MAC_SAME_NAME_NOARG(ReportRotationProblems, 0, 4, REPORTROTATIONPROBLEMS)
+MAC_SAME_FUNC_ARG(UseHoleVectorsForMulti, 0, 4, ReportLastHoleVectors, USEHOLEVECTORSFORMULTI, i)
+MAC_SAME_FUNC_ARG(RunScriptAfterNavAcquire, 1, 4, DoMacro, RUNSCRIPTAFTERNAVACQUIRE, I)
+MAC_SAME_NAME_ARG(LoadScriptPackAtEnd, 2, 4, LOADSCRIPTPACKATEND, IS)
+MAC_SAME_NAME_ARG(ConvertToBytes, 1, 4, CONVERTTOBYTES, Sdd)
+MAC_SAME_NAME_ARG(PasteImagesTogether, 3, 4, PASTEIMAGESTOGETHER, SSSi)
+MAC_SAME_NAME_ARG(ScaledSpectrum, 2, 4, SCALEDSPECTRUM, SI)
+MAC_SAME_FUNC_ARG(SpectrumBesideImage, 2, 4, ScaledSpectrum, SPECTRUMBESIDEIMAGE, SI)
+MAC_SAME_NAME_ARG(CheckStageToCamera, 0, 4, CHECKSTAGETOCAMERA, ddi)
+MAC_SAME_FUNC(RunScriptInFile, 1, 0, GetFileInWatchedDir, RUNSCRIPTINFILE)
+MAC_SAME_FUNC(RunSerialEMSnapshot, 0, 0, GetFileInWatchedDir, RUNSERIALEMSNAPSHOT)
+MAC_SAME_NAME_ARG(ImageConditions, 1, 4, IMAGECONDITIONS, S)
+MAC_SAME_NAME_ARG(AccumulateRecordDose, 1, 4, ACCUMULATERECORDDOSE, D)
+MAC_SAME_NAME_ARG(OpenMultiShotFiles, 1, 4, OPENMULTISHOTFILES, S)
+MAC_SAME_NAME_NOARG(CloseMultiShotFiles, 0, 4, CLOSEMULTISHOTFILES)
+MAC_SAME_NAME_ARG(SetNextEmailAddress, 1, 6, SETNEXTEMAILADDRESS, IS)
+MAC_SAME_NAME_NOARG(ReorderMontageByTilt, 0, 4, REORDERMONTAGEBYTILT)
+MAC_SAME_NAME_NOARG(ReportTiltAxisOffset, 0, 4, REPORTTILTAXISOFFSET)
+MAC_SAME_NAME_ARG(DeleteNavigatorItem, 1, 4, DELETENAVIGATORITEM, I)
+MAC_SAME_FUNC_ARG(MeasureBeamPosition, 0, 4, MeasureBeamSize, MEASUREBEAMPOSITION, s)
+MAC_SAME_NAME_ARG(MeasureBeamEllipse, 0, 4, MEASUREBEAMELLIPSE, s)
+MAC_SAME_NAME_ARG(AddImagePosAsNavPoint, 3, 5, ADDIMAGEPOSASNAVPOINT, SDDdii)
+MAC_SAME_FUNC_ARG(AddImagePointsAsPolygon, 3, 4, AddImagePosAsNavPoint, ADDIMAGEPOINTSASPOLYGON, SSSdi)
+MAC_SAME_NAME_ARG(AdjustStagePosForNav, 2, 5, ADJUSTSTAGEPOSFORNAV, DDddiid)
+MAC_SAME_NAME_ARG(AddStagePosAsNavPoint, 3, 5, ADDSTAGEPOSASNAVPOINT, DDDii)
+MAC_SAME_FUNC_ARG(AddStagePointsAsPolygon, 3, 4, AddStagePosAsNavPoint, ADDSTAGEPOINTSASPOLYGON, SSDi)
+MAC_SAME_NAME_NOARG(GetUniqueNavID, 0, 5, GETUNIQUENAVID)
+MAC_SAME_NAME_ARG(TrimString, 3, 4, TRIMSTRING, ISS)
+MAC_SAME_NAME_ARG(ReportCameraName, 1, 4, REPORTCAMERANAME, I)
+MAC_SAME_NAME_ARG(Ctfplotter, 3, 1, CTFPLOTTER, SDDiddiddd)
+MAC_SAME_NAME_ARG(RunProcess, 1, 0, RUNPROCESS, S)
+MAC_SAME_NAME_NOARG(ReportCtplotterTuning, 0, 4, REPORTCTPLOTTERTUNING)
+
+
 
 // new Python-only commands need to be added to pythonOnlyCmds in ::CMacroProcessor
+// New Not from Python items omit _ARG or _NOARG
+// Use SubstituteLineStripItems or JustStripItems for trailing strings to work in Python
 //
 // The longest command name is now 25 characters but 23 is a more common limit
 // # of args, 1 for arith allowed + 2 for not allowed in Set... + 4 looping in OnIdle OK
@@ -627,3 +687,5 @@ MAC_SAME_NAME_ARG(ImageMetadataToVar, 2, 4, IMAGEMETADATATOVAR, SS)
 #undef MAC_SAME_NAME
 #undef MAC_SAME_NAME_ARG
 #undef MAC_SAME_NAME_NOARG
+
+#pragma pop_macro("CreateProcess")

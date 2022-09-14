@@ -33,6 +33,7 @@
 
 #define ERR_BUF_SIZE 320
 #define MAX_SCRIPT_LANG_ARGS 20
+#define MAX_REPORTED_VALS 6
 
 #define B3DMIN(a,b) ((a) < (b) ? (a) : (b))
 
@@ -51,9 +52,9 @@ struct ScriptLangData {
   int itemInt[MAX_SCRIPT_LANG_ARGS];       // Integer value by atoi, from plugin
   double itemDbl[MAX_SCRIPT_LANG_ARGS];    // double value from plugin
   int lastNonEmptyInd;                     // Index of last non-empty item from plugin
-  std::string reportedStrs[6];                 // Reported string values after command
-  double reportedVals[6];                  // Reported double values after command
-  bool repValIsString[6];                  // Flag for whether reported value is string
+  std::string reportedStrs[MAX_REPORTED_VALS];  // Reported string values after command
+  double reportedVals[MAX_REPORTED_VALS];  // Reported double values after command
+  bool repValIsString[MAX_REPORTED_VALS];  // Flag for whether reported value is string
   int highestReportInd;                    // Index of highest reported value (from 0)
   int errorOccurred;                       // Flag that an error occurred in the command
   int commandReady;                        // Flag set by plugin that command is ready

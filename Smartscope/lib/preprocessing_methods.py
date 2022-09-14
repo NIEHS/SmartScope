@@ -76,7 +76,7 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         CTFfind(input_mrc=movie.image_path, output_directory=movie.name,
                 voltage=movie.metadata.Voltage.iloc[-1], pixel_size=movie.pixel_size, spherical_abberation=spherical_abberation)
     movie.read_image()
-    export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    export_as_png(movie.image, movie.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     movie.save_metadata()
 
     return movie

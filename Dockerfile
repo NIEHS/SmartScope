@@ -59,7 +59,7 @@ RUN conda update -y conda && \
 ADD . /opt/smartscope/
 
 RUN pip install -e /opt/smartscope/ --no-dependencies && \
-	pip install /opt/smartscope/SerialEM-python --no-dependencies
+	pip install -e /opt/smartscope/SerialEM-python --no-dependencies
 
 RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate &&\
 	tar -xvf Smartscope0.6.tar.gz -C /opt/ &&\
