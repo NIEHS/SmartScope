@@ -318,8 +318,8 @@ class FakeScopeInterface(MicroscopeInterface):
     def align():
         pass
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
-        generate_fake_file(file, 'lowmagHole', destination_dir=self.scope_path)
+    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', is_negativestain=False, aliThreshold=500):
+        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.scope_path)
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
