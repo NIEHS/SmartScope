@@ -616,7 +616,7 @@ async function reportMain() {
         if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {
             await loadAtlas(metaonly = false, display_type = currentState['atlasDisplayType'] || null , method = currentState['atlasMethod'] || null);
             if (![null, undefined].includes(currentState.square)) {
-                await loadSquare(currentState.square)
+                await loadSquare(currentState.square, metaonly = false, display_type = currentState['squareDisplayType'] || null , method = currentState['squareMethod'] || null)
             }
             if (![null, undefined].includes(currentState.hole)) {
                 await loadHole(document.getElementById(currentState.hole))
