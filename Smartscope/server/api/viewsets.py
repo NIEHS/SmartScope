@@ -54,7 +54,7 @@ class ExtraActionsMixin:
         context = {**context, **serializer.data}
         context['card'] = render_to_string('mapcard.html', context=context, )
         logger.debug(f"{context['method']}, {context['display_type']}")
-        return Response(dict(fullmeta=context['fullmeta'], card=context['card']))
+        return Response(dict(fullmeta=context['fullmeta'], card=context['card'], displayType=context['display_type'], method=context['method']))
 
     @ action(detail=True, methods=['get'])
     def file_paths(self, request, *args, **kwargs):

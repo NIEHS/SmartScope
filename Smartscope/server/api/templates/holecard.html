@@ -13,7 +13,7 @@
                             <div class="dropdown-menu hmQuality">
                                 {% for key,class in classifier.classes.items %}
                                 <button id='' class="dropdown-item" label="{{class.name}}"
-                                    onclick="updateClassifier('holes','{{classifier.name}}', '{{key}}', ['{{hole.hole_id.pk}}'])">{{class.name}}</button>
+                                    onclick="updateTargets('holes', false,'{{classifier.name}}', 'label', '{{key}}', ['{{hole.hole_id.pk}}'])">{{class.name}}</button>
                                 {% endfor %}
                             </div>
                         </li>
