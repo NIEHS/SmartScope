@@ -75,13 +75,14 @@ def update_target(data):
         response['error'] = 'Invalid model specified'
         return response
     content_type = ContentType.objects.get_for_model(model)
-    if method is None:
+    # if method is None:
+        
+    if key == 'selected':
         objs = list(model.objects.filter(pk__in=ids))
-        if key == 'selected' and model is HoleModel:
+        if model is HoleModel:
             for i, obj in enumerate(objs):
                 if obj.bis_type == 'is_area':
                     objs[i] = HoleModel.objects.get(square_id=obj.square_id, bis_group=obj.bis_group, bis_type='center')
-
     else:
         logger.debug('Updating Classifier objects')
         objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
