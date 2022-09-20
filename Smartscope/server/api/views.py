@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.conf import settings
 from rest_framework import response
 from Smartscope.core.db_manipulations import update, update_target
 from Smartscope.core.models import *
@@ -8,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
-from Smartscope.server.lib.s3functions import *
+from Smartscope.lib.s3functions import *
 from Smartscope.server.frontend.forms import *
 from django.db import transaction
 from Smartscope.server.lib.worker_jobs import send_to_worker
@@ -160,6 +161,7 @@ class ReportPanel(APIView):
             context['grid'] = grid
             context['gridform'] = AutoloaderGridReportForm(instance=context['grid'])
             context['gridCollectionParamsForm'] = GridCollectionParamsForm(instance=context['grid'].params_id)
+            context['useMicroscope'] = settings.USE_MICROSCOPE
             try:
                 context['atlas_id'] = context['grid'].atlasmodel_set.all().first().atlas_id
             except:

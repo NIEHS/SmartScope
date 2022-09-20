@@ -321,9 +321,11 @@
         <a id='curateMics' class="dropdown-item"
             href="{% url 'evaluatemicrographs' %}?grid_id={{grid.grid_id}}&format=json" target="_blank">
             Curate micrographs </a>
-        <a id='curateMics' class="dropdown-item" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
+        {% if useMicroscope %}
+        <a id='runAutoscreen' class="dropdown-item" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
             target="_blank">View
             Logs</a>
+        {% endif %}
     </div>
 </div>
 

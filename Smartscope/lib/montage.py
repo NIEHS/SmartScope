@@ -21,6 +21,7 @@ import math
 from Smartscope.lib.generic_position import parse_mdoc
 from Smartscope.lib.Classifiers.basic_pred import decide_type
 from Smartscope.lib.Finders.basic_finders import *
+from Smartscope.lib.s3functions import TemporaryS3File
 from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma, save_image, mrc_to_png, fourier_crop
 from torch import Tensor
 import logging
@@ -203,15 +204,27 @@ class BaseImage(ABC):
 
     @property
     def directory(self):
-        return Path(self.working_dir, self.name)
+        return self._directory
+
+    @directory.setter
+    def directory(self, value):
+        self._directory = value
 
     @property
     def image_path(self):
-        return Path(self.directory, f'{self.name}.mrc')
+        return self._image_path
+
+    @image_path.setter
+    def image_path(self, value):
+        self._image_path = value
 
     @property
     def metadataFile(self):
-        return Path(self.directory, f'{self.name}_metadata.pkl')
+        return self._metadataFile
+
+    @metadataFile.setter
+    def metadataFile(self, value):
+        self._metadataFile = value
 
     @property
     def png(self):
@@ -248,6 +261,7 @@ class BaseImage(ABC):
     def read_image(self):
         with mrcfile.open(self.image_path) as mrc:
             self.image = mrc.data
+        return
 
     def read_data(self):
         self.read_image()
@@ -258,6 +272,14 @@ class BaseImage(ABC):
             logger.info('Found metadata, reading...')
             self.read_data()
             return True
+
+        if not eval(os.getenv('USE_STORAGE')) and eval(os.getenv('USE_AWS')):
+            logger.debug(f'{self.image_path}, {self.metadataFile}')
+            with TemporaryS3File([self.image_path, self.metadataFile]) as temp:
+                self.image_path, self.metadataFile = temp.temporary_files
+                self.read_data()
+
+            return True
         return False
 
     def save_metadata(self):
@@ -266,22 +288,27 @@ class BaseImage(ABC):
     def read_metadata(self):
         self.metadata = pd.read_pickle(self.metadataFile)
 
-    def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
-        resized = normalization(binning_method(self.image, height=height))
-        cv2.imwrite(str(self.png), resized)
+    # def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
+    #     resized = normalization(binning_method(self.image, height=height))
+    #     cv2.imwrite(str(self.png), resized)
 
     def make_symlink(self):
         os.symlink(f'../raw/{self.name}.mrc', self.image_path)
+
+    def __post_init__(self):
+        self._directory = Path(self.working_dir, self.name)
+        self._image_path = Path(self._directory, f'{self.name}.mrc')
+        self._metadataFile = Path(self._directory, f'{self.name}_metadata.pkl')
 
 
 @dataclass
 class Montage(BaseImage):
 
     def __post_init__(self):
-        self.directory.mkdir(exist_ok=True)
+        super().__post_init__()
         if self.check_metadata():
             return
-
+        self.directory.mkdir(exist_ok=True)
         self.metadata = parse_mdoc(self.mdoc, self.is_movie)
 
         self.build_montage()
@@ -339,6 +366,7 @@ class Movie(BaseImage):
         return Path(self.directory, 'ali.xf')
 
     def __post_init__(self):
+        super().__post_init__()
         self.directory.mkdir(exist_ok=True)
 
     def check_metadata(self):
@@ -346,26 +374,26 @@ class Movie(BaseImage):
             return True
 
 
-def find_targets(montage: Montage, methods: list):
-    logger.debug(f'Using method: {methods}')
-    for method in methods:
-        if not 'args' in method.keys():
-            method['args'] = []
-        if not 'kwargs' in method.keys():
-            method['kwargs'] = dict()
+# def find_targets(montage: Montage, methods: list):
+#     logger.debug(f'Using method: {methods}')
+#     for method in methods:
+#         if not 'args' in method.keys():
+#             method['args'] = []
+#         if not 'kwargs' in method.keys():
+#             method['kwargs'] = dict()
 
-        import_cmd = f"from {method['package']} import {method['method']}"
-        logger.debug(import_cmd)
-        logger.debug(f"kwargs = {method['kwargs']}")
-        exec(import_cmd)
-        try:
-            output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
-        except Exception as err:
-            logger.exception(err)
-            continue
-        if success:
-            logger.debug(f'{method} was successful: {success}')
-            return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
+#         import_cmd = f"from {method['package']} import {method['method']}"
+#         logger.debug(import_cmd)
+#         logger.debug(f"kwargs = {method['kwargs']}")
+#         exec(import_cmd)
+#         try:
+#             output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
+#         except Exception as err:
+#             logger.exception(err)
+#             continue
+#         if success:
+#             logger.debug(f'{method} was successful: {success}')
+#             return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
 
 
 def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):

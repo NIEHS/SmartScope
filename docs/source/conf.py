@@ -22,7 +22,7 @@ copyright = '2022, NIEHS/NIH Molecular Microscopy Consortium and Bartesaghi Lab'
 author = 'Jonathan Bouvette and Elizabeth Viverette'
 
 # The full version, including alpha/beta/rc tags
-release = '0.62beta'
+release = '0.7beta'
 
 
 # -- General configuration ---------------------------------------------------
@@ -61,3 +61,10 @@ html_theme = 'sphinx_book_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_theme_options = {
+
+    "repository_url": "https://github.com/NIEHS/SmartScope",
+    "use_repository_button": True,
+    "use_issues_button": True,
+
+}

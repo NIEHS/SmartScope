@@ -12,9 +12,10 @@ from django.utils import timezone
 from django.core import serializers
 from django.conf import settings
 from django.apps import apps
-from Smartscope.server.lib.s3functions import *
-from Smartscope.lib.svg_plots import *
-from Smartscope.lib.config import deep_get, load_plugins
+from Smartscope.lib.s3functions import *
+from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag
+# from Smartscope.lib.config import deep_get, load_pluginsa
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 import logging
 
@@ -42,7 +43,6 @@ class DetectorManager(models.Manager):
 
 class GridManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("Grid Manager")
         return super().get_queryset().prefetch_related('session_id')
 
 
@@ -56,49 +56,38 @@ class ImageManager(models.Manager):
 
 class HoleImageManager(models.Manager):
     use_for_related_fields = True
-    # def get_prefetch_queryset(self, instances, queryset=None):
-    #     super().get_prefetch_queryset()
-    #     image_ids = [image.pk for images in instances]
-    #     return
 
     def __init__(self):
         super().__init__()
 
     def get_queryset(self):
-        # logger.debug("Image Manager")
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('highmagmodel_set')
 
 
 class DisplayManager(models.Manager):
-    # use_for_related_fields = True
-    # def get_prefetch_queryset(self, instances, queryset=None):
-    #     super().get_prefetch_queryset()
-    #     image_ids = [image.pk for images in instances]
-    #     return
-
-    def __init__(self):
-        super().__init__()
 
     def get_queryset(self):
-        # logger.debug("Image Manager")
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
+
+
+class HoleDisplayManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors').prefetch_related('highmagmodel_set')
 
 
 class SquareImageManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("Square Image Manager")
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('holemodel_set')
 
 
 class HighMagImageManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("hm Manager")
         return super().get_queryset().prefetch_related('grid_id__session_id')
 
 
 class ScreeningSessionManager(models.Manager):
     def get_queryset(self):
-        # logger.debug("hm Manager")
         return super().get_queryset().prefetch_related('microscope_id').prefetch_related('detector_id')
 
 
@@ -149,12 +138,7 @@ class ExtraPropertyMixin:
 
     @ property
     def ctf_img(self):
-        # img_path = os.path.join(self.directory, 'ctf.png')
-        # if os.path.isfile(img_path):
         return self.get_full_path(os.path.join(self.grid_id.url, self.name, 'ctf.png'))
-    # @property
-    # def files(self):
-    #     return {}
 
 
 class Microscope(BaseModel):
@@ -216,6 +200,11 @@ class Detector(BaseModel):
     gain_flip = models.BooleanField(default=True)
     energy_filter = models.BooleanField(default=False)
 
+    frames_windows_directory = models.CharField(
+        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command. Should not need change for K2/K3 setups.')
+    frames_directory = models.CharField(max_length=200, default='/mnt/scope/movies/',
+                                        help_text='Location of the frames directory from the smartscope container. Should not need change for K2/K3 detectors.')
+
     objects = DetectorManager()
 
     class Meta(BaseModel.Meta):
@@ -252,6 +241,8 @@ class GridCollectionParams(BaseModel):
     drift_crit = models.FloatField(default=-1)
     tilt_angle = models.FloatField(default=0)
     save_frames = models.BooleanField(default=True)
+    offset_targeting = models.BooleanField(default=True)
+    offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
 
     class Meta(BaseModel.Meta):
@@ -401,6 +392,10 @@ class HoleType(BaseModel):
     hole_size = models.FloatField(null=True, blank=True, default=None)
     hole_spacing = models.FloatField(null=True, blank=True, default=None)
 
+    @property
+    def pitch(self):
+        return self.hole_size + self.hole_spacing
+
     class Meta(BaseModel.Meta):
         db_table = 'holetype'
 
@@ -458,6 +453,10 @@ class AutoloaderGrid(BaseModel):
     @ property
     def parent(self):
         return self.session_id
+
+    @property
+    def group(self):
+        return self.session_id.group
 
     @ parent.setter
     def set_parent(self, parent):
@@ -590,6 +589,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     # aliases
 
+    @property
+    def group(self):
+        return self.grid_id.session_id.group
+
     @ property
     def alias_name(self):
         return 'Atlas'
@@ -712,18 +715,21 @@ class Target(BaseModel):
     class Meta:
         abstract = True
 
-    def is_excluded(self, protocol, targets_prefix):
-        protocolselectors = protocol[f'{targets_prefix}Selectors']
+    @property
+    def group(self):
+        return self.grid_id.session_id.group
+
+    def is_excluded(self):
+        # protocolselectors = protocol[f'{targets_prefix}Selectors']
         for selector in self.selectors.all():
 
-            protocol = [protocol for protocol in protocolselectors if protocol['name'] == selector.method_name]
-            if len(protocol) > 0 and selector.label in protocol[0]['exclude']:
-                # logger.debug(f'{self.name}: Excluded. Label={selector.label}')
+            plugin = PLUGINS_FACTORY[selector.method_name]
+            if selector.label in plugin.exclude:
                 return True, selector.label
 
         return False, selector.label
 
-    def is_good(self, plugins):
+    def is_good(self):
         """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
 
         Args:
@@ -733,29 +739,23 @@ class Target(BaseModel):
             boolean: Whether the target is good for selection or not.
         """
         for label in self.classifiers.all():
-            plugin = deep_get(plugins, label.method_name)
-            if plugin['classes'][label.label]['value'] < 1:
+            # plugin = deep_get(plugins, label.method_name)
+            if PLUGINS_FACTORY[label.method_name].classes[label.label].value < 1:
                 return False
         return True
 
-    def css_color(self, plugins, display_type, method):
-        display_type = 'classifiers' if display_type is None else display_type
+    def css_color(self, display_type, method):
 
-        # logger.debug(f'{display_type}, {method}, {plugins}')
-        for label in getattr(self, display_type).all():
-            method = label.method_name if method is None else method
-            # logger.debug(f'{self.name}: {label.method_name}, {method}')
-            if label.method_name == method:
-                plugin = deep_get(plugins, label.method_name)
-                if display_type == 'classifiers':
-                    return plugin['classes'][label.label]['color'], plugin['classes'][label.label]['name'], ''
-                elif display_type == 'selectors':
-                    # logger.debug(plugin)
-                    return plugin['clusters']['colors'][int(label.label)], label.label, 'Cluster'
-        if display_type == 'selectors':
-            # logger.debug(f'{self.name}: Color none')
-            return None, None, ''
-        return 'blue', 'target', ''
+        if method is None:
+            return 'blue', 'target', ''
+
+        # Must use list comprehension instead of a filter query to use the prefetched data
+        # Reduces the amount of queries subsitancially.
+        labels = list(getattr(self, display_type).all())
+        label = [i for i in labels if i.method_name == method]
+        if len(label) == 0:
+            return 'blue', 'target', ''
+        return PLUGINS_FACTORY[method].get_label(label[0].label)
 
 
 class SquareModel(Target, ExtraPropertyMixin):
@@ -873,6 +873,7 @@ class HoleModel(Target, ExtraPropertyMixin):
 
     objects = HoleImageManager()
     just_holes = models.Manager()
+    display = HoleDisplayManager()
 
     def generate_bis_group_name(self):
         if self.bis_group is None:
@@ -950,11 +951,14 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     number = models.IntegerField()
     name = models.CharField(max_length=100, null=False)
     pixel_size = models.FloatField(null=True)
+    shape_x = models.IntegerField(null=True)
+    shape_y = models.IntegerField(null=True)
     hole_id = models.ForeignKey(HoleModel, on_delete=models.CASCADE, to_field='hole_id')
     status = models.CharField(max_length=20, null=True, default=None)
     grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
     is_x = models.FloatField(null=True)
     is_y = models.FloatField(null=True)
+    offset = models.FloatField(default=0)
     frames = models.CharField(max_length=120, null=True, default=None)
     defocus = models.FloatField(null=True)
     astig = models.FloatField(null=True)
@@ -981,12 +985,18 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
         self.hole_id = parent
     # endaliases
 
+    @property
+    def SVG(self):
+        return drawHighMag(self)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.hm_id:
             self.name = f'{self.parent.name}_hm'
             self.hm_id = generate_unique_id(extra_inputs=[self.name[:20]])
         self.raw = os.path.join('raw', f'{self.name}.mrc')
+        if self.status == 'completed' and (self.shape_x is None or self.pixel_size is None):
+            set_shape_values(self)
 
     def save(self, *args, **kwargs):
 

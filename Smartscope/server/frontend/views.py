@@ -21,6 +21,7 @@ import psutil
 import signal
 from django.utils.timezone import now
 from Smartscope.core.db_manipulations import viewer_only
+from datetime import datetime
 
 
 def signup(request):
@@ -148,7 +149,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
             if form_general.is_valid() and form_params.is_valid():
 
-                session, created = ScreeningSession.objects.get_or_create(**form_general.cleaned_data)
+                session, created = ScreeningSession.objects.get_or_create(**form_general.cleaned_data, date=datetime.today().strftime('%Y%m%d'))
                 if created:
                     print(f'{session} newly created')
                 else:

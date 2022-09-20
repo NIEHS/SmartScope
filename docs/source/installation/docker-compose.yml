@@ -5,7 +5,7 @@
 version: "3"
 services:
   smartscope:
-    image: localhost/smartscope:0.62
+    image: localhost/smartscope:0.7
     container_name: smartscope
     build:
       context: .
@@ -13,7 +13,11 @@ services:
     volumes:
       ######## FILL THIS ##########
       - :/mnt/data/
-      - :/opt/Template_files/
+      ######## ADD YOUR MICROSCOPES #########
+      # The synthax from the microscope volumes is as follows:
+      # - /path/to/where/serialem/will/write/files/:/mnt/your_scope_name_here/
+      # Example:
+      # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
     environment:
       SECRET_KEY: 'd41d8cd98f00b204e9800998eag' #Make sure this is unique! Generate a new one with: $RANDOM | md5sum | head -c 25
     depends_on:
@@ -25,11 +29,10 @@ services:
     image: mariadb:10.5
     container_name: smartscope-db
     restart: always
-    ports:
-      - 6603:3306
     volumes:
-      ######## FILL THIS ##########
+      ######## FILL ONLY THE FIRST VALUE ##########
       - :/var/lib/mysql
+      - ./config/docker/initialdb.sql:/docker-entrypoint-initdb.d/initialdb.sql ##Copies the initial db file to initialize the datase on first launch##
     environment:
       MYSQL_DATABASE: smartscope
       MYSQL_USER: root
@@ -48,11 +51,9 @@ services:
       - 48000:80
     volumes:
       ######## FILL ONLY THE FIRST VALUE ##########
-      - :/mnt/data/
-      - ./static/:/opt/smartscope/static/
-      - ./config/docker/templates_noSSL/:/etc/nginx/templates/
-    environment:
-      SERVER_NAME: localhost
+      - :/mnt/data/ #This is the same what is bound to /mnt/data in the smartscope service.
+      - ./static/:/opt/smartscope/static/ #Doesn't need to be changed
+      - ./config/docker/templates_noSSL/:/etc/nginx/templates/ #Change if using SSL, view docs for more info.
     networks:
       - smartscopenet
     depends_on:

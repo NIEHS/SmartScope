@@ -33,25 +33,15 @@ If you are planning on using GPU acceleration with SmartScope with podman, the n
 Installation steps
 ******************
 
-1. Clone or download the `git repository <https://github.com/NIEHS/SmartScope>`_ and navigate to the directory
+#. Clone or download the `git repository <https://github.com/NIEHS/SmartScope>`_ and navigate to the directory
 
     .. code-block:: bash
 
         git clone https://github.com/NIEHS/SmartScope.git
         cd SmartScope
 
-.. _installation models download:
 
-2. Download the AI models
-
-    The AI models can be download by clicking the following :download:`this link <https://docs.smartscope.org/downloads/Smartscope0.6.tar.gz>` or via the wget command.
-
-    .. code-block:: bash
-
-        wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz
-        tar -xvf Smartscope0.6.tar.gz
-
-3. Using a text editor, copy the :code:`docker-compose-template.yml` to :code:`docker-compose.yml` and edit the values in the volumes and environment to your needs. The file includes description of each entry.
+#. Using a text editor, copy the :code:`docker-compose-template.yml` to :code:`docker-compose.yml` and edit the values in the volumes and environment to your needs. The file includes description of each entry.
     
     .. warning:: This is the most important step. Please follow the link below for a full description or the docker-compose file requirements.
 
@@ -69,7 +59,7 @@ Installation steps
         ./environment.rst
 
 
-4. Run the docker-compose file. On the first run, this should build the images and start the pods.
+#. Run the docker-compose file. On the first run, this should build the images and start the pods.
 
     .. note:: 
         This process takes a few minutes to complete when the smartscope images needs to be built. 
@@ -107,17 +97,7 @@ Installation steps
         #To force rebuilding an existing image
         docker-compose build --no-cache
 
-5. Set up the initial database (only once)
-
-    SmartScope includes an initial database dump containing the migrations and some basic entries. To copy it into your deployment, you'll need to access the database pod and enter a few commands:
-
-    .. code-block:: bash
-
-        #First copy the dump into the location were your database is. This is the same directory specified in the volumes section of the docker-compose file for the db service.
-        cp SmartScope/config/docker/initialdb.sql /path/to/db/
-        docker exec smartscope-db /bin/bash -c 'mysql --user=$MYSQL_USER --password=$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /var/lib/mysql/initialdb.sql'
-
-6. Log in to the web interface with the initial admin account.
+#. Log in to the web interface with the initial admin account.
 
     You should now be able to access the smartscope interface at `<http://localhost:48000/>`_.
 
@@ -125,6 +105,6 @@ Installation steps
 
     .. note:: You may need to change the domain and port number to reflect the docker-compose file with the port specified in the nginx service and one of the domains specified in the ALLOWED_HOSTS of the smartscope service.
 
-7. The installation is done!
+#. The installation is done!
     
     There is a few more set up steps to do in SerialEM and in the web portal to get up and running. `Click here <../setup.html>`_. for the instructions

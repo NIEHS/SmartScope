@@ -4,6 +4,10 @@ import serialem as sem
 import time
 import logging
 import math
+import numpy as np
+from Smartscope.lib.Finders.basic_finders import find_square
+from Smartscope.lib.image_manipulations import generate_hole_ref
+
 
 from Smartscope.lib.file_manipulations import generate_fake_file
 
@@ -14,7 +18,7 @@ class CartridgeLoadingError(Exception):
     pass
 
 
-class SerialemInterface(MicroscopeInterface):
+class GatanSerialemInterface(MicroscopeInterface):
 
     def checkDewars(self, wait=30):
         while True:
@@ -71,8 +75,12 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetMag(int(mag))
         sem.SetPercentC2(float(c2))
         sem.SetSpotSize(int(spotsize))
+        if self.energyfilter:
+            sem.SetSlitIn(0)
         self.eucentricHeight()
         sem.OpenNewMontage(tileX, tileY, file)
+        self.checkDewars()
+        self.checkPump()
         logger.info('Starting Atlas acquisition')
         sem.Montage()
         sem.CloseFile()
@@ -85,6 +93,7 @@ class SerialemInterface(MicroscopeInterface):
         logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
         time.sleep(0.2)
         sem.MoveStageTo(stageX, stageY, stageZ)
+        # realign_to_square()
         self.eucentricHeight()
         self.checkDewars()
         self.checkPump()
@@ -96,13 +105,45 @@ class SerialemInterface(MicroscopeInterface):
         sem.CloseFile()
         logger.info('Square acquisition finished')
 
+    def realign_to_square(self):
+        while True:
+            logger.info('Running square realignment')
+            sem.Search()
+            square = np.asarray(sem.bufferImage('A'))
+            _, square_center, _ = find_square(square)
+            im_center = (square.shape[1] // 2, square.shape[0] // 2)
+            diff = square_center - np.array(im_center)
+            sem.ImageShiftByPixels(int(diff[0]), int(diff[1]))
+            sem.ResetImageShift()
+            if max(diff) < max(square.shape) // 4:
+                logger.info('Done.')
+                sem.Search()
+                break
+            logger.info('Iterating.')
+        return sem.ReportStageXYZ()
+
     def align(self):
         sem.View()
-        sem.CropCenterToSize('A', 1700, 1700)
+        sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
         return sem.ReportAlignShift()
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
+    def make_hole_ref(self, hole_size_in_um):
+
+        # sem.View()
+        # img = np.asarray(sem.bufferImage('A'))
+        # dtype = img.dtype
+        # shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
+        # logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
+        # ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
+        # self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
+        # sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
+        sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+        shape_x, _, _, _, _, _ = sem.ImageProperties('T')
+        self.hole_crop_size = int(shape_x)
+        self.has_hole_ref = True
+
+    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
 
         sem.TiltTo(tiltAngle)
 
@@ -110,8 +151,10 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stageX, stageY, stageZ)
         time.sleep(0.2)
-        if not is_negativestain:
-            sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+        if hole_size_in_um is not None:
+            if not self.has_hole_ref:
+                self.make_hole_ref(hole_size_in_um=hole_size_in_um)
+            # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
             aligned = self.align()
             holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
             if holeshift > aliThreshold:
@@ -121,6 +164,7 @@ class SerialemInterface(MicroscopeInterface):
                     iShift = sem.ReportImageShift()
                     sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
                     time.sleep(0.2)
+                # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
                 aligned = self.align()
         self.checkDewars()
         self.checkPump()
@@ -143,8 +187,7 @@ class SerialemInterface(MicroscopeInterface):
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
-        # checkDewars()
-        # checkPump()
+
         if not frames:
             sem.EarlyReturnNextShot(-1)
             sem.Preview()
@@ -154,6 +197,7 @@ class SerialemInterface(MicroscopeInterface):
             return None
 
         sem.EarlyReturnNextShot(0)
+
         sem.Preview()  # Seems possible to change this to Record in 4.0, needs testing
         frames = sem.ReportLastFrameFile()
         if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
@@ -169,18 +213,18 @@ class SerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, zerolossDelay):
+    def setup(self, saveframes, zerolossDelay, framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.directory, 'movies').as_posix().replace('/', '\\')
+            movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
-            # sem.EarlyReturnNextShot(0)
+            if framesName is not None:
+                sem.SetFrameBaseName(0, 1, 0, framesName)
         else:
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
-            # sem.EarlyReturnNextShot(-1)
 
         if self.energyfilter and zerolossDelay > 0:
             sem.RefineZPL(zerolossDelay * 60, 1)
@@ -214,6 +258,46 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetColumnOrGunValve(1)
 
 
+class FalconSerialemInterface(GatanSerialemInterface):
+
+    def square(self, stageX, stageY, stageZ, file=''):
+        sem.SetLowDoseMode(1)
+        logger.info(f'Starting Square acquisition of: {file}')
+        logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
+        time.sleep(0.2)
+        sem.MoveStageTo(stageX, stageY, stageZ)
+        sem.Eucentricity()
+        self.checkDewars()
+        self.checkPump()
+        sem.MoveStageTo(stageX, stageY)
+        time.sleep(0.2)
+        sem.Search()
+        sem.OpenNewFile(file)
+        sem.Save()
+        sem.CloseFile()
+        logger.info('Square acquisition finished')
+
+    def highmag(self, isX, isY, tiltAngle, file='', frames=True):
+
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
+        self.state.imageShiftX = isX
+        self.state.imageShiftY = isY
+        sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
+
+        sem.Preview()
+        sem.OpenNewFile(file)
+        sem.Save()
+        sem.CloseFile()
+        if not frames:
+            return None
+
+        frames = sem.ReportLastFrameFile()
+        if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
+            frames = frames[0]
+        logger.debug(f"Frames: {frames},")
+        return frames.split('\\')[-1]
+
+
 class FakeScopeInterface(MicroscopeInterface):
 
     def checkDewars(self, wait=30) -> None:
@@ -234,8 +318,8 @@ class FakeScopeInterface(MicroscopeInterface):
     def align():
         pass
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
-        generate_fake_file(file, 'lowmagHole', destination_dir=self.scope_path)
+    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', is_negativestain=False, aliThreshold=500):
+        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.scope_path)
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
@@ -248,7 +332,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def connect(self, directory: str):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, zerolossDelay):
+    def setup(self, saveframes, zerolossDelay, framesName=None):
         pass
 
     def disconnect(self, close_valves=True):

@@ -1,5 +1,3 @@
-from itertools import count
-from turtle import st
 from django.contrib.auth.models import User, Group
 import mrcfile
 import mrcfile.mrcinterpreter
@@ -7,6 +5,7 @@ import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
 from Smartscope.core.models.models_actions import targets_methods
+from Smartscope.server.api.permissions import HasGroupPermission
 from .serializers import *
 from Smartscope.core.models import *
 from Smartscope.server.frontend.forms import *
@@ -50,14 +49,12 @@ class ExtraActionsMixin:
         if context['method'] is None:
             methods = context['targets_methods'][context['display_type']]
             if len(methods) > 0:
-                context['method'] = methods[0]['name']
+                context['method'] = methods[0].name
         serializer = SvgSerializer(instance=obj, display_type=context['display_type'], method=context['method'])
         context = {**context, **serializer.data}
-        # if context['method'] is None:
-        #     context['method'] = context['targets_methods'][context['display_type']][0]['name']
         context['card'] = render_to_string('mapcard.html', context=context, )
-        logger.debug(f"{context['method']}, {context['display_type']}, {context['targets_methods']}")
-        return Response(dict(fullmeta=context['fullmeta'], card=context['card']))
+        logger.debug(f"{context['method']}, {context['display_type']}")
+        return Response(dict(fullmeta=context['fullmeta'], card=context['card'], displayType=context['display_type'], method=context['method']))
 
     @ action(detail=True, methods=['get'])
     def file_paths(self, request, *args, **kwargs):
@@ -72,7 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -81,7 +78,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class MicroscopeViewSet(viewsets.ModelViewSet):
@@ -108,7 +105,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
     """
     queryset = ScreeningSession.objects.all()
     serializer_class = SessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
 
     filterset_fields = ['session', 'group', 'date', 'microscope_id', 'detector_id']
 
@@ -280,7 +277,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = AutoloaderGrid.objects.all()
     serializer_class = AutoloaderGridSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ('session_id', 'holeType', 'meshSize', 'meshMaterial', 'quality', 'status')
 
     @ action(detail=True, methods=['get'])
@@ -332,6 +329,7 @@ class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = AtlasModel.objects.all()
     serializer_class = AtlasSerializer
+    permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType',
                         'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id', 'status']
 
@@ -346,7 +344,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = SquareModel.objects.all()
     serializer_class = SquareSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
                         'atlas_id', 'selected', 'grid_id__session_id', 'status']
 
@@ -389,12 +387,12 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             obj = self.get_object()
             microscope = obj.grid_id.session_id.microscope_id
             out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
-                                      'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True)
+                                      'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True, timeout=30)
             out = out.decode("utf-8").strip().split('\n')[-1]
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
-            return Response(dict(succes=False))
+            return Response(dict(success=False))
 
 
 class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
@@ -403,7 +401,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
     queryset = HoleModel.objects.all()
     serializer_class = HoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id',
                         'square_id', 'status']
 
@@ -421,11 +419,12 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
-            queryset = list(HighMagModel.objects.all().filter(hole_id=kwargs['pk']))
+            queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk']))
         else:
-            queryset = list(HighMagModel.objects.all().filter(grid_id=obj.grid_id, hole_id__bis_group=obj.bis_group))
+            queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
+                            hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
         context = dict(holes=queryset)
-        context['classifier'] = load_plugins()['Micrographs curation']
+        context['classifier'] = PLUGINS_FACTORY['Micrographs curation']
         resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
         logger.debug(resp)
         return resp
@@ -451,7 +450,7 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     API endpoint that allows Atlases to be viewed or edited.
     """
     queryset = HighMagModel.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
                         'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id']

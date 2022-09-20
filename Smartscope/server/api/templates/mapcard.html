@@ -29,6 +29,15 @@
                             class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
                             onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'selectors','{{selector.name}}')">{{selector.name}}</button>
                         {% endfor %}
+                        {% if instance.targets_prefix == 'hole' %}
+                        <h6 class="dropdown-header">Metadata</h6>
+                        {% for metadata in targets_methods.metadata %}
+                        <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
+                            title="{{metadata.description}}"
+                            class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
+                            onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'metadata','{{metadata.name}}')">{{metadata.name}}</button>
+                        {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
                 <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
@@ -87,7 +96,7 @@
                             {% if methods.name == method %}
                             {% for key,class in methods.classes.items %}
                             <button id='' class="dropdown-item"
-                                onclick="updateClassifier('{{instance.targets_prefix}}s','{{method}}', '{{key}}')">{{class.name}}</button>
+                                onclick="updateTargets('{{instance.targets_prefix}}s', false, '{{method}}', 'label', '{{key}}')">{{class.name}}</button>
                             {% endfor %}
                             {% endif %}
                             {% endfor %}
@@ -97,8 +106,8 @@
                         <div class="div" id="{{instance.targets_prefix}}Queue">
 
                             <h6 class="dropdown-header">Add/remove from Queue</h6>
-                            <button id='opt-queued-{{instance.targets_prefix}}' class="dropdown-item" value='1'
-                                onclick="popupSele(this)">Queue</button>
+                            <button id='opt-queued-{{instance.targets_prefix}}' class="dropdown-item" value=1
+                                onclick="updateTargets('{{instance.targets_prefix}}s', false, false, 'selected', this.value)">Queue</button>
                         </div>
 
                     </div>

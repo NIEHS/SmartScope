@@ -100,6 +100,10 @@ def save_image(img, filename, extension='png', resize_to: int = None, destinatio
     if os.path.isfile(file):
         os.rename(file, os.path.join(destination, f'{filename}_old.{extension}'))
     cv2.imwrite(file, img)
+    
+def export_as_png(image, output, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
+    resized = normalization(binning_method(image, height=height))
+    cv2.imwrite(str(output), resized)
 
 
 def mrc_to_png(mrc_file, ):
@@ -120,3 +124,18 @@ def fourier_crop(img, height=500):
 
     reversed = np.real(np.fft.ifft2(np.fft.ifftshift(cropped)))
     return reversed
+
+
+def generate_hole_ref(hole_size_in_um: float, pixel_size: float, out_type: str = 'int16'):
+    radius = int(hole_size_in_um / (pixel_size / 10_000) / 2)
+    im_size = int(radius * 2.5)
+    fill_value = 2 ** np.dtype(out_type).itemsize
+    color = 0
+    if np.issubdtype(out_type, np.signedinteger):
+        fill_value /= 2
+        color = -fill_value
+
+    im = np.ones((im_size, im_size)) * int(fill_value)
+
+    cv2.circle(im, (im_size // 2, im_size // 2), radius=radius, color=int(color), thickness=max([1, int(80 / pixel_size)]))
+    return im.astype(out_type)

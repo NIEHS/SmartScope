@@ -25,11 +25,7 @@ TEMPDIR = os.getenv('TEMPDIR')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# with open('/mnt/mariadb/secretkey.txt') as f:
-#     SECRET_KEY = open('/mnt/mariadb/secretkey.txt').read()
 SECRET_KEY = os.getenv('SECRET_KEY')
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
 DEPLOY = True
 
@@ -46,20 +42,6 @@ USE_AWS = eval(os.getenv('USE_AWS'))
 USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
 
 WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
-
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_DATA_PREFIX = os.getenv('AWS_DATA_PREFIX')
-
-# Tell django-storages the domain to use to refer to static files.
-# AWS_STATIC_LOCATION = 'static'
-# AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com/%s' % (AWS_STORAGE_BUCKET_NAME, AWS_STATIC_LOCATION)
-
-# Tell the staticfiles app to use S3Boto3 storage when writing the collected static files (when
-# you run `collectstatic`).
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
@@ -192,11 +174,6 @@ REST_FRAMEWORK = {
 
 
 # Enable finders. List of tuples, where first value is the name and the is the method import path relative to Smartscope.Finders. Third value is the optional keyword arguments that can be supplemented to the function.
-SMARTSCOPE_CONFIG = os.path.join(os.getenv('APP'), 'config/smartscope/')
-SMARTSCOPE_PLUGINS = SMARTSCOPE_CONFIG + 'plugins.yaml'
-SMARTSCOPE_PROTOCOLS = SMARTSCOPE_CONFIG + 'protocols.yaml'
-
-# Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'

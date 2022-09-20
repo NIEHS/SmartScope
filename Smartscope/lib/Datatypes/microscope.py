@@ -1,13 +1,7 @@
 from dataclasses import dataclass
 import serialem as sem
-import time
-import math
-import os
-import logging
-import numpy as np
-from Smartscope.lib.file_manipulations import generate_fake_file
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 
 from Smartscope.lib.montage import Montage
 
@@ -33,11 +27,14 @@ class MicroscopeInterface(ABC):
     ip: str
     port: int
     directory: str
+    frames_directory: str
     scope_path: str
     energyfilter: bool
     state: MicroscopeState = MicroscopeState()
     imageHandler: Any = Montage
     loader_size: int = 12
+    has_hole_ref: bool = False
+    hole_crop_size: int = 0
 
     def __enter__(self):
         self.connect(self.directory)
@@ -63,9 +60,10 @@ class MicroscopeInterface(ABC):
         defocusTarget = round(sem.ReportTargetDefocus() - abs(step), 2)
         if defocusTarget < maxdef or defocusTarget > mindef:
             defocusTarget = mindef
-
-        # sem.SetTargetDefocus(defocusTarget)
         self.state.defocusTarget = defocusTarget
+
+    def clear_hole_ref(self):
+        self.has_hole_ref = False
 
     @abstractmethod
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:

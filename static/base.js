@@ -129,7 +129,7 @@ async function updateTarget(type, ids, key, new_value, useAPI = false) {
 
 function checkState() {
 
-    var state = url.match(/([a-zA-Z_]+)=([a-zA-Z0-9-_]*)/g)
+    var state = url.match(/([a-zA-Z_]+)=([a-zA-Z0-9-_%]*)/g)
     if (state != null) {
         for (i in state) {
             var split = state[i].split('=')

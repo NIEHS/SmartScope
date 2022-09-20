@@ -4,6 +4,10 @@ from itertools import chain
 import os
 import json
 from django.core import serializers
+from Smartscope.lib.montage import Montage
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def generate_unique_id(extra_inputs=[], N=30):
@@ -48,3 +52,13 @@ def get_fields(obj):
 
 def get_fields_names(model):
     return [field.name for field in model._meta.fields]
+
+
+def set_shape_values(instance):
+    montage = Montage(name=instance.name, working_dir=instance.grid_id.directory)
+    logger.info(f'No shape found for completed image. Setting values to {montage.shape_x} X {montage.shape_y}')
+    instance.shape_x = montage.shape_x
+    instance.shape_y = montage.shape_y
+    if instance.pixel_size is None:
+        instance.pixel_size = montage.pixel_size
+    instance.save()

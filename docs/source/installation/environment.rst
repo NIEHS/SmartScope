@@ -8,8 +8,8 @@ General
 
 * ALLOWED_HOSTS *Default: localhost*
 
-    Comma separated list of hostsnames that are allowed to be used to connect to the server.
-    *e.g.* locahost,myhostname,mydomain.com,
+    Comma separated list domains that are allowed to be used to connect to the server. Usually, it is the IP an/or hostname of the computer where SmartScope is installed. If you have a domain name.
+    *e.g.* locahost,myhostname,mydomain.com
 
 * DJANGO_SETTINGS_MODULE *Default: Smartscope.settings.server_docker*
 

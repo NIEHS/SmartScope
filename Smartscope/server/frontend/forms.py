@@ -86,7 +86,9 @@ class GridCollectionParamsForm(forms.ModelForm):
             drift_crit='Drift threshold before taking acquision in A/s. Use -1 to disable',
             tilt_angle='Tilt angle. For tilted data collection.',
             save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked',
-            zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate'
+            zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
+            offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
+            offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable'
         )
 
     def __init__(self, *args, **kwargs):
@@ -119,6 +121,10 @@ class GridCollectionParamsForm(forms.ModelForm):
         })
         self.fields['atlas_y'].widget.attrs.update({
             "min": 1,
+        })
+        self.fields['offset_distance'].widget.attrs.update({
+            "min": -1,
+            "step": 0.05
         })
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'

@@ -1,0 +1,11 @@
+name: Graylevel selector
+method: gray_level_selector
+module: Smartscope.core.selectors
+targetClass:
+  - Selector
+description: |
+  Sorts and clusters the targets by gray level from darkest to brightest.
+clusters:
+  values: ascending
+  colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
+exclude: ['0']   
