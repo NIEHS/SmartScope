@@ -27,7 +27,6 @@ Site map
 .. toctree::
 
    news.rst
-   beta.rst
    installation.rst
    update.rst
    setup.rst
