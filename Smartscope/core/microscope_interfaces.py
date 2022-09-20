@@ -164,7 +164,7 @@ class GatanSerialemInterface(MicroscopeInterface):
                     iShift = sem.ReportImageShift()
                     sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
                     time.sleep(0.2)
-                sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
+                # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
                 aligned = self.align()
         self.checkDewars()
         self.checkPump()
