@@ -516,7 +516,7 @@ class AutoloaderGrid(BaseModel):
 
     @ property
     def protocol(self):
-        if self.holeType in ['NegativeStain', 'Lacey']:
+        if self.holeType.name in ['NegativeStain', 'Lacey']:
             return 'NegativeStain'
         return 'SPA'
 
@@ -557,14 +557,6 @@ class AutoloaderGrid(BaseModel):
     def __str__(self):
         return f'{self.position}_{self.name}'
 
-    # def create_dir(self):
-    #     for dirs in [self.directory,
-    #                  os.path.join(self.directory, 'raw'),
-    #                  os.path.join(self.directory, 'pngs')]:
-    #         if not os.path.isdir(dirs):
-    #             os.mkdir(dirs)
-    #     os.chdir(self.directory)
-
     def export(self, working_dir=None):
         to_export = list(self.atlasmodel_set.all())
         to_export += list(self.squaremodel_set.all())
@@ -598,6 +590,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     @ property
     def alias_name(self):
         return 'Atlas'
+
+    @ property
+    def api_viewset_name(self):
+        return 'atlas'
 
     @ property
     def targets_prefix(self):
@@ -759,6 +755,10 @@ class SquareModel(Target, ExtraPropertyMixin):
         return f'Square {self.number}'
 
     @ property
+    def api_viewset_name(self):
+        return 'squares'
+
+    @ property
     def targets_prefix(self):
         return 'hole'
 
@@ -872,6 +872,10 @@ class HoleModel(Target, ExtraPropertyMixin):
         return f'Hole {self.number}'
 
     @ property
+    def api_viewset_name(self):
+        return 'holes'
+
+    @ property
     def id(self):
         return self.hole_id
 
@@ -961,6 +965,10 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     @ property
     def id(self):
         return self.hm_id
+
+    @ property
+    def api_viewset_name(self):
+        return 'highmag'
 
     @ property
     def parent(self):

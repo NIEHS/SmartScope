@@ -178,4 +178,5 @@ def get_file_and_process(raw, name, directory=''):
         path = os.path.join(directory, raw)
         get_file(path, remove=True)
     montage = Montage(name)
+    montage.load_or_process()
     return montage
