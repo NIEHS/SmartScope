@@ -2,7 +2,6 @@ from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.query import prefetch_related_objects
 from datetime import datetime
 import Smartscope
 import os
@@ -14,7 +13,6 @@ from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag
-# from Smartscope.lib.config import deep_get, load_pluginsa
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 import logging
@@ -127,6 +125,10 @@ class ExtraPropertyMixin:
     def png(self):
         return dict(path=os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.png'),
                     url=self.get_full_path(os.path.join(self.grid_id.url, 'pngs', f'{self.name}.png')))
+
+    @ property
+    def png_img(self):
+        return os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.png')
 
     @ property
     def mrc(self):
@@ -514,7 +516,7 @@ class AutoloaderGrid(BaseModel):
 
     @ property
     def protocol(self):
-        if self.holeType in ['NegativeStain', 'Lacey']:
+        if self.holeType.name in ['NegativeStain', 'Lacey']:
             return 'NegativeStain'
         return 'SPA'
 
@@ -555,14 +557,6 @@ class AutoloaderGrid(BaseModel):
     def __str__(self):
         return f'{self.position}_{self.name}'
 
-    # def create_dir(self):
-    #     for dirs in [self.directory,
-    #                  os.path.join(self.directory, 'raw'),
-    #                  os.path.join(self.directory, 'pngs')]:
-    #         if not os.path.isdir(dirs):
-    #             os.mkdir(dirs)
-    #     os.chdir(self.directory)
-
     def export(self, working_dir=None):
         to_export = list(self.atlasmodel_set.all())
         to_export += list(self.squaremodel_set.all())
@@ -598,6 +592,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
         return 'Atlas'
 
     @ property
+    def api_viewset_name(self):
+        return 'atlas'
+
+    @ property
     def targets_prefix(self):
         return 'square'
 
@@ -620,22 +618,6 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     @ property
     def targets(self):
         return self.squaremodel_set.all()
-
-    # @ property
-    # def targets_methods(self):
-    #     plugins = load_plugins()
-    #     targets = self.squaremodel_set.values_list('square_id', flat=True)
-    #     contenttype = ContentType.objects.get_for_model(self.base_target_query.first())
-
-    #     finders = list(Finder.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
-    #     classifiers = list(Classifier.objects.filter(content_type=contenttype,
-    #                                                  object_id__in=targets).values_list('method_name', flat=True).distinct())
-    #     selectors = list(Selector.objects.filter(object_id__in=targets).values_list(
-    #         'method_name', flat=True).distinct())  # NEED TO LOOK INTO THE CONTENT TYPE ISSUE
-    #     logger.debug(f'Finders: {finders}, Classifiers: {classifiers}, Selectors: {selectors}')
-    #     return dict(finders=[deep_get(plugins, finder) for finder in finders],
-    #                 classifiers=[deep_get(plugins, classifier) for classifier in classifiers],
-    #                 selectors=[deep_get(plugins, selector) for selector in selectors])
 
     def toSVG(self, display_type, method):
         return drawAtlas(self, list(SquareModel.display.filter(atlas_id=self.atlas_id)), display_type, method)
@@ -773,6 +755,10 @@ class SquareModel(Target, ExtraPropertyMixin):
         return f'Square {self.number}'
 
     @ property
+    def api_viewset_name(self):
+        return 'squares'
+
+    @ property
     def targets_prefix(self):
         return 'hole'
 
@@ -886,6 +872,10 @@ class HoleModel(Target, ExtraPropertyMixin):
         return f'Hole {self.number}'
 
     @ property
+    def api_viewset_name(self):
+        return 'holes'
+
+    @ property
     def id(self):
         return self.hole_id
 
@@ -975,6 +965,10 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     @ property
     def id(self):
         return self.hm_id
+
+    @ property
+    def api_viewset_name(self):
+        return 'highmag'
 
     @ property
     def parent(self):

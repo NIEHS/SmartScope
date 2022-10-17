@@ -43,7 +43,8 @@ def test_realign_to_square(microscope_id):
                                 directory=microscope.windows_path,
                                 scope_path=microscope.scope_path,
                                 energyfilter=False,
-                                loader_size=microscope.loader_size) as scope:
+                                loader_size=microscope.loader_size,
+                                frames_directory='X:/testing/') as scope:
         scope.realign_to_square()
 
 
@@ -111,7 +112,8 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
     std = np.std(pixel_sizes)
     return average, std
 
-def test_finder(plugin_name: str, raw_image_path:str,): #output_dir='/mnt/data/testing/'
+
+def test_finder(plugin_name: str, raw_image_path: str,):  # output_dir='/mnt/data/testing/'
     from Smartscope.lib.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
     import cv2
@@ -123,10 +125,9 @@ def test_finder(plugin_name: str, raw_image_path:str,): #output_dir='/mnt/data/t
     bit8_montage = auto_contrast(montage.image)
     bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
     for i in output:
-        cv2.rectangle(bit8_color, list(i[0:2]),list(i[2:]), (0, 0, 255), cv2.FILLED)
+        cv2.rectangle(bit8_color, list(i[0:2]), list(i[2:]), (0, 0, 255), cv2.FILLED)
     logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name + '.png')}")
     save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
-    
 
 
 def list_plugins():

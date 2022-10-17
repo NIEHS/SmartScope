@@ -8,58 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# class ImageModelSerializer(RESTserializers.ModelSerializer):
-
-#     def __init__(self, *args, **kwargs):
-#         self.base_directory = kwargs.pop('base_directory',None)
-#         self.base_url = kwargs.pop('base_url',None)
-#         super().__init__(*args,**kwargs)
-
-#     def get_full_path(self, data):
-#         if self.is_aws:
-#             storage = SmartscopeStorage()
-#             if isinstance(data, dict):
-#                 for k, v in data.items():
-#                     data[k] = storage.url(v)
-#                 return data
-#             else:
-#                 return storage.url(data)
-#         return data
-
-#     @property
-#     def is_aws(self):
-#         if os.path.isabs(self.base_directory):
-#             return False
-#         return True
-
-#     # @property
-#     # def directory(self):
-#     #     return os.path.join(self.base_directory, self.name)
-
-
-#     def get_svg(self,obj):
-#         return os.path.join(self.base_directory, 'pngs', f'{obj.name}.svg')
-
-
-#     def get_png(self,obj):
-#         return dict(path=os.path.join(self.base_directory, 'pngs', f'{obj.name}.png'),
-#                     url=self.get_full_path(os.path.join(self.base_url, 'pngs', f'{obj.name}.png')))
-
-
-#     def get_mrc(self,obj):
-#         return os.path.join(self.base_directory, obj.name, f'{obj.name}.mrc')
-
-
-#     def get_raw_mrc(self,obj):
-#         return os.path.join(self.base_directory, 'raw', f'{obj.name}.mrc')
-
-
-#     def get_ctf_img(self,obj):
-#         # img_path = os.path.join(self.directory, 'ctf.png')
-#         # if os.path.isfile(img_path):
-#         return self.get_full_path(os.path.join(self.base_url,obj.name, 'ctf.png'))
-
-
 class UserSerializer(RESTserializers.ModelSerializer):
     class Meta:
         model = User
@@ -91,7 +39,6 @@ class SessionSerializer(RESTserializers.ModelSerializer):
 
 
 class AutoloaderGridSerializer(RESTserializers.ModelSerializer):
-    # directory = RESTserializers.ReadOnlyField()
 
     class Meta:
         model = AutoloaderGrid
@@ -122,16 +69,32 @@ class GridCollectionParamsSerializer(RESTserializers.ModelSerializer):
         fields = '__all__'
 
 
+class FinderSerializer(RESTserializers.ModelSerializer):
+
+    class Meta:
+        model = Finder
+        # fields = '__all__'
+        exclude = ['id', ]
+
+
+class ClassifierSerializer(RESTserializers.ModelSerializer):
+
+    class Meta:
+        model = Classifier
+        # fields = '__all__'
+        exclude = ['id', ]
+
+
+class SelectorSerializer(RESTserializers.ModelSerializer):
+
+    class Meta:
+        model = Selector
+        # fields = '__all__'
+        exclude = ['id', ]
+
+
 class AtlasSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    # parent = RESTserializers.ReadOnlyField()
-    # grid_id = AutoloaderGridSerializer()
-    # svg = RESTserializers.ReadOnlyField()
-    # png = RESTserializers.ReadOnlyField()
-    # raw = RESTserializers.ReadOnlyField()
-    # mrc = RESTserializers.ReadOnlyField()
-    # selectors = RESTserializers.ReadOnlyField()
-    # classifiers = RESTserializers.ReadOnlyField()
     targets_methods = RESTserializers.ReadOnlyField()
 
     class Meta:
@@ -147,15 +110,6 @@ class FilePathsSerializer(RESTserializers.Serializer):
         for k, _ in self.context['request'].query_params.items():
             data[k] = getattr(instance, k)
 
-        # if not os.path.isabs(instance.directory):
-        #     storage = SmartscopeStorage()
-        #     for k, v in data.items():
-        #         if isinstance(v, dict):
-        #             for k1, v1 in v.items():
-        #                 data[k][k1] = storage.url(v1)
-        #         else:
-        #             data[k] = storage.url(v)
-
         return data
 
 
@@ -166,11 +120,6 @@ class FilePathSerializer(RESTserializers.Serializer):
 
 class SquareSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    # parent = RESTserializers.ReadOnlyField()
-    # grid_id = AutoloaderGridSerializer()
-    # atlas_id = AtlasSerializer()
-    # initial = RESTserializers.ReadOnlyField(source='initial_quality')
-    # svg = RESTserializers.ReadOnlyField()
     has_queued = RESTserializers.ReadOnlyField()
     has_completed = RESTserializers.ReadOnlyField()
     has_active = RESTserializers.ReadOnlyField()
@@ -208,17 +157,6 @@ class HighMagBasicSerializer(RESTserializers.ModelSerializer):
 
 class HoleSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    # parent = RESTserializers.ReadOnlyField()
-    # svg = RESTserializers.ReadOnlyField()
-    # png = RESTserializers.SerializerMethodField()
-    # raw = RESTserializers.ReadOnlyField()
-    # mrc = RESTserializers.ReadOnlyField()
-    # initial = RESTserializers.ReadOnlyField(source='initial_quality')
-    # high_mag = RESTserializers.SerializerMethodField()
-
-    # def get_png(self,obj):
-    #     if obj.status == 'completed':
-    #         return obj.png
 
     def get_high_mag(self, obj):
         if obj.status == 'completed':
@@ -228,32 +166,26 @@ class HoleSerializer(RESTserializers.ModelSerializer):
         model = HoleModel
         fields = '__all__'
         extra_fields = ['id']
-        # extra_fields = ['high_mag', 'initial', ]  # 'svg', 'png', 'raw', 'mrc']
 
 
-class DetailedHoleSerializer(RESTserializers.ModelSerializer):
-    id = RESTserializers.ReadOnlyField()
-    # parent = RESTserializers.ReadOnlyField()
-    # svg = RESTserializers.ReadOnlyField()
-    # png = RESTserializers.SerializerMethodField()
-    # raw = RESTserializers.ReadOnlyField()
-    # mrc = RESTserializers.ReadOnlyField()
-    # initial = RESTserializers.ReadOnlyField(source='initial_quality')
-    high_mag = HighMagSerializer(many=False)
+class TargetSerializer(RESTserializers.ModelSerializer):
+    finders = FinderSerializer(many=True)
+    selectors = SelectorSerializer(many=True)
+    classifiers = ClassifierSerializer(many=True)
 
-    # def get_png(self,obj):
-    #     if obj.status == 'completed':
-    #         return obj.png
 
-    # def get_high_mag(self, obj):
-    #     if obj.status == 'completed':
-    #         return HighMagSerializer(obj.high_mag, many=False).data
+class DetailedHoleSerializer(TargetSerializer):
 
     class Meta:
         model = HoleModel
         fields = '__all__'
-        extra_fields = ['id']
-        extra_fields = ['high_mag']  # 'svg', 'png', 'raw', 'mrc']
+
+
+class DetailedSquareSerializer(TargetSerializer):
+
+    class Meta:
+        model = SquareModel
+        fields = '__all__'
 
 
 class HoleSerializerSimple(RESTserializers.ModelSerializer):
@@ -268,25 +200,6 @@ class HoleSerializerSimple(RESTserializers.ModelSerializer):
 class FullGridSerializer(RESTserializers.ModelSerializer):
     atlas = AtlasSerializer(many=True)
     squares = SquareSerializer(many=True)
-    # holes = HoleSerializer(many=True)
-    # high_mag = HighMagSerializer(many=True)
-
-    # def get_atlas(self, obj):
-    #     return AtlasSerializer(obj.atlas, many=True)
-
-    # def get_squares(self, obj):
-    #     squares_data = SquareSerializer(obj.squares, many=True)
-    #     output = dict()
-    #     for i in squares_data.data:
-    #         output[i['id']] = i
-    #     return output
-
-    # def get_holes(self, obj):
-    #     return HoleSerializer(obj.holes, many=True, base_directory=obj.directory, base_url=obj.url).data
-    #     # output = dict()
-    #     # for i in holes_data.data:
-    #     #     output[i['id']] = i
-    #     # return output
 
     class Meta:
         model = AutoloaderGrid
@@ -296,8 +209,8 @@ class FullGridSerializer(RESTserializers.ModelSerializer):
 
 class ExportMetaSerializer(RESTserializers.ModelSerializer):
     atlas = AtlasSerializer(many=True)
-    squares = SquareSerializer(many=True)
-    holes = HoleSerializer(many=True)
+    squares = DetailedSquareSerializer(many=True)
+    holes = DetailedHoleSerializer(many=True)
     high_mag = HighMagBasicSerializer(many=True)
     params_id = GridCollectionParamsSerializer(many=False)
 
@@ -319,7 +232,6 @@ class SvgSerializer(RESTserializers.Serializer):
 
     def __init__(self, display_type=None, method=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.targetSerializer = targetSerializer
         self.display_type = display_type
         self.method = method
 
@@ -327,10 +239,8 @@ class SvgSerializer(RESTserializers.Serializer):
 
         if self.instance.is_aws:
             storage = SmartscopeStorage()
-            # print(self.instance.svg)
             with storage.open(self.instance.svg, 'r') as f:
                 url = self.instance.png['url']
-                # print(url)
                 return f.read().replace(f'{self.instance.name}.png', url)
         with open(self.instance.svg, 'r') as f:
             return f.read().replace(f'{self.instance.name}.png', self.instance.png['url'])
@@ -365,9 +275,7 @@ def update_to_fullmeta(objects: list):
             updateDict[models_to_serializers[classname]['key']].append(obj)
         if classname == 'HoleModel' and (square := obj.square_id) not in updateDict['squares']:
             updateDict['squares'].append(square)
-    # logger.debug(f'Update dict = {updateDict}')
     updateDict['atlas'] = list_to_dict(models_to_serializers['AtlasModel']['serializer'](updateDict['atlas'], many=True).data)
     updateDict['squares'] = list_to_dict(models_to_serializers['SquareModel']['serializer'](updateDict['squares'], many=True).data)
     updateDict['holes'] = list_to_dict(models_to_serializers['HoleModel']['serializer'](updateDict['holes'], many=True).data)
-    # logger.debug(updateDict)
     return updateDict

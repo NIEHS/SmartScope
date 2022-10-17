@@ -2,7 +2,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-import time
 from typing import List, Union
 import cv2
 import mrcfile
@@ -13,16 +12,14 @@ import imutils
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
-from scipy.optimize import curve_fit
 from math import radians, sin, cos, floor, sqrt, degrees, atan2
 from scipy.spatial.distance import cdist
 import pandas as pd
 import math
 from Smartscope.lib.generic_position import parse_mdoc
-from Smartscope.lib.Classifiers.basic_pred import decide_type
 from Smartscope.lib.Finders.basic_finders import *
 from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma, save_image, mrc_to_png, fourier_crop
+from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma
 from torch import Tensor
 import logging
 
@@ -267,13 +264,13 @@ class BaseImage(ABC):
         self.read_image()
         self.read_metadata()
 
-    def check_metadata(self):
+    def check_metadata(self, check_AWS=False):
         if self.image_path.exists() and self.metadataFile.exists():
             logger.info('Found metadata, reading...')
             self.read_data()
             return True
 
-        if not eval(os.getenv('USE_STORAGE')) and eval(os.getenv('USE_AWS')):
+        if check_AWS:
             logger.debug(f'{self.image_path}, {self.metadataFile}')
             with TemporaryS3File([self.image_path, self.metadataFile]) as temp:
                 self.image_path, self.metadataFile = temp.temporary_files
@@ -287,10 +284,6 @@ class BaseImage(ABC):
 
     def read_metadata(self):
         self.metadata = pd.read_pickle(self.metadataFile)
-
-    # def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
-    #     resized = normalization(binning_method(self.image, height=height))
-    #     cv2.imwrite(str(self.png), resized)
 
     def make_symlink(self):
         os.symlink(f'../raw/{self.name}.mrc', self.image_path)
@@ -306,11 +299,12 @@ class Montage(BaseImage):
 
     def __post_init__(self):
         super().__post_init__()
-        if self.check_metadata():
-            return
         self.directory.mkdir(exist_ok=True)
-        self.metadata = parse_mdoc(self.mdoc, self.is_movie)
 
+    def load_or_process(self, check_AWS=False):
+        if self.check_metadata(check_AWS=check_AWS):
+            return
+        self.metadata = parse_mdoc(self.mdoc, self.is_movie)
         self.build_montage()
         self.read_image()
         self.save_metadata()
@@ -372,28 +366,6 @@ class Movie(BaseImage):
     def check_metadata(self):
         if self.image_path.exists() and self.shifts.exists() and self.ctf.exists():
             return True
-
-
-# def find_targets(montage: Montage, methods: list):
-#     logger.debug(f'Using method: {methods}')
-#     for method in methods:
-#         if not 'args' in method.keys():
-#             method['args'] = []
-#         if not 'kwargs' in method.keys():
-#             method['kwargs'] = dict()
-
-#         import_cmd = f"from {method['package']} import {method['method']}"
-#         logger.debug(import_cmd)
-#         logger.debug(f"kwargs = {method['kwargs']}")
-#         exec(import_cmd)
-#         try:
-#             output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
-#         except Exception as err:
-#             logger.exception(err)
-#             continue
-#         if success:
-#             logger.debug(f'{method} was successful: {success}')
-#             return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
 
 
 def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):

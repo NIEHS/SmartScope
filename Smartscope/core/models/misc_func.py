@@ -56,6 +56,7 @@ def get_fields_names(model):
 
 def set_shape_values(instance):
     montage = Montage(name=instance.name, working_dir=instance.grid_id.directory)
+    montage.load_or_process()
     logger.info(f'No shape found for completed image. Setting values to {montage.shape_x} X {montage.shape_y}')
     instance.shape_x = montage.shape_x
     instance.shape_y = montage.shape_y

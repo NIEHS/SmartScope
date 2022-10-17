@@ -76,7 +76,7 @@ def update_target(data):
         return response
     content_type = ContentType.objects.get_for_model(model)
     # if method is None:
-        
+
     if key == 'selected':
         objs = list(model.objects.filter(pk__in=ids))
         if model is HoleModel:
@@ -107,6 +107,21 @@ def update_target(data):
     except Exception as err:
         logger.exception("An error occured while updating the page.")
         return response
+
+
+def set_refined_finder(object_id, stage_x, stage_y, stage_z):
+    original = Finder.objects.get(object_id=object_id)
+    new = Finder(
+        content_type=original.content_type,
+        x=original.x,
+        y=original.y,
+        method_name='Recentering',
+        object_id=object_id,
+        stage_x=stage_x,
+        stage_y=stage_y,
+        stage_z=stage_z,
+    )
+    new.save()
 
 
 def get_hole_count(grid, hole_list=None):
