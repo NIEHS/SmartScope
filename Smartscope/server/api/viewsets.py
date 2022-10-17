@@ -230,6 +230,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         logger.info('Fetching logs')
         check_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
                                            self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
+        logger.debug(f'Check pause output: {check_output}')
         check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
         # check_stop_file_output = send_to_worker(self.object.microscope_id. worker_hostname,
         #                                         self.object.microscope_id.executable, arguments=['check_stop_file', self.object.session_id], communicate=True)

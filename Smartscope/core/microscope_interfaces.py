@@ -93,8 +93,8 @@ class GatanSerialemInterface(MicroscopeInterface):
         logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
         time.sleep(0.2)
         sem.MoveStageTo(stageX, stageY, stageZ)
-        # realign_to_square()
-        self.eucentricHeight()
+        stageX, stageY, stageZ = self.realign_to_square()
+        sem.Eucentricity(1)
         self.checkDewars()
         self.checkPump()
         sem.MoveStageTo(stageX, stageY)
@@ -104,6 +104,7 @@ class GatanSerialemInterface(MicroscopeInterface):
         sem.Save()
         sem.CloseFile()
         logger.info('Square acquisition finished')
+        return stageX, stageY, stageZ
 
     def realign_to_square(self):
         while True:
@@ -113,7 +114,8 @@ class GatanSerialemInterface(MicroscopeInterface):
             _, square_center, _ = find_square(square)
             im_center = (square.shape[1] // 2, square.shape[0] // 2)
             diff = square_center - np.array(im_center)
-            sem.ImageShiftByPixels(int(diff[0]), int(diff[1]))
+            logger.info(f'Found square center: {square_center}. Image-shifting by {diff} pixels')
+            sem.ImageShiftByPixels(int(diff[0]), -int(diff[1]))
             sem.ResetImageShift()
             if max(diff) < max(square.shape) // 4:
                 logger.info('Done.')
