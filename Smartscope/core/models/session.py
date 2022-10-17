@@ -2,7 +2,6 @@ from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.query import prefetch_related_objects
 from datetime import datetime
 import Smartscope
 import os
@@ -14,7 +13,6 @@ from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag
-# from Smartscope.lib.config import deep_get, load_pluginsa
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 import logging
@@ -127,6 +125,10 @@ class ExtraPropertyMixin:
     def png(self):
         return dict(path=os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.png'),
                     url=self.get_full_path(os.path.join(self.grid_id.url, 'pngs', f'{self.name}.png')))
+
+    @ property
+    def png_img(self):
+        return os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.png')
 
     @ property
     def mrc(self):
@@ -620,22 +622,6 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     @ property
     def targets(self):
         return self.squaremodel_set.all()
-
-    # @ property
-    # def targets_methods(self):
-    #     plugins = load_plugins()
-    #     targets = self.squaremodel_set.values_list('square_id', flat=True)
-    #     contenttype = ContentType.objects.get_for_model(self.base_target_query.first())
-
-    #     finders = list(Finder.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
-    #     classifiers = list(Classifier.objects.filter(content_type=contenttype,
-    #                                                  object_id__in=targets).values_list('method_name', flat=True).distinct())
-    #     selectors = list(Selector.objects.filter(object_id__in=targets).values_list(
-    #         'method_name', flat=True).distinct())  # NEED TO LOOK INTO THE CONTENT TYPE ISSUE
-    #     logger.debug(f'Finders: {finders}, Classifiers: {classifiers}, Selectors: {selectors}')
-    #     return dict(finders=[deep_get(plugins, finder) for finder in finders],
-    #                 classifiers=[deep_get(plugins, classifier) for classifier in classifiers],
-    #                 selectors=[deep_get(plugins, selector) for selector in selectors])
 
     def toSVG(self, display_type, method):
         return drawAtlas(self, list(SquareModel.display.filter(atlas_id=self.atlas_id)), display_type, method)

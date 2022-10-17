@@ -12,6 +12,7 @@ from Smartscope.server.frontend.forms import *
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.template.response import SimpleTemplateResponse
+from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.db import transaction
 import base64
@@ -26,6 +27,7 @@ import os
 import time
 import logging
 from rest_framework.renderers import TemplateHTMLRenderer
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +63,47 @@ class ExtraActionsMixin:
         self.serializer_class = FilePathsSerializer
         serializer = self.get_serializer(self.get_object(), many=False)
         return Response(serializer.data)
+
+    @ action(detail=True, methods=['get'])
+    def download(self, request, **kwargs):
+        extension = request.query_params.get('extension', None)
+        if extension is None:
+            extension = 'mrc'
+        instance = self.get_object()
+        extension_factory = {
+            'mrc': 'mrc',
+            'raw': 'raw_mrc',
+            'png': 'png_img'
+        }
+        img = Path(getattr(instance, extension_factory[extension]))
+        response = FileResponse(open(img, 'rb'), content_type='image/*')
+        response['Content-Length'] = os.path.getsize(img)
+        response['Content-Disposition'] = f"attachment; filename={img.name}"
+        return response
+
+
+class TargetRouteMixin:
+
+    detailed_serializer = None
+
+    def get_detailed_serializer(self):
+        if self.detailed_serializer is None:
+            raise ValueError(f'detailed_serializer attribute is not set on {self.__class__.__name__}.')
+        return self.detailed_serializer
+
+    @ action(detail=True, methods=['get'], url_path='detailed')
+    def detailedOne(self, request, *args, **kwargs):
+        self.serializer_class = self.get_detailed_serializer()
+        obj = self.get_object()
+        serializer = self.get_serializer(obj, many=False)
+        return Response(data=serializer.data)
+
+    @ action(detail=False, methods=['get'], url_path='detailed')
+    def detailedMany(self, request, *args, **kwargs):
+        self.serializer_class = self.get_detailed_serializer()
+        page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -215,7 +258,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         self.object = self.get_object()
         logger.info('Removing lock file')
         out, err = send_to_worker(self.object.microscope_id.worker_hostname, 'rm', arguments=[
-                                  os.path.join('/tmp/', f'{self.object.microscope_id.pk}.lock')], communicate=True)
+            os.path.join('/tmp/', f'{self.object.microscope_id.pk}.lock')], communicate=True)
         logger.info(f'OUTPUT: {out}\nERROR: {err}')
         return Response(dict(out=out, err=err))
 
@@ -322,6 +365,13 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             logger.error(f'Error while updating parameters, {err}.')
             return Response(dict(success=False))
 
+    @ action(detail=True, methods=['get'])
+    def export(self, resquest, **kwargs):
+        obj = self.get_object()
+        self.serializer_class = ExportMetaSerializer
+        serializer = self.get_serializer(obj, many=False)
+        return Response(data=serializer.data)
+
 
 class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     """
@@ -338,7 +388,7 @@ class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         return super().load_card(request, **kwargs)
 
 
-class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
+class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Squares to be viewed or edited.
     """
@@ -347,6 +397,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
                         'atlas_id', 'selected', 'grid_id__session_id', 'status']
+    detailed_serializer = DetailedSquareSerializer
 
     @ action(detail=True, methods=['get'])
     def load(self, request, **kwargs):
@@ -387,7 +438,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             obj = self.get_object()
             microscope = obj.grid_id.session_id.microscope_id
             out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
-                                      'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True, timeout=30)
+                'regroup_bis', obj.grid_id.pk, obj.square_id], communicate=True, timeout=30)
             out = out.decode("utf-8").strip().split('\n')[-1]
             return Response(dict(out=out))
         except Exception as err:
@@ -395,7 +446,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             return Response(dict(success=False))
 
 
-class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
+class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Squares to be viewed or edited.
     """
@@ -403,7 +454,9 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     serializer_class = HoleSerializer
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id',
-                        'square_id', 'status']
+                        'square_id', 'status', 'bis_group', 'bis_type']
+
+    detailed_serializer = DetailedHoleSerializer
 
     @ action(detail=False, methods=['get'])
     def simple(self, request, *args, **kwargs):
@@ -415,14 +468,14 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     @ action(detail=True, methods=['get'])
     def highmag(self, request, *args, **kwargs):
         obj = self.get_object()
-        self.serializer_class = HighMagSerializer
+        # self.serializer_class = HighMagSerializer
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
             queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk']))
         else:
             queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
-                            hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
+                                                        hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
         context = dict(holes=queryset)
         context['classifier'] = PLUGINS_FACTORY['Micrographs curation']
         resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
