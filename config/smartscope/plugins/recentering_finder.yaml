@@ -1,0 +1,5 @@
+name: Recentering
+targetClass:
+  - Finder
+description: |
+  Recentering of the stage coordinates to the target.
