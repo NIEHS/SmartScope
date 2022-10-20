@@ -1,3 +1,4 @@
+from email.policy import default
 from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -144,11 +145,16 @@ class ExtraPropertyMixin:
 
 
 class Microscope(BaseModel):
-    name = models.CharField(max_length=100)
-    location = models.CharField(max_length=30)
+    name = models.CharField(max_length=100, help_text='Name of your microscope')
+    location = models.CharField(max_length=30, help_text='Name of the institute, departement or room for the microscope.')
     voltage = models.IntegerField(default=200)
     spherical_abberation = models.FloatField(default=2.7)
     microscope_id = models.CharField(max_length=30, primary_key=True, editable=False)
+    VENDOR_CHOICES = (
+        ('TFS', 'TFS / FEI'),
+        ('JEOL', 'JEOL')
+    )
+    vendor = models.CharField(max_length=30, default='TFS', choices=VENDOR_CHOICES)
     loader_size = models.IntegerField(default=12)
 
     # Worker location
@@ -197,6 +203,10 @@ class Detector(BaseModel):
     atlas_max_tiles_Y = models.IntegerField(default=6)
     spot_size = models.IntegerField(default=None, null=True)
     c2_perc = models.FloatField(default=100)
+    atlas_to_search_offset_x = models.FloatField(
+        default=0, help_text='X stage offset between the atlas and Search mag. Similar to the Shift to Marker offset')
+    atlas_to_search_offset_y = models.FloatField(
+        default=0, help_text='Y stage offset between the atlas and Search mag. Similar to the Shift to Marker offset')
     frame_align_cmd = models.CharField(max_length=30, default='alignframes')
     gain_rot = models.IntegerField(default=0, null=True)
     gain_flip = models.BooleanField(default=True)
@@ -243,6 +253,7 @@ class GridCollectionParams(BaseModel):
     drift_crit = models.FloatField(default=-1)
     tilt_angle = models.FloatField(default=0)
     save_frames = models.BooleanField(default=True)
+    force_process_from_average = models.BooleanField(default=False)
     offset_targeting = models.BooleanField(default=True)
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)

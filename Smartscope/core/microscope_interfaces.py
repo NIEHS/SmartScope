@@ -1,4 +1,5 @@
 from pathlib import PureWindowsPath
+from typing import Callable
 from Smartscope.lib.Datatypes.microscope import MicroscopeInterface
 import serialem as sem
 import time
@@ -18,21 +19,7 @@ class CartridgeLoadingError(Exception):
     pass
 
 
-class GatanSerialemInterface(MicroscopeInterface):
-
-    def checkDewars(self, wait=30):
-        while True:
-            if sem.AreDewarsFilling() == 0:
-                return
-            logger.info(f'LN2 is refilling, waiting {wait}s')
-            time.sleep(wait)
-
-    def checkPump(self, wait=30):
-        while True:
-            if sem.IsPVPRunning() == 0:
-                return
-            logger.info(f'Pump is Running, waiting {wait}s')
-            time.sleep(wait)
+class SerialemInterface(MicroscopeInterface):
 
     def eucentricHeight(self, tiltTo=10, increments=-5):
         logger.info(f'Doing eucentric height')
@@ -89,11 +76,13 @@ class GatanSerialemInterface(MicroscopeInterface):
 
     def square(self, stageX, stageY, stageZ, file=''):
         sem.SetLowDoseMode(1)
+        sem.GoToLowDoseArea('S')
         logger.info(f'Starting Square acquisition of: {file}')
         logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
         time.sleep(0.2)
         sem.MoveStageTo(stageX, stageY, stageZ)
         stageX, stageY, stageZ = self.realign_to_square()
+        sem.GoToLowDoseArea('V')
         sem.Eucentricity(1)
         self.checkDewars()
         self.checkPump()
@@ -146,7 +135,7 @@ class GatanSerialemInterface(MicroscopeInterface):
         self.has_hole_ref = True
 
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
-
+        sem.GoToLowDoseArea('V')
         sem.TiltTo(tiltAngle)
 
         sem.AllowFileOverwrite(1)
@@ -182,30 +171,6 @@ class GatanSerialemInterface(MicroscopeInterface):
         self.state.currentDefocus = sem.ReportDefocus()
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
-
-    def highmag(self, isX, isY, tiltAngle, file='', frames=True):
-
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
-        self.state.imageShiftX = isX
-        self.state.imageShiftY = isY
-        sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
-
-        if not frames:
-            sem.EarlyReturnNextShot(-1)
-            sem.Preview()
-            sem.OpenNewFile(file)
-            sem.Save()
-            sem.CloseFile()
-            return None
-
-        sem.EarlyReturnNextShot(0)
-
-        sem.Preview()  # Seems possible to change this to Record in 4.0, needs testing
-        frames = sem.ReportLastFrameFile()
-        if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
-            frames = frames[0]
-        logger.debug(f"Frames: {frames},")
-        return frames.split('\\')[-1]
 
     def connect(self, directory: str):
         logger.info(
@@ -259,45 +224,85 @@ class GatanSerialemInterface(MicroscopeInterface):
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
 
-
-class FalconSerialemInterface(GatanSerialemInterface):
-
-    def square(self, stageX, stageY, stageZ, file=''):
-        sem.SetLowDoseMode(1)
-        logger.info(f'Starting Square acquisition of: {file}')
-        logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
-        time.sleep(0.2)
-        sem.MoveStageTo(stageX, stageY, stageZ)
-        sem.Eucentricity()
-        self.checkDewars()
-        self.checkPump()
-        sem.MoveStageTo(stageX, stageY)
-        time.sleep(0.2)
-        sem.Search()
-        sem.OpenNewFile(file)
-        sem.Save()
-        sem.CloseFile()
-        logger.info('Square acquisition finished')
-
-    def highmag(self, isX, isY, tiltAngle, file='', frames=True):
+    def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
 
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
 
-        sem.Preview()
-        sem.OpenNewFile(file)
-        sem.Save()
-        sem.CloseFile()
-        if not frames:
-            return None
+        if earlyReturn:
+            sem.EarlyReturnNextShot(-1)
 
-        frames = sem.ReportLastFrameFile()
-        if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
-            frames = frames[0]
-        logger.debug(f"Frames: {frames},")
-        return frames.split('\\')[-1]
+        sem.Preview()
+        if earlyReturn:
+            sem.OpenNewFile(file)
+            sem.Save()
+            sem.CloseFile()
+
+        if frames:
+            frames = sem.ReportLastFrameFile()
+            if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
+                frames = frames[0]
+            logger.debug(f"Frames: {frames},")
+            return frames.split('\\')[-1]
+
+
+class TFSSerialemInterface(SerialemInterface):
+
+    def checkDewars(self, wait=30):
+        while True:
+            if sem.AreDewarsFilling() == 0:
+                return
+            logger.info(f'LN2 is refilling, waiting {wait}s')
+            time.sleep(wait)
+
+    def checkPump(self, wait=30):
+        while True:
+            if sem.IsPVPRunning() == 0:
+                return
+            logger.info(f'Pump is Running, waiting {wait}s')
+            time.sleep(wait)
+
+
+def remove_condenser_aperture(function: Callable, *args, **kwargs):
+    def wrapper():
+        sem.RemoveAperture(0)
+        function(*args, **kwargs)
+        sem.ReinsertAperture(0)
+    return wrapper
+
+
+class JEOLSerialemInterface(SerialemInterface):
+
+    def checkPump(self, wait=30):
+        pass
+
+    @remove_condenser_aperture
+    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
+        super().atlas(mag, c2, spotsize, tileX, tileY, file, center_stage_x, center_stage_y)
+
+# class FalconSerialemInterface(SerialemInterface):
+
+#     def highmag(self, isX, isY, tiltAngle, file='', frames=True):
+
+#         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
+#         self.state.imageShiftX = isX
+#         self.state.imageShiftY = isY
+#         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
+
+#         sem.Preview()
+#         sem.OpenNewFile(file)
+#         sem.Save()
+#         sem.CloseFile()
+#         if not frames:
+#             return None
+
+#         frames = sem.ReportLastFrameFile()
+#         if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
+#             frames = frames[0]
+#         logger.debug(f"Frames: {frames},")
+#         return frames.split('\\')[-1]
 
 
 class FakeScopeInterface(MicroscopeInterface):
@@ -316,6 +321,7 @@ class FakeScopeInterface(MicroscopeInterface):
 
     def square(self, stageX, stageY, stageZ, file=''):
         generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.scope_path)
+        return 0, 0, 0
 
     def align():
         pass
@@ -326,7 +332,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
-    def highmag(self, isX, isY, tiltAngle, file='', frames=True):
+    def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
         # if frames:
         #     generate_fake_file(file.replace('raw', 'movies').replace('mrc', 'tif'), 'highmagframes', sleeptime=7, destination_dir=self.scope_path)
         generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.scope_path)

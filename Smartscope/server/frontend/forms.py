@@ -1,5 +1,7 @@
 from django import forms
 from Smartscope.core.models import *
+from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG
+import yaml
 
 
 class ScreeningSessionForm(forms.ModelForm):
@@ -91,6 +93,10 @@ class GridCollectionParamsForm(forms.ModelForm):
             offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable'
         )
 
+    def read_config(self):
+        file = SMARTSCOPE_CONFIG / 'default_collection_params.yaml'
+        return yaml.safe_load(file.read_text())
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -129,6 +135,10 @@ class GridCollectionParamsForm(forms.ModelForm):
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
+
+        for field, data in self.read_config().items():
+            self.fields[field].initial = data.pop('initial')
+            self.fields[field].widget.attrs.update(data)
 
 
 class AssingBisGroupsForm(forms.Form):

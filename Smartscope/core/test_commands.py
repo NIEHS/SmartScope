@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 import torch
-from Smartscope.core.microscope_interfaces import GatanSerialemInterface
+from Smartscope.core.microscope_interfaces import TFSSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 from Smartscope.core.finders import find_targets
 import logging
@@ -38,13 +38,13 @@ def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'te
 def test_realign_to_square(microscope_id):
     from Smartscope.core.models import Microscope
     microscope = Microscope.objects.get(pk=microscope_id)
-    with GatanSerialemInterface(ip=microscope.serialem_IP,
-                                port=microscope.serialem_PORT,
-                                directory=microscope.windows_path,
-                                scope_path=microscope.scope_path,
-                                energyfilter=False,
-                                loader_size=microscope.loader_size,
-                                frames_directory='X:/testing/') as scope:
+    with TFSSerialemInterface(ip=microscope.serialem_IP,
+                              port=microscope.serialem_PORT,
+                              directory=microscope.windows_path,
+                              scope_path=microscope.scope_path,
+                              energyfilter=False,
+                              loader_size=microscope.loader_size,
+                              frames_directory='X:/testing/') as scope:
         scope.realign_to_square()
 
 

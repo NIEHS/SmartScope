@@ -93,7 +93,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         from_frames = partial(process_hm_from_frames, frames_directories=self.frames_directory,
                               spherical_abberation=self.microscope.spherical_abberation)
         for obj in self.incomplete_processes:
-            if obj.frames is None or self.detector.detector_model not in ['K2', 'K3']:
+            if obj.frames is None or self.detector.detector_model not in ['K2', 'K3'] or self.grid.params.force_process_from_average:
                 self.to_process_queue.put([from_average, [], dict(raw=obj.raw, name=obj.name)])
             else:
                 self.to_process_queue.put([from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)])
