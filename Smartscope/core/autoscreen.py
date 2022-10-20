@@ -4,12 +4,11 @@ from random import random
 import sys
 import time
 import shlex
-from typing import Union
-from Smartscope.core.microscope_interfaces import FakeScopeInterface, GatanSerialemInterface, FalconSerialemInterface
+from Smartscope.core.microscope_interfaces import FakeScopeInterface, TFSSerialemInterface, JEOLSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
-from Smartscope.core.models import AutoloaderGrid, ScreeningSession, HoleModel, SquareModel, Process
+from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
-from Smartscope.lib.image_manipulations import auto_contrast, auto_contrast_sigma, fourier_crop, export_as_png
+from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage, Movie, create_targets
 from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
@@ -230,7 +229,8 @@ def run_grid(grid, session, processing_queue, scope):
                         if params.offset_targeting and (grid.collection_mode == 'screening' or params.offset_distance != -1) and grid_type.hole_size is not None:
                             offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
                         isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
-                        frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw, frames=params.save_frames)
+                        frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw,
+                                               frames=params.save_frames, earlyReturn=params.force_process_from_average)
                         hm = update(hm, is_x=isX, is_y=isY, offset=offset, frames=frames, status='acquired', completion_time=timezone.now())
                         if h != hole:
                             update(h, status='acquired', completion_time=timezone.now())
@@ -360,14 +360,14 @@ def autoscreen(session_id):
         logger.info(f'Process: {process}')
         logger.info(f'Session: {session}')
         logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
-        scopeInterface = GatanSerialemInterface
+        scopeInterface = TFSSerialemInterface
         if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
             logger.info('Setting scope into test mode')
             scopeInterface = FakeScopeInterface
 
-        if session.detector_id.detector_model in ['Falcon3', 'Falcon4', 'Ceta']:
-            logger.info('Using the Falcon interface')
-            scopeInterface = FalconSerialemInterface
+        if session.microscope_id.vendor == 'JEOL':
+            logger.info('Using the JEOL interface')
+            scopeInterface = JEOLSerialemInterface
 
         with scopeInterface(ip=microscope.serialem_IP,
                             port=microscope.serialem_PORT,
