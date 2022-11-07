@@ -16,8 +16,8 @@ To download:
 
 .. code-block:: bash
 
-    wget docs.smartscope.org/downloads/smartscope_testfiles.tar.gz
-    tar -xvf smartscope_testfiles.tar.gz
+    wget docs.smartscope.org/downloads/smartscope_testfiles.tar
+    tar -xvf smartscope_testfiles.tar
 
 **Podman/Docker Installation**
 
