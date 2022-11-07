@@ -21,27 +21,3 @@ To run Smartscope, simply fill the form about which grids to be screened, press 
 
 
 
-Site map
-========
-
-.. toctree::
-
-   news.rst
-   installation.rst
-   update.rst
-   setup.rst
-   overview.rst
-   run_smartscope.rst
-   testing.rst
-   citation.rst
-   contact.rst
-   license.rst
-
-
-   
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

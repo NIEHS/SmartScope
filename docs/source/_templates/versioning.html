@@ -1,0 +1,34 @@
+{% if versions %}
+<hr>
+<nav id='versioning' class="bd-links">
+  <h3>Versions</h3>
+  <div class="bd-toc-item active">
+  <ul class="nav bd-sidenav">
+    {%- for item in versions.tags %}
+    <li class="toctree-l1"><a class="reference internal" id='{{item.name}}' href="{{ item.url }}">{{ item.name }}</a></li>
+    {%- endfor %}
+  </ul>
+  </div>
+<h3>Branches</h3>
+<div class="bd-toc-item active">
+<ul class="nav bd-sidenav">
+  {%- for item in versions.branches %}
+  <li class="toctree-l1"><a class="reference internal" id='{{item.name}}' href="{{ item.url }}">{{ item.name }}</a></li>
+  {%- endfor %}
+</ul>
+</div>
+
+</nav>
+{% endif %}
+
+<script>
+  $('#versioning a').each(function(){
+    let id = this.id
+    let regex = new RegExp(`/(${id})/`)
+    console.log(regex)
+   if (regex.test(window.location.pathname)) {
+    $('#site-title').append( "<p>Version " + id +'</p>' )
+   }
+});
+
+</script>
