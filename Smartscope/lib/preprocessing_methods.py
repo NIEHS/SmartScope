@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 import pandas as pd
 from pathlib import Path
 import logging
@@ -42,8 +42,11 @@ def CTFfind(input_mrc: str, output_directory: str, pixel_size: float, voltage: i
     mrc_to_png(output_file)
 
 
-def align_frames(frames: str, output_file: str, output_shifts: str, gain: str, mdoc: str, voltage: int):
-    com = f'alignframes -input {frames} -output {output_file} -gain {gain} -rotation -1 -dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
+def align_frames(frames: str, output_file: str, output_shifts: str, gain: Union[str, None], mdoc: str, voltage: int):
+
+    com = f'alignframes -input {frames} -output {output_file} -rotation -1 -dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
+    if gain is not None:
+       com += f' -gain {gain}'
     logger.debug(com)
     p = subprocess.run(shlex.split(com), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     logger.debug(p.stdout.decode('utf-8'))
@@ -69,8 +72,11 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         return movie
     movie.metadata = parse_mdoc(mdocFile=mdoc, movie=True)
     if not movie.shifts.exists() or not movie.ctf.exists():
-        align_frames(frames_file, output_file=movie.raw, output_shifts=movie.shifts, gain=Path(
-            directory, movie.metadata.iloc[-1].GainReference), mdoc=mdoc, voltage=movie.metadata.Voltage.iloc[-1])
+        try:
+            gain = Path( directory, movie.metadata.GainReference.iloc[-1])
+        except AttributeError:
+            gain = None
+        align_frames(frames_file, output_file=movie.raw, output_shifts=movie.shifts, gain=gain, mdoc=mdoc, voltage=movie.metadata.Voltage.iloc[-1])
         if not movie.image_path.exists():
             movie.make_symlink()
         CTFfind(input_mrc=movie.image_path, output_directory=movie.name,
