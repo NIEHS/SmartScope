@@ -1,10 +1,9 @@
 from enum import Enum
 import importlib
 from abc import ABC
-from typing import Any, Optional, Protocol, List, Dict
+from typing import Any, Optional, Protocol, List, Dict, Union
 from pydantic import BaseModel, Field
-import importlib
-
+import sys
 
 class TargetClass(Enum):
     FINDER = 'Finder'
@@ -30,10 +29,15 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
     method: Optional[str] = ''
     module: Optional[str] = ''
     kwargs: Optional[Dict[str, Any]]
+    importPaths: Union[str,List] = Field(default_factory=list)
 
     @property
     def is_classifer(self) -> bool:
         """Check wheter this class is a classifier"""
+    
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        [sys.path.append(path) for path in self.importPaths]
 
     def run(self, *args, **kwargs):
         """Where the main logic for the algorithm is"""

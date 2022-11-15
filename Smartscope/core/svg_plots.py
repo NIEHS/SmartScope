@@ -228,6 +228,58 @@ def drawSquare(square, targets, display_type, method):
     return d.asSvg()
 
 
+def drawHole(hole, targets, display_type, method):
+    d = myDrawging(hole.shape_y, hole.shape_x, id='hole-svg', displayInline=False)
+    d.append(draw.Image(0, 0, d.width, d.height, path=hole.png['url'], embed=False))
+    shapes = draw.Group(id='holeShapes')
+    text = draw.Group(id='holeText')
+    labels_list = []
+    bis_groups = {}
+    for i in targets:
+
+        color, label, prefix = css_color(i, display_type, method)
+        if color is not None:
+            finders = list(i.finders.all())
+            if len(finders) == 0:
+                break
+            finder = list(i.finders.all())[0]
+            x = finder.x
+            y = -(finder.y) + d.height
+            c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,
+                            class_=f'target', number=i.number, onclick="clickHole(this)")
+
+            if i.selected:
+                ft_sz = floor(d.width / 3000 * 80)
+                t = draw.Text(str(i.number), ft_sz, x=x + i.radius, y=y + i.radius, id=f'{i.pk}_text', paint_order='stroke',
+                              stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')  # + qualityClass
+                text.append(t)
+            if i.status is not None:
+                c.args['class'] += f" {i.status}"
+                c.args['fill-opacity'] = 0.6 if color != 'blue' else 0
+            if i.bis_type is not None:
+                c.args['class'] += f" {i.bis_type}"
+                if i.bis_type == 'center':
+                    c.args['stroke-width'] = floor(d.width / 200)
+            if i.bis_group in bis_groups.keys():
+                bis_groups[i.bis_group].append(c)
+            else:
+                bis_groups[i.bis_group] = [c]
+            labels_list.append((color, label, prefix))
+    for bis_group, item in bis_groups.items():
+        g = draw.Group(id=bis_group)
+        for i in item:
+            g.append(i)
+        shapes.append(g)
+    d.append(shapes)
+    d.append(text)
+    # d.append(add_scale_bar(square.pixel_size * square.binning_factor, d.width, d.height, id_type='square'))
+    d.append(add_scale_bar(hole.pixel_size, d.width, d.height, id_type='hole'))
+    d.append(add_legend(set(labels_list), d.width, d.height, hole.pixel_size))
+    # d.setRenderSize()
+    # print(d.asSvg())
+    return d.asSvg()
+
+
 def drawHighMag(highmag):
     d = myDrawging(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False)
     d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png['url'], embed=False))

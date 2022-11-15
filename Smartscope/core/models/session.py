@@ -13,7 +13,7 @@ from django.core import serializers
 from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
-from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag
+from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawHole
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 import logging
@@ -602,6 +602,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     def alias_name(self):
         return 'Atlas'
 
+    @property
+    def prefix(self):
+        return 'Atlas'
+
     @ property
     def api_viewset_name(self):
         return 'atlas'
@@ -622,9 +626,9 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     def set_parent(self, parent):
         self.grid_id = parent
 
-    @ property
-    def base_target_query(self):
-        return self.squaremodel_set
+    # @ property
+    # def base_target_query(self):
+    #     return self.squaremodel_set
 
     @ property
     def targets(self):
@@ -763,11 +767,15 @@ class SquareModel(Target, ExtraPropertyMixin):
 
     @ property
     def alias_name(self):
-        return f'Square {self.number}'
+        return f'Area {self.number}'
 
     @ property
     def api_viewset_name(self):
         return 'squares'
+
+    @property
+    def prefix(self):
+        return 'Square'
 
     @ property
     def targets_prefix(self):
@@ -790,9 +798,9 @@ class SquareModel(Target, ExtraPropertyMixin):
     def parent_stage_z(self):
         return self.parent.stage_z
 
-    @ property
-    def base_target_query(self):
-        return self.holemodel_set
+    # @ property
+    # def base_target_query(self):
+    #     return self.holemodel_set
 
     @ property
     def targets(self):
@@ -880,7 +888,26 @@ class HoleModel(Target, ExtraPropertyMixin):
 
     @ property
     def alias_name(self):
-        return f'Hole {self.number}'
+        return f'Target {self.number}'
+
+    @property
+    def prefix(self):
+        return 'Hole'
+
+    # @ property
+    # def base_target_query(self):
+
+    #     return self.__class__.objects.filter(bis_group=self.bis_group)
+
+    @ property
+    def targets(self):
+        holes_in_group = HoleModel.objects.filter(bis_group=self.bis_group).values_list('hole_id', flat=True)
+
+        return HighMagModel.objects.filter(hole_id__in=holes_in_group)
+
+    @ property
+    def targets_prefix(self):
+        return 'high_mag'
 
     @ property
     def api_viewset_name(self):
@@ -889,6 +916,15 @@ class HoleModel(Target, ExtraPropertyMixin):
     @ property
     def id(self):
         return self.hole_id
+
+    def toSVG(self, display_type, method):
+        reset_queries()
+        holes = list(self.targets)
+        if self.shape_x is None:  # There was an error in previous version where shape wasn't set.
+            set_shape_values(self)
+        sq = drawHole(self, holes, display_type, method)
+        logger.debug(f'Loading hole required {len(connection.queries)} queries')
+        return sq
 
     @ property
     def bisgroup_acquired(self):
@@ -923,9 +959,6 @@ class HoleModel(Target, ExtraPropertyMixin):
     @ property
     def high_mag(self):
         return self.highmagmodel_set.first()
-        # if self.selected or self.status == 'completed':
-        #     logger.debug('Calling DB')
-        #     return self.highmagmodel_set.first().hm_id
 
     class Meta(BaseModel.Meta):
         unique_together = ('name', 'square_id')
@@ -947,16 +980,16 @@ class HoleModel(Target, ExtraPropertyMixin):
         return self.name
 
 
-class HighMagModel(BaseModel, ExtraPropertyMixin):
+class HighMagModel(Target, ExtraPropertyMixin):
     hm_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    number = models.IntegerField()
-    name = models.CharField(max_length=100, null=False)
-    pixel_size = models.FloatField(null=True)
-    shape_x = models.IntegerField(null=True)
-    shape_y = models.IntegerField(null=True)
+    # number = models.IntegerField()
+    # name = models.CharField(max_length=100, null=False)
+    # pixel_size = models.FloatField(null=True)
+    # shape_x = models.IntegerField(null=True)
+    # shape_y = models.IntegerField(null=True)
     hole_id = models.ForeignKey(HoleModel, on_delete=models.CASCADE, to_field='hole_id')
-    status = models.CharField(max_length=20, null=True, default=None)
-    grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
+    # status = models.CharField(max_length=20, null=True, default=None)
+    # grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
     is_x = models.FloatField(null=True)
     is_y = models.FloatField(null=True)
     offset = models.FloatField(default=0)
@@ -965,7 +998,7 @@ class HighMagModel(BaseModel, ExtraPropertyMixin):
     astig = models.FloatField(null=True)
     angast = models.FloatField(null=True)
     ctffit = models.FloatField(null=True)
-    completion_time = models.DateTimeField(null=True)
+    # completion_time = models.DateTimeField(null=True)
 
     # aliases
     objects = HighMagImageManager()

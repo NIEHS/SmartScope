@@ -19,7 +19,7 @@ import math
 from Smartscope.lib.generic_position import parse_mdoc
 from Smartscope.lib.Finders.basic_finders import *
 from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma
+from Smartscope.lib.image_manipulations import fourier_crop, save_mrc, to_8bits, auto_contrast, auto_contrast_sigma
 from torch import Tensor
 import logging
 
@@ -69,7 +69,7 @@ def closest_node(node, nodes, num=1):
     return index, dist
 
 
-def pixel_to_stage(dist, tile, tiltAngle):
+def pixel_to_stage(dist, tile, tiltAngle=0):
     apix = tile.PixelSpacing / 10000
     dist *= apix
     theta = radians(tile.RotationAngle)
@@ -198,6 +198,8 @@ class BaseImage(ABC):
     # fourier_crop: bool = False
     is_movie: bool = False
     metadata: Union[pd.DataFrame, None] = None
+    _raw = None
+    _mdoc = None
 
     @property
     def directory(self):
@@ -229,10 +231,19 @@ class BaseImage(ABC):
 
     @property
     def raw(self):
+        if self._raw is not None:
+            return self._raw
         return Path(self.working_dir, 'raw', f'{self.name}.mrc')
+    
+    @raw.setter
+    def raw(self, value):
+        self._raw = value 
+        self._mdoc = Path(str(value) + '.mdoc')
 
     @property
     def mdoc(self):
+        if self._mdoc is not None:
+            return self._mdoc
         return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
 
     @property
@@ -242,6 +253,17 @@ class BaseImage(ABC):
     @property
     def shape_y(self):
         return self.image.shape[1]
+
+    @property
+    def image_center(self):
+        return np.array([self.shape_x, self.shape_y]) // 2
+
+    @property
+    def rotation_angle(self):
+        return self.metadata.iloc[0].RotationAngle
+
+    def get_tile(self, tileIndex=0):
+        return self.metadata.iloc[tileIndex]
 
     @property
     def stage_z(self):
@@ -256,13 +278,20 @@ class BaseImage(ABC):
         return Path(self.directory, 'ctf.txt')
 
     def read_image(self):
-        with mrcfile.open(self.image_path) as mrc:
-            self.image = mrc.data
+        try:
+            with mrcfile.open(self.image_path) as mrc:
+                self.image = mrc.data
+        except FileNotFoundError:
+            with mrcfile.open(self.raw) as mrc:
+                self.image = mrc.data            
         return
 
     def read_data(self):
         self.read_image()
         self.read_metadata()
+
+    def downsample(self, scale=2) -> np.ndarray:
+        return fourier_crop(self.image, height=int(self.shape_x // scale))
 
     def check_metadata(self, check_AWS=False):
         if self.image_path.exists() and self.metadataFile.exists():
@@ -286,7 +315,9 @@ class BaseImage(ABC):
         self.metadata = pd.read_pickle(self.metadataFile)
 
     def make_symlink(self):
-        os.symlink(f'../raw/{self.name}.mrc', self.image_path)
+        relative = os.path.relpath(self.raw,self.directory)
+        logger.debug(f'Relative path from {self.directory} to raw = {relative}')
+        os.symlink(relative, self.image_path)
 
     def __post_init__(self):
         self._directory = Path(self.working_dir, self.name)

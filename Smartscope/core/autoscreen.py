@@ -332,8 +332,8 @@ def process_square_image(square, grid, microscope_id):
 def process_hole_image(hole, microscope_id):
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path)
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
-    update(hole, status='processed',
-           pixel_size=montage.pixel_size,)
+    update(hole, status='processed', shape_x=montage.shape_x,
+                        shape_y=montage.shape_y, pixel_size=montage.pixel_size)
 
 
 def write_sessionLock(session, lockFile):

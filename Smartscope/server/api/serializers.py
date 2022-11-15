@@ -181,6 +181,13 @@ class DetailedHoleSerializer(TargetSerializer):
         fields = '__all__'
 
 
+class DetailedHighMagSerializer(TargetSerializer):
+
+    class Meta:
+        model = HighMagModel
+        fields = '__all__'
+
+
 class DetailedSquareSerializer(TargetSerializer):
 
     class Meta:

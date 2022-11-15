@@ -53,15 +53,18 @@ class SerialemInterface(MicroscopeInterface):
             else:
                 logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
                 break
+    
+    def set_atlas_optics(self,mag,c2,spotsize):
+        sem.SetLowDoseMode(0)
+        sem.SetMag(int(mag))
+        sem.SetPercentC2(float(c2))
+        sem.SetSpotSize(int(spotsize))
 
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
         logger.debug(f'Atlas mag:{mag}, c2perc:{c2}, spotsize:{spotsize}, tileX:{tileX}, tileY:{tileY}')
         sem.TiltTo(0)
         sem.MoveStageTo(center_stage_x, center_stage_y)
-        sem.SetLowDoseMode(0)
-        sem.SetMag(int(mag))
-        sem.SetPercentC2(float(c2))
-        sem.SetSpotSize(int(spotsize))
+        self.set_atlas_optics(mag,c2,spotsize)
         if self.energyfilter:
             sem.SetSlitIn(0)
         self.eucentricHeight()

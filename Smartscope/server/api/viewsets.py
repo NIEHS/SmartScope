@@ -4,6 +4,7 @@ import mrcfile.mrcinterpreter
 import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
+from rest_framework import status
 from Smartscope.core.models.models_actions import targets_methods
 from Smartscope.server.api.permissions import HasGroupPermission
 from .serializers import *
@@ -43,9 +44,14 @@ class ExtraActionsMixin:
     def load_card(self, request, **kwargs):
         context = dict()
         obj = self.queryset.filter(pk=kwargs['pk']).first()
-        display_type = isnull_to_none(request.query_params['display_type'])
+        display_type = request.query_params.get('display_type')
+        if display_type is not None:
+            display_type = isnull_to_none(display_type)
         context['display_type'] = 'classifiers' if display_type is None else display_type
-        context['method'] = isnull_to_none(request.query_params['method'])
+        method = request.query_params.get('method')
+        if method is not None:
+            method = isnull_to_none(method)
+        context['method'] = method
         context['targets_methods'] = targets_methods(obj)
         context['instance'] = obj
         if context['method'] is None:
@@ -104,6 +110,21 @@ class TargetRouteMixin:
         page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['post', 'patch'])
+    def post_detailedMany(self, request, *args, **kwargs):
+        self.serializer_class = self.get_detailed_serializer()
+        # logger.debug(request.data.get('data'))
+        # for item in request.data:
+        #     logger.info(item)
+        serializer = self.get_serializer(data=request.data, many=True)
+    # logger.debug(serializer)
+        if serializer.is_valid():
+            logger.debug(f'Valid!')
+            serializer.save()
+            self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -459,6 +480,10 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
 
     detailed_serializer = DetailedHoleSerializer
 
+    @ action(detail=True, methods=['get'])
+    def load(self, request, **kwargs):
+        return super().load_card(request, **kwargs)
+
     @ action(detail=False, methods=['get'])
     def simple(self, request, *args, **kwargs):
         self.serializer_class = HoleSerializerSimple
@@ -499,7 +524,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         return Response(dict(data=serializer.data, count=count))
 
 
-class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
+class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Atlases to be viewed or edited.
     """
@@ -507,7 +532,9 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
-                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id']
+                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number']
+
+    detailed_serializer = DetailedHighMagSerializer
 
     @ action(detail=True, methods=['get'])
     def fft(self, request, *args, **kwargs):

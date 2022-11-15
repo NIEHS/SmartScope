@@ -53,7 +53,7 @@ html_sidebars = {
         'versioning.html',
     ],
 }
-# smv_remote_whitelist = 'niehs'
+smv_remote_whitelist = 'niehs'
 smv_branch_whitelist = r'^(stable|dev)$'
 smv_outputdir_format = '{ref.name}' 
 # List of patterns, relative to source directory, that match files and
