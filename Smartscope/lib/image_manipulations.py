@@ -142,3 +142,64 @@ def generate_hole_ref(hole_size_in_um: float, pixel_size: float, out_type: str =
 
     cv2.circle(im, (im_size // 2, im_size // 2), radius=radius, color=int(color), thickness=max([1, int(80 / pixel_size)]))
     return im.astype(out_type)
+
+def gaussian_kernel(size, sigma, two_d=True):
+    'returns a one-dimensional gaussian kernel if two_d is False, otherwise 2d'
+    if two_d:
+        kernel = np.fromfunction(lambda x, y: (1 / (2 * math.pi * sigma**2)) * math.e **
+                                 ((-1 * ((x - (size - 1) / 2)**2 + (y - (size - 1) / 2)**2)) / (2 * sigma**2)), (size, size))
+    else:
+        kernel = np.fromfunction(lambda x: math.e ** ((-1 * (x - (size - 1) / 2)**2) / (2 * sigma**2)), (size,))
+    return kernel / np.sum(kernel)
+
+
+def power_spectrum(im):
+    f = np.fft.fft2(im)
+    fshift = np.fft.fftshift(f)
+    fabs = np.abs(fshift)
+    contrasted = auto_contrast_sigma(fabs, sigmas=0.5, to_8bits=True)
+    img = imutils.resize(contrasted, height=800)
+    is_succes, buffer = cv2.imencode(".png", img)
+    return io.BytesIO(buffer)
+
+
+def highpass(im, pixel_size, filter_size=4):
+    f = np.fft.fft2(im)
+    fshift = np.fft.fftshift(f)
+    fabs = np.abs(fshift)
+    fang = np.angle(fshift)
+
+    size = pixel_size / 10000 / filter_size * np.array(im.shape)
+    size = round_up_to_odd(size)
+
+    center = np.floor(np.array(im.shape) / 2).astype(int)
+    high = np.ones(im.shape)
+    cv2.ellipse(high, (center[0], center[1]), (size[0], size[1]), 0.0, 0.0, 360.0, 0, -1)
+    padding = np.array(high.shape) * 0.002
+    padding = padding.astype(int)
+    high[center[0] - padding[0]:center[0] + padding[0], :] *= 0.2
+    high[:, center[1] - padding[1]:center[1] + padding[1]] *= 0.2
+    fabs *= high
+    fabs = auto_contrast(fabs, cutperc=[90, 0.001], to_8bits=True)
+    F = fabs * np.exp(1j * fang)
+    reversed = to_8bits(np.real(np.fft.ifft2(np.fft.ifftshift(F))))
+    return reversed, fabs
+
+def auto_canny(image, limits=None, sigma=0.33, dilation=5):
+    # compute the median of the single channel pixel intensities
+    v = np.median(image)
+    if limits is None:
+        lower = int(max(0, (1.0 - sigma) * v))
+        upper = int(min(255, (1.0 + sigma) * v))
+    else:
+        lower = min(limits)
+        upper = max(limits)
+    edged = cv2.Canny(image, lower, upper)
+
+    if dilation is None:
+        return edged, lower, upper
+    else:
+        kernel = np.ones((dilation, dilation), np.uint8)
+        dilated = cv2.dilate(edged, kernel, iterations=1)
+        erosion = cv2.erode(dilated, kernel, iterations=1)
+        return erosion, lower, upper

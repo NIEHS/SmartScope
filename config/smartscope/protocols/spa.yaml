@@ -6,6 +6,8 @@ holeFinders:
   - AI hole finder
   # - Binary finder
   - Regular pattern
+highmagFinders:
+  - Ptolemy hole finder
 squareSelectors:
   - Size selector
 holeSelectors:

@@ -118,6 +118,7 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str):  # outp
     from Smartscope.lib.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
     import cv2
+    import math
     output_dir = Path(output_dir)
     try:
         output_dir.mkdir(exist_ok=True)
@@ -129,12 +130,15 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str):  # outp
     montage = Montage(image.stem, working_dir=output_dir)
     montage.raw = image
     montage.load_or_process()
-    output, _ , _ = find_targets(montage, [plugin_name])
+    output, _ , _ , additional_outputs = find_targets(montage, [plugin_name])
     bit8_montage = auto_contrast(montage.image)
     bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
     for i in output:
-        cv2.rectangle(bit8_color, list(i[0:2]), list(i[2:]), (0, 0, 255), cv2.FILLED)
-    logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name + '.png')}")
+        cv2.circle(bit8_color, (i.x,i.y),20, (0, 0, 255), cv2.FILLED)
+    if 'lattice_angle' in additional_outputs.keys():
+
+        cv2.line(bit8_color,tuple(montage.center),(int(3000*math.sin(math.radians(additional_outputs['lattice_angle']))+montage.center[0]), int(3000*math.cos(math.radians(additional_outputs['lattice_angle'])))+ montage.center[1]),(0,255,0),10)
+    logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name.replace(' ', '_') + '.png')}")
     save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
 
 

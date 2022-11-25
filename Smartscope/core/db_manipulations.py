@@ -129,10 +129,10 @@ def get_hole_count(grid, hole_list=None):
         all_holes = hole_list
     else:
         all_holes = list(HoleModel.display.filter(grid_id=grid.grid_id))
-    completed = [hole for hole in all_holes if hole.status == 'completed']
-    if len(completed) == 0:
-        return dict(completed=0, queued=0, perhour=0, last_hour=0)
-    num_completed = len(completed)
+    completed = HighMagModel.objects.filter(grid_id=grid.grid_id)
+    # if len(completed) == 0:
+    #     return dict(completed=0, queued=0, perhour=0, last_hour=0)
+    num_completed = completed.count()
     queued = 0
     all_queued = [hole for hole in all_holes if hole.status == 'queued']
     for hole in all_queued:
@@ -141,14 +141,14 @@ def get_hole_count(grid, hole_list=None):
                           and not h.is_excluded()[0]])
         else:
             queued += 1
-    holes_per_hour = None
-    last_hour = None
+    holes_per_hour = 0
+    last_hour = 0
     if grid.start_time is not None:
 
         holes_per_hour = round(num_completed / (grid.time_spent.total_seconds() / 3600), 1)
 
         last_hour_date_time = grid.end_time - timedelta(hours=1)
-        last_hour = len([h for h in completed if h.completion_time >= last_hour_date_time])
+        last_hour = completed.filter(completion_time__gte=last_hour_date_time).count()
     logger.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
     return dict(completed=num_completed, queued=queued, perhour=holes_per_hour, lasthour=last_hour)
 

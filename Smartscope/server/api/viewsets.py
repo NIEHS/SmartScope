@@ -17,7 +17,7 @@ from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.db import transaction
 import base64
-from Smartscope.lib.montage import power_spectrum
+from Smartscope.lib.image_manipulations import power_spectrum
 from Smartscope.lib.system_monitor import disk_space
 from Smartscope.core.db_manipulations import get_hole_count, viewer_only
 from Smartscope.lib.converters import *
@@ -532,7 +532,7 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
-                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number']
+                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status']
 
     detailed_serializer = DetailedHighMagSerializer
 

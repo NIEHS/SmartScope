@@ -91,7 +91,11 @@ def grid_modification(sender, instance, **kwargs):
 
         # if instance.status == 'started' and original.status is None:
         #     instance.start_time = timezone.now()
-
+@ receiver(post_save, sender=HoleModel)
+def queue_bis_group(sender,instance, **kwargs):
+    logger.debug("Updating status bis target to 'queued'")
+    if instance.selected:
+        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')
 
 @ receiver(pre_save, sender=HoleModel)
 @ receiver(pre_save, sender=SquareModel)

@@ -1,51 +1,29 @@
 #! /usr/bin/env python
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Union
 import cv2
 import mrcfile
 import os
-import io
 import numpy as np
 import imutils
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
-from math import radians, sin, cos, floor, sqrt, degrees, atan2
-from scipy.spatial.distance import cdist
+
 import pandas as pd
-import math
 from Smartscope.lib.generic_position import parse_mdoc
 from Smartscope.lib.Finders.basic_finders import *
 from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.lib.image_manipulations import fourier_crop, save_mrc, to_8bits, auto_contrast, auto_contrast_sigma
+from Smartscope.lib.image_manipulations import fourier_crop, save_mrc
+from Smartscope.lib.transformations import closest_node, pixel_to_stage
 from torch import Tensor
 import logging
 
 mpl.use('Agg')
 
 logger = logging.getLogger(__name__)
-
-
-def auto_canny(image, limits=None, sigma=0.33, dilation=5):
-    # compute the median of the single channel pixel intensities
-    v = np.median(image)
-    if limits is None:
-        lower = int(max(0, (1.0 - sigma) * v))
-        upper = int(min(255, (1.0 + sigma) * v))
-    else:
-        lower = min(limits)
-        upper = max(limits)
-    edged = cv2.Canny(image, lower, upper)
-
-    if dilation is None:
-        return edged, lower, upper
-    else:
-        kernel = np.ones((dilation, dilation), np.uint8)
-        dilated = cv2.dilate(edged, kernel, iterations=1)
-        erosion = cv2.erode(dilated, kernel, iterations=1)
-        return erosion, lower, upper
 
 
 def quantize(x, mi=-3, ma=3, dtype=np.uint8):
@@ -61,23 +39,7 @@ def quantize(x, mi=-3, ma=3, dtype=np.uint8):
     return x
 
 
-def closest_node(node, nodes, num=1):
-    nodes = np.stack((nodes))
-    cd = cdist([node], nodes)
-    index = cd.argmin()
-    dist = nodes[index] - node
-    return index, dist
 
-
-def pixel_to_stage(dist, tile, tiltAngle=0):
-    apix = tile.PixelSpacing / 10000
-    dist *= apix
-    theta = radians(tile.RotationAngle)
-    c, s = cos(theta), sin(theta)
-    R = np.array(((c, -s), (s, c)))
-    specimen_dist = np.sum(R * np.reshape(dist, (-1, 1)), axis=0)
-    coords = tile.StagePosition + specimen_dist / np.array([1, cos(radians(round(tiltAngle, 1)))])
-    return np.around(coords, decimals=3)
 
 
 def plot_hist(image, size=254, **kwargs):
@@ -101,47 +63,6 @@ def plot_hist(image, size=254, **kwargs):
     return hist
 
 
-def gaussian_kernel(size, sigma, two_d=True):
-    'returns a one-dimensional gaussian kernel if two_d is False, otherwise 2d'
-    if two_d:
-        kernel = np.fromfunction(lambda x, y: (1 / (2 * math.pi * sigma**2)) * math.e **
-                                 ((-1 * ((x - (size - 1) / 2)**2 + (y - (size - 1) / 2)**2)) / (2 * sigma**2)), (size, size))
-    else:
-        kernel = np.fromfunction(lambda x: math.e ** ((-1 * (x - (size - 1) / 2)**2) / (2 * sigma**2)), (size,))
-    return kernel / np.sum(kernel)
-
-
-def power_spectrum(im):
-    f = np.fft.fft2(im)
-    fshift = np.fft.fftshift(f)
-    fabs = np.abs(fshift)
-    contrasted = auto_contrast_sigma(fabs, sigmas=0.5, to_8bits=True)
-    img = imutils.resize(contrasted, height=800)
-    is_succes, buffer = cv2.imencode(".png", img)
-    return io.BytesIO(buffer)
-
-
-def highpass(im, pixel_size, filter_size=4):
-    f = np.fft.fft2(im)
-    fshift = np.fft.fftshift(f)
-    fabs = np.abs(fshift)
-    fang = np.angle(fshift)
-
-    size = pixel_size / 10000 / filter_size * np.array(im.shape)
-    size = round_up_to_odd(size)
-
-    center = np.floor(np.array(im.shape) / 2).astype(int)
-    high = np.ones(im.shape)
-    cv2.ellipse(high, (center[0], center[1]), (size[0], size[1]), 0.0, 0.0, 360.0, 0, -1)
-    padding = np.array(high.shape) * 0.002
-    padding = padding.astype(int)
-    high[center[0] - padding[0]:center[0] + padding[0], :] *= 0.2
-    high[:, center[1] - padding[1]:center[1] + padding[1]] *= 0.2
-    fabs *= high
-    fabs = auto_contrast(fabs, cutperc=[90, 0.001], to_8bits=True)
-    F = fabs * np.exp(1j * fang)
-    reversed = to_8bits(np.real(np.fft.ifft2(np.fft.ifftshift(F))))
-    return reversed, fabs
 
 
 def plot_thresholds(im, blur, thresh, thresholded, cnts, file, mu=None, sigma=None, a=None, polygon='Circle'):
@@ -195,7 +116,6 @@ class BaseImage(ABC):
 
     name: str
     working_dir: str = ''
-    # fourier_crop: bool = False
     is_movie: bool = False
     metadata: Union[pd.DataFrame, None] = None
     _raw = None
@@ -253,10 +173,14 @@ class BaseImage(ABC):
     @property
     def shape_y(self):
         return self.image.shape[1]
-
+    
     @property
-    def image_center(self):
-        return np.array([self.shape_x, self.shape_y]) // 2
+    def center(self):
+        return np.array([self.shape_x//2, self.shape_y//2],dtype=int)
+
+    # @property
+    # def image_center(self):
+    #     return np.array([self.shape_x, self.shape_y]) // 2
 
     @property
     def rotation_angle(self):
@@ -399,14 +323,14 @@ class Movie(BaseImage):
             return True
 
 
-def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):
+def create_targets_from_box(targets: List, montage: BaseImage, target_type: str = 'square'):
     output_targets = []
     if isinstance(targets, tuple):
         targets, labels = targets
     else:
         labels = [None] * len(targets)
     for target, label in zip(targets, labels):
-        t = AITarget(target, quality=label)
+        t = Target(target, quality=label)
         t.convert_image_coords_to_stage(montage)
         t.set_area_radius(target_type)
         output_targets.append(t)
@@ -415,10 +339,23 @@ def create_targets(targets: List, montage: BaseImage, target_type: str = 'square
 
     return output_targets
 
+def create_targets_from_center(targets: List, montage: BaseImage):
+    output_targets = []
 
-@dataclass
-class AITarget:
+    for target in targets:
+        t = Target(target,from_center=True)
+        t.convert_image_coords_to_stage(montage)
+        output_targets.append(t)
 
+    output_targets.sort(key=lambda x: (x.stage_x, x.stage_y))
+
+    return output_targets    
+
+
+class Target:
+
+    _x: Union[int,None] = None
+    _y: Union[int,None] = None
     shape: Union[list, Tensor]
     quality: Union[str, None] = None
     area: Union[float, None] = None
@@ -427,13 +364,40 @@ class AITarget:
     stage_y: Union[float, None] = None
     stage_z: Union[float, None] = None
 
+    def __init__(self,shape: Union[list, Tensor], quality: Union[str,None]=None, from_center=False) -> None:
+        self.quality = quality
+        if from_center:
+            self.x = shape[0]
+            self.y = shape[1]
+            return
+        self.x = shape
+        self.y = shape
+        self.shape = shape
+
+
     @property
     def x(self):
-        return int(self.shape[0] + (self.shape[2] - self.shape[0]) // 2)
+        return self._x
+
+    @x.setter
+    def x(self, value = None):
+        if isinstance(value,list):
+            self._x = int(value[0] + (value[2] - value[0]) // 2)
+        self._x = value    
 
     @property
     def y(self):
-        return int(self.shape[1] + (self.shape[3] - self.shape[1]) // 2)
+        return self._y
+    
+    @property
+    def coords(self):
+        return np.array([self._x,self._y])
+
+    @y.setter
+    def y(self, value = None):
+        if isinstance(value,list):
+            self._y = int(value[1] + (value[3] - value[1]) // 2)
+        self._y = value
 
     def set_area_radius(self, shape_type):
 

@@ -1,4 +1,3 @@
-from email.policy import default
 from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -7,13 +6,14 @@ from datetime import datetime
 import Smartscope
 import os
 import json
+import numpy as np
 from .misc_func import *
 from django.utils import timezone
 from django.core import serializers
 from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
-from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawHole
+from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 import logging
@@ -505,12 +505,12 @@ class AutoloaderGrid(BaseModel):
 
     @ property
     def high_mag(self):
-        return self.holemodel_set.all()
+        return self.highmagmodel_set.all()
 
     @ property
     def end_time(self):
         try:
-            hole = self.holemodel_set.filter(status='completed').order_by('-completion_time').first()
+            hole = self.highmagmodel_set.filter(status='completed').order_by('-completion_time').first()
 
             if hole is None:
                 raise
@@ -715,6 +715,10 @@ class Target(BaseModel):
     @property
     def group(self):
         return self.grid_id.session_id.group
+
+    @property
+    def stage_coords(self) -> np.ndarray:
+        return np.array([self.finders.first().stage_x, self.finders.first().stage_y])
 
     def is_excluded(self):
         # protocolselectors = protocol[f'{targets_prefix}Selectors']
@@ -922,7 +926,7 @@ class HoleModel(Target, ExtraPropertyMixin):
         holes = list(self.targets)
         if self.shape_x is None:  # There was an error in previous version where shape wasn't set.
             set_shape_values(self)
-        sq = drawHole(self, holes, display_type, method)
+        sq = drawMediumMag(self, holes, display_type, method, radius=self.grid_id.holeType.hole_size/2)
         logger.debug(f'Loading hole required {len(connection.queries)} queries')
         return sq
 

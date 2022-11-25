@@ -1,12 +1,3 @@
 name: Ptolemy hole finder
-# method: ptolemy_find_holes
-# module: ptolemy_smartscope.smartscope_plugin.wrapper
-importPaths: ['/opt/smartscope/ptolemy_smartscope']
-pluginClass: ptolemy_smartscope.smartscope_plugin.plugin.PtolemyPlugin
-# kwargs: 
-#   model_path: '/opt/smartscope/ptolemy_smartscope/weights/211026_unet_9x64_ep6.torchmodel'
-#   cuda: False
-targetClass:
-  - Finder
-description: |
-  Hole finder that uses the ptolemy hole finder to find the holes at medium magnification.
+importPaths: ['/opt/smartscope/external_plugins/ptolemy/']
+pluginClass: external_plugins.ptolemy.smartscope_plugin.plugin.PtolemyHoleFinder

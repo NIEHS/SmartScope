@@ -1,8 +1,9 @@
 from enum import Enum
 import importlib
 from abc import ABC
-from typing import Any, Optional, Protocol, List, Dict, Union
+from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
+from Smartscope.lib.montage import create_targets_from_box, Montage
 import sys
 
 class TargetClass(Enum):
@@ -26,6 +27,7 @@ class FeatureAnalyzer(Protocol):
 class BaseFeatureAnalyzer(BaseModel, ABC):
     name: str
     description: Optional[str] = ''
+    reference: Optional[str]= ''
     method: Optional[str] = ''
     module: Optional[str] = ''
     kwargs: Optional[Dict[str, Any]]
@@ -37,13 +39,16 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
     
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
-        [sys.path.append(path) for path in self.importPaths]
+        [sys.path.insert(0, path) for path in self.importPaths]
 
-    def run(self, *args, **kwargs):
+
+    def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
         """Where the main logic for the algorithm is"""
         module = importlib.import_module(self.module)
         function = getattr(module, self.method)
-        output = function(*args, **kwargs, **self.kwargs)
+        output = function(montage,*args, **kwargs, **self.kwargs)
+        output = create_targets_method(output[0],)
+
         return output
 
 
@@ -84,5 +89,7 @@ class Selector(BaseFeatureAnalyzer):
 class ImagingProtocol(BaseModel):
     squareFinders: List[str]
     holeFinders: List[str]
+    highmagFinders: List[str] = Field(default_factory=list)
     squareSelectors: List[str]
     holeSelectors: List[str]
+    
