@@ -138,9 +138,7 @@ class HighMagSerializer(RESTserializers.ModelSerializer):
     png = RESTserializers.ReadOnlyField()
     # hole_id = HoleSerializer()
     ctf_img = RESTserializers.ReadOnlyField()
-    # raw = RESTserializers.ReadOnlyField()
-    # mrc = RESTserializers.ReadOnlyField()
-    # initial = RESTserializers.ReadOnlyField(source='initial_quality')
+
 
     class Meta:
         model = HighMagModel
@@ -173,6 +171,12 @@ class TargetSerializer(RESTserializers.ModelSerializer):
     selectors = SelectorSerializer(many=True)
     classifiers = ClassifierSerializer(many=True)
 
+
+class DetailedHighMagSerializer(TargetSerializer):
+
+    class Meta:
+        model = HighMagModel
+        fields = '__all__'
 
 class DetailedHoleSerializer(TargetSerializer):
 

@@ -16,7 +16,6 @@ from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_
 from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, set_refined_finder
 from Smartscope.lib.logger import add_log_handlers
-# import Smartscope.lib.Datatypes.models as newModels
 from math import cos, radians
 from django.db import transaction
 from django.utils import timezone

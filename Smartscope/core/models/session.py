@@ -309,7 +309,6 @@ class ScreeningSession(BaseModel):
                 return [self.working_dir, self.working_dir]
 
         if settings.USE_STORAGE:
-            # os.mkdir(cwd)
             return [cwd, url]
 
     @ property
@@ -347,8 +346,6 @@ class ScreeningSession(BaseModel):
             if not self.date:
                 self.date = datetime.today().strftime('%Y%m%d')
             self.session_id = generate_unique_id(extra_inputs=[self.date, self.session])
-        # self.dir_url = self.get_dir_url()
-        # logger.debug('Initiating Session')
 
     def save(self, *args, **kwargs):
         self.session = self.session.replace(' ', '_')
@@ -553,13 +550,10 @@ class AutoloaderGrid(BaseModel):
         super().__init__(*args, **kwargs)
         if not self.grid_id and self.position is not None and self.name is not None:
             self.grid_id = generate_unique_id(extra_inputs=[str(self.position), self.name])
-        # logger.debug('Initiating Grid')
 
     def save(self, export=False, *args, **kwargs):
         if self.status != 'complete':
             self.last_update = timezone.now()
-        # if not self.grid_id:
-        #     self.grid_id = generate_unique_id(extra_inputs=[str(self.position), self.name])
         super().save(*args, **kwargs)
         if export:
             self.session_id.export()
@@ -625,10 +619,6 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     @ parent.setter
     def set_parent(self, parent):
         self.grid_id = parent
-
-    # @ property
-    # def base_target_query(self):
-    #     return self.squaremodel_set
 
     @ property
     def targets(self):
@@ -721,7 +711,6 @@ class Target(BaseModel):
         return np.array([self.finders.first().stage_x, self.finders.first().stage_y])
 
     def is_excluded(self):
-        # protocolselectors = protocol[f'{targets_prefix}Selectors']
         for selector in self.selectors.all():
 
             plugin = PLUGINS_FACTORY[selector.method_name]
@@ -740,7 +729,6 @@ class Target(BaseModel):
             boolean: Whether the target is good for selection or not.
         """
         for label in self.classifiers.all():
-            # plugin = deep_get(plugins, label.method_name)
             if PLUGINS_FACTORY[label.method_name].classes[label.label].value < 1:
                 return False
         return True
@@ -802,10 +790,6 @@ class SquareModel(Target, ExtraPropertyMixin):
     def parent_stage_z(self):
         return self.parent.stage_z
 
-    # @ property
-    # def base_target_query(self):
-    #     return self.holemodel_set
-
     @ property
     def targets(self):
         return self.holemodel_set.all()
@@ -813,29 +797,24 @@ class SquareModel(Target, ExtraPropertyMixin):
     def toSVG(self, display_type, method):
         reset_queries()
         holes = list(HoleModel.display.filter(square_id=self.square_id))
-        # prefetch_related_objects(holes, 'finders', 'classifiers', 'selectors')
         sq = drawSquare(self, holes, display_type, method)
         logger.debug(f'Loading square required {len(connection.queries)} queries')
         return sq
 
     @ property
     def has_queued(self):
-        # if self.holemodel_set.filter(status='queued').first():
-        #     return True
+ 
         return self.holemodel_set(manager='just_holes').filter(status='queued').exists()
 
     @ property
     def has_completed(self):
-        # if self.holemodel_set.filter(status='completed').first():
-        #     return True
+
         return self.holemodel_set(manager='just_holes').filter(status='completed').exists()
 
     @ property
     def has_active(self):
-        # filter = [i for i in self.targets if i.status in ['acquired', 'processed', 'targets_picked', 'started']]
         return self.holemodel_set(manager='just_holes').filter(status__in=['acquired', 'processed', 'targets_picked', 'started']).exists()
-        #     return True
-        # return False
+
 
     @ property
     def initial_quality(self):
@@ -858,7 +837,6 @@ class SquareModel(Target, ExtraPropertyMixin):
             self.name = f'{self.grid_id.name}_square{self.number}'
             self.square_id = generate_unique_id(extra_inputs=[self.name[:20]])
         self.raw = os.path.join('raw', f'{self.name}.mrc')
-        # self.targets = list(self.holemodel_set.all())
 
     def save(self, *args, **kwargs):
 
@@ -872,7 +850,6 @@ class SquareModel(Target, ExtraPropertyMixin):
 class HoleModel(Target, ExtraPropertyMixin):
 
     hole_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    # dist_from_center = models.FloatField(null=True)
     radius = models.IntegerField()  # Can be removed and area can be put in the target class
     area = models.FloatField()
     square_id = models.ForeignKey(SquareModel, on_delete=models.CASCADE, to_field='square_id')
@@ -897,11 +874,6 @@ class HoleModel(Target, ExtraPropertyMixin):
     @property
     def prefix(self):
         return 'Hole'
-
-    # @ property
-    # def base_target_query(self):
-
-    #     return self.__class__.objects.filter(bis_group=self.bis_group)
 
     @ property
     def targets(self):
@@ -939,7 +911,6 @@ class HoleModel(Target, ExtraPropertyMixin):
             if self.high_mag is None:
                 return False
             status_set = set([self.high_mag.status])
-        # logger.debug(f"STATUS_SET = {status_set}")
         if list(status_set) in [['acquired'], ['processed']] or len(status_set) > 1:
             return True
         elif status_set == set(['completed']):
@@ -986,14 +957,7 @@ class HoleModel(Target, ExtraPropertyMixin):
 
 class HighMagModel(Target, ExtraPropertyMixin):
     hm_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    # number = models.IntegerField()
-    # name = models.CharField(max_length=100, null=False)
-    # pixel_size = models.FloatField(null=True)
-    # shape_x = models.IntegerField(null=True)
-    # shape_y = models.IntegerField(null=True)
     hole_id = models.ForeignKey(HoleModel, on_delete=models.CASCADE, to_field='hole_id')
-    # status = models.CharField(max_length=20, null=True, default=None)
-    # grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
     is_x = models.FloatField(null=True)
     is_y = models.FloatField(null=True)
     offset = models.FloatField(default=0)
@@ -1002,8 +966,6 @@ class HighMagModel(Target, ExtraPropertyMixin):
     astig = models.FloatField(null=True)
     angast = models.FloatField(null=True)
     ctffit = models.FloatField(null=True)
-    # completion_time = models.DateTimeField(null=True)
-
     # aliases
     objects = HighMagImageManager()
 

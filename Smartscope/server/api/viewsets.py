@@ -114,11 +114,7 @@ class TargetRouteMixin:
     @action(detail=False, methods=['post', 'patch'])
     def post_detailedMany(self, request, *args, **kwargs):
         self.serializer_class = self.get_detailed_serializer()
-        # logger.debug(request.data.get('data'))
-        # for item in request.data:
-        #     logger.info(item)
         serializer = self.get_serializer(data=request.data, many=True)
-    # logger.debug(serializer)
         if serializer.is_valid():
             logger.debug(f'Valid!')
             serializer.save()
@@ -184,10 +180,8 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                 logger.info('starting process')
                 send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                arguments=['autoscreen', self.object.session_id],)
-                # send_to_worker('which Smartscope.sh', communicate=True)
             else:
                 logger.info('stopping')
-                # send_to_worker(self.object.microscope_id.worker_hostname, 'kill', arguments=['-15', process.PID])
                 send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                arguments=['stop_session', self.object.session_id])
 
@@ -228,9 +222,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         if 'pause' in data.keys():
             out, err = send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                       arguments=['toggle_pause', self.object.microscope_id.pk], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(json.loads(out))
 
     @ action(detail=True, methods=['put'])
@@ -253,18 +245,10 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                                            self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
         logger.debug(f'Check pause output: {check_output}')
         check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
-        # check_stop_file_output = send_to_worker(self.object.microscope_id. worker_hostname,
-        #                                         self.object.microscope_id.executable, arguments=['check_stop_file', self.object.session_id], communicate=True)
         disk_status = disk_space(settings.AUTOSCREENDIR)
-        # try:
         out = self.read_file('run.out')
         proc = self.read_file('proc.out')
         queue = self.read_file('queue.txt', start_line=0)
-
-        # except FileNotFoundError:
-        #     out = ''
-        #     proc = ''
-        #     queue = ''
 
         return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **check_output))
 
@@ -286,7 +270,6 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
 
     def read_file(self, name, start_line=-100):
         try:
-            # print(os.path.join(self.object.directory, name))
             with open(os.path.join(self.object.directory, name), 'r') as f:
                 file = ''.join(f.readlines()[start_line:])
             return file
@@ -494,7 +477,6 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
     @ action(detail=True, methods=['get'])
     def highmag(self, request, *args, **kwargs):
         obj = self.get_object()
-        # self.serializer_class = HighMagSerializer
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
@@ -507,8 +489,6 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
         logger.debug(resp)
         return resp
-        # return Response(context, template_name='holecard.html', content_type='text/html',renderer=TemplateHTMLRenderer)
-        # return Response(list_to_dict(serializer.data))
 
     @ action(detail=False, methods=['get'])
     def preload_highmag(self, request, *args, **kwargs):
