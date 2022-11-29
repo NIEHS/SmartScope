@@ -1,6 +1,6 @@
 from enum import Enum
 import importlib
-from abc import ABC
+from abc import ABC, abstractclassmethod
 from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
 from Smartscope.lib.montage import create_targets_from_box, Montage
@@ -42,14 +42,15 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
         [sys.path.insert(0, path) for path in self.importPaths]
 
 
+    # @abstractclassmethod
     def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
         """Where the main logic for the algorithm is"""
         module = importlib.import_module(self.module)
         function = getattr(module, self.method)
         output = function(montage,*args, **kwargs, **self.kwargs)
-        output = create_targets_method(output[0],)
+        targets = create_targets_method(output[0],montage)
 
-        return output
+        return targets, output[1],output[2]
 
 
 class Finder(BaseFeatureAnalyzer):
@@ -58,6 +59,15 @@ class Finder(BaseFeatureAnalyzer):
     @property
     def is_classifier(self):
         return False
+
+    # def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
+    #     """Where the main logic for the algorithm is"""
+    #     module = importlib.import_module(self.module)
+    #     function = getattr(module, self.method)
+    #     output = function(montage,*args, **kwargs, **self.kwargs)
+    #     targets = create_targets_method(output[0],montage)
+
+    #     return targets, output[1],output[2]
 
 
 class Classifier(BaseFeatureAnalyzer):
@@ -84,6 +94,14 @@ class Selector(BaseFeatureAnalyzer):
 
     def get_label(self, label):
         return self.clusters['colors'][int(label)], int(label), 'Cluster'
+
+    def run(self, *args, **kwargs):
+        """Where the main logic for the algorithm is"""
+        module = importlib.import_module(self.module)
+        function = getattr(module, self.method)
+        output = function(*args, **kwargs, **self.kwargs)
+
+        return output
 
 
 class ImagingProtocol(BaseModel):

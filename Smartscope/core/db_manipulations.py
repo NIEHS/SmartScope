@@ -74,6 +74,7 @@ def update_target(data):
     content_type = ContentType.objects.get_for_model(model)
 
     if key == 'selected':
+        new_value = True if new_value == '1' else False
         objs = list(model.objects.filter(pk__in=ids))
         if model is HoleModel:
             for i, obj in enumerate(objs):
@@ -341,7 +342,7 @@ def select_n_areas(parent, n, is_bis=False):
     filter_fields = dict(selected=False, status=None)
     if is_bis:
         filter_fields['bis_type'] = 'center'
-    targets = parent.base_target_query.filter(**filter_fields)
+    targets = parent.targets.filter(**filter_fields)
 
     if n <= 0:
         with transaction.atomic():

@@ -905,12 +905,12 @@ class HoleModel(Target, ExtraPropertyMixin):
     @ property
     def bisgroup_acquired(self):
         if self.bis_group is not None:
-            status_set = set(list(HighMagModel.objects.filter(hole_id__square_id=self.square_id,
-                                                              hole_id__bis_group=self.bis_group).values_list('status', flat=True)))
+            status_set = set(list(self.targets.values_list('status', flat=True)))
         else:
             if self.high_mag is None:
                 return False
             status_set = set([self.high_mag.status])
+        logger.debug(f'Status set = {status_set}')
         if list(status_set) in [['acquired'], ['processed']] or len(status_set) > 1:
             return True
         elif status_set == set(['completed']):

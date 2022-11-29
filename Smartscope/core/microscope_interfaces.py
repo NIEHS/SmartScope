@@ -121,6 +121,11 @@ class SerialemInterface(MicroscopeInterface):
         sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
         return sem.ReportAlignShift()
+    
+    def align_to_coord(self, coord):
+        sem.ImageShiftByPixels(int(coord[0]), -int(coord[1]))
+        sem.ResetImageShift()
+        return sem.ReportStageXYZ()
 
     def make_hole_ref(self, hole_size_in_um):
 
@@ -145,21 +150,21 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stageX, stageY, stageZ)
         time.sleep(0.2)
-        if hole_size_in_um is not None:
-            if not self.has_hole_ref:
-                self.make_hole_ref(hole_size_in_um=hole_size_in_um)
-            # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
-            aligned = self.align()
-            holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
-            if holeshift > aliThreshold:
-                if tiltAngle == 0:
-                    sem.ResetImageShift()
-                else:
-                    iShift = sem.ReportImageShift()
-                    sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
-                    time.sleep(0.2)
-                # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
-                aligned = self.align()
+        # if hole_size_in_um is not None:
+        #     if not self.has_hole_ref:
+        #         self.make_hole_ref(hole_size_in_um=hole_size_in_um)
+        #     # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+        #     aligned = self.align()
+        #     holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
+        #     if holeshift > aliThreshold:
+        #         if tiltAngle == 0:
+        #             sem.ResetImageShift()
+        #         else:
+        #             iShift = sem.ReportImageShift()
+        #             sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
+        #             time.sleep(0.2)
+        #         # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
+        #         aligned = self.align()
         self.checkDewars()
         self.checkPump()
         sem.View()
@@ -234,10 +239,11 @@ class SerialemInterface(MicroscopeInterface):
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
 
-        if earlyReturn:
+        if not earlyReturn:
             sem.EarlyReturnNextShot(-1)
 
-        sem.Preview()
+        # sem.Preview()
+        sem.View()
         if earlyReturn:
             sem.OpenNewFile(file)
             sem.Save()

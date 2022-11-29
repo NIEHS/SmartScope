@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 def closest_node(node, nodes, num=1):
     nodes = np.stack((nodes))
-    cd = cdist([node], nodes)
+    cd = cdist(node, nodes)
     index = cd.argmin()
     dist = nodes[index] - node
     return index, dist

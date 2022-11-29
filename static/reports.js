@@ -195,7 +195,7 @@ async function loadSquare(full_id, metaonly = false, display_type = null, method
 
 async function loadHole(elem, metaonly = false) {
     var center = elem
-    if (elem.classList.contains('completed')) {
+    if (elem.classList.contains('completed') | elem.classList.contains('processed')) {
         if (!metaonly) {
             //Find center hole
             if (elem.classList.contains('is_area')) {
@@ -209,9 +209,11 @@ async function loadHole(elem, metaonly = false) {
             // imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
             $("#mmHole").html(data.card)
         }
+        if (elem.classList.contains('completed')) {  
         hm_data = await fetchAsync(`/api/holes/${center.id}/highmag/`)
         $('#Hole').html(hm_data)
         grabCuration()
+        };
     };
 };
 

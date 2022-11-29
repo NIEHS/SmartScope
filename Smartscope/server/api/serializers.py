@@ -179,29 +179,28 @@ class DetailedHighMagSerializer(TargetSerializer):
         fields = '__all__'
 
 class DetailedHoleSerializer(TargetSerializer):
+    targets = DetailedHighMagSerializer(many=True)
 
     class Meta:
         model = HoleModel
         fields = '__all__'
 
-
-class DetailedHighMagSerializer(TargetSerializer):
-
-    class Meta:
-        model = HighMagModel
-        fields = '__all__'
-
-
 class DetailedSquareSerializer(TargetSerializer):
+    targets = DetailedHoleSerializer(many=True)
 
     class Meta:
         model = SquareModel
         fields = '__all__'
 
+class DetailedAtlasSerializer(RESTserializers.ModelSerializer):
+    targets = DetailedSquareSerializer(many=True)
+
+    class Meta:
+        model = AtlasModel
+        fields = '__all__'
 
 class HoleSerializerSimple(RESTserializers.ModelSerializer):
     grid_id = AutoloaderGridSerializer()
-    # square_id = SquareSerializer()
 
     class Meta:
         model = HoleModel
@@ -217,18 +216,13 @@ class FullGridSerializer(RESTserializers.ModelSerializer):
         fields = '__all__'
         extra_fields = ['atlas', 'squares']
 
-
 class ExportMetaSerializer(RESTserializers.ModelSerializer):
-    atlas = AtlasSerializer(many=True)
-    squares = DetailedSquareSerializer(many=True)
-    holes = DetailedHoleSerializer(many=True)
-    high_mag = HighMagBasicSerializer(many=True)
-    params_id = GridCollectionParamsSerializer(many=False)
+    atlas = DetailedAtlasSerializer(many=True)
 
     class Meta:
         model = AutoloaderGrid
         fields = '__all__'
-        extra_fields = ['atlas', 'squares', 'holes', 'high_mag']
+        extra_fields = ['atlas']
 
 
 models_to_serializers = {

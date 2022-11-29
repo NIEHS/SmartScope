@@ -142,6 +142,19 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str):  # outp
     save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
 
 
+# def test_grid_import(file_to_import:str):
+#     from Smartscope.server.api.serializers import ExportMetaSerializer, TargetsSerializer
+#     import json
+#     with open(file_to_import,'r') as f:
+#         data = json.load(f)
+#     targets = data.pop('targets')
+#     grid = ExportMetaSerializer(data=data)
+#     grid.is_valid()
+#     print(grid.errors)
+#     grid.save()
+
+    
+
 def list_plugins():
     from Smartscope.core.settings.worker import PLUGINS_FACTORY
     logger.info(f'Registered:\n{PLUGINS_FACTORY}')
@@ -152,7 +165,7 @@ def list_protocols():
     logger.info(f'Registered:\n{PROTOCOLS_FACTORY}')
 
 
-def acquire_fast_atlas_serialEM(microscope_id):
+def acquire_fast_atlas_test(microscope_id):
     import serialem as sem
     from Smartscope.lib.microscope_methods import FastAtlas,make_serpent_pattern_in_mask
 
@@ -190,6 +203,56 @@ def acquire_fast_atlas_serialEM(microscope_id):
             logger.info(f'Starting movement {ind} at {start}, moving to {end}')
             sem.Echo(f'Movemement {ind}')
             sem.MoveStageTo(*end)
+            movement_elapsed = time.time() - start_movement
+            distance = abs(start[1]-end[1])
+            logger.info(f'Movement {ind} took {movement_elapsed:.1f} for a distance of {distance}')
+            time_distances.append([movement_elapsed,distance])
+
+        sem.SetContinuous('R',0)
+        elapsed = time.time() - start_time
+        logger.info(f'Finished acquisition in {elapsed:.0f} seconds.')
+
+def acquire_fast_atlas_test2(microscope_id):
+    import serialem as sem
+    from Smartscope.lib.microscope_methods import FastAtlas,make_serpent_pattern_in_mask
+
+    microscope = Microscope.objects.get(pk=microscope_id)
+    with TFSSerialemInterface(ip=microscope.serialem_IP,
+                              port=microscope.serialem_PORT,
+                              directory=microscope.windows_path,
+                              scope_path=microscope.scope_path,
+                              energyfilter=False,
+                              loader_size=microscope.loader_size,
+                              frames_directory='X:/testing/') as scope:
+        scope.set_atlas_optics(62,100,5)
+        sem.SetColumnOrGunValve(1)
+        sem.Search()
+        X, Y, _, _, pixel_size, _ = sem.ImageProperties('A')
+        logger.info(f'Setting atlas for {X}, {Y}, {pixel_size}')
+        atlas = FastAtlas(atlas_imsize_x=X,atlas_imsize_y=Y,pixel_size_in_angst=pixel_size*10)
+        atlas.generate_tile_mask(atlas_radius_in_um=990)
+        atlas.make_stage_pattern(make_serpent_pattern_in_mask)
+        sem.SetContinuous('R',1)
+        sem.UseContinuousFrames(1)
+        sem.StartFrameWaitTimer(-1)
+        start_time = time.time()
+        time_distances = []
+        sem.MoveStageTo(*atlas.stage_movements[0][0])
+        
+        for ind, m in enumerate(atlas.stage_movements):
+            start, end = m
+            distance = abs(start[1]-end[1])
+            Path(scope.scope_path,'raw','atlas',str(ind)).mkdir(parents=True,exist_ok=True)
+            sem.SetFolderForFrames(f'{scope.directory}raw/atlas/{ind}')
+            sem.MoveStageTo(*start)
+            sem.Record()
+            start_movement = time.time()
+            logger.info(f'Starting movement {ind} at {start}, moving to {end}')
+            sem.Echo(f'Movemement {ind}')
+            stage_movement = end - start
+            sem.MoveStageWithSpeed(*stage_movement,0.5)
+            # sem.WaitForNextFrame()
+            sem.StopContinuous()
             movement_elapsed = time.time() - start_movement
             distance = abs(start[1]-end[1])
             logger.info(f'Movement {ind} took {movement_elapsed:.1f} for a distance of {distance}')

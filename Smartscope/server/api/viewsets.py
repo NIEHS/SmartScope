@@ -421,14 +421,17 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMi
                     query_filters['bis_group__isnull'] = False
                 query = obj.holemodel_set.all().filter(**query_filters)
                 selected = True
+                status = 'queued'
             elif action == 'cancelall':
-                query_filters = dict(selected=True, status='queued')
+                query_filters = dict(status='queued')
                 query = obj.holemodel_set.all().filter(**query_filters)
                 selected = False
+                status = None
 
             with transaction.atomic():
                 for target in query:
                     target.selected = selected
+                    target.status = status
                     target.save()
             return Response(data=dict(success=True))
         except Exception as err:
@@ -512,7 +515,7 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
-                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status']
+                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status','name']
 
     detailed_serializer = DetailedHighMagSerializer
 
