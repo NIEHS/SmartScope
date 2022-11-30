@@ -14,7 +14,7 @@ from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
 from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
-from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, set_refined_finder
+from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, set_or_update_refined_finder
 from Smartscope.lib.logger import add_log_handlers
 from math import cos, radians
 from django.db import transaction
@@ -23,7 +23,6 @@ import multiprocessing
 import logging
 import subprocess
 import numpy as np
-
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +196,7 @@ def run_grid(grid, session, processing_queue, scope):
                 logger.debug(f'Recenter value in pixels = {recenter}')
                 logger.debug('Need to add recentering logic here')
                 stage_x, stage_y, stage_z = scope.align_to_coord(recenter)
-                set_refined_finder(hole.hole_id, stage_x, stage_y, stage_z)
+                set_or_update_refined_finder(hole.hole_id, stage_x, stage_y, stage_z)
             scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
             scope.reset_image_shift_values()
             for hm in hole.targets.exclude(status__in=['acquired','completed']):
@@ -221,7 +220,7 @@ def run_grid(grid, session, processing_queue, scope):
                 finder = square.finders.first()
                 stageX, stageY, stageZ = scope.square(finder.stage_x, finder.stage_y, finder.stage_z, file=square.raw)
                 square = update(square, status='acquired', completion_time=timezone.now())
-                set_refined_finder(square.square_id, stageX, stageY, stageZ)
+                set_or_update_refined_finder(square.square_id, stageX, stageY, stageZ)
                 process_square_image(square, grid, microscope)
         elif is_done:
             microscope_id = session.microscope_id.pk

@@ -320,8 +320,6 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
-        # if frames:
-        #     generate_fake_file(file.replace('raw', 'movies').replace('mrc', 'tif'), 'highmagframes', sleeptime=7, destination_dir=self.scope_path)
         generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.scope_path)
 
     def connect(self, directory: str):
