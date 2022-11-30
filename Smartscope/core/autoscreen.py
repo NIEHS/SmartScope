@@ -198,7 +198,6 @@ def run_grid(grid, session, processing_queue, scope):
                 logger.debug('Need to add recentering logic here')
                 stage_x, stage_y, stage_z = scope.align_to_coord(recenter)
                 set_refined_finder(hole.hole_id, stage_x, stage_y, stage_z)
-                # raise KeyboardInterrupt()
             scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
             scope.reset_image_shift_values()
             for hm in hole.targets.exclude(status__in=['acquired','completed']):
@@ -303,18 +302,24 @@ def process_square_image(square, grid, microscope_id):
         logger.info(f'Square {square.name} analysis is complete')
 
 
+def check_if_need_recenter(targets,montage, threshold_in_microns):
+    coords_in_microns = np.array([(target.coords - montage.center) * montage.pixel_size/10_000 for target in targets])
+    dist_to_center = np.sqrt(np.sum(np.power(coords_in_microns,2),axis=1))
+    smallest_distance_ind = np.argmin(dist_to_center)
+    small_dist_to_center = dist_to_center[smallest_distance_ind]
+    if small_dist_to_center > threshold_in_microns:
+        return targets[smallest_distance_ind].coords
+
 def process_hole_image(hole, grid, microscope_id):
     protocol = PROTOCOLS_FACTORY[grid.protocol]
     logger.info(protocol)
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
-    targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders) 
-    dist_to_center = np.sqrt(np.sum(np.power(np.array([(target.coords - montage.center) * montage.pixel_size/10_000 for target in targets]),2),axis=0))
-    smallest_distance_ind = np.argmin(dist_to_center)
-    small_dist_to_center = dist_to_center[smallest_distance_ind]
-    if small_dist_to_center > 0.5:
+    targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
+    if coords:=check_if_need_recenter(targets,montage,0.5) is not None:
         logger.debug('Need recentering')
-        return targets[smallest_distance_ind].coords
+        return coords
+
     hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
     hole.targets.delete()
     image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)

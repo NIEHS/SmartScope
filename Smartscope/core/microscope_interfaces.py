@@ -123,7 +123,7 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ReportAlignShift()
     
     def align_to_coord(self, coord):
-        sem.ImageShiftByPixels(int(coord[0]), -int(coord[1]))
+        sem.ImageShiftByPixels(coord[0], -coord[1])
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
 
@@ -290,28 +290,6 @@ class JEOLSerialemInterface(SerialemInterface):
     @remove_condenser_aperture
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
         super().atlas(mag, c2, spotsize, tileX, tileY, file, center_stage_x, center_stage_y)
-
-# class FalconSerialemInterface(SerialemInterface):
-
-#     def highmag(self, isX, isY, tiltAngle, file='', frames=True):
-
-#         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
-#         self.state.imageShiftX = isX
-#         self.state.imageShiftY = isY
-#         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
-
-#         sem.Preview()
-#         sem.OpenNewFile(file)
-#         sem.Save()
-#         sem.CloseFile()
-#         if not frames:
-#             return None
-
-#         frames = sem.ReportLastFrameFile()
-#         if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
-#             frames = frames[0]
-#         logger.debug(f"Frames: {frames},")
-#         return frames.split('\\')[-1]
 
 
 class FakeScopeInterface(MicroscopeInterface):

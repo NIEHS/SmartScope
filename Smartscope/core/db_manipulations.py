@@ -105,9 +105,15 @@ def update_target(data):
         return response
 
 
-def set_refined_finder(object_id, stage_x, stage_y, stage_z):
-    original = Finder.objects.get(object_id=object_id)
-    new = Finder(
+def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
+    refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
+    if refined is not None:
+        refined.update(stage_x=stage_x,
+                        stage_y=stage_y,
+                        stage_z=stage_z,)
+        return
+    original = Finder.objects.filter(object_id=object_id).first()
+    new = Finder.objects(
         content_type=original.content_type,
         x=original.x,
         y=original.y,
