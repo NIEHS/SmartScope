@@ -171,6 +171,10 @@ class Microscope(BaseModel):
     class Meta(BaseModel.Meta):
         db_table = 'microscope'
 
+    @ property
+    def lockFile(self):
+        return f'{self.microscope_id}.lock'
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         return self
@@ -329,7 +333,7 @@ class ScreeningSession(BaseModel):
 
     @ property
     def scopeLockFile(self):
-        return f'{self.microscope_id.microscope_id}.lock'
+        return self.microscope_id.lockFile
 
     @ property
     def isScopeLocked(self):
