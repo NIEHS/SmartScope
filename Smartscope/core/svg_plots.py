@@ -291,11 +291,11 @@ def drawMediumMag(hole, targets, display_type, method, **kwargs):
             c = draw.Circle(x, y, radius, id=i.pk, stroke_width=floor(d.width / 100), stroke=color, fill=color, fill_opacity=0, label=label,
                             class_=f'target', number=i.number)
 
-            if i.selected:
-                ft_sz = floor(d.width / 3000 * 80)
-                t = draw.Text(str(i.number), ft_sz, x=x + radius, y=y + radius, id=f'{i.pk}_text', paint_order='stroke',
-                              stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')
-                text.append(t)
+            # if i.selected:
+            #     ft_sz = floor(d.width / 3000 * 80)
+            #     t = draw.Text(str(i.number), ft_sz, x=x + radius, y=y + radius, id=f'{i.pk}_text', paint_order='stroke',
+            #                   stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')
+            #     text.append(t)
             if i.status is not None:
                 c.args['class'] += f" {i.status}"
                 c.args['fill-opacity'] = 0.6 if color != 'blue' else 0
