@@ -46,6 +46,7 @@ Django==4.0.5
 django-filter
 django-storages
 djangorestframework
+djangorestframework-yaml
 docutils==0.15.2
 drawSvg==1.8.3
 flake8==3.9.2

@@ -141,18 +141,24 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str):  # outp
     logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name.replace(' ', '_') + '.png')}")
     save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
 
+def test_grid_export(grid_id, export_to:str):
+    from Smartscope.core.models import AutoloaderGrid
+    from Smartscope.server.api.export_serializers import ExportMetaSerializer
+    from rest_framework_yaml.renderers import YAMLRenderer
+    
+    serializer = ExportMetaSerializer(instance=AutoloaderGrid.objects.get(grid_id=grid_id))
+    with open(export_to,'wb') as file:
+        file.write(YAMLRenderer().render(data=serializer.data))
 
-# def test_grid_import(file_to_import:str):
-#     from Smartscope.server.api.serializers import ExportMetaSerializer, TargetsSerializer
-#     import json
-#     with open(file_to_import,'r') as f:
-#         data = json.load(f)
-#     targets = data.pop('targets')
-#     grid = ExportMetaSerializer(data=data)
-#     grid.is_valid()
-#     print(grid.errors)
-#     grid.save()
-
+def test_grid_import(file_to_import:str):
+    from Smartscope.server.api.export_serializers import ExportMetaSerializer
+    import yaml
+    with open(file_to_import,'r') as file:
+        data = yaml.safe_load(file) 
+    grid= ExportMetaSerializer(data=data)
+    grid.is_valid()
+    print(grid.errors) 
+    grid.save()
     
 
 def list_plugins():
