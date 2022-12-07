@@ -677,6 +677,7 @@ class Classifier(TargetLabel):
 
 class Selector(TargetLabel):
     label = models.CharField(max_length=30, null=True)
+    value = models.FloatField(null=True)
 
     class Meta(BaseModel.Meta):
         db_table = 'selector'
@@ -898,7 +899,11 @@ class HoleModel(Target, ExtraPropertyMixin):
         holes = list(self.targets)
         if self.shape_x is None:  # There was an error in previous version where shape wasn't set.
             set_shape_values(self)
-        sq = drawMediumMag(self, holes, display_type, method, radius=self.grid_id.holeType.hole_size/2)
+        radius = 0.5
+        if self.grid_id.holeType.hole_size is not None:
+            radius = self.grid_id.holeType.hole_size/2 
+        
+        sq = drawMediumMag(self, holes, display_type, method, radius=radius)
         logger.debug(f'Loading hole required {len(connection.queries)} queries')
         return sq
 

@@ -54,6 +54,11 @@ class SerialemInterface(MicroscopeInterface):
                 logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
                 break
     
+    def get_image_settings(self, magSet:str='V'):
+        shapeX,shapeY,_,_,_,_ =sem.ReportCurrentPixelSize(magSet)
+        pixel_size = sem.ReportCameraSetArea(magSet) / 1000
+        return shapeX*pixel_size,shapeY*pixel_size
+    
     def set_atlas_optics(self,mag,c2,spotsize):
         sem.SetLowDoseMode(0)
         sem.SetMag(int(mag))

@@ -9,7 +9,7 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
-from Smartscope.lib.montage import Montage
+from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
@@ -317,21 +317,33 @@ def check_if_need_recenter(targets,montage, threshold_in_microns):
 def process_hole_image(hole, grid, microscope_id,iteration):
     protocol = PROTOCOLS_FACTORY[grid.protocol]
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
-    targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
-    coords, is_recenter_required = check_if_need_recenter(targets,montage,0.5)
-    generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([coords],(255,0,0),2),([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it{iteration}.png'))
-    if is_recenter_required:
-        logger.debug('Need recentering')
-        return coords - montage.center
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
-    hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+    if hole.bis_group is not None:
+        hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+    else:
+        hole_group = [hole]
     hole.targets.delete()
     image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
+    if len(protocol.highmagFinders) != 0:
+        targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
+        coords, is_recenter_required = check_if_need_recenter(targets,montage,0.5)
+        generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([coords],(255,0,0),2),([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it{iteration}.png'))
+        if is_recenter_required:
+            logger.debug('Need recentering')
+            return coords - montage.center
+    else:
+        targets = create_targets_from_center(image_coords, montage)
+        finder_method = 'Registration'
+        classifier_method=None
+    
     if len(hole_group) > 1:
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
         for h, index in zip(hole_group,register):
             target = targets[index]
-            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)           
+            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
+    else:
+        add_targets(grid,hole_group[0],targets,HighMagModel,finder_method,classifier=classifier_method )
+
     update(hole, shape_x=montage.shape_x,
                         shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
 
