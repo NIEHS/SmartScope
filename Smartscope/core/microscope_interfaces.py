@@ -128,6 +128,9 @@ class SerialemInterface(MicroscopeInterface):
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
 
+    
+    def get_conversion_matrix(self, magIndex=0):
+        return sem.CameraToSpecimenMatrix(magIndex)
     # def make_hole_ref(self, hole_size_in_um):
 
     #     # sem.View()
@@ -221,16 +224,15 @@ class SerialemInterface(MicroscopeInterface):
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
 
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0,1)
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
 
         if not earlyReturn:
-            sem.EarlyReturnNextShot(-1)
+            sem.EarlyReturnNextShot(0)
 
         sem.Preview()
-        # sem.View()
         if earlyReturn:
             sem.OpenNewFile(file)
             sem.Save()

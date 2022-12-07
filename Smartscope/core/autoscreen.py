@@ -202,7 +202,7 @@ def run_grid(grid, session, processing_queue, scope):
                 stage_x, stage_y, stage_z = scope.align_to_coord(recenter)
             scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
             scope.reset_image_shift_values()
-            for hm in hole.targets.exclude(status__in=['acquired','completed']):
+            for hm in hole.targets.exclude(status__in=['acquired','completed']).order_by('hole_id__number'):
                 update(hm, status='started')
                 finder = hm.finders.first()
                 offset = 0
@@ -316,7 +316,6 @@ def check_if_need_recenter(targets,montage, threshold_in_microns):
 
 def process_hole_image(hole, grid, microscope_id,iteration):
     protocol = PROTOCOLS_FACTORY[grid.protocol]
-    logger.info(protocol)
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
     targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
     coords, is_recenter_required = check_if_need_recenter(targets,montage,0.5)
@@ -330,7 +329,6 @@ def process_hole_image(hole, grid, microscope_id,iteration):
     image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
     if len(hole_group) > 1:
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
-    
         for h, index in zip(hole_group,register):
             target = targets[index]
             add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)           
