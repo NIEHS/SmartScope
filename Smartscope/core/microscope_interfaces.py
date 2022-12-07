@@ -54,6 +54,11 @@ class SerialemInterface(MicroscopeInterface):
                 logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
                 break
     
+    def get_image_settings(self, magSet:str='V'):
+        shapeX,shapeY,_,_,_,_ =sem.ReportCurrentPixelSize(magSet)
+        pixel_size = sem.ReportCameraSetArea(magSet) / 1000
+        return shapeX*pixel_size,shapeY*pixel_size
+    
     def set_atlas_optics(self,mag,c2,spotsize):
         sem.SetLowDoseMode(0)
         sem.SetMag(int(mag))
@@ -123,24 +128,28 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ReportAlignShift()
     
     def align_to_coord(self, coord):
-        sem.ImageShiftByPixels(coord[0], -coord[1])
+        sem.ImageShiftByPixels(coord[0], coord[1])
+        sem.View()
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
 
-    def make_hole_ref(self, hole_size_in_um):
+    
+    def get_conversion_matrix(self, magIndex=0):
+        return sem.CameraToSpecimenMatrix(magIndex)
+    # def make_hole_ref(self, hole_size_in_um):
 
-        # sem.View()
-        # img = np.asarray(sem.bufferImage('A'))
-        # dtype = img.dtype
-        # shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
-        # logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
-        # ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
-        # self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
-        # sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
-        sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
-        shape_x, _, _, _, _, _ = sem.ImageProperties('T')
-        self.hole_crop_size = int(shape_x)
-        self.has_hole_ref = True
+    #     # sem.View()
+    #     # img = np.asarray(sem.bufferImage('A'))
+    #     # dtype = img.dtype
+    #     # shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
+    #     # logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
+    #     # ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
+    #     # self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
+    #     # sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
+    #     sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+    #     shape_x, _, _, _, _, _ = sem.ImageProperties('T')
+    #     self.hole_crop_size = int(shape_x)
+    #     self.has_hole_ref = True
 
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
         sem.GoToLowDoseArea('V')
@@ -150,21 +159,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stageX, stageY, stageZ)
         time.sleep(0.2)
-        # if hole_size_in_um is not None:
-        #     if not self.has_hole_ref:
-        #         self.make_hole_ref(hole_size_in_um=hole_size_in_um)
-        #     # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
-        #     aligned = self.align()
-        #     holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
-        #     if holeshift > aliThreshold:
-        #         if tiltAngle == 0:
-        #             sem.ResetImageShift()
-        #         else:
-        #             iShift = sem.ReportImageShift()
-        #             sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
-        #             time.sleep(0.2)
-        #         # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
-        #         aligned = self.align()
+        
         self.checkDewars()
         self.checkPump()
         sem.View()
@@ -234,16 +229,15 @@ class SerialemInterface(MicroscopeInterface):
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
 
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0,1)
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
 
         if not earlyReturn:
-            sem.EarlyReturnNextShot(-1)
+            sem.EarlyReturnNextShot(0)
 
-        # sem.Preview()
-        sem.View()
+        sem.Preview()
         if earlyReturn:
             sem.OpenNewFile(file)
             sem.Save()

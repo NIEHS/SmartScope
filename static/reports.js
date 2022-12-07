@@ -640,9 +640,14 @@ $('#main').on('change', ".card circle", function () {
 
 $('#main').on('mouseenter', ".holeCard", function (e) {
     var hole = document.getElementById($(this).attr('hole_id'))
+    var highmag = document.getElementById($(this).attr('id'))
     if (hole) {
         hovered.push(hole)
         hole.classList.add("hovered")
+    }
+    if (highmag) {
+        hovered.push(highmag)
+        highmag.classList.add("hovered")
     }
 }).on("mouseleave", ".holeCard", function () {
     for (let i in hovered) {

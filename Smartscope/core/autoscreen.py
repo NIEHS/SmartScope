@@ -9,13 +9,14 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
-from Smartscope.lib.montage import Montage
+from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
 from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, set_or_update_refined_finder
 from Smartscope.lib.logger import add_log_handlers
+from Smartscope.lib.diagnostics import generate_diagnostic_figure
 from math import cos, radians
 from django.db import transaction
 from django.utils import timezone
@@ -23,6 +24,8 @@ import multiprocessing
 import logging
 import subprocess
 import numpy as np
+from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
@@ -185,21 +188,22 @@ def run_grid(grid, session, processing_queue, scope):
             finder = hole.finders.first()
             stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
             hole = update(hole, status='started')
+            iteration = 0
             while True:
                 is_stop_file(session_id)
                 scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
                                     file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
                 hole = update(hole, status='acquired',completion_time=timezone.now())
-                recenter = process_hole_image(hole, grid, microscope)
+                recenter = process_hole_image(hole, grid, microscope,iteration)
+                iteration +=1
                 if recenter is None:
+                    set_or_update_refined_finder(hole.hole_id, stage_x, stage_y, stage_z)
                     break
                 logger.debug(f'Recenter value in pixels = {recenter}')
-                logger.debug('Need to add recentering logic here')
                 stage_x, stage_y, stage_z = scope.align_to_coord(recenter)
-                set_or_update_refined_finder(hole.hole_id, stage_x, stage_y, stage_z)
             scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
             scope.reset_image_shift_values()
-            for hm in hole.targets.exclude(status__in=['acquired','completed']):
+            for hm in hole.targets.exclude(status__in=['acquired','completed']).order_by('hole_id__number'):
                 update(hm, status='started')
                 finder = hm.finders.first()
                 offset = 0
@@ -211,6 +215,7 @@ def run_grid(grid, session, processing_queue, scope):
                 hm = update(hm, is_x=isX, is_y=isY, offset=offset, frames=frames, status='acquired', completion_time=timezone.now())
                 if hm.hole_id.bis_type != 'center':
                     update(hm.hole_id, status='acquired', completion_time=timezone.now())
+            update(hole, status='completed')
         elif len(squares) > 0:
             is_done = False
             square = squares[0]
@@ -307,27 +312,39 @@ def check_if_need_recenter(targets,montage, threshold_in_microns):
     smallest_distance_ind = np.argmin(dist_to_center)
     small_dist_to_center = dist_to_center[smallest_distance_ind]
     if small_dist_to_center > threshold_in_microns:
-        return targets[smallest_distance_ind].coords
+        return  targets[smallest_distance_ind].coords, True
+    return targets[smallest_distance_ind].coords, False
 
-def process_hole_image(hole, grid, microscope_id):
+def process_hole_image(hole, grid, microscope_id,iteration):
     protocol = PROTOCOLS_FACTORY[grid.protocol]
-    logger.info(protocol)
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
-    targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
-    if coords:=check_if_need_recenter(targets,montage,0.5) is not None:
-        logger.debug('Need recentering')
-        return coords
-
-    hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+    if hole.bis_group is not None:
+        hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+    else:
+        hole_group = [hole]
     hole.targets.delete()
     image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
+    if len(protocol.highmagFinders) != 0:
+        targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
+        coords, is_recenter_required = check_if_need_recenter(targets,montage,0.5)
+        generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([coords],(255,0,0),2),([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it{iteration}.png'))
+        if is_recenter_required:
+            logger.debug('Need recentering')
+            return coords - montage.center
+    else:
+        targets = create_targets_from_center(image_coords, montage)
+        finder_method = 'Registration'
+        classifier_method=None
+    
     if len(hole_group) > 1:
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
-    
         for h, index in zip(hole_group,register):
             target = targets[index]
-            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)           
+            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
+    else:
+        add_targets(grid,hole_group[0],targets,HighMagModel,finder_method,classifier=classifier_method )
+
     update(hole, shape_x=montage.shape_x,
                         shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
 

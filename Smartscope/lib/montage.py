@@ -176,7 +176,7 @@ class BaseImage(ABC):
     
     @property
     def center(self):
-        return np.array([self.shape_x//2, self.shape_y//2],dtype=int)
+        return np.array([self.shape_y/2, self.shape_x//2],dtype=int)
 
     # @property
     # def image_center(self):
@@ -214,8 +214,8 @@ class BaseImage(ABC):
         self.read_image()
         self.read_metadata()
 
-    def downsample(self, scale=2) -> np.ndarray:
-        return fourier_crop(self.image, height=int(self.shape_x // scale))
+    # def downsample(self, scale=2) -> np.ndarray:
+    #     return imutils.resize(self.image, height=int(self.shape_x // scale))
 
     def check_metadata(self, check_AWS=False):
         if self.image_path.exists() and self.metadataFile.exists():

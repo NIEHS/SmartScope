@@ -1,0 +1,5 @@
+name: Registration
+targetClass:
+  - Finder
+description: |
+  Targets that are registered from the lower magnification image without any additional processing

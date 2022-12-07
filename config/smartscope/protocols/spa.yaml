@@ -1,10 +1,8 @@
 name: SPA
 squareFinders:
   - AI square finder
-  # - Square finder
 holeFinders:
   - AI hole finder
-  # - Binary finder
   - Regular pattern
 highmagFinders:
   - Ptolemy hole finder
