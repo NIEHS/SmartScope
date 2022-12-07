@@ -161,8 +161,7 @@
     </nav>
 
     <div class="row h-100 w-100 m-0 p-0 justify-content-center">
-        <div id="{% if instance.alias_name == 'Atlas' %}Atlas{% else %}Square{% endif %}_im"
-            class="d-flex w-100 mh-100 justify-content-center">
+        <div id="{{instance.prefix}}_im" class="d-flex w-100 mh-100 justify-content-center">
             {{ svg | safe }}
         </div>
     </div>

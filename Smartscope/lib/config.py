@@ -4,6 +4,7 @@ from pathlib import Path
 import yaml
 from Smartscope.lib.s3functions import TemporaryS3File
 import logging
+import importlib
 from Smartscope.lib.Datatypes.base_plugin import Finder, Classifier, Selector, ImagingProtocol
 
 logger = logging.getLogger(__name__)
@@ -15,11 +16,16 @@ def register_plugins(directory, factory):
         with open(file) as f:
             data = yaml.safe_load(f)
 
-        out_class = Finder
-        if 'Classifier' in data['targetClass']:
-            out_class = Classifier
-        if data['targetClass'] == ['Selector']:
-            out_class = Selector
+        if not 'pluginClass' in data.keys():
+            out_class = Finder
+            if 'Classifier' in data['targetClass']:
+                out_class = Classifier
+            if data['targetClass'] == ['Selector']:
+                out_class = Selector
+        else:
+            split = data['pluginClass'].split('.')
+            module = importlib.import_module('.'.join(split[:-1]))
+            out_class = getattr(module, split[-1])
 
         factory[data['name']] = out_class.parse_obj(data)
 
@@ -31,20 +37,6 @@ def register_protocols(directory, factory):
             data = yaml.safe_load(f)
 
         factory[data['name']] = ImagingProtocol.parse_obj(data)
-# def load_plugins():
-#     with open(settings.SMARTSCOPE_PLUGINS) as f:
-#         return yaml.safe_load(f)
-
-
-# def deep_get(d, key):
-#     if key in d:
-#         return d[key]
-
-#     for k, subdict in d.items():
-#         if isinstance(subdict, dict):
-#             val = deep_get(subdict, key)
-#             if val:
-#                 return val
 
 
 def load_default_protocol(protocol):

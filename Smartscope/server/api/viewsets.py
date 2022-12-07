@@ -4,9 +4,11 @@ import mrcfile.mrcinterpreter
 import mrcfile.mrcfile
 from rest_framework import viewsets
 from rest_framework import permissions
+from rest_framework import status
 from Smartscope.core.models.models_actions import targets_methods
 from Smartscope.server.api.permissions import HasGroupPermission
 from .serializers import *
+from .export_serializers import *
 from Smartscope.core.models import *
 from Smartscope.server.frontend.forms import *
 from rest_framework.decorators import action
@@ -16,7 +18,7 @@ from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.db import transaction
 import base64
-from Smartscope.lib.montage import power_spectrum
+from Smartscope.lib.image_manipulations import power_spectrum
 from Smartscope.lib.system_monitor import disk_space
 from Smartscope.core.db_manipulations import get_hole_count, viewer_only
 from Smartscope.lib.converters import *
@@ -43,9 +45,14 @@ class ExtraActionsMixin:
     def load_card(self, request, **kwargs):
         context = dict()
         obj = self.queryset.filter(pk=kwargs['pk']).first()
-        display_type = isnull_to_none(request.query_params['display_type'])
+        display_type = request.query_params.get('display_type')
+        if display_type is not None:
+            display_type = isnull_to_none(display_type)
         context['display_type'] = 'classifiers' if display_type is None else display_type
-        context['method'] = isnull_to_none(request.query_params['method'])
+        method = request.query_params.get('method')
+        if method is not None:
+            method = isnull_to_none(method)
+        context['method'] = method
         context['targets_methods'] = targets_methods(obj)
         context['instance'] = obj
         if context['method'] is None:
@@ -105,6 +112,17 @@ class TargetRouteMixin:
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
+    @action(detail=False, methods=['post', 'patch'])
+    def post_detailedMany(self, request, *args, **kwargs):
+        self.serializer_class = self.get_detailed_serializer()
+        serializer = self.get_serializer(data=request.data, many=True)
+        if serializer.is_valid():
+            logger.debug(f'Valid!')
+            serializer.save()
+            self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -163,10 +181,8 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                 logger.info('starting process')
                 send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                arguments=['autoscreen', self.object.session_id],)
-                # send_to_worker('which Smartscope.sh', communicate=True)
             else:
                 logger.info('stopping')
-                # send_to_worker(self.object.microscope_id.worker_hostname, 'kill', arguments=['-15', process.PID])
                 send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                arguments=['stop_session', self.object.session_id])
 
@@ -207,9 +223,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         if 'pause' in data.keys():
             out, err = send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                       arguments=['toggle_pause', self.object.microscope_id.pk], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(json.loads(out))
 
     @ action(detail=True, methods=['put'])
@@ -232,18 +246,10 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                                            self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
         logger.debug(f'Check pause output: {check_output}')
         check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
-        # check_stop_file_output = send_to_worker(self.object.microscope_id. worker_hostname,
-        #                                         self.object.microscope_id.executable, arguments=['check_stop_file', self.object.session_id], communicate=True)
         disk_status = disk_space(settings.AUTOSCREENDIR)
-        # try:
         out = self.read_file('run.out')
         proc = self.read_file('proc.out')
         queue = self.read_file('queue.txt', start_line=0)
-
-        # except FileNotFoundError:
-        #     out = ''
-        #     proc = ''
-        #     queue = ''
 
         return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **check_output))
 
@@ -265,7 +271,6 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
 
     def read_file(self, name, start_line=-100):
         try:
-            # print(os.path.join(self.object.directory, name))
             with open(os.path.join(self.object.directory, name), 'r') as f:
                 file = ''.join(f.readlines()[start_line:])
             return file
@@ -417,14 +422,17 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMi
                     query_filters['bis_group__isnull'] = False
                 query = obj.holemodel_set.all().filter(**query_filters)
                 selected = True
+                status = 'queued'
             elif action == 'cancelall':
-                query_filters = dict(selected=True, status='queued')
+                query_filters = dict(status='queued')
                 query = obj.holemodel_set.all().filter(**query_filters)
                 selected = False
+                status = None
 
             with transaction.atomic():
                 for target in query:
                     target.selected = selected
+                    target.status = status
                     target.save()
             return Response(data=dict(success=True))
         except Exception as err:
@@ -459,6 +467,10 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
 
     detailed_serializer = DetailedHoleSerializer
 
+    @ action(detail=True, methods=['get'])
+    def load(self, request, **kwargs):
+        return super().load_card(request, **kwargs)
+
     @ action(detail=False, methods=['get'])
     def simple(self, request, *args, **kwargs):
         self.serializer_class = HoleSerializerSimple
@@ -469,7 +481,6 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
     @ action(detail=True, methods=['get'])
     def highmag(self, request, *args, **kwargs):
         obj = self.get_object()
-        # self.serializer_class = HighMagSerializer
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
@@ -482,8 +493,6 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
         logger.debug(resp)
         return resp
-        # return Response(context, template_name='holecard.html', content_type='text/html',renderer=TemplateHTMLRenderer)
-        # return Response(list_to_dict(serializer.data))
 
     @ action(detail=False, methods=['get'])
     def preload_highmag(self, request, *args, **kwargs):
@@ -499,7 +508,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         return Response(dict(data=serializer.data, count=count))
 
 
-class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
+class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Atlases to be viewed or edited.
     """
@@ -507,7 +516,9 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
-                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id']
+                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status','name']
+
+    detailed_serializer = DetailedHighMagSerializer
 
     @ action(detail=True, methods=['get'])
     def fft(self, request, *args, **kwargs):

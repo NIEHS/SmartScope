@@ -23,3 +23,5 @@ test.ipynb
 others/testing.ipynb
 docs/build/
 static/docs
+others/*
+external_plugins/*

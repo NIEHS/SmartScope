@@ -53,15 +53,18 @@ class SerialemInterface(MicroscopeInterface):
             else:
                 logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
                 break
+    
+    def set_atlas_optics(self,mag,c2,spotsize):
+        sem.SetLowDoseMode(0)
+        sem.SetMag(int(mag))
+        sem.SetPercentC2(float(c2))
+        sem.SetSpotSize(int(spotsize))
 
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
         logger.debug(f'Atlas mag:{mag}, c2perc:{c2}, spotsize:{spotsize}, tileX:{tileX}, tileY:{tileY}')
         sem.TiltTo(0)
         sem.MoveStageTo(center_stage_x, center_stage_y)
-        sem.SetLowDoseMode(0)
-        sem.SetMag(int(mag))
-        sem.SetPercentC2(float(c2))
-        sem.SetSpotSize(int(spotsize))
+        self.set_atlas_optics(mag,c2,spotsize)
         if self.energyfilter:
             sem.SetSlitIn(0)
         self.eucentricHeight()
@@ -118,6 +121,11 @@ class SerialemInterface(MicroscopeInterface):
         sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
         return sem.ReportAlignShift()
+    
+    def align_to_coord(self, coord):
+        sem.ImageShiftByPixels(coord[0], -coord[1])
+        sem.ResetImageShift()
+        return sem.ReportStageXYZ()
 
     def make_hole_ref(self, hole_size_in_um):
 
@@ -142,21 +150,21 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stageX, stageY, stageZ)
         time.sleep(0.2)
-        if hole_size_in_um is not None:
-            if not self.has_hole_ref:
-                self.make_hole_ref(hole_size_in_um=hole_size_in_um)
-            # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
-            aligned = self.align()
-            holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
-            if holeshift > aliThreshold:
-                if tiltAngle == 0:
-                    sem.ResetImageShift()
-                else:
-                    iShift = sem.ReportImageShift()
-                    sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
-                    time.sleep(0.2)
-                # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
-                aligned = self.align()
+        # if hole_size_in_um is not None:
+        #     if not self.has_hole_ref:
+        #         self.make_hole_ref(hole_size_in_um=hole_size_in_um)
+        #     # sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
+        #     aligned = self.align()
+        #     holeshift = math.sqrt(aligned[4]**2 + aligned[5]**2)
+        #     if holeshift > aliThreshold:
+        #         if tiltAngle == 0:
+        #             sem.ResetImageShift()
+        #         else:
+        #             iShift = sem.ReportImageShift()
+        #             sem.MoveStage(iShift[4], iShift[5] * math.cos(math.radians(tiltAngle)))
+        #             time.sleep(0.2)
+        #         # sem.LimitNextAutoAlign(hole_size_in_um * 0.4)
+        #         aligned = self.align()
         self.checkDewars()
         self.checkPump()
         sem.View()
@@ -231,10 +239,11 @@ class SerialemInterface(MicroscopeInterface):
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
 
-        if earlyReturn:
+        if not earlyReturn:
             sem.EarlyReturnNextShot(-1)
 
-        sem.Preview()
+        # sem.Preview()
+        sem.View()
         if earlyReturn:
             sem.OpenNewFile(file)
             sem.Save()
@@ -282,28 +291,6 @@ class JEOLSerialemInterface(SerialemInterface):
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
         super().atlas(mag, c2, spotsize, tileX, tileY, file, center_stage_x, center_stage_y)
 
-# class FalconSerialemInterface(SerialemInterface):
-
-#     def highmag(self, isX, isY, tiltAngle, file='', frames=True):
-
-#         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
-#         self.state.imageShiftX = isX
-#         self.state.imageShiftY = isY
-#         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
-
-#         sem.Preview()
-#         sem.OpenNewFile(file)
-#         sem.Save()
-#         sem.CloseFile()
-#         if not frames:
-#             return None
-
-#         frames = sem.ReportLastFrameFile()
-#         if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
-#             frames = frames[0]
-#         logger.debug(f"Frames: {frames},")
-#         return frames.split('\\')[-1]
-
 
 class FakeScopeInterface(MicroscopeInterface):
 
@@ -333,8 +320,6 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
-        # if frames:
-        #     generate_fake_file(file.replace('raw', 'movies').replace('mrc', 'tif'), 'highmagframes', sleeptime=7, destination_dir=self.scope_path)
         generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.scope_path)
 
     def connect(self, directory: str):

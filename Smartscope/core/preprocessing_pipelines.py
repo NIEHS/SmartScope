@@ -84,8 +84,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 break
 
     def list_incomplete_processes(self):
-        self.incomplete_processes = list(self.grid.highmagmodel_set.exclude(
-            status__in=['queued', 'started', 'completed']).order_by('completion_time')[:20])
+        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time')[:20])
 
     def queue_incomplete_processes(self):
         from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,

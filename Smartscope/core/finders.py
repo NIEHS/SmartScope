@@ -12,11 +12,11 @@ def find_targets(montage: Montage, methods: list):
         method = PLUGINS_FACTORY[method]
 
         try:
-            output, success = method.run(montage=montage)
+            targets, success, additional_outputs  = method.run(montage=montage)
         except Exception as err:
             logger.exception(err)
             continue
         if success:
             logger.debug(f"{method} was successful: {success}, Is Classifier: {method.target_class is TargetClass.CLASSIFIER}")
 
-            return output, method.name, method.name if method.target_class is TargetClass.CLASSIFIER else None
+            return targets, method.name, method.name if method.target_class is TargetClass.CLASSIFIER else None, additional_outputs
