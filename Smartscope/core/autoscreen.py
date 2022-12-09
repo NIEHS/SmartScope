@@ -337,13 +337,13 @@ def process_hole_image(hole, grid, microscope_id,iteration):
         finder_method = 'Registration'
         classifier_method=None
     
-    if len(hole_group) > 1:
-        register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
-        for h, index in zip(hole_group,register):
-            target = targets[index]
-            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
-    else:
-        add_targets(grid,hole_group[0],targets,HighMagModel,finder_method,classifier=classifier_method )
+    # if len(hole_group) > 1:
+    register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
+    for h, index in zip(hole_group,register):
+        target = targets[index]
+        add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
+    # else:
+    #     add_targets(grid,hole_group[0],targets,HighMagModel,finder_method,classifier=classifier_method )
 
     update(hole, shape_x=montage.shape_x,
                         shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')

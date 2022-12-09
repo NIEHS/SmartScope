@@ -61,17 +61,23 @@ class SerialemInterface(MicroscopeInterface):
     
     def set_atlas_optics(self,mag,c2,spotsize):
         sem.SetLowDoseMode(0)
+        sem.Delay(0.5)
         sem.SetMag(int(mag))
+        sem.Delay(0.5)
         sem.SetPercentC2(float(c2))
+        sem.Delay(0.5)
         sem.SetSpotSize(int(spotsize))
+        sem.Delay(0.5)
 
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
         logger.debug(f'Atlas mag:{mag}, c2perc:{c2}, spotsize:{spotsize}, tileX:{tileX}, tileY:{tileY}')
         sem.TiltTo(0)
         sem.MoveStageTo(center_stage_x, center_stage_y)
         self.set_atlas_optics(mag,c2,spotsize)
+        logger.debug('Optics set successfully')
         if self.energyfilter:
-            sem.SetSlitIn(0)
+            if sem.ReportEnergyFilter()[2] == 1:
+                sem.SetSlitIn(0)
         self.eucentricHeight()
         sem.OpenNewMontage(tileX, tileY, file)
         self.checkDewars()
@@ -129,7 +135,7 @@ class SerialemInterface(MicroscopeInterface):
     
     def align_to_coord(self, coord):
         sem.ImageShiftByPixels(coord[0], coord[1])
-        sem.View()
+        # sem.View()
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
 
@@ -229,7 +235,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
 
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0,1)
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))

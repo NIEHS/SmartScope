@@ -1005,7 +1005,7 @@ class HighMagModel(Target, ExtraPropertyMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.hm_id:
-            self.name = f'{self.parent.name}_hm'
+            self.name = f'{self.parent.name}_{self.number}_hm'
             self.hm_id = generate_unique_id(extra_inputs=[self.name[:20]])
         self.raw = os.path.join('raw', f'{self.name}.mrc')
         if self.status == 'completed' and (self.shape_x is None or self.pixel_size is None):

@@ -163,12 +163,12 @@ def test_grid_import(file_to_import:str):
 
 def list_plugins():
     from Smartscope.core.settings.worker import PLUGINS_FACTORY
-    logger.info(f'Registered:\n{PLUGINS_FACTORY}')
+    [print(f"{'#'*60}\n{name}:\n\n\t{plugin}\n{'#'*60}\n") for name,plugin in PLUGINS_FACTORY.items()]
 
 
 def list_protocols():
     from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
-    logger.info(f'Registered:\n{PROTOCOLS_FACTORY}')
+    [print(f"{'#'*60}\n{name}:\n\n\t{plugin}\n{'#'*60}\n") for name,plugin in PROTOCOLS_FACTORY.items()]
 
 
 def acquire_fast_atlas_test(microscope_id):
