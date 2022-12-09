@@ -1,4 +1,4 @@
-Updating a podman installation
+Updating a Docker installation
 ##############################
 
 This section outlines the steps to update your SmartScope installation with Podman/Docker
@@ -16,12 +16,12 @@ This section outlines the steps to update your SmartScope installation with Podm
 
     .. code-block:: bash
 
-        sudo podman-compose down
+        sudo docker-compose down
 
 
 #. Pull the latest version
 
-    To update your podman installation, first go to your smartscope directory, where you initially cloned the repository,
+    To update your docker installation, first go to your smartscope directory, where you initially cloned the repository,
     Copy your docker-compose.yml file in case there is an update to that file and pull the update.
 
     .. code-block:: bash
@@ -36,7 +36,7 @@ This section outlines the steps to update your SmartScope installation with Podm
 
     .. code-block:: bash
 
-        sudo podman-compose up -d
+        sudo docker-compose up -d
 
     .. note:: If the Dockerfile changed, it will rebuild the new image
 
@@ -46,6 +46,6 @@ This section outlines the steps to update your SmartScope installation with Podm
 
     .. code-block:: bash
 
-        sudo podman exec smartscope manage.py migrate
+        sudo docker exec smartscope manage.py migrate
 
     .. note:: The output may throw warnings. This is ok as long that there isn't errors.

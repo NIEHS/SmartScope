@@ -1,6 +1,10 @@
 Latest News
 ###########
 
+2022-12-07:
+
+   Ptolemy is now used withing SmartScope as an optional plugin in v0.8b3 and later.
+
 2022-08-02:
 
    Open beta has begun!

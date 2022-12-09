@@ -68,7 +68,7 @@ Installation steps
     .. code-block:: bash
 
         #This will build and run the pod as a daemon
-        docker-compose up -d
+        docker compose up -d
 
     After the process is finished, you can list the running containers using the following command:
 
@@ -84,7 +84,7 @@ Installation steps
         ed4cf9175516  docker.io/library/nginx:latest      nginx -g daemon o...  6 hours ago   Up 6 hours ago   0.0.0.0:48000->80/tcp  smartscope-beta_nginx_1
 
     .. note:: 
-        Anytime the docker-compose.yml is changed, the pod needs to be stopped and restarted.
+        Anytime the docker compose.yml is changed, the pod needs to be stopped and restarted.
         Stop with `docker-compose down` and start `docker-compose up -d`
 
 
@@ -93,9 +93,19 @@ Installation steps
     .. code-block:: bash
 
         #This will only the image building
-        docker-compose build
+        docker compose build
         #To force rebuilding an existing image
-        docker-compose build --no-cache
+        docker compose build --no-cache
+
+#. Apply database migrations
+
+    There is a chance that something changed in the database and, to avoid errors, try applying the migrations
+
+    .. code-block:: bash
+
+        sudo docker exec smartscope manage.py migrate
+
+    .. note:: The output may throw warnings. This is ok as long that there isn't errors.
 
 #. Log in to the web interface with the initial admin account.
 
