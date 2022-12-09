@@ -42,7 +42,7 @@ extensions = [
 # source_suffix = '.rst'
 source_suffix = ['.rst', '.md']
 # Add any paths that contain templates here, relative to this directory.
-master_doc = 'index'
+master_doc = 'sitemap'
 templates_path = ['_templates']
 
 html_sidebars = {
@@ -53,7 +53,7 @@ html_sidebars = {
         'versioning.html',
     ],
 }
-# smv_remote_whitelist = 'niehs'
+smv_remote_whitelist = None
 smv_branch_whitelist = r'^(stable|dev)$'
 smv_outputdir_format = '{ref.name}' 
 # List of patterns, relative to source directory, that match files and

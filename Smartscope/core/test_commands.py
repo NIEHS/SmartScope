@@ -5,7 +5,9 @@ import torch
 from Smartscope.core.microscope_interfaces import TFSSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 from Smartscope.core.finders import find_targets
+from Smartscope.core.models import Microscope
 import logging
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,6 @@ def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'te
 
 
 def test_realign_to_square(microscope_id):
-    from Smartscope.core.models import Microscope
     microscope = Microscope.objects.get(pk=microscope_id)
     with TFSSerialemInterface(ip=microscope.serialem_IP,
                               port=microscope.serialem_PORT,
@@ -51,7 +52,7 @@ def test_realign_to_square(microscope_id):
 def test_realign_to_hole(microscope_id):
     from Smartscope.core.models import Microscope
     microscope = Microscope.objects.get(pk=microscope_id)
-    with GatanSerialemInterface(ip=microscope.serialem_IP,
+    with TFSSerialemInterface(ip=microscope.serialem_IP,
                                 port=microscope.serialem_PORT,
                                 directory=microscope.windows_path,
                                 scope_path=microscope.scope_path,
@@ -113,28 +114,156 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
     return average, std
 
 
-def test_finder(plugin_name: str, raw_image_path: str,):  # output_dir='/mnt/data/testing/'
+def test_finder(plugin_name: str, raw_image_path: str, output_dir: str):  # output_dir='/mnt/data/testing/'
     from Smartscope.lib.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
     import cv2
+    import math
+    output_dir = Path(output_dir)
+    try:
+        output_dir.mkdir(exist_ok=True)
+    except:
+        logger.info(f'Could not create or find {str(output_dir)}')
     image = Path(raw_image_path)
     logger.info(f'Testing finder {plugin_name} on image {raw_image_path}')
     logger.debug(f'{image.name}, {image.parent}')
-    montage = Montage(image.stem, working_dir=image.parents[1])
-    output, _, _ = find_targets(montage, [plugin_name])
+    montage = Montage(image.stem, working_dir=output_dir)
+    montage.raw = image
+    montage.load_or_process()
+    output, _ , _ , additional_outputs = find_targets(montage, [plugin_name])
     bit8_montage = auto_contrast(montage.image)
     bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
     for i in output:
-        cv2.rectangle(bit8_color, list(i[0:2]), list(i[2:]), (0, 0, 255), cv2.FILLED)
-    logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name + '.png')}")
+        cv2.circle(bit8_color, (i.x,i.y),20, (0, 0, 255), cv2.FILLED)
+    if 'lattice_angle' in additional_outputs.keys():
+
+        cv2.line(bit8_color,tuple(montage.center),(int(3000*math.sin(math.radians(additional_outputs['lattice_angle']))+montage.center[0]), int(3000*math.cos(math.radians(additional_outputs['lattice_angle'])))+ montage.center[1]),(0,255,0),10)
+    logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name.replace(' ', '_') + '.png')}")
     save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
 
+def test_grid_export(grid_id, export_to:str):
+    from Smartscope.core.models import AutoloaderGrid
+    from Smartscope.server.api.export_serializers import ExportMetaSerializer
+    from rest_framework_yaml.renderers import YAMLRenderer
+    
+    serializer = ExportMetaSerializer(instance=AutoloaderGrid.objects.get(grid_id=grid_id))
+    with open(export_to,'wb') as file:
+        file.write(YAMLRenderer().render(data=serializer.data))
+
+def test_grid_import(file_to_import:str):
+    from Smartscope.server.api.export_serializers import ExportMetaSerializer
+    import yaml
+    with open(file_to_import,'r') as file:
+        data = yaml.safe_load(file) 
+    grid= ExportMetaSerializer(data=data)
+    grid.is_valid()
+    print(grid.errors) 
+    grid.save()
+    
 
 def list_plugins():
     from Smartscope.core.settings.worker import PLUGINS_FACTORY
-    logger.info(f'Registered:\n{PLUGINS_FACTORY}')
+    [print(f"{'#'*60}\n{name}:\n\n\t{plugin}\n{'#'*60}\n") for name,plugin in PLUGINS_FACTORY.items()]
 
 
 def list_protocols():
     from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
-    logger.info(f'Registered:\n{PROTOCOLS_FACTORY}')
+    [print(f"{'#'*60}\n{name}:\n\n\t{plugin}\n{'#'*60}\n") for name,plugin in PROTOCOLS_FACTORY.items()]
+
+
+def acquire_fast_atlas_test(microscope_id):
+    import serialem as sem
+    from Smartscope.lib.microscope_methods import FastAtlas,make_serpent_pattern_in_mask
+
+    microscope = Microscope.objects.get(pk=microscope_id)
+    with TFSSerialemInterface(ip=microscope.serialem_IP,
+                              port=microscope.serialem_PORT,
+                              directory=microscope.windows_path,
+                              scope_path=microscope.scope_path,
+                              energyfilter=False,
+                              loader_size=microscope.loader_size,
+                              frames_directory='X:/testing/') as scope:
+        scope.set_atlas_optics(62,100,5)
+        sem.Search()
+        sem.EarlyReturnNextShot(-1)
+        X, Y, _, _, pixel_size, _ = sem.ImageProperties('A')
+        logger.info(f'Setting atlas for {X}, {Y}, {pixel_size}')
+        atlas = FastAtlas(atlas_imsize_x=X,atlas_imsize_y=Y,pixel_size_in_angst=pixel_size*10)
+        atlas.generate_tile_mask(atlas_radius_in_um=990)
+        atlas.make_stage_pattern(make_serpent_pattern_in_mask)
+        sem.SetContinuous('R',1)
+        sem.UseContinuousFrames(1)
+        sem.StartFrameWaitTimer(-1)
+        start_time = time.time()
+        time_distances = []
+        sem.MoveStageTo(*atlas.stage_movements[0][0])
+        
+        for ind, m in enumerate(atlas.stage_movements):
+            start, end = m
+            distance = abs(start[1]-end[1])
+            exposure_time = 0.011 * distance + 4
+            logger.info(f'Setting exposure time to {exposure_time:.1f}')
+            sem.SetExposure('R', exposure_time)
+            sem.MoveStageTo(*start)
+            start_movement = time.time()
+            logger.info(f'Starting movement {ind} at {start}, moving to {end}')
+            sem.Echo(f'Movemement {ind}')
+            sem.MoveStageTo(*end)
+            movement_elapsed = time.time() - start_movement
+            distance = abs(start[1]-end[1])
+            logger.info(f'Movement {ind} took {movement_elapsed:.1f} for a distance of {distance}')
+            time_distances.append([movement_elapsed,distance])
+
+        sem.SetContinuous('R',0)
+        elapsed = time.time() - start_time
+        logger.info(f'Finished acquisition in {elapsed:.0f} seconds.')
+
+def acquire_fast_atlas_test2(microscope_id):
+    import serialem as sem
+    from Smartscope.lib.microscope_methods import FastAtlas,make_serpent_pattern_in_mask
+
+    microscope = Microscope.objects.get(pk=microscope_id)
+    with TFSSerialemInterface(ip=microscope.serialem_IP,
+                              port=microscope.serialem_PORT,
+                              directory=microscope.windows_path,
+                              scope_path=microscope.scope_path,
+                              energyfilter=False,
+                              loader_size=microscope.loader_size,
+                              frames_directory='X:/testing/') as scope:
+        scope.set_atlas_optics(62,100,5)
+        sem.SetColumnOrGunValve(1)
+        sem.Search()
+        X, Y, _, _, pixel_size, _ = sem.ImageProperties('A')
+        logger.info(f'Setting atlas for {X}, {Y}, {pixel_size}')
+        atlas = FastAtlas(atlas_imsize_x=X,atlas_imsize_y=Y,pixel_size_in_angst=pixel_size*10)
+        atlas.generate_tile_mask(atlas_radius_in_um=990)
+        atlas.make_stage_pattern(make_serpent_pattern_in_mask)
+        sem.SetContinuous('R',1)
+        sem.UseContinuousFrames(1)
+        sem.StartFrameWaitTimer(-1)
+        start_time = time.time()
+        time_distances = []
+        sem.MoveStageTo(*atlas.stage_movements[0][0])
+        
+        for ind, m in enumerate(atlas.stage_movements):
+            start, end = m
+            distance = abs(start[1]-end[1])
+            Path(scope.scope_path,'raw','atlas',str(ind)).mkdir(parents=True,exist_ok=True)
+            sem.SetFolderForFrames(f'{scope.directory}raw/atlas/{ind}')
+            sem.MoveStageTo(*start)
+            sem.Record()
+            start_movement = time.time()
+            logger.info(f'Starting movement {ind} at {start}, moving to {end}')
+            sem.Echo(f'Movemement {ind}')
+            stage_movement = end - start
+            sem.MoveStageWithSpeed(*stage_movement,0.5)
+            # sem.WaitForNextFrame()
+            sem.StopContinuous()
+            movement_elapsed = time.time() - start_movement
+            distance = abs(start[1]-end[1])
+            logger.info(f'Movement {ind} took {movement_elapsed:.1f} for a distance of {distance}')
+            time_distances.append([movement_elapsed,distance])
+
+        sem.SetContinuous('R',0)
+        elapsed = time.time() - start_time
+        logger.info(f'Finished acquisition in {elapsed:.0f} seconds.')

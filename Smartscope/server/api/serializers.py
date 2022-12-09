@@ -69,28 +69,28 @@ class GridCollectionParamsSerializer(RESTserializers.ModelSerializer):
         fields = '__all__'
 
 
-class FinderSerializer(RESTserializers.ModelSerializer):
+# class FinderSerializer(RESTserializers.ModelSerializer):
 
-    class Meta:
-        model = Finder
-        # fields = '__all__'
-        exclude = ['id', ]
-
-
-class ClassifierSerializer(RESTserializers.ModelSerializer):
-
-    class Meta:
-        model = Classifier
-        # fields = '__all__'
-        exclude = ['id', ]
+#     class Meta:
+#         model = Finder
+#         # fields = '__all__'
+#         exclude = ['id', ]
 
 
-class SelectorSerializer(RESTserializers.ModelSerializer):
+# class ClassifierSerializer(RESTserializers.ModelSerializer):
 
-    class Meta:
-        model = Selector
-        # fields = '__all__'
-        exclude = ['id', ]
+#     class Meta:
+#         model = Classifier
+#         # fields = '__all__'
+#         exclude = ['id', ]
+
+
+# class SelectorSerializer(RESTserializers.ModelSerializer):
+
+#     class Meta:
+#         model = Selector
+#         # fields = '__all__'
+#         exclude = ['id', ]
 
 
 class AtlasSerializer(RESTserializers.ModelSerializer):
@@ -138,9 +138,7 @@ class HighMagSerializer(RESTserializers.ModelSerializer):
     png = RESTserializers.ReadOnlyField()
     # hole_id = HoleSerializer()
     ctf_img = RESTserializers.ReadOnlyField()
-    # raw = RESTserializers.ReadOnlyField()
-    # mrc = RESTserializers.ReadOnlyField()
-    # initial = RESTserializers.ReadOnlyField(source='initial_quality')
+
 
     class Meta:
         model = HighMagModel
@@ -168,29 +166,41 @@ class HoleSerializer(RESTserializers.ModelSerializer):
         extra_fields = ['id']
 
 
-class TargetSerializer(RESTserializers.ModelSerializer):
-    finders = FinderSerializer(many=True)
-    selectors = SelectorSerializer(many=True)
-    classifiers = ClassifierSerializer(many=True)
+# class TargetSerializer(RESTserializers.ModelSerializer):
+#     finders = FinderSerializer(many=True)
+#     selectors = SelectorSerializer(many=True)
+#     classifiers = ClassifierSerializer(many=True)
 
 
-class DetailedHoleSerializer(TargetSerializer):
+# class DetailedHighMagSerializer(TargetSerializer):
 
-    class Meta:
-        model = HoleModel
-        fields = '__all__'
+#     class Meta:
+#         model = HighMagModel
+#         fields = '__all__'
 
+# class DetailedHoleSerializer(TargetSerializer):
+#     targets = DetailedHighMagSerializer(many=True)
 
-class DetailedSquareSerializer(TargetSerializer):
+#     class Meta:
+#         model = HoleModel
+#         fields = '__all__'
 
-    class Meta:
-        model = SquareModel
-        fields = '__all__'
+# class DetailedSquareSerializer(TargetSerializer):
+#     targets = DetailedHoleSerializer(many=True)
 
+#     class Meta:
+#         model = SquareModel
+#         fields = '__all__'
+
+# class DetailedAtlasSerializer(RESTserializers.ModelSerializer):
+#     targets = DetailedSquareSerializer(many=True)
+
+#     class Meta:
+#         model = AtlasModel
+#         fields = '__all__'
 
 class HoleSerializerSimple(RESTserializers.ModelSerializer):
     grid_id = AutoloaderGridSerializer()
-    # square_id = SquareSerializer()
 
     class Meta:
         model = HoleModel
@@ -206,18 +216,13 @@ class FullGridSerializer(RESTserializers.ModelSerializer):
         fields = '__all__'
         extra_fields = ['atlas', 'squares']
 
+# class ExportMetaSerializer(RESTserializers.ModelSerializer):
+#     atlas = DetailedAtlasSerializer(many=True)
 
-class ExportMetaSerializer(RESTserializers.ModelSerializer):
-    atlas = AtlasSerializer(many=True)
-    squares = DetailedSquareSerializer(many=True)
-    holes = DetailedHoleSerializer(many=True)
-    high_mag = HighMagBasicSerializer(many=True)
-    params_id = GridCollectionParamsSerializer(many=False)
-
-    class Meta:
-        model = AutoloaderGrid
-        fields = '__all__'
-        extra_fields = ['atlas', 'squares', 'holes', 'high_mag']
+#     class Meta:
+#         model = AutoloaderGrid
+#         fields = '__all__'
+#         extra_fields = ['atlas']
 
 
 models_to_serializers = {

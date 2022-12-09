@@ -34,12 +34,9 @@ class Websocket_update_decorator:
 
 
 def websocket_update(objs, grid_id):
-
     channel_layer = get_channel_layer()
-
     outputDict = {'type': 'update.metadata',
                   'update': {}}
-
     logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')
     outputDict['update'] = update_to_fullmeta(objs)
     async_to_sync(channel_layer.group_send)(grid_id, outputDict)
@@ -75,9 +72,9 @@ def update_target(data):
         response['error'] = 'Invalid model specified'
         return response
     content_type = ContentType.objects.get_for_model(model)
-    # if method is None:
 
     if key == 'selected':
+        new_value = True if new_value == '1' else False
         objs = list(model.objects.filter(pk__in=ids))
         if model is HoleModel:
             for i, obj in enumerate(objs):
@@ -88,7 +85,6 @@ def update_target(data):
         objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
     logger.debug(f'From {len(ids)} ids, found {len(objs)}. Updating {key} to {new_value}')
     all_found = len(ids) == len(objs)
-    # return_objs = []
     with transaction.atomic():
         if all_found:
             for obj in objs:
@@ -105,12 +101,18 @@ def update_target(data):
         response['success'] = True
         return response
     except Exception as err:
-        logger.exception("An error occured while updating the page.")
+        logger.exception(f"An error occured while updating the page. {err}")
         return response
 
 
-def set_refined_finder(object_id, stage_x, stage_y, stage_z):
-    original = Finder.objects.get(object_id=object_id)
+def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
+    refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
+    if refined:
+        refined.update(stage_x=stage_x,
+                        stage_y=stage_y,
+                        stage_z=stage_z,)
+        return
+    original = Finder.objects.filter(object_id=object_id).first()
     new = Finder(
         content_type=original.content_type,
         x=original.x,
@@ -126,29 +128,18 @@ def set_refined_finder(object_id, stage_x, stage_y, stage_z):
 
 def get_hole_count(grid, hole_list=None):
     if hole_list is not None:
-        all_holes = hole_list
+        queued = len(hole_list)
     else:
-        all_holes = list(HoleModel.display.filter(grid_id=grid.grid_id))
-    completed = [hole for hole in all_holes if hole.status == 'completed']
-    if len(completed) == 0:
-        return dict(completed=0, queued=0, perhour=0, last_hour=0)
-    num_completed = len(completed)
-    queued = 0
-    all_queued = [hole for hole in all_holes if hole.status == 'queued']
-    for hole in all_queued:
-        if hole.bis_group is not None:
-            queued += len([h for h in all_holes if h.bis_group == hole.bis_group and h.is_good()
-                          and not h.is_excluded()[0]])
-        else:
-            queued += 1
-    holes_per_hour = None
-    last_hour = None
+        queued = HoleModel.display.filter(grid_id=grid.grid_id,status='queued').count()
+    completed = HighMagModel.objects.filter(grid_id=grid.grid_id)
+    num_completed = completed.count()
+
+    holes_per_hour = 0
+    last_hour = 0
     if grid.start_time is not None:
-
         holes_per_hour = round(num_completed / (grid.time_spent.total_seconds() / 3600), 1)
-
         last_hour_date_time = grid.end_time - timedelta(hours=1)
-        last_hour = len([h for h in completed if h.completion_time >= last_hour_date_time])
+        last_hour = completed.filter(completion_time__gte=last_hour_date_time).count()
     logger.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
     return dict(completed=num_completed, queued=queued, perhour=holes_per_hour, lasthour=last_hour)
 
@@ -240,7 +231,6 @@ def queue_atlas(grid):
     atlas, created = AtlasModel.objects.get_or_create(
         name=f'{grid.name}_atlas',
         grid_id=grid)
-    # print('Atlas newly created? ', created, ' Status: ', atlas.status)
     if created or atlas.status is None:
         atlas.status = 'queued'
     return atlas
@@ -253,7 +243,6 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     for key, val in kwargs.items():
         updated_fields.append(key)
         setattr(instance, key, val)
-    # close_old_connections()
     instance = instance.save(update_fields=updated_fields)
     if refresh_from_db:
         instance.refresh_from_db()
@@ -271,11 +260,9 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
         defaut_field_dict['hole_id'] = parent
     fields = get_fields_names(model)
     model_content_type_id = ContentType.objects.get_for_model(model)
-    # all_objects = model.objects.all().filter(**defaut_field_dict)
     with transaction.atomic():
         for ind, target in enumerate(targets):
             fields_dict = defaut_field_dict.copy()
-
             fields_dict['number'] = ind + start_number
             for field in fields:
                 val = getattr(target, field, None)
@@ -297,7 +284,6 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
                 classifier_model = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=classifier,
                                               label=target.quality)
                 classifier_model.save()
-
     return output
 
 
@@ -325,18 +311,11 @@ def select_n_squares(parent, n):
 
 
 def select_n_holes(parent, n, is_bis=False):
-    filter_fields = dict(selected=False, status=None)  # , class_num__lt=2
+    filter_fields = dict(selected=False, status=None) 
     if is_bis:
         filter_fields['bis_type'] = 'center'
     holes = list(parent.holemodel_set.filter(
         **filter_fields).order_by('dist_from_center'))
-    # if len(holes) == 0:
-    #     # To still select holes when they are all predicted to be bad. Because we're not sure the classifier is working well yet (added v.0.44)
-    #     logger.info('No holes new selected, overlooking prediction classes')
-    #     filter_fields.pop('class_num__lt')
-    #     logger.debug(filter_fields)
-    #     holes = list(parent.holemodel_set.filter(
-    #         **filter_fields).order_by('dist_from_center'))
 
     holes = [h for h in holes if h.is_good()]
 
@@ -357,7 +336,7 @@ def select_n_holes(parent, n, is_bis=False):
                 groups[group].append(h)
         except:
             groups = np.array_split(np.array(holes), n)
-        # print(groups)
+
         with transaction.atomic():
             for bucket in groups[:-1]:
                 if len(bucket) > 0:
@@ -369,7 +348,7 @@ def select_n_areas(parent, n, is_bis=False):
     filter_fields = dict(selected=False, status=None)
     if is_bis:
         filter_fields['bis_type'] = 'center'
-    targets = parent.base_target_query.filter(**filter_fields)
+    targets = parent.targets.filter(**filter_fields)
 
     if n <= 0:
         with transaction.atomic():

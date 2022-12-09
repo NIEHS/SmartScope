@@ -195,21 +195,25 @@ async function loadSquare(full_id, metaonly = false, display_type = null, method
 
 async function loadHole(elem, metaonly = false) {
     var center = elem
-    if (elem.classList.contains('completed')) {
+    if (elem.classList.contains('completed') | elem.classList.contains('processed')) {
         if (!metaonly) {
             //Find center hole
             if (elem.classList.contains('is_area')) {
                 center = elem.parentElement.getElementsByClassName('center')[0]
             }
             var imglm = document.createElement('img')
-            let lm_data = await fetchAsync(`/api/holes/${center.id}/file_paths?png`)
-            imglm.src = lm_data.png.url
-            imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
-            $("#mmHole").html(imglm)
+            let data = await fetchAsync(`/api/holes/${center.id}/load`)
+            loadSVG(data, generalElements.hole)
+            // $("#Atlas_div").html(data.card)
+            // imglm.src = lm_data.png.url
+            // imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
+            $("#mmHole").html(data.card)
         }
+        if (elem.classList.contains('completed')) {  
         hm_data = await fetchAsync(`/api/holes/${center.id}/highmag/`)
         $('#Hole').html(hm_data)
         grabCuration()
+        };
     };
 };
 
@@ -490,24 +494,24 @@ async function popupSele(element) {
 
 
 async function updateTargets(model, display_type, method, key, new_value, ids = null) {
-    
+
     var sele = squareSelection
-    let stateKey= 'atlas'
+    let stateKey = 'atlas'
     if (model == 'holes') {
         sele = holeSelection
-        stateKey= 'square'
+        stateKey = 'square'
     }
     if (ids) {
         sele = ids
     }
     let request = {
-            type: model,
-            ids: sele,
-            display_type: display_type || currentState[`${stateKey}DisplayType`],
-            method: method || currentState[`${stateKey}Method`],
-            key: key,
-            new_value: new_value
-        }
+        type: model,
+        ids: sele,
+        display_type: display_type || currentState[`${stateKey}DisplayType`],
+        method: method || currentState[`${stateKey}Method`],
+        key: key,
+        new_value: new_value
+    }
     console.log('updateClassifier request: ', request)
     resp = await websocketSend('update.target', request)
     console.log('updateClassifier response: ', resp)
@@ -597,7 +601,8 @@ function populateReportHead() {
 async function reportMain() {
     generalElements = {
         'atlas': document.getElementById('Atlas_im'),
-        'square': document.getElementById('Square_im')
+        'square': document.getElementById('Square_im'),
+        'hole': document.getElementById('mmHole')
     }
     currentTarget = null
     hm_data = null
@@ -614,9 +619,9 @@ async function reportMain() {
     if (fullmeta.status != null) {
         console.log(fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status)
         if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {
-            await loadAtlas(metaonly = false, display_type = currentState['atlasDisplayType'] || null , method = currentState['atlasMethod'] || null);
+            await loadAtlas(metaonly = false, display_type = currentState['atlasDisplayType'] || null, method = currentState['atlasMethod'] || null);
             if (![null, undefined].includes(currentState.square)) {
-                await loadSquare(currentState.square, metaonly = false, display_type = currentState['squareDisplayType'] || null , method = currentState['squareMethod'] || null)
+                await loadSquare(currentState.square, metaonly = false, display_type = currentState['squareDisplayType'] || null, method = currentState['squareMethod'] || null)
             }
             if (![null, undefined].includes(currentState.hole)) {
                 await loadHole(document.getElementById(currentState.hole))
@@ -635,9 +640,14 @@ $('#main').on('change', ".card circle", function () {
 
 $('#main').on('mouseenter', ".holeCard", function (e) {
     var hole = document.getElementById($(this).attr('hole_id'))
+    var highmag = document.getElementById($(this).attr('id'))
     if (hole) {
         hovered.push(hole)
         hole.classList.add("hovered")
+    }
+    if (highmag) {
+        hovered.push(highmag)
+        highmag.classList.add("hovered")
     }
 }).on("mouseleave", ".holeCard", function () {
     for (let i in hovered) {
@@ -706,8 +716,10 @@ $('#sidebarCollapse').on('click', function () {
     console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
     if ($(this).attr('aria-expanded') == "false") {
         document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
+        // $('#sidebar-container').removeClass('col-md-2').addClass('col-md-auto')
     } else {
         document.getElementById("sidebarCollapseLogo").style.transform = ""
+        // $('#sidebar-container').classList.removeClass('col-md-auto').addClass('col-md-2')
     }
 })
 

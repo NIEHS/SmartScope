@@ -3,6 +3,7 @@ squareFinders:
   - AI square finder
 holeFinders:
   - Regular pattern
+highmagFinders: []
 squareSelectors:
   - Size selector
 holeSelectors:

@@ -6,21 +6,25 @@ import time
 import shlex
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, TFSSerialemInterface, JEOLSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
-from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process
+from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
-from Smartscope.lib.montage import Montage, Movie, create_targets
+from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
-from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, add_high_mag, set_refined_finder
+from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
+from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS, set_or_update_refined_finder
 from Smartscope.lib.logger import add_log_handlers
+from Smartscope.lib.diagnostics import generate_diagnostic_figure
+from math import cos, radians
 from django.db import transaction
 from django.utils import timezone
-from math import cos, radians
 import multiprocessing
 import logging
 import subprocess
+import numpy as np
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -35,10 +39,10 @@ def get_queue(grid):
     Returns:
         (list): [squares,holes]; List of SquareModels that are status='queued' and List of HoleModels that are status='queued'
     """
-    squares = list(grid.squaremodel_set.filter(selected=1, status__in=['queued', 'started']).order_by('number'))
-    holes = list(grid.holemodel_set.filter(selected=1, square_id__status='completed', status__in=['queued', 'started', 'processed',
-                                                                                                  'acquired']).order_by('square_id__completion_time', 'number'))
-    return squares, [h for h in holes if not h.bisgroup_acquired]
+    squares = list(grid.squaremodel_set.filter(selected=True, status__in=['queued', 'started']).order_by('number'))
+    holes = list(grid.holemodel_set.filter(selected=True, square_id__status='completed').exclude(status='completed').order_by('square_id__completion_time', 'number'))
+    logger.debug(f'Pre-queue Holes: {holes}')
+    return squares, holes#[h for h in holes if not h.bisgroup_acquired]
 
 
 def resume_incomplete_processes(queue, grid, microscope_id):
@@ -56,9 +60,6 @@ def resume_incomplete_processes(queue, grid, microscope_id):
     for square in squares:
         logger.info(f'Square {square} was not fully processed')
         transaction.on_commit(lambda: queue.put([process_square_image, [square, grid, microscope_id], {}]))
-    for hole in holes:
-        logger.info(f'Hole {hole} was not fully processed')
-        transaction.on_commit(lambda: queue.put([process_hole_image, [hole, microscope_id], {}]))
 
 
 def print_queue(squares, holes, session):
@@ -120,10 +121,9 @@ def run_grid(grid, session, processing_queue, scope):
     microscope = session.microscope_id
 
     # Set the Websocket_update_decorator grid property
-    # processing_queue.put(['set_update', [grid]])
     update.grid = grid
 
-    logger.info(f'Starting {grid.name}')  # \nHoleType: {grid.holeType.name}
+    logger.info(f'Starting {grid.name}') 
 
     grid = update(grid, refresh_from_db=True, last_update=None)
 
@@ -154,14 +154,13 @@ def run_grid(grid, session, processing_queue, scope):
         path = os.path.join(microscope.scope_path, atlas.raw)
         scope.atlas(mag=session.detector_id.atlas_mag, c2=session.detector_id.c2_perc, spotsize=session.detector_id.spot_size,
                     tileX=params.atlas_x, tileY=params.atlas_y, file=atlas.raw)
-        atlas = update(atlas, status='acquired')
+        atlas = update(atlas, status='acquired', completion_time=timezone.now())
 
     if atlas.status == 'acquired':
         logger.info('Atlas acquired')
         montage = get_file_and_process(raw=atlas.raw, name=atlas.name, directory=microscope.scope_path)
         export_as_png(montage.image, montage.png)
-        targets, finder_method, classifier_method = find_targets(montage, protocol.squareFinders)
-        targets = create_targets(targets, montage, target_type='square')
+        targets, finder_method, classifier_method, _ = find_targets(montage, protocol.squareFinders)
         squares = add_targets(grid, atlas, targets, SquareModel, finder_method, classifier_method)
         atlas = update(atlas, status='processed', pixel_size=montage.pixel_size,
                        shape_x=montage.shape_x, shape_y=montage.shape_y, stage_z=montage.stage_z)
@@ -173,13 +172,11 @@ def run_grid(grid, session, processing_queue, scope):
     logger.info('Atlas analysis is complete')
 
     running = True
-    restarting = True
     is_done = False
     while running:
         is_stop_file(session_id)
         grid = update(grid, refresh_from_db=True, last_update=None)
         params = grid.params_id
-        is_bis = params.bis_max_distance > 0
         if grid.status == 'aborting':
             break
         else:
@@ -190,64 +187,45 @@ def run_grid(grid, session, processing_queue, scope):
             hole = holes[0]
             finder = hole.finders.first()
             stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
-            if is_bis and hole.bis_group is not None:
-                bis_holes = list(grid.holemodel_set(manager='display')
-                                 .filter(bis_group=hole.bis_group, bis_type='is_area')
-                                 .exclude(status__in=['acquired', 'completed'])
-                                 .order_by('number'))
-                bis_holes += [hole]
-            else:
-                bis_holes = [hole]
-
-            if hole.status == 'queued' or hole.status == 'started':
-                restarting = False
-                hole = update(hole, status='started')
-
+            hole = update(hole, status='started')
+            iteration = 0
+            while True:
+                is_stop_file(session_id)
                 scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                 file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
-                scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
-                hole = update(hole, status='acquired', completion_time=timezone.now())
-                process_hole_image(hole, microscope)
-                # transaction.on_commit(lambda: processing_queue.put([process_hole_image, [hole, microscope], {}]))
-            if hole.status in ['acquired', 'processed']:
-                if restarting:
-                    restarting = False
-                    logger.info(f'Restarting run, recentering on {hole} area before taking high-mag images')
-                    scope.lowmagHole(stage_x, stage_y, stage_z, round(params.tilt_angle, 1),
-                                     file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
-                    scope.focusDrift(params.target_defocus_min, params.target_defocus_max,
-                                     params.step_defocus, params.drift_crit)
-
-                logger.debug(f'{hole} is {hole.status} {bis_holes}')
-                scope.reset_image_shift_values()
-                for h in bis_holes:
-                    hm, created = add_high_mag(grid, h)
-                    logger.debug(f'Just created:{created} {hm}, {hm.pk}')
-                    if hm.status in [None, 'started']:
-                        finder = list(h.finders.all())[0]
-                        offset = 0
-                        if params.offset_targeting and (grid.collection_mode == 'screening' or params.offset_distance != -1) and grid_type.hole_size is not None:
-                            offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
-                        isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
-                        frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw,
-                                               frames=params.save_frames, earlyReturn=params.force_process_from_average)
-                        hm = update(hm, is_x=isX, is_y=isY, offset=offset, frames=frames, status='acquired', completion_time=timezone.now())
-                        if h != hole:
-                            update(h, status='acquired', completion_time=timezone.now())
-                        # transaction.on_commit(lambda: processing_queue.put([process_hm_image, [hm, microscope]]))
-
+                                    file=hole.raw, hole_size_in_um=grid.holeType.hole_size)
+                hole = update(hole, status='acquired',completion_time=timezone.now())
+                recenter = process_hole_image(hole, grid, microscope,iteration)
+                iteration +=1
+                if recenter is None:
+                    set_or_update_refined_finder(hole.hole_id, stage_x, stage_y, stage_z)
+                    break
+                logger.debug(f'Recenter value in pixels = {recenter}')
+                stage_x, stage_y, stage_z = scope.align_to_coord(recenter)
+            scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
+            scope.reset_image_shift_values()
+            for hm in hole.targets.exclude(status__in=['acquired','completed']).order_by('hole_id__number'):
+                update(hm, status='started')
+                finder = hm.finders.first()
+                offset = 0
+                if params.offset_targeting and (grid.collection_mode == 'screening' or params.offset_distance != -1) and grid_type.hole_size is not None:
+                    offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
+                isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
+                frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=hm.raw,
+                                        frames=params.save_frames, earlyReturn=any([params.force_process_from_average, params.save_frames is False]))
+                hm = update(hm, is_x=isX, is_y=isY, offset=offset, frames=frames, status='acquired', completion_time=timezone.now())
+                if hm.hole_id.bis_type != 'center':
+                    update(hm.hole_id, status='acquired', completion_time=timezone.now())
+            update(hole, status='completed')
         elif len(squares) > 0:
             is_done = False
             square = squares[0]
             if square.status == 'queued' or square.status == 'started':
                 square = update(square, status='started')
                 logger.info('Waiting on square file')
-                path = os.path.join(microscope.scope_path, square.raw)
                 finder = square.finders.first()
                 stageX, stageY, stageZ = scope.square(finder.stage_x, finder.stage_y, finder.stage_z, file=square.raw)
                 square = update(square, status='acquired', completion_time=timezone.now())
-                set_refined_finder(square.square_id, stageX, stageY, stageZ)
-                # transaction.on_commit(lambda: processing_queue.put([process_square_image, [square, grid, microscope], {}]))
+                set_or_update_refined_finder(square.square_id, stageX, stageY, stageZ)
                 process_square_image(square, grid, microscope)
         elif is_done:
             microscope_id = session.microscope_id.pk
@@ -257,7 +235,6 @@ def run_grid(grid, session, processing_queue, scope):
                 update(grid, status='paused')
                 logger.info('SerialEM is paused')
                 while os.path.isfile(paused):
-
                     sys.stdout.flush()
                     time.sleep(3)
                 next_file = os.path.join(os.getenv('TEMPDIR'), f'next_{microscope_id}')
@@ -299,8 +276,7 @@ def process_square_image(square, grid, microscope_id):
     if square.status == 'acquired':
         montage = get_file_and_process(raw=square.raw, name=square.name, directory=microscope_id.scope_path)
         export_as_png(montage.image, montage.png)
-        targets, finder_method, classifier_method = find_targets(montage, protocol.holeFinders)
-        targets = create_targets(targets, montage, target_type='hole')
+        targets, finder_method, classifier_method, _ = find_targets(montage, protocol.holeFinders)
         holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
 
         square = update(square, status='processed', shape_x=montage.shape_x,
@@ -309,6 +285,7 @@ def process_square_image(square, grid, microscope_id):
     if square.status == 'processed':
         if montage is None:
             montage = Montage(name=square.name)
+            montage.load_or_process()
         selector_wrapper(protocol.holeSelectors, square, n_groups=5, montage=montage)
 
         square = update(square, status='selected')
@@ -329,11 +306,47 @@ def process_square_image(square, grid, microscope_id):
         logger.info(f'Square {square.name} analysis is complete')
 
 
-def process_hole_image(hole, microscope_id):
-    montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path)
+def check_if_need_recenter(targets,montage, threshold_in_microns):
+    coords_in_microns = np.array([(target.coords - montage.center) * montage.pixel_size/10_000 for target in targets])
+    dist_to_center = np.sqrt(np.sum(np.power(coords_in_microns,2),axis=1))
+    smallest_distance_ind = np.argmin(dist_to_center)
+    small_dist_to_center = dist_to_center[smallest_distance_ind]
+    if small_dist_to_center > threshold_in_microns:
+        return  targets[smallest_distance_ind].coords, True
+    return targets[smallest_distance_ind].coords, False
+
+def process_hole_image(hole, grid, microscope_id,iteration):
+    protocol = PROTOCOLS_FACTORY[grid.protocol]
+    montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
-    update(hole, status='processed',
-           pixel_size=montage.pixel_size,)
+    if hole.bis_group is not None:
+        hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+    else:
+        hole_group = [hole]
+    hole.targets.delete()
+    image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
+    if len(protocol.highmagFinders) != 0:
+        targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
+        coords, is_recenter_required = check_if_need_recenter(targets,montage,0.5)
+        generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([coords],(255,0,0),2),([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it{iteration}.png'))
+        if is_recenter_required:
+            logger.debug('Need recentering')
+            return coords - montage.center
+    else:
+        targets = create_targets_from_center(image_coords, montage)
+        finder_method = 'Registration'
+        classifier_method=None
+    
+    # if len(hole_group) > 1:
+    register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
+    for h, index in zip(hole_group,register):
+        target = targets[index]
+        add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
+    # else:
+    #     add_targets(grid,hole_group[0],targets,HighMagModel,finder_method,classifier=classifier_method )
+
+    update(hole, shape_x=montage.shape_x,
+                        shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
 
 
 def write_sessionLock(session, lockFile):

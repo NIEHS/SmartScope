@@ -173,10 +173,10 @@ def locate_file_in_directories(directory_list: List[str], file_name: str) -> Uni
     return None, None
 
 
-def get_file_and_process(raw, name, directory=''):
-    if not os.path.isfile(raw):
+def get_file_and_process(raw, name, directory='', force_reprocess=False):
+    if force_reprocess or not os.path.isfile(raw):
         path = os.path.join(directory, raw)
         get_file(path, remove=True)
     montage = Montage(name)
-    montage.load_or_process()
+    montage.load_or_process(force_process=force_reprocess)
     return montage

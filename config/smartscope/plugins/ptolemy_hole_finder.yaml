@@ -1,0 +1,3 @@
+name: Ptolemy hole finder
+importPaths: ['/opt/smartscope/external_plugins/ptolemy/']
+pluginClass: external_plugins.ptolemy.smartscope_plugin.plugin.PtolemyHoleFinder

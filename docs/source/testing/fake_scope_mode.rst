@@ -23,7 +23,7 @@ To download:
 
     Mount the location of smartscope_testfiles to /mnt/fake_scope/.
 
-**Anaconda**
+.. **Anaconda**
 
-    Change the TEST_FILES enviroment variable to the smartscope_testfiles location.
+..     Change the TEST_FILES enviroment variable to the smartscope_testfiles location.
 
