@@ -12,6 +12,7 @@ Site map
    run_smartscope.rst
    testing.rst
    plugins/index.rst
+   restAPI/index.rst
    citation.rst
    contact.rst
    license.rst
