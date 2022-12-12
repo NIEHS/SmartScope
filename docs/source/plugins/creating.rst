@@ -52,4 +52,3 @@ Example
 Here is the example of how the ptolemy hole finder was created.
 
 .. literalinclude:: ../../../external_plugins/ptolemy/smartscope_plugin/plugin.py
-    :language: python
