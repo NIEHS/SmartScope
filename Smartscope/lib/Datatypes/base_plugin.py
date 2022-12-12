@@ -42,7 +42,6 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
         [sys.path.insert(0, path) for path in self.importPaths]
 
 
-    # @abstractclassmethod
     def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
         """Where the main logic for the algorithm is"""
         module = importlib.import_module(self.module)

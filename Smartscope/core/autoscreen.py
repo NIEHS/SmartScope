@@ -327,7 +327,7 @@ def process_hole_image(hole, grid, microscope_id,iteration):
     image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
     if len(protocol.highmagFinders) != 0:
         targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.highmagFinders)
-        coords, is_recenter_required = check_if_need_recenter(targets,montage,0.5)
+        coords, is_recenter_required = check_if_need_recenter(targets,montage,0.7)
         generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([coords],(255,0,0),2),([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it{iteration}.png'))
         if is_recenter_required:
             logger.debug('Need recentering')
