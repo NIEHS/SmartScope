@@ -108,5 +108,8 @@ Finder and classifier combination
 
 External plugin
 ---------------
-.. literalinclude:: ../../../external_plugins/ptolemy/smartscope_plugin/ptolemy_hole_finder.yaml
-    :language: yaml
+
+.. code-block:: yaml
+    
+    name: Ptolemy hole finder
+    pluginClass: smartscope_plugin.plugin.PtolemyHoleFinder

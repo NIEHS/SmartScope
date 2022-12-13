@@ -5,6 +5,7 @@ import yaml
 from Smartscope.lib.s3functions import TemporaryS3File
 import logging
 import importlib
+import sys
 from Smartscope.lib.Datatypes.base_plugin import Finder, Classifier, Selector, ImagingProtocol
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,13 @@ def register_plugins(directory, factory):
 
         factory[data['name']] = out_class.parse_obj(data)
 
+def register_external_plugins(external_plugins_directory, external_plugins_list,factory):
+    with open(external_plugins_list,'r') as file:
+        paths = [external_plugins_directory / plugin for plugin in file.readlines()]
+    for path in paths:
+        sys.path.insert(0, str(path))
+        register_plugins(path/'smartscope_plugin'/'config',factory)
+        sys.path.remove(str(path))
 
 def register_protocols(directory, factory):
     for file in directory.glob('*.yaml'):
@@ -37,21 +45,6 @@ def register_protocols(directory, factory):
             data = yaml.safe_load(f)
 
         factory[data['name']] = ImagingProtocol.parse_obj(data)
-
-
-def load_default_protocol(protocol):
-    file = settings.SMARTSCOPE_PROTOCOLS
-    with open(file) as f:
-        protocol = yaml.safe_load(f)[protocol]
-    # Sub protocol with plugins
-    plugins = load_plugins()
-    for k, v in protocol.items():
-        for i, val in enumerate(v):
-            print(val)
-            pluginKey = 'selectors' if 'selector' in k.lower() else k
-            protocol[k][i] = plugins[pluginKey][val]
-
-    return protocol
 
 
 def load_protocol(file='protocol.yaml'):
