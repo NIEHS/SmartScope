@@ -882,8 +882,10 @@ class HoleModel(Target, ExtraPropertyMixin):
 
     @ property
     def targets(self):
-        holes_in_group = HoleModel.objects.filter(bis_group=self.bis_group).values_list('hole_id', flat=True)
+        if self.bis_group is None:
+            return HighMagModel.objects.filter(hole_id__in=[self.hole_id])
 
+        holes_in_group = HoleModel.objects.filter(bis_group=self.bis_group).values_list('hole_id', flat=True)
         return HighMagModel.objects.filter(hole_id__in=holes_in_group)
 
     @ property

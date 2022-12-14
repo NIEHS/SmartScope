@@ -13,6 +13,7 @@ Installing the ptolemy hole finder external plugin
 .. note:: This process is manual but will be more automated with install scripts in the near future.
 
 .. code-block:: shell-session
+    
     $ cd /path/to/Smartscope/external_plugins
     $ git clone https://github.com/JoQCcoz/ptolemy-smartscope.git
     $ echo 'ptolemy-smartscope' > ../config/smartscope/plugins/external_plugins.txt
