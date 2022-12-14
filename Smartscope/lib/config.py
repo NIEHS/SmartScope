@@ -32,7 +32,8 @@ def register_plugins(directory, factory):
 
 def register_external_plugins(external_plugins_directory, external_plugins_list,factory):
     with open(external_plugins_list,'r') as file:
-        paths = [external_plugins_directory / plugin for plugin in file.readlines()]
+        paths = [external_plugins_directory / plugin.strip() for plugin in file.readlines()]
+    
     for path in paths:
         sys.path.insert(0, str(path))
         register_plugins(path/'smartscope_plugin'/'config',factory)
