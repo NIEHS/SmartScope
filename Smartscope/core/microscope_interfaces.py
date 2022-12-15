@@ -275,7 +275,7 @@ class TFSSerialemInterface(SerialemInterface):
 
 
 def remove_condenser_aperture(function: Callable, *args, **kwargs):
-    def wrapper():
+    def wrapper(*args, **kwargs):
         sem.RemoveAperture(0)
         function(*args, **kwargs)
         sem.ReinsertAperture(0)
