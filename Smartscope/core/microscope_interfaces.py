@@ -280,6 +280,13 @@ class JEOLSerialemInterface(SerialemInterface):
     def checkPump(self, wait=30):
         pass
 
+    def checkDewars(self, wait=30):
+        while True:
+            if sem.AreDewarsFilling() == 0:
+                return
+            logger.info(f'LN2 is refilling, waiting {wait}s')
+            time.sleep(wait)
+
     @remove_condenser_aperture
     def atlas(self, *args, **kwargs):
         super().atlas(*args,**kwargs)
