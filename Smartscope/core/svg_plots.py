@@ -135,7 +135,7 @@ class myDrawging(draw.Drawing):
 
 def drawAtlas(atlas, targets, display_type, method):
     d = myDrawging(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False)
-    d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png_img, embed=True))
     shapes = draw.Group(id='atlasShapes')
     text = draw.Group(id='atlasText')
 
@@ -174,7 +174,7 @@ def drawAtlas(atlas, targets, display_type, method):
 
 def drawSquare(square, targets, display_type, method):
     d = myDrawging(square.shape_y, square.shape_x, id='square-svg', displayInline=False)
-    d.append(draw.Image(0, 0, d.width, d.height, path=square.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=square.png_img, embed=True))
     shapes = draw.Group(id='squareShapes')
     text = draw.Group(id='squareText')
     labels_list = []
@@ -272,7 +272,7 @@ def drawSquare(square, targets, display_type, method):
 
 def drawMediumMag(hole, targets, display_type, method, **kwargs):
     d = myDrawging(hole.shape_y, hole.shape_x, id='hole-svg', displayInline=False)
-    d.append(draw.Image(0, 0, d.width, d.height, path=hole.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=hole.png_img, embed=True))
     shapes = draw.Group(id='holeShapes')
     text = draw.Group(id='holeText')
     labels_list = []
@@ -310,7 +310,7 @@ def drawMediumMag(hole, targets, display_type, method, **kwargs):
 
 def drawHighMag(highmag):
     d = myDrawging(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False)
-    d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png_img, embed=True))
     d.append(add_scale_bar(highmag.pixel_size, d.width, d.height, id_type=highmag.name))
 
     return d.asSvg

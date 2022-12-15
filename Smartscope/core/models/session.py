@@ -15,6 +15,7 @@ from django.apps import apps
 from Smartscope.lib.s3functions import *
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
+from Smartscope.lib.image_manipulations import embed_image
 
 import logging
 
@@ -141,7 +142,8 @@ class ExtraPropertyMixin:
 
     @ property
     def ctf_img(self):
-        return self.get_full_path(os.path.join(self.grid_id.url, self.name, 'ctf.png'))
+        return os.path.join(self.grid_id.directory, self.name, 'ctf.png')
+        # return self.get_full_path(os.path.join(self.grid_id.url, self.name, 'ctf.png'))
 
 
 class Microscope(BaseModel):
@@ -1003,6 +1005,11 @@ class HighMagModel(Target, ExtraPropertyMixin):
     @property
     def SVG(self):
         return drawHighMag(self)
+    
+    @property
+    def power_spectrum(self):
+        return embed_image(self.ctf_img)
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
