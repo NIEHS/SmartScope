@@ -287,6 +287,13 @@ class JEOLSerialemInterface(SerialemInterface):
     def checkPump(self, wait=30):
         pass
 
+    def checkDewars(self, wait=30):
+        while True:
+            if sem.AreDewarsFilling() == 0:
+                return
+            logger.info(f'LN2 is refilling, waiting {wait}s')
+            time.sleep(wait)
+
     @remove_condenser_aperture
     def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
         super().atlas(mag, c2, spotsize, tileX, tileY, file, center_stage_x, center_stage_y)
