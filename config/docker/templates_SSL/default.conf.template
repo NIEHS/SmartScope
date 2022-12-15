@@ -39,26 +39,6 @@ server {
        alias /opt/smartscope/static/;
     }
 
-    location /autoscreeningstorage/ {
-        #CHANGE THIS PATH
-        alias /mnt/longterm/;
-        location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
-            expires 7d;
-            access_log off;
-            add_header Cache-Control "public";
-        }
-
-    }
-    location /autoscreening/ {
-        #CHANGE THIS PATH
-        alias /mnt/data/;
-        location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
-            expires 7d;
-            access_log off;
-            add_header Cache-Control "public";
-        }
-    }
-
     ssl_certificate /opt/certs/smartscope.crt;
     ssl_certificate_key /opt/certs/smartscope.key;
     ssl_session_timeout 1h;

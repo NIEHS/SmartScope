@@ -6,6 +6,7 @@ from math import floor
 import os
 import cv2
 import imutils
+import base64
 
 
 def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max_x: float, max_y: float, diameter_in_um: float = 1.2) -> np.ndarray:
@@ -203,3 +204,10 @@ def auto_canny(image, limits=None, sigma=0.33, dilation=5):
         dilated = cv2.dilate(edged, kernel, iterations=1)
         erosion = cv2.erode(dilated, kernel, iterations=1)
         return erosion, lower, upper
+
+def embed_image(path):
+    mimeType = 'image/png'
+    with open(path, 'rb') as f:
+        data = f.read()
+    encData = base64.b64encode(data).decode(encoding='ascii')
+    return 'data:{};base64,{}'.format(mimeType, encData)

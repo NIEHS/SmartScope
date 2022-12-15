@@ -30,22 +30,4 @@ server {
        alias /opt/smartscope/static/;
     }
 
-    location /autoscreeningstorage/ {
-        alias /mnt/longterm/;
-        location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
-            expires 7d;
-            access_log off;
-            add_header Cache-Control "public";
-        }
-
-    }
-    location /autoscreening/ {
-        alias /mnt/data/;
-        location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
-            expires 7d;
-            access_log off;
-            add_header Cache-Control "public";
-        }
-    }
-
 }
