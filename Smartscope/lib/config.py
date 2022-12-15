@@ -7,6 +7,7 @@ import logging
 import importlib
 import sys
 from Smartscope.lib.Datatypes.base_plugin import Finder, Classifier, Selector, ImagingProtocol
+from Smartscope.lib.Datatypes.base_protocol import BaseProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def register_protocols(directory, factory):
         with open(file) as f:
             data = yaml.safe_load(f)
 
-        factory[data['name']] = ImagingProtocol.parse_obj(data)
+        factory[data['name']] = BaseProtocol.parse_obj(data)
 
 
 def load_protocol(file='protocol.yaml'):

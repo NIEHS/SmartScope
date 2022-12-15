@@ -1,0 +1,28 @@
+name: SPA
+atlas:
+  acquisition:
+    - set_atlas_optics
+    - atlas
+  targets:
+    finders:
+      - AI square finder
+    selectors:
+      - Size selector
+square:
+  acquisition:
+    - square
+  targets:
+    finders:
+      - AI hole finder
+      - Regular pattern
+    selectors:
+      - Graylevel selector
+mediumMag:
+  acquisition:
+    - lowmagHole
+  targets:
+    finders:
+      - Ptolemy hole finder
+highMag:
+  acquisition:
+    - highmag

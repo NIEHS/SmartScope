@@ -59,34 +59,28 @@ class SerialemInterface(MicroscopeInterface):
         pixel_size = sem.ReportCameraSetArea(magSet) / 1000
         return shapeX*pixel_size,shapeY*pixel_size
     
-    def set_atlas_optics(self,mag,c2,spotsize):
+    def set_atlas_optics(self):
+        logger.info('Setting atlas optics')
         sem.SetLowDoseMode(0)
-        sem.Delay(0.5)
-        sem.SetMag(int(mag))
-        sem.Delay(0.5)
-        sem.SetPercentC2(float(c2))
-        sem.Delay(0.5)
-        sem.SetSpotSize(int(spotsize))
-        sem.Delay(0.5)
+        sem.SetMag(self.atlasSettings.mag)
+        sem.SetPercentC2(self.atlasSettings.c2)
+        sem.SetSpotSize(self.atlasSettings.spotSize)
 
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        logger.debug(f'Atlas mag:{mag}, c2perc:{c2}, spotsize:{spotsize}, tileX:{tileX}, tileY:{tileY}')
+    def atlas(self, size, file=''):
         sem.TiltTo(0)
-        sem.MoveStageTo(center_stage_x, center_stage_y)
-        self.set_atlas_optics(mag,c2,spotsize)
-        logger.debug('Optics set successfully')
+        sem.MoveStageTo(0,0)
         if self.energyfilter:
             if sem.ReportEnergyFilter()[2] == 1:
                 sem.SetSlitIn(0)
         self.eucentricHeight()
-        sem.OpenNewMontage(tileX, tileY, file)
+        sem.OpenNewMontage(size[0],size[1], file)
         self.checkDewars()
         self.checkPump()
         logger.info('Starting Atlas acquisition')
         sem.Montage()
         sem.CloseFile()
-        sem.SetLowDoseMode(1)
         logger.info('Atlas acquisition finished')
+        sem.SetLowDoseMode(1)
 
     def square(self, stageX, stageY, stageZ, file=''):
         sem.SetLowDoseMode(1)
@@ -135,7 +129,6 @@ class SerialemInterface(MicroscopeInterface):
     
     def align_to_coord(self, coord):
         sem.ImageShiftByPixels(coord[0], coord[1])
-        # sem.View()
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
 
@@ -157,7 +150,7 @@ class SerialemInterface(MicroscopeInterface):
     #     self.hole_crop_size = int(shape_x)
     #     self.has_hole_ref = True
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
+    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file=''):
         sem.GoToLowDoseArea('V')
         sem.TiltTo(tiltAngle)
 
@@ -181,11 +174,11 @@ class SerialemInterface(MicroscopeInterface):
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
-    def connect(self, directory: str):
+    def connect(self):
         logger.info(
-            f'Initiating connection to SerialEM at: {self.ip}:{self.port}\n\t If no more messages show up after this one and the External Control notification is not showing up on the SerialEM interface, there is a problem. \n\t The best way to solve it is generally by closing and restarting SerialEM.')
-        sem.ConnectToSEM(self.port, self.ip)
-        sem.SetDirectory(directory)
+            f'Initiating connection to SerialEM at: {self.microscope.ip}:{self.microscope.port}\n\t If no more messages show up after this one and the External Control notification is not showing up on the SerialEM interface, there is a problem. \n\t The best way to solve it is generally by closing and restarting SerialEM.')
+        sem.ConnectToSEM(self.microscope.port, self.microscope.ip)
+        sem.SetDirectory(self.microscope.directory)
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
@@ -202,7 +195,7 @@ class SerialemInterface(MicroscopeInterface):
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
 
-        if self.energyfilter and zerolossDelay > 0:
+        if self.detector.energyFilter and zerolossDelay > 0:
             sem.RefineZPL(zerolossDelay * 60, 1)
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
@@ -217,7 +210,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.Exit(1)
 
     def loadGrid(self, position):
-        if self.loader_size > 1:
+        if self.microscope.loader_size > 1:
             slot_status = sem.ReportSlotStatus(position)
             if slot_status == -1:
                 raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
@@ -288,8 +281,8 @@ class JEOLSerialemInterface(SerialemInterface):
         pass
 
     @remove_condenser_aperture
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        super().atlas(mag, c2, spotsize, tileX, tileY, file, center_stage_x, center_stage_y)
+    def atlas(self, *args, **kwargs):
+        super().atlas(*args,**kwargs)
 
 
 class FakeScopeInterface(MicroscopeInterface):
@@ -303,26 +296,26 @@ class FakeScopeInterface(MicroscopeInterface):
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
         pass
 
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        generate_fake_file(file, 'atlas', destination_dir=self.scope_path)
+    def atlas(self, size, file=''):
+        generate_fake_file(file, 'atlas', destination_dir=self.microscope.scopePath)
 
     def square(self, stageX, stageY, stageZ, file=''):
-        generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.scope_path)
+        generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.microscope.scopePath)
         return 0, 0, 0
 
     def align():
         pass
 
     def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', is_negativestain=False, aliThreshold=500):
-        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.scope_path)
+        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.microscope.scopePath)
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
-        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.scope_path)
+        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
 
-    def connect(self, directory: str):
+    def connect(self):
         logger.info('Connecting to fake scope.')
 
     def setup(self, saveframes, zerolossDelay, framesName=None):

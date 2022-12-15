@@ -11,6 +11,7 @@ from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
+from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
 from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
@@ -136,7 +137,8 @@ def run_grid(grid, session, processing_queue, scope):
     params = grid.params_id
     # ADD the new protocol loader
     protocol = PROTOCOLS_FACTORY[grid.protocol]
-
+    print(protocol)
+    raise KeyboardInterrupt
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
     subprocess.Popen(shlex.split(f'smartscope.py highmag_processing smartscopePipeline {grid.grid_id} 1'))
     is_stop_file(session_id)
@@ -150,8 +152,8 @@ def run_grid(grid, session, processing_queue, scope):
     grid_mesh = grid.meshMaterial
     if atlas.status == 'queued' or atlas.status == 'started':
         atlas = update(atlas, status='started')
-        print('Waiting on atlas file')
-        path = os.path.join(microscope.scope_path, atlas.raw)
+        logger.info('Waiting on atlas file')
+        
         scope.atlas(mag=session.detector_id.atlas_mag, c2=session.detector_id.c2_perc, spotsize=session.detector_id.spot_size,
                     tileX=params.atlas_x, tileY=params.atlas_y, file=atlas.raw)
         atlas = update(atlas, status='acquired', completion_time=timezone.now())
@@ -382,13 +384,11 @@ def autoscreen(session_id):
             logger.info('Using the JEOL interface')
             scopeInterface = JEOLSerialemInterface
 
-        with scopeInterface(ip=microscope.serialem_IP,
-                            port=microscope.serialem_PORT,
-                            energyfilter=session.detector_id.energy_filter,
-                            directory=microscope.windows_path,
-                            frames_directory=session.detector_id.frames_windows_directory,
-                            scope_path=microscope.scope_path,
-                            loader_size=microscope.loader_size) as scope:
+        with scopeInterface(
+                            microscope = Microscope.from_orm(session.microscope_id),
+                            detector= Detector.from_orm(session.detector_id) ,
+                            atlasSettings= AtlasSettings.from_orm(session.detector_id)
+                            ) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
             child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(session.directory, processing_queue,))

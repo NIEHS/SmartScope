@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import serialem as sem
 from abc import ABC, abstractmethod
 from typing import Any, List
-
+from pydantic import BaseModel, Field
 from Smartscope.lib.montage import Montage
 
 
@@ -21,23 +21,46 @@ class MicroscopeState:
         self.imageShiftX = 0
         self.imageShiftY = 0
 
+class AtlasSettings(BaseModel):
+    mag:int = Field(alias='atlas_mag')
+    maxX:int = Field(alias='atlas_max_tiles_X')
+    maxY:int = Field(alias='atlas_max_tiles_Y')
+    spotSize:int = Field(alias='spot_size')
+    c2:float = Field(alias='c2_perc')
+
+    class Config:
+        orm_mode=True
+
+class Detector(BaseModel):
+    energyFilter:bool = Field(alias='energy_filter')
+    framesDir:str = Field(alias='frames_windows_directory')
+
+    class Config:
+        orm_mode=True
+
+class Microscope(BaseModel):
+    loaderSize:int = Field(alias='loader_size')
+    ip:str = Field(alias='serialem_IP')
+    port:str = Field(alias='serialem_PORT')
+    directory:str= Field(alias='windows_path')
+    scopePath:str = Field(alias='scope_path')
+
+    class Config:
+        orm_mode=True
+
 
 @dataclass
 class MicroscopeInterface(ABC):
-    ip: str
-    port: int
-    directory: str
-    frames_directory: str
-    scope_path: str
-    energyfilter: bool
+    microscope: Microscope
+    detector: Detector
+    atlasSettings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
-    imageHandler: Any = Montage
-    loader_size: int = 12
+    # imageHandler: Any = Montage
     has_hole_ref: bool = False
     hole_crop_size: int = 0
 
     def __enter__(self):
-        self.connect(self.directory)
+        self.connect()
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
