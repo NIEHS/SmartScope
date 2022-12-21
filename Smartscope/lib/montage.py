@@ -284,8 +284,7 @@ class Montage(BaseImage):
             self.metadata['PieceCoordinates'] = [[0, 0, 0]]
             self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
             self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-            montage = img
-            self.image = montage
+            self.image = img
             self.make_symlink()
             return
 
@@ -306,7 +305,6 @@ class Montage(BaseImage):
 
         save_mrc(self.image_path, self.image, self.pixel_size, [0, 0])
 
-
 @dataclass
 class Movie(BaseImage):
 
@@ -323,7 +321,6 @@ class Movie(BaseImage):
     def check_metadata(self):
         if self.image_path.exists() and self.shifts.exists() and self.ctf.exists():
             return True
-
 
 def create_targets_from_box(targets: List, montage: BaseImage, target_type: str = 'square'):
     output_targets = []
@@ -351,7 +348,8 @@ def create_targets_from_center(targets: List, montage: BaseImage):
 
     output_targets.sort(key=lambda x: (x.stage_x, x.stage_y))
 
-    return output_targets    
+    return output_targets
+
 
 
 class Target:

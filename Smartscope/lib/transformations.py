@@ -2,6 +2,7 @@ import numpy as np
 import logging
 from math import radians, cos
 from scipy.spatial.distance import cdist
+from random import random
 
 logger = logging.getLogger(__name__)
 
@@ -47,3 +48,14 @@ def register_targets_by_proximity(targets:np.array, new_targets:np.array):
     distance_matrix = cdist(targets,new_targets)
     closest_index = np.argmin(distance_matrix,1)
     return closest_index
+
+def add_IS_offset(hole_size_in_um: float, mesh_type: str, offset_in_um: float = -1) -> float:
+    if offset_in_um != -1:
+        return offset_in_um
+    hole_radius = hole_size_in_um / 2
+    max_offset_factor = 0.5
+    if mesh_type == 'Carbon':
+        max_offset_factor = 0.8
+    offset_in_um = round(random() * hole_radius * max_offset_factor, 1)
+    logger.info(f'Adding a {offset_in_um} \u03BCm offset to sample ice gradient along the hole.')
+    return offset_in_um

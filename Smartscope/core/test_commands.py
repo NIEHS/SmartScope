@@ -37,31 +37,6 @@ def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'te
     print(f'All movie data: {movie.check_metadata()}')
 
 
-def test_realign_to_square(microscope_id):
-    microscope = Microscope.objects.get(pk=microscope_id)
-    with TFSSerialemInterface(ip=microscope.serialem_IP,
-                              port=microscope.serialem_PORT,
-                              directory=microscope.windows_path,
-                              scope_path=microscope.scope_path,
-                              energyfilter=False,
-                              loader_size=microscope.loader_size,
-                              frames_directory='X:/testing/') as scope:
-        scope.realign_to_square()
-
-
-def test_realign_to_hole(microscope_id):
-    from Smartscope.core.models import Microscope
-    microscope = Microscope.objects.get(pk=microscope_id)
-    with TFSSerialemInterface(ip=microscope.serialem_IP,
-                                port=microscope.serialem_PORT,
-                                directory=microscope.windows_path,
-                                scope_path=microscope.scope_path,
-                                energyfilter=False,
-                                loader_size=microscope.loader_size) as scope:
-        scope.make_hole_ref(1.2)
-        scope.align()
-
-
 def refine_atlas_pixel_size(grids: List[str]):
     logger.info('Running atlas pixel size refinement')
     from Smartscope.core.models import AtlasModel
@@ -106,7 +81,6 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
         cd = cdist(coordinates, coordinates)
         cd.sort(axis=0)
         pixel_size = grid_mesh * 10000 / cd[1].mean()
-        # logger.info(f'{instance} has a pixel size of {pixel_size:.2f} A/pix.')
         pixel_sizes.append(pixel_size)
 
     average = np.mean(pixel_sizes)
@@ -159,7 +133,18 @@ def test_grid_import(file_to_import:str):
     grid.is_valid()
     print(grid.errors) 
     grid.save()
-    
+
+def test_protocol_command(microscope_id,detector_id,command):
+    from Smartscope.core.models import Microscope, Detector
+    import Smartscope.lib.Datatypes.microscope as micModels
+    from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
+    microscope = Microscope.objects.get(pk=microscope_id)
+    detector = Detector.objects.get(pk=detector_id)
+    with TFSSerialemInterface(microscope = micModels.Microscope.from_orm(microscope),
+                              detector= micModels.Detector.from_orm(detector),
+                              atlasSettings= micModels.AtlasSettings.from_orm(detector)) as scope:
+        PROTOCOL_COMMANDS_FACTORY[command](scope,None,None)
+
 
 def list_plugins():
     from Smartscope.core.settings.worker import PLUGINS_FACTORY
@@ -257,7 +242,6 @@ def acquire_fast_atlas_test2(microscope_id):
             sem.Echo(f'Movemement {ind}')
             stage_movement = end - start
             sem.MoveStageWithSpeed(*stage_movement,0.5)
-            # sem.WaitForNextFrame()
             sem.StopContinuous()
             movement_elapsed = time.time() - start_movement
             distance = abs(start[1]-end[1])

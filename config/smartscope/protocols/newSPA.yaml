@@ -1,8 +1,8 @@
 name: SPA
 atlas:
   acquisition:
-    - set_atlas_optics
-    - atlas
+      - set_atlas_optics
+      - atlas
   targets:
     finders:
       - AI square finder
@@ -10,6 +10,10 @@ atlas:
       - Size selector
 square:
   acquisition:
+    - moveStage
+    - realignToSquare
+    - eucentricSearch
+    - createHoleRefPtolemy
     - square
   targets:
     finders:
@@ -19,10 +23,12 @@ square:
       - Graylevel selector
 mediumMag:
   acquisition:
-    - lowmagHole
+    - moveStage
+    - alignToHoleRef
+    - mediumMagHole
   targets:
     finders:
       - Ptolemy hole finder
 highMag:
   acquisition:
-    - highmag
+    - highMag

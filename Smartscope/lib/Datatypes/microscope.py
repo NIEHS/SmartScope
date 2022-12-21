@@ -41,13 +41,15 @@ class Detector(BaseModel):
 class Microscope(BaseModel):
     loaderSize:int = Field(alias='loader_size')
     ip:str = Field(alias='serialem_IP')
-    port:str = Field(alias='serialem_PORT')
+    port:int = Field(alias='serialem_PORT')
     directory:str= Field(alias='windows_path')
     scopePath:str = Field(alias='scope_path')
 
     class Config:
         orm_mode=True
 
+class CartridgeLoadingError(Exception):
+    pass
 
 @dataclass
 class MicroscopeInterface(ABC):
@@ -55,7 +57,6 @@ class MicroscopeInterface(ABC):
     detector: Detector
     atlasSettings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
-    # imageHandler: Any = Montage
     has_hole_ref: bool = False
     hole_crop_size: int = 0
 
@@ -88,8 +89,33 @@ class MicroscopeInterface(ABC):
     def clear_hole_ref(self):
         self.has_hole_ref = False
 
+    
+    @abstractmethod
+    def report_stage(self):
+        return 0,0,0
+
     @abstractmethod
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
+        pass
+
+    @abstractmethod
+    def eucentricity():
+        pass
+
+    @abstractmethod
+    def get_image_settings(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def buffer_to_numpy():
+        pass
+
+    @abstractmethod
+    def numpy_to_buffer():
+        pass
+
+    @abstractmethod
+    def set_atlas_optics(self):
         pass
 
     @abstractmethod
@@ -97,19 +123,44 @@ class MicroscopeInterface(ABC):
         pass
 
     @abstractmethod
-    def square(self, stageX, stageY, stageZ, file=''):
+    def realign_to_square(self):
+        return 0,0,0
+
+    @abstractmethod
+    def square(self, file=''):
         pass
 
     @abstractmethod
-    def align():
+    def align_to_hole_ref(self):
         pass
 
     @abstractmethod
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
+    def align_to_coord(self, coord):
+        pass
+
+    @abstractmethod
+    def moveStage(self, stage_x, stage_y, stage_z):
+        pass
+
+    @abstractmethod
+    def acquire_medium_mag(self):
+        pass
+
+
+    @abstractmethod
+    def medium_mag_hole(self, tiltAngle, file=''):
         pass
 
     @abstractmethod
     def focusDrift(self, def1, def2, step, drifTarget):
+        pass
+
+    @abstractmethod
+    def load_hole_ref(self):
+        pass
+
+    @abstractmethod
+    def image_shift_by_microns(self,isX,isY,tiltAngle):
         pass
 
     @abstractmethod

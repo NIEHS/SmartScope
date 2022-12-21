@@ -138,8 +138,7 @@ def create_grid_directories(path: str) -> None:
         directory.mkdir(exist_ok=True)
 
 
-def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
-    logger.info(f"Generating fake {file} from {funcname}")
+def select_random_fake_file(funcname):
     TEST_FILES_ROOT = os.getenv('TEST_FILES')
     dirs = dict(atlas=os.path.join(TEST_FILES_ROOT, 'atlas'),
                 square=os.path.join(TEST_FILES_ROOT, 'square'),
@@ -148,10 +147,11 @@ def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('
                 highmagframes=os.path.join(TEST_FILES_ROOT, 'highmag_frames'),
                 )
     dirname = dirs[funcname]
-    # if 'frames' in kwargs.keys() and kwargs['frames']:
-    #     dirname = dir[f'{funcname}_frames']
+    return random.choice(glob.glob(f'{dirname}/*.???'))
 
-    randomfile = random.choice(glob.glob(f'{dirname}/*.???'))
+def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
+    logger.info(f"Generating fake {file} from {funcname}")
+    randomfile = select_random_fake_file(funcname)
     destination = os.path.join(destination_dir, file)
     shutil.copy(randomfile, destination)
     shutil.copy(f'{randomfile}.mdoc', f'{destination}.mdoc')

@@ -8,7 +8,6 @@ from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
 from django.db import transaction
 from Smartscope.lib.Finders.basic_finders import find_square_center
 from Smartscope.core.autoscreen import autoscreen
-from Smartscope.lib.config import *
 from Smartscope.core.test_commands import *
 from Smartscope.core.utils.training_data import add_to_training_set
 from Smartscope.core.preprocessing_pipelines import highmag_processing
