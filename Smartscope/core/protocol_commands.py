@@ -1,5 +1,6 @@
 from Smartscope.lib.transformations import add_IS_offset
 from math import cos, radians
+import numpy as np
 
 
 def setAtlasOptics(scope,params,instance) -> None:
@@ -32,7 +33,9 @@ def mediumMagHole(scope,params,instance):
     scope.medium_mag_hole(params.tilt_angle,file=instance.raw)
 
 def alignToHoleRef(scope,params,instance):
-    scope.align_to_hole_ref()
+    shift = scope.align_to_hole_ref()
+    if np.sqrt(np.sum(np.array(shift)**2)) > 0.8:
+        scope.reset_image_shift()
 
 def highMag(scope, params,instance):
     finder = instance.finders.first()

@@ -14,10 +14,6 @@ from Smartscope.lib.image_manipulations import export_as_png
 
 logger = logging.getLogger(__name__)
 
-
-
-
-
 class SerialemInterface(MicroscopeInterface):
 
     def eucentricHeight(self, tiltTo=10, increments=-5):
@@ -130,7 +126,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.View()
         sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
-        return sem.ReportAlignShift()
+        return sem.ReportAlignShift()[5:]
     
     def align_to_coord(self, coord):
         sem.ImageShiftByPixels(coord[0], coord[1])
@@ -142,7 +138,6 @@ class SerialemInterface(MicroscopeInterface):
     
     def get_conversion_matrix(self, magIndex=0):
         return sem.CameraToSpecimenMatrix(magIndex)
-
 
     def load_hole_ref(self):
         if self.has_hole_ref:
@@ -228,6 +223,8 @@ class SerialemInterface(MicroscopeInterface):
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
 
+    def reset_image_shift(self):
+        return sem.ResetImageShift()
 
     def image_shift_by_microns(self,isX,isY,tiltAngle):
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
@@ -331,6 +328,9 @@ class FakeScopeInterface(MicroscopeInterface):
 
     def image_shift_by_microns(self, isX, isY, tiltAngle):
         return super().image_shift_by_microns(isX, isY, tiltAngle)
+
+    def reset_image_shift(self):
+        return super().reset_image_shift()
 
     def align_to_hole_ref(self):
         return super().align_to_hole_ref()

@@ -1,4 +1,5 @@
 from typing import Dict
+from django.core.cache import cache
 from .session import Finder, Classifier, Selector
 from django.contrib.contenttypes.models import ContentType
 # from Smartscope.lib.config import deep_get, load_plugins
@@ -10,7 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 def targets_methods(instance):
-    # plugins = load_plugins()
+    cache_key = f'{instance.pk}_targets_methods'
+    if (output:=cache.get(cache_key)) is not None:
+        logger.debug(f'Loading targets_method for {instance} from cache.')
+        return output
     targets = instance.targets.values_list('pk', flat=True)
     if len(targets) == 0:
         return dict(finders=[], classifiers=[], selectors=[])
@@ -23,10 +27,12 @@ def targets_methods(instance):
         classifiers.append('Micrographs curation')
     selectors = list(Selector.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
     logger.debug(f'Finders: {finders}, Classifiers: {classifiers}, Selectors: {selectors}')
-    return dict(finders=[PLUGINS_FACTORY[finder] for finder in finders],
+    output = dict(finders=[PLUGINS_FACTORY[finder] for finder in finders],
                 classifiers=[PLUGINS_FACTORY[classifier] for classifier in classifiers],
                 selectors=[PLUGINS_FACTORY[selector] for selector in selectors],
                 metadata=[CTFFitViewer()])
+    cache.set(cache_key,output,timeout=300)
+    return output
 
 
 def update_fields(instance, fields: Dict):

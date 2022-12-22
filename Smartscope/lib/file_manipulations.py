@@ -53,22 +53,6 @@ def copy_file(file, remove=True):
     return split_path(new_file)
 
 
-# def process_montage(obj, mag_level='atlas', save=True, raw_only=False, frames=False, force_reprocess=False, **kwargs):
-#     MAG_LEVELS = {'atlas': Atlas, 'square': Square, 'hole': Hole, 'high_mag': High_Mag}
-#     try:
-#         montage = MAG_LEVELS[mag_level.lower()](**obj.__dict__, **kwargs)
-#     except Exception as err:
-#         logger.error(err)
-#     is_metadata = montage.create_dirs(force_reproces=force_reprocess)
-#     if not is_metadata:
-#         montage.parse_mdoc(file=obj.raw)
-#         montage.build_montage(raw_only=raw_only)
-#         save_image(montage.montage, montage._id, extension='png')
-#         if save:
-#             montage.save_metadata()
-#     return montage, is_metadata
-
-
 def get_file(file, remove=True):
     path = split_path(file)
     file_busy(path.file, path.root)

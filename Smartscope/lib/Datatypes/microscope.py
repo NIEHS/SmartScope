@@ -132,6 +132,10 @@ class MicroscopeInterface(ABC):
 
     @abstractmethod
     def align_to_hole_ref(self):
+        return 0,0 
+
+    @abstractmethod
+    def reset_image_shift(self):
         pass
 
     @abstractmethod
