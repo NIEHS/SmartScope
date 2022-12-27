@@ -70,7 +70,7 @@ class SerialemInterface(MicroscopeInterface):
         
         sem.TiltTo(0)
         sem.MoveStageTo(0,0)
-        if self.energyfilter:
+        if self.detector.energyFilter:
             if sem.ReportEnergyFilter()[2] == 1:
                 sem.SetSlitIn(0)
         self.eucentricHeight()
@@ -107,7 +107,7 @@ class SerialemInterface(MicroscopeInterface):
         while True:
             logger.info('Running square realignment')
             sem.Search()
-            square = self.buffer_to_numpy()
+            square, shape_x, shape_y, _, _, _ = self.buffer_to_numpy()
             _, square_center, _ = find_square(square)
             im_center = (square.shape[1] // 2, square.shape[0] // 2)
             diff = square_center - np.array(im_center)
@@ -122,7 +122,6 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ReportStageXYZ()
 
     def align_to_hole_ref(self):
-        self.load_hole_ref()
         sem.View()
         sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
@@ -134,7 +133,7 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ReportStageXYZ()
 
     def moveStage(self,stage_x,stage_y,stage_z):
-        sem.moveStageTo(stage_x,stage_y,stage_z)
+        sem.MoveStageTo(stage_x,stage_y,stage_z)
     
     def get_conversion_matrix(self, magIndex=0):
         return sem.CameraToSpecimenMatrix(magIndex)
@@ -157,7 +156,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.TiltTo(tiltAngle)
         sem.AllowFileOverwrite(1)
         sem.SetImageShift(0, 0)
-        self.acquireMediumMag()
+        self.acquire_medium_mag()
         sem.OpenNewFile(file)
         sem.Save()
         sem.CloseFile()
@@ -182,7 +181,7 @@ class SerialemInterface(MicroscopeInterface):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
+            movies_directory = PureWindowsPath(self.detector.framesDir).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
             if framesName is not None:
@@ -207,7 +206,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.Exit(1)
 
     def loadGrid(self, position):
-        if self.microscope.loader_size > 1:
+        if self.microscope.loaderSize > 1:
             slot_status = sem.ReportSlotStatus(position)
             if slot_status == -1:
                 raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')

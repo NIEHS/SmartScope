@@ -185,7 +185,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                 #     for grid in grids:
                 #         grid.save()
 
-                session.export(export_all=False)
+                # session.export(export_all=False)
                 return redirect(f'../session/{session.session_id}')
 
                 # print(form_general.errors)

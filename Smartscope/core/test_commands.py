@@ -203,19 +203,18 @@ def acquire_fast_atlas_test(microscope_id):
         elapsed = time.time() - start_time
         logger.info(f'Finished acquisition in {elapsed:.0f} seconds.')
 
-def acquire_fast_atlas_test2(microscope_id):
+def acquire_fast_atlas_test2(microscope_id,detector_id):
+    from Smartscope.core.models import Microscope, Detector
+    import Smartscope.lib.Datatypes.microscope as micModels
     import serialem as sem
     from Smartscope.lib.microscope_methods import FastAtlas,make_serpent_pattern_in_mask
 
     microscope = Microscope.objects.get(pk=microscope_id)
-    with TFSSerialemInterface(ip=microscope.serialem_IP,
-                              port=microscope.serialem_PORT,
-                              directory=microscope.windows_path,
-                              scope_path=microscope.scope_path,
-                              energyfilter=False,
-                              loader_size=microscope.loader_size,
-                              frames_directory='X:/testing/') as scope:
-        scope.set_atlas_optics(62,100,5)
+    detector = Detector.objects.get(pk=detector_id)
+    with TFSSerialemInterface(microscope = micModels.Microscope.from_orm(microscope),
+                              detector= micModels.Detector.from_orm(detector),
+                              atlasSettings= micModels.AtlasSettings.from_orm(detector)) as scope:
+        # scope.set_atlas_optics(62,100,5)
         sem.SetColumnOrGunValve(1)
         sem.Search()
         X, Y, _, _, pixel_size, _ = sem.ImageProperties('A')
@@ -233,8 +232,8 @@ def acquire_fast_atlas_test2(microscope_id):
         for ind, m in enumerate(atlas.stage_movements):
             start, end = m
             distance = abs(start[1]-end[1])
-            Path(scope.scope_path,'raw','atlas',str(ind)).mkdir(parents=True,exist_ok=True)
-            sem.SetFolderForFrames(f'{scope.directory}raw/atlas/{ind}')
+            Path(scope.microscope.scopePath,'raw','atlas',str(ind)).mkdir(parents=True,exist_ok=True)
+            sem.SetFolderForFrames(f'{scope.microscope.directory}raw/atlas/{ind}')
             sem.MoveStageTo(*start)
             sem.Record()
             start_movement = time.time()

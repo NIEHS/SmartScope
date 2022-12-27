@@ -33,9 +33,13 @@ def mediumMagHole(scope,params,instance):
     scope.medium_mag_hole(params.tilt_angle,file=instance.raw)
 
 def alignToHoleRef(scope,params,instance):
-    shift = scope.align_to_hole_ref()
-    if np.sqrt(np.sum(np.array(shift)**2)) > 0.8:
+    while True:
+        shift = scope.align_to_hole_ref()
+        if np.sqrt(np.sum(np.array(shift)**2)) < 700:
+            break
         scope.reset_image_shift()
+
+
 
 def highMag(scope, params,instance):
     finder = instance.finders.first()
@@ -48,8 +52,7 @@ def highMag(scope, params,instance):
         offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
     isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(round(params.tilt_angle, 1)))
     scope.image_shift_by_microns(isX,isY,params.tilt_angle)
-    frames = scope.highmag(isX, isY, round(params.tilt_angle, 1), file=instance.raw,
-                            frames=params.save_frames, earlyReturn=any([params.force_process_from_average, params.save_frames is False]))
+    frames = scope.highmag(file=instance.raw, frames=params.save_frames, earlyReturn=any([params.force_process_from_average, params.save_frames is False]))
     instance.is_x=isX
     instance.is_y=isY
     instance.offset=offset

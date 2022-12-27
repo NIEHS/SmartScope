@@ -72,22 +72,22 @@ def grid_modification(sender, instance, **kwargs):
             os.rename(original.directory, instance.directory)
             return
 
-        if instance.status == 'complete' and original.status != 'complete':
-            instance.export()
-            if settings.USE_STORAGE:
-                try:
-                    com = f'rsync -au {instance.session_id.directory}/ {instance.session_id.storage}/'
-                    print(com)
-                    sub.Popen(shlex.split(com))
-                except Exception as err:
-                    print(err)
-            if settings.USE_AWS:
-                try:
-                    com = f'aws s3 sync {instance.session_id.directory} s3://{settings.AWS_STORAGE_BUCKET_NAME}/{settings.AWS_DATA_PREFIX}/{instance.session_id.working_dir}'
-                    print(com)
-                    sub.Popen(shlex.split(com))
-                except Exception as err:
-                    print(err)
+        # if instance.status == 'complete' and original.status != 'complete':
+        #     instance.export()
+        #     if settings.USE_STORAGE:
+        #         try:
+        #             com = f'rsync -au {instance.session_id.directory}/ {instance.session_id.storage}/'
+        #             print(com)
+        #             sub.Popen(shlex.split(com))
+        #         except Exception as err:
+        #             print(err)
+        #     if settings.USE_AWS:
+        #         try:
+        #             com = f'aws s3 sync {instance.session_id.directory} s3://{settings.AWS_STORAGE_BUCKET_NAME}/{settings.AWS_DATA_PREFIX}/{instance.session_id.working_dir}'
+        #             print(com)
+        #             sub.Popen(shlex.split(com))
+        #         except Exception as err:
+        #             print(err)
 
         # if instance.status == 'started' and original.status is None:
         #     instance.start_time = timezone.now()

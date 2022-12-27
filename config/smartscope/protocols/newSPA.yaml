@@ -1,7 +1,7 @@
 name: SPA
 atlas:
   acquisition:
-      - set_atlas_optics
+      - setAtlasOptics 
       - atlas
   targets:
     finders:
@@ -24,6 +24,7 @@ square:
 mediumMag:
   acquisition:
     - moveStage
+    - createHoleRefPtolemy
     - alignToHoleRef
     - mediumMagHole
   targets:

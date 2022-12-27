@@ -140,13 +140,13 @@ def drawAtlas(atlas, targets, display_type, method):
     labels_list = []
     for i in targets:
         color, label, prefix = i.css_color(display_type, method)
-        if color is not None:  # style = f"stroke: {color}; fill: {color}; color: {color}; "
+        if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
             x = finder.x - sz // 2
             y = -(finder.y - sz // 2) + d.height - sz
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
-                               class_=f'target', onclick="clickSquare(this)")  # style=style,
+                               class_=f'target', onclick="clickSquare(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 35)
