@@ -39,7 +39,10 @@ def alignToHoleRef(scope,params,instance):
             break
         scope.reset_image_shift()
 
-
+def loadHoleRef(scope,params,instance):
+    if scope.has_hole_ref:
+        return
+    scope.load_hole_ref()
 
 def highMag(scope, params,instance):
     finder = instance.finders.first()

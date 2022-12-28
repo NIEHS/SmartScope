@@ -10,7 +10,9 @@ class MagLevel(BaseModel):
     targets: Optional[TargetPlugins] = TargetPlugins()
 
 class BaseProtocol(BaseModel):
+    name: str
     atlas: MagLevel
     square: MagLevel
     mediumMag: MagLevel
     highMag: MagLevel
+    description: str = ''

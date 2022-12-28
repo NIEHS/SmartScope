@@ -1,6 +1,6 @@
 from django import forms
 from Smartscope.core.models import *
-from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG
+from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG, PROTOCOLS_FACTORY 
 import yaml
 
 
@@ -29,6 +29,8 @@ class ScreeningSessionForm(forms.ModelForm):
 
 
 class AutoloaderGridForm(forms.ModelForm):
+    protocol = forms.ChoiceField([(protocol,protocol) for protocol in PROTOCOLS_FACTORY.keys()])
+
     class Meta:
         model = AutoloaderGrid
         fields = ('name', 'position', 'holeType', 'meshSize', 'meshMaterial')

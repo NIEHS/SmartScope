@@ -127,9 +127,6 @@ class ExtraPropertyMixin:
     def directory(self):
         return os.path.join(self.working_dir, self.name)
 
-    # @ property
-    # def svg(self):
-    #     return os.path.join(self.grid_id.directory, 'pngs', f'{self.name}.svg')
 
     @ property
     def png(self):

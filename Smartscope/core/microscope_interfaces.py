@@ -67,7 +67,6 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetSpotSize(self.atlasSettings.spotSize)
 
     def atlas(self, size, file=''):
-        
         sem.TiltTo(0)
         sem.MoveStageTo(0,0)
         if self.detector.energyFilter:
@@ -93,7 +92,6 @@ class SerialemInterface(MicroscopeInterface):
         sem.Save()
         sem.CloseFile()
         logger.info('Square acquisition finished')
-        # return stageX, stageY, stageZ
     
     def buffer_to_numpy(self, buffer:str='A') -> Tuple[np.array, int, int, int, float, float]:
         shape_x, shape_y, binning, exposure, pixel_size, _ = sem.ImageProperties(buffer)
@@ -139,8 +137,6 @@ class SerialemInterface(MicroscopeInterface):
         return sem.CameraToSpecimenMatrix(magIndex)
 
     def load_hole_ref(self):
-        if self.has_hole_ref:
-            return
         sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')
         shape_x, _, _, _, _, _ = sem.ImageProperties('T')
         self.hole_crop_size = int(shape_x)

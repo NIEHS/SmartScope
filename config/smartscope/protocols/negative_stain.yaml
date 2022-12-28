@@ -1,4 +1,4 @@
-name: SPA
+name: NegativeStain
 atlas:
   acquisition:
       - setAtlasOptics 
@@ -12,24 +12,17 @@ square:
   acquisition:
     - moveStage
     - realignToSquare
-    - eucentricSearch
-    - createHoleRefPtolemy
+    - eucentricity
     - square
   targets:
     finders:
-      - AI hole finder
       - Regular pattern
     selectors:
       - Graylevel selector
 mediumMag:
   acquisition:
     - moveStage
-    - createHoleRefPtolemy
-    - alignToHoleRef
     - mediumMagHole
-  targets:
-    finders:
-      - Ptolemy hole finder
 highMag:
   acquisition:
     - highMag

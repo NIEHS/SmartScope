@@ -12,14 +12,10 @@ SMARTSCOPE_PROTOCOLS = SMARTSCOPE_CONFIG / 'protocols'
 ##Register plugins
 PLUGINS_FACTORY = dict()
 register_plugins(SMARTSCOPE_PLUGINS, PLUGINS_FACTORY)
-register_external_plugins( EXTERNAL_PLUGINS_LIST, PLUGINS_FACTORY )
+PROTOCOLS_FACTORY = dict()
+register_protocols(SMARTSCOPE_PROTOCOLS, PROTOCOLS_FACTORY)
+register_external_plugins( EXTERNAL_PLUGINS_LIST, plugins_factory=PLUGINS_FACTORY, protocols_factory=PROTOCOLS_FACTORY )
 PLUGINS_FACTORY['CTF Viewer'] = CTFFitViewer()
-
-
 
 ##Register available protocol commands
 PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)
-
-PROTOCOLS_FACTORY = dict()
-register_protocols(SMARTSCOPE_PROTOCOLS, PROTOCOLS_FACTORY)
-

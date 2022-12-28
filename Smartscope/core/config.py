@@ -36,19 +36,21 @@ def get_active_plugins_list(external_plugins_directory,external_plugins_list):
         return [external_plugins_directory / plugin.strip() for plugin in file.readlines()]
 
 
-def register_external_plugins(external_plugins_list,factory):   
-    for path in external_plugins_list:
-        sys.path.insert(0, str(path))
-        register_plugins(path/'smartscope_plugin'/'config',factory)
-        sys.path.remove(str(path))
+
 
 def register_protocols(directory, factory):
     for file in directory.glob('*.yaml'):
         logger.debug(f'Registering protocol {file}')
         with open(file) as f:
             data = yaml.safe_load(f)
-
         factory[data['name']] = BaseProtocol.parse_obj(data)
+
+def register_external_plugins(external_plugins_list,plugins_factory,protocols_factory):   
+    for path in external_plugins_list:
+        sys.path.insert(0, str(path))
+        register_plugins(path/'smartscope_plugin'/'plugins',plugins_factory)
+        register_protocols(path/'smartscope_plugin'/'protocols',protocols_factory)
+        sys.path.remove(str(path))
 
 def get_protocol_commands(external_plugins_list):
     from Smartscope.core.protocol_commands import protocolCommandsFactory
@@ -59,8 +61,6 @@ def get_protocol_commands(external_plugins_list):
         sys.path.remove(str(path))
         protocolCommandsFactory.update(protocol_commands)
     return protocolCommandsFactory
-
-
 
 
 def load_protocol(file='protocol.yaml'):
