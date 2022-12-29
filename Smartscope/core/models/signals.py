@@ -92,14 +92,14 @@ def grid_modification(sender, instance, **kwargs):
         # if instance.status == 'started' and original.status is None:
         #     instance.start_time = timezone.now()
 @ receiver(post_save, sender=HoleModel)
-def queue_bis_group(sender,instance, **kwargs):
-    logger.debug(instance.__dict__)
-    if instance.selected:
-        logger.debug("Updating status bis target to 'queued'")
-        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')
-        return
-    logger.debug("Updating status bis target to 'null'")
-    HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status='queued').update(status=None)
+def queue_bis_group(sender,instance,created, **kwargs):
+    if not created:
+        if instance.selected:
+            logger.debug("Updating status bis target to 'queued'")
+            HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')
+            return
+        logger.debug("Updating status bis target to 'null'")
+        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status='queued').update(status=None)
 # @ receiver(pre_save, sender=HoleModel)
 # def unqueue_bis_group(sender, instance, **kwargs):
 #     if not instance._state.adding:
@@ -116,7 +116,6 @@ def queue_bis_group(sender,instance, **kwargs):
 @ receiver(pre_save, sender=SquareModel)
 def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
-        # original = sender.objects.get(pk=instance.pk)
         if instance.status == 'completed' and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
@@ -148,6 +147,7 @@ def change_group(sender, instance, **kwargs):
 @receiver(post_save, sender=ScreeningSession)
 def create_session_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
+        logger.debug(f'Creating session {instance} directories')
         create_scope_dirs(instance.microscope_id.scope_path)
         Path(instance.directory).mkdir(parents=True, exist_ok=True)
 
@@ -156,12 +156,3 @@ def create_session_scope_directory(sender, instance, created, *args, **kwargs):
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.scope_path)
-
-
-# @ receiver(post_save, sender=Process)
-# def clean_scope_dir(sender, instance, created, **kwargs):
-#     if created:
-#         print('Starting new session, Cleaning scope directory')
-#         send_to_worker(os.getenv('SMARTSCOPE_EXE'), arguments=['clean_scope_dir'])
-#     else:
-#         print('Reloading existing session')

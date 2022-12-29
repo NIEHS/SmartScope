@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 import yaml
-from Smartscope.lib.s3functions import TemporaryS3File
+
 import logging
 import importlib
 import sys
@@ -61,20 +61,3 @@ def get_protocol_commands(external_plugins_list):
         sys.path.remove(str(path))
         protocolCommandsFactory.update(protocol_commands)
     return protocolCommandsFactory
-
-
-def load_protocol(file='protocol.yaml'):
-    file = Path(file)
-    if file.exists():
-        with open(file) as f:
-            return yaml.safe_load(f)
-
-    if eval(os.getenv('USE_AWS')):
-        with TemporaryS3File([file]) as temp:
-            with open(temp.temporary_files[0]) as f:
-                return yaml.safe_load(f)
-
-
-def save_protocol(protocol, file='protocol.yaml'):
-    with open(file, 'w') as f:
-        yaml.dump(protocol, f)

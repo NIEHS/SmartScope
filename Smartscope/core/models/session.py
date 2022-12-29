@@ -316,6 +316,7 @@ class ScreeningSession(BaseModel):
                 return self.working_dir
 
         if settings.USE_STORAGE:
+            cache.set(cache_key,cwd,timeout=21600)
             return cwd
 
     @ property
@@ -498,11 +499,11 @@ class AutoloaderGrid(BaseModel):
         logger.debug(f'Time spent: {self.grid_id}, {timeSpent}')
         return timeSpent
 
+    
     @ property
     def protocol(self):
-        if self.holeType.name in ['NegativeStain', 'Lacey']:
-            return 'NegativeStain'
-        return 'SPA'
+        return Path(self.directory , 'protocol.yaml')
+
 
     @ property
     def directory(self):
