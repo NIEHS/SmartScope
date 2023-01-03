@@ -1,23 +1,18 @@
 from pathlib import PureWindowsPath
-from typing import Callable
-from Smartscope.lib.Datatypes.microscope import MicroscopeInterface
+from typing import Callable, Tuple
+from Smartscope.lib.Datatypes.microscope import MicroscopeInterface, CartridgeLoadingError
 import serialem as sem
+import mrcfile
 import time
 import logging
 import math
+import os
 import numpy as np
 from Smartscope.lib.Finders.basic_finders import find_square
-from Smartscope.lib.image_manipulations import generate_hole_ref
-
-
-from Smartscope.lib.file_manipulations import generate_fake_file
+from Smartscope.lib.file_manipulations import generate_fake_file, select_random_fake_file
+from Smartscope.lib.image_manipulations import export_as_png
 
 logger = logging.getLogger(__name__)
-
-
-class CartridgeLoadingError(Exception):
-    pass
-
 
 class SerialemInterface(MicroscopeInterface):
 
@@ -53,67 +48,64 @@ class SerialemInterface(MicroscopeInterface):
             else:
                 logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
                 break
+
+    def eucentricity(self):
+        sem.GoToLowDoseArea('V')
+        sem.Eucentricity(1)
     
     def get_image_settings(self, magSet:str='V'):
-        shapeX,shapeY,_,_,_,_ =sem.ReportCurrentPixelSize(magSet)
-        pixel_size = sem.ReportCameraSetArea(magSet) / 1000
-        return shapeX*pixel_size,shapeY*pixel_size
+        return sem.ReportCurrentPixelSize(magSet)
     
-    def set_atlas_optics(self,mag,c2,spotsize):
+    def report_stage(self):
+        return sem.ReportStageXYZ()
+    
+    def set_atlas_optics(self):
+        logger.info('Setting atlas optics')
         sem.SetLowDoseMode(0)
-        sem.Delay(0.5)
-        sem.SetMag(int(mag))
-        sem.Delay(0.5)
-        sem.SetPercentC2(float(c2))
-        sem.Delay(0.5)
-        sem.SetSpotSize(int(spotsize))
-        sem.Delay(0.5)
+        sem.SetMag(self.atlasSettings.mag)
+        sem.SetPercentC2(self.atlasSettings.c2)
+        sem.SetSpotSize(self.atlasSettings.spotSize)
 
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        logger.debug(f'Atlas mag:{mag}, c2perc:{c2}, spotsize:{spotsize}, tileX:{tileX}, tileY:{tileY}')
+    def atlas(self, size, file=''):
         sem.TiltTo(0)
-        sem.MoveStageTo(center_stage_x, center_stage_y)
-        self.set_atlas_optics(mag,c2,spotsize)
-        logger.debug('Optics set successfully')
-        if self.energyfilter:
+        sem.MoveStageTo(0,0)
+        if self.detector.energyFilter:
             if sem.ReportEnergyFilter()[2] == 1:
                 sem.SetSlitIn(0)
         self.eucentricHeight()
-        sem.OpenNewMontage(tileX, tileY, file)
+        sem.OpenNewMontage(size[0],size[1], file)
         self.checkDewars()
         self.checkPump()
         logger.info('Starting Atlas acquisition')
         sem.Montage()
         sem.CloseFile()
-        sem.SetLowDoseMode(1)
         logger.info('Atlas acquisition finished')
+        sem.SetLowDoseMode(1)
 
-    def square(self, stageX, stageY, stageZ, file=''):
+    def square(self, file=''):
         sem.SetLowDoseMode(1)
         sem.GoToLowDoseArea('S')
-        logger.info(f'Starting Square acquisition of: {file}')
-        logger.debug(f'Moving stage to: X={stageX}, Y={stageY}, Z={stageZ}')
-        time.sleep(0.2)
-        sem.MoveStageTo(stageX, stageY, stageZ)
-        stageX, stageY, stageZ = self.realign_to_square()
-        sem.GoToLowDoseArea('V')
-        sem.Eucentricity(1)
         self.checkDewars()
         self.checkPump()
-        sem.MoveStageTo(stageX, stageY)
-        time.sleep(0.2)
         sem.Search()
         sem.OpenNewFile(file)
         sem.Save()
         sem.CloseFile()
         logger.info('Square acquisition finished')
-        return stageX, stageY, stageZ
+    
+    def buffer_to_numpy(self, buffer:str='A') -> Tuple[np.array, int, int, int, float, float]:
+        shape_x, shape_y, binning, exposure, pixel_size, _ = sem.ImageProperties(buffer)
+        return np.asarray(sem.bufferImage(buffer)), shape_x, shape_y, binning, exposure, pixel_size
+
+    def numpy_to_buffer(self,image,buffer='T'):
+        sem.PutImageInBuffer(image, buffer, *image.shape, 'A')
+        
 
     def realign_to_square(self):
         while True:
             logger.info('Running square realignment')
             sem.Search()
-            square = np.asarray(sem.bufferImage('A'))
+            square, shape_x, shape_y, _, _, _ = self.buffer_to_numpy()
             _, square_center, _ = find_square(square)
             im_center = (square.shape[1] // 2, square.shape[0] // 2)
             diff = square_center - np.array(im_center)
@@ -127,48 +119,41 @@ class SerialemInterface(MicroscopeInterface):
             logger.info('Iterating.')
         return sem.ReportStageXYZ()
 
-    def align(self):
+    def align_to_hole_ref(self):
         sem.View()
         sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
-        return sem.ReportAlignShift()
+        return sem.ReportAlignShift()[5:]
     
     def align_to_coord(self, coord):
         sem.ImageShiftByPixels(coord[0], coord[1])
-        # sem.View()
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
 
+    def moveStage(self,stage_x,stage_y,stage_z):
+        sem.MoveStageTo(stage_x,stage_y,stage_z)
     
     def get_conversion_matrix(self, magIndex=0):
         return sem.CameraToSpecimenMatrix(magIndex)
-    # def make_hole_ref(self, hole_size_in_um):
 
-    #     # sem.View()
-    #     # img = np.asarray(sem.bufferImage('A'))
-    #     # dtype = img.dtype
-    #     # shape_x, shape_y, _, _, pixel_size, _ = sem.ImageProperties('A')
-    #     # logger.debug(f'\nImage dtype: {dtype}\nPixel size: {pixel_size}')
-    #     # ref = generate_hole_ref(hole_size_in_um, pixel_size * 10, out_type=dtype)
-    #     # self.hole_crop_size = int(min([shape_x, shape_y, ref.shape[0] * 1.5]))
-    #     # sem.PutImageInBuffer(ref, 'T', ref.shape[0], ref.shape[1])
-    #     sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')  # Will need to change in the future for more flexibility
-    #     shape_x, _, _, _, _, _ = sem.ImageProperties('T')
-    #     self.hole_crop_size = int(shape_x)
-    #     self.has_hole_ref = True
+    def load_hole_ref(self):
+        sem.ReadOtherFile(0, 'T', 'reference/holeref.mrc')
+        shape_x, _, _, _, _, _ = sem.ImageProperties('T')
+        self.hole_crop_size = int(shape_x)
+        self.has_hole_ref = True
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', aliThreshold=500):
+    def acquire_medium_mag(self):
         sem.GoToLowDoseArea('V')
-        sem.TiltTo(tiltAngle)
-
-        sem.AllowFileOverwrite(1)
-        sem.SetImageShift(0, 0)
-        sem.MoveStageTo(stageX, stageY, stageZ)
-        time.sleep(0.2)
-        
+        time.sleep(1)
         self.checkDewars()
         self.checkPump()
         sem.View()
+
+    def medium_mag_hole(self, tiltAngle, file=''):
+        sem.TiltTo(tiltAngle)
+        sem.AllowFileOverwrite(1)
+        # sem.SetImageShift(0, 0)
+        self.acquire_medium_mag()
         sem.OpenNewFile(file)
         sem.Save()
         sem.CloseFile()
@@ -181,11 +166,11 @@ class SerialemInterface(MicroscopeInterface):
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
-    def connect(self, directory: str):
+    def connect(self):
         logger.info(
-            f'Initiating connection to SerialEM at: {self.ip}:{self.port}\n\t If no more messages show up after this one and the External Control notification is not showing up on the SerialEM interface, there is a problem. \n\t The best way to solve it is generally by closing and restarting SerialEM.')
-        sem.ConnectToSEM(self.port, self.ip)
-        sem.SetDirectory(directory)
+            f'Initiating connection to SerialEM at: {self.microscope.ip}:{self.microscope.port}\n\t If no more messages show up after this one and the External Control notification is not showing up on the SerialEM interface, there is a problem. \n\t The best way to solve it is generally by closing and restarting SerialEM.')
+        sem.ConnectToSEM(self.microscope.port, self.microscope.ip)
+        sem.SetDirectory(self.microscope.directory)
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
@@ -193,7 +178,7 @@ class SerialemInterface(MicroscopeInterface):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.frames_directory).as_posix().replace('/', '\\')
+            movies_directory = PureWindowsPath(self.detector.framesDir).as_posix().replace('/', '\\')
             logger.info(f'Saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
             if framesName is not None:
@@ -202,12 +187,13 @@ class SerialemInterface(MicroscopeInterface):
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
 
-        if self.energyfilter and zerolossDelay > 0:
+        if self.detector.energyFilter and zerolossDelay > 0:
             sem.RefineZPL(zerolossDelay * 60, 1)
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
 
-    def disconnect(self, close_valves=True):
+    def disconnect(self, close_valves=False):
+        
         logger.info("Closing Valves and disconnecting from SerialEM")
         if close_valves:
             try:
@@ -217,7 +203,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.Exit(1)
 
     def loadGrid(self, position):
-        if self.loader_size > 1:
+        if self.microscope.loaderSize > 1:
             slot_status = sem.ReportSlotStatus(position)
             if slot_status == -1:
                 raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
@@ -233,12 +219,16 @@ class SerialemInterface(MicroscopeInterface):
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
 
-    def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
+    def reset_image_shift(self):
+        return sem.ResetImageShift()
 
+    def image_shift_by_microns(self,isX,isY,tiltAngle):
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
-        sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))
+        sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))     
+
+    def highmag(self, file='', frames=True, earlyReturn=False):
 
         if not earlyReturn:
             sem.EarlyReturnNextShot(0)
@@ -295,11 +285,14 @@ class JEOLSerialemInterface(SerialemInterface):
             time.sleep(wait)
 
     @remove_condenser_aperture
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        super().atlas(mag, c2, spotsize, tileX, tileY, file, center_stage_x, center_stage_y)
+    def atlas(self, *args, **kwargs):
+        super().atlas(*args,**kwargs)
 
 
 class FakeScopeInterface(MicroscopeInterface):
+
+    def set_atlas_optics(self):
+        pass
 
     def checkDewars(self, wait=30) -> None:
         pass
@@ -310,26 +303,70 @@ class FakeScopeInterface(MicroscopeInterface):
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
         pass
 
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
-        generate_fake_file(file, 'atlas', destination_dir=self.scope_path)
+    def eucentricity():
+        pass
 
-    def square(self, stageX, stageY, stageZ, file=''):
-        generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.scope_path)
+    def moveStage(self, stage_x, stage_y, stage_z):
+        pass
+
+    def realign_to_square(self):
+        return super().realign_to_square()
+
+    def atlas(self, size, file=''):
+        generate_fake_file(file, 'atlas', destination_dir=self.microscope.scopePath)
+
+    def square(self, file=''):
+        generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.microscope.scopePath)
         return 0, 0, 0
 
     def align():
         pass
 
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, hole_size_in_um, file='', is_negativestain=False, aliThreshold=500):
-        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.scope_path)
+    def image_shift_by_microns(self, isX, isY, tiltAngle):
+        return super().image_shift_by_microns(isX, isY, tiltAngle)
+
+    def reset_image_shift(self):
+        return super().reset_image_shift()
+
+    def align_to_hole_ref(self):
+        return super().align_to_hole_ref()
+
+    def acquire_medium_mag(self,):
+        return super().acquire_medium_mag()
+
+    def align_to_coord(self, coord):
+        return super().align_to_coord(coord)
+    
+    def get_image_settings(self, *args, **kwargs):
+        return super().get_image_settings(*args, **kwargs)
+    
+    def load_hole_ref(self):
+        return super().load_hole_ref()
+    
+    def report_stage(self):
+        return super().report_stage()
+    
+    def buffer_to_numpy(self):
+        file = select_random_fake_file('lowmagHole')
+        logger.debug(f'Using {file} to generate fake buffer')
+        with mrcfile.open(file) as mrc:
+            header = mrc.header
+            img = mrc.data
+        return img, header.nx, header.ny, 1, 1, header.cella.x/header.nx/10
+    
+    def numpy_to_buffer(sekf,image):
+        export_as_png(image, output=os.path.join(os.getenv('TEMPDIR'),'mockNumpyToBuffer.png'),height=max([image.shape[0],1024]))
+
+    def medium_mag_hole(self, tiltAngle, file=''):
+        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.microscope.scopePath)
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
     def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
-        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.scope_path)
+        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
 
-    def connect(self, directory: str):
+    def connect(self):
         logger.info('Connecting to fake scope.')
 
     def setup(self, saveframes, zerolossDelay, framesName=None):

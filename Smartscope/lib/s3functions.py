@@ -14,7 +14,7 @@ class SmartscopeStorage(S3Boto3Storage):
     custom_domain = None
 
     def dir_exists(self, name):
-        name = self._normalize_name(self._clean_name(name))
+        name = self._normalize_name(name)
         # print(name)
         objs = self.connection.meta.client.list_objects(Bucket=self.bucket_name, Prefix=name, MaxKeys=1)
         if 'Contents' in objs:

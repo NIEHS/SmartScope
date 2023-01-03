@@ -59,15 +59,6 @@ class Finder(BaseFeatureAnalyzer):
     def is_classifier(self):
         return False
 
-    # def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
-    #     """Where the main logic for the algorithm is"""
-    #     module = importlib.import_module(self.module)
-    #     function = getattr(module, self.method)
-    #     output = function(montage,*args, **kwargs, **self.kwargs)
-    #     targets = create_targets_method(output[0],montage)
-
-    #     return targets, output[1],output[2]
-
 
 class Classifier(BaseFeatureAnalyzer):
     classes: Dict[(str, classLabel)]

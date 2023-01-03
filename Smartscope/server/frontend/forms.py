@@ -1,6 +1,6 @@
 from django import forms
 from Smartscope.core.models import *
-from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG
+from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG, PROTOCOLS_FACTORY 
 import yaml
 
 
@@ -28,7 +28,13 @@ class ScreeningSessionForm(forms.ModelForm):
             visible.field.widget.attrs['class'] = 'form-control'
 
 
+def read_config():
+    file = SMARTSCOPE_CONFIG / 'default_collection_params.yaml'
+    return yaml.safe_load(file.read_text())
+
 class AutoloaderGridForm(forms.ModelForm):
+    protocol = forms.ChoiceField(choices=[('auto','auto')] + [(protocol,protocol) for protocol in PROTOCOLS_FACTORY.keys()])
+
     class Meta:
         model = AutoloaderGrid
         fields = ('name', 'position', 'holeType', 'meshSize', 'meshMaterial')
@@ -74,7 +80,7 @@ class AutoloaderGridReportForm(forms.ModelForm):
 class GridCollectionParamsForm(forms.ModelForm):
     class Meta:
         model = GridCollectionParams
-        fields = '__all__'
+        exclude = ['square_x','square_y']
         help_texts = dict(
             atlas_x='Number of tiles in X for the Atlas',
             atlas_y='Number of tiles in Y for the Atlas',
@@ -92,10 +98,6 @@ class GridCollectionParamsForm(forms.ModelForm):
             offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
             offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable'
         )
-
-    def read_config(self):
-        file = SMARTSCOPE_CONFIG / 'default_collection_params.yaml'
-        return yaml.safe_load(file.read_text())
 
     def __init__(self, *args, **kwargs):
 
@@ -136,7 +138,9 @@ class GridCollectionParamsForm(forms.ModelForm):
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
 
-        for field, data in self.read_config().items():
+        for field, data in read_config().items():
+            if field not in self.fields.keys():
+                continue
             self.fields[field].initial = data.pop('initial')
             self.fields[field].widget.attrs.update(data)
 

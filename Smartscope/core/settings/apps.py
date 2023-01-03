@@ -1,9 +1,9 @@
 from django.apps import AppConfig
 
 
-class SmartscopeConfig(AppConfig):
-    name = 'Smartscope'
-    label = 'autoscreenViewer'
+# class SmartscopeConfig(AppConfig):
+#     name = 'Smartscope'
+#     label = 'autoscreenViewer'
 
 
 class API(AppConfig):

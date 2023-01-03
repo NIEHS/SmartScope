@@ -1,26 +1,19 @@
 from django.shortcuts import render
-
-from django.contrib.auth import logout, authenticate, login, REDIRECT_FIELD_NAME
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User, Group
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.http import JsonResponse, HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
-from django.views import generic
-from django.views.generic import View, TemplateView, RedirectView
+from django.http import JsonResponse
+from django.views.generic import TemplateView
 from django.shortcuts import redirect
-from django.db import transaction
 import os
-import glob
 import json
 from .forms import *
 import subprocess as sub
 import psutil
-import signal
 from django.utils.timezone import now
 from Smartscope.core.db_manipulations import viewer_only
+from Smartscope.lib.file_manipulations import create_grid_directories
+from Smartscope.core.protocols import get_or_set_protocol
 from datetime import datetime
 
 
@@ -49,68 +42,6 @@ class AutoScreenViewer(LoginRequiredMixin, TemplateView):
     login_url = '/login'
     redirect_field_name = 'redirect_to'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        print('User Staff?:', self.request.user.is_staff)
-        if self.request.user.is_staff:
-            context['dirs'] = sorted(list(Group.objects.all().values_list('name', flat=True)))
-        else:
-            context['dirs'] = sorted(list(self.request.user.groups.values_list('name', flat=True)))
-        return context
-
-    def listsubdir(self, dir, reverse=False):
-        ld = sorted(os.listdir(os.path.join(settings.AUTOSCREENING, dir)), reverse=reverse)
-        return [l for l in ld if l[0] != '.']
-
-    def open_settings(self, path):
-        with open(path, 'r') as f:
-            adict = json.load(f)
-        return adict
-
-
-class GroupSessions(AutoScreenViewer):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['sessions'] = ScreeningSession.objects.all().filter(group=kwargs['dir']).order_by('-date')
-        return context
-
-
-class GridsSession(GroupSessions):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        session = kwargs['session'].split('_')
-        context['selected_session'] = ScreeningSession.objects.get(session='_'.join(session[1:]), date=session[0])
-        context['autoloader'] = AutoloaderGrid.objects.all().filter(session_id=context['selected_session'].session_id).order_by('position')
-        context['form_general'] = ScreeningSessionForm(instance=context['selected_session'])
-        # print(context)
-        return context
-
-
-class Report(GridsSession):
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context['grid'] = context['selected_session'].autoloadergrid_set.get(name=kwargs['name'], position=kwargs['pos'])
-
-        context['gridform'] = AutoloaderGridReportForm(instance=context['grid'])
-        context['gridCollectionParamsForm'] = GridCollectionParamsForm(instance=context['grid'].params_id)
-        context['directory'] = context['grid'].url
-        context['quality_choices'] = HoleModel.QUALITY_CHOICES
-        context['class_choices'] = HoleModel.CLASS_CHOICES
-        try:
-            context['atlas_id'] = context['grid'].atlasmodel_set.all().first().atlas_id
-        except:
-            context['atlas_id'] = None
-        # self.directory = context['grid'].directory
-
-        return context
-
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
-        return render(request, self.template_name, context)
-
-
 class AutoScreenSetup(LoginRequiredMixin, TemplateView):
     template_name = "autoscreenViewer/run_setup.html"
     login_url = '/login'
@@ -126,11 +57,9 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
             form_params = kwargs['form_params']
 
         grids = []
-        # for i in range(1, 13, 1):
         form = AutoloaderGridForm(prefix=1)
         form.fields['position'].initial = 1
-        # form.fields['position'].widget.attrs['readonly'] = True
-        # form.fields['position'].widget.attrs['class'] = "form-control-plaintext"
+
         grids.append(form)
 
         context = dict(form_general=form_general, form_params=form_params, grids=grids)
@@ -151,14 +80,15 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
                 session, created = ScreeningSession.objects.get_or_create(**form_general.cleaned_data, date=datetime.today().strftime('%Y%m%d'))
                 if created:
-                    print(f'{session} newly created')
+                    logger.debug(f'{session} newly created')
+
                 else:
-                    print(f'{session} exists')
+                    logger.debug(f'{session} exists')
                 params, created = GridCollectionParams.objects.get_or_create(**form_params.cleaned_data)
                 if created:
-                    print(f'{params} newly created')
+                    logger.debug(f'{params} newly created')
                 else:
-                    print(f'{params} exists')
+                    logger.debug(f'{params} exists')
 
                 grids = []
                 for i in num_grids:
@@ -166,29 +96,20 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
                     if form.is_valid():
                         if form.cleaned_data['name'] != '':
+                            protocol = form.cleaned_data.pop('protocol')
                             grid, created = AutoloaderGrid.objects.get_or_create(**form.cleaned_data, session_id=session, params_id=params)
-
+                            
                             if created:
-                                print(f'{grid} newly created')
+                                logger.debug(f'{grid} newly created, creating directories')
+                                create_grid_directories(grid.directory)
                             else:
-                                print(f'{grid} exists')
-                        # if grid.name == '':
-                        #     continue
-                        # else:
-                        #     grid.session_id = session
-                        #     grid.params_id = params
-                        #     grids.append(grid)
+                                logger.debug(f'{grid} exists')
+                            logger.debug(f'Setting protocol {protocol} for {grid}')
+                            get_or_set_protocol(grid,protocol)
 
-                # with transaction.atomic():
-                #     session.save()
-                #     params.save()
-                #     for grid in grids:
-                #         grid.save()
-
-                session.export(export_all=False)
+                # session.export(export_all=False)
                 return redirect(f'../session/{session.session_id}')
 
-                # print(form_general.errors)
         context = self.get_context_data(form_general=form_general, form_params=form_params)
 
         return render(request, self.template_name, context)
@@ -228,7 +149,7 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
         proc = context['process']
         body = json.loads(request.body)
         if 'start' in body:
-            print('starting process')
+            logger.debug('starting process')
             pid = self.start_process()
             print('PID:', pid)
             if proc is None:
@@ -243,7 +164,7 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         body = json.loads(request.body)
         if 'start' in body:
-            print('Stop process')
+            logger.debug('Stop process')
             self.stop_process(context['process'])
             return JsonResponse(dict(status='yay!'))
 
@@ -267,7 +188,7 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         if 'getarg' in kwargs:
             if kwargs['getarg'] == 'logs':
-                print('GOT REQUEST!')
+                logger.debug('GOT REQUEST!')
                 pause = os.path.isfile(os.path.join(os.getenv('MOUNTLOC'), '.pause'))
                 paused = os.path.isfile(os.path.join(os.getenv('MOUNTLOC'), 'paused'))
                 try:
@@ -292,7 +213,7 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
             return ''
 
     def start_process(self):
-        print(' '.join(['nohup', 'python', os.path.join(settings.BASE_DIR,
+        logger.debug(' '.join(['nohup', 'python', os.path.join(settings.BASE_DIR,
                                                         'autoscreen.py'), self.session.session_id]))
         proc = sub.Popen(['nohup', 'python', os.path.join(settings.BASE_DIR,
                                                           'autoscreen.py'), self.session.session_id], stdin=None, stdout=None, stderr=None, preexec_fn=os.setpgrp)
@@ -311,8 +232,8 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
         except psutil.NoSuchProcess:
             return False, to_reload
         is_running = proc.is_running()
-        print('Is_running: ', is_running)
-        print('status: ', proc.status())
+        logger.debug('Is_running: ', is_running)
+        logger.debug('status: ', proc.status())
         if len(self.read_file('run.err')) > 0 and is_running is False:
             process.status = 'Error'
             process.end_time = now()

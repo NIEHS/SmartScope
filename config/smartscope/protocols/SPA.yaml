@@ -1,4 +1,4 @@
-name: NegativeStain
+name: SPA
 atlas:
   acquisition:
       - setAtlasOptics 
@@ -16,12 +16,15 @@ square:
     - square
   targets:
     finders:
+      - AI hole finder
       - Regular pattern
     selectors:
       - Graylevel selector
 mediumMag:
   acquisition:
     - moveStage
+    - loadHoleRef
+    - alignToHoleRef
     - mediumMagHole
 highMag:
   acquisition:
