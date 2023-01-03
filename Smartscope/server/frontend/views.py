@@ -13,7 +13,7 @@ import psutil
 from django.utils.timezone import now
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.lib.file_manipulations import create_grid_directories
-from Smartscope.core.protocols import get_protocol
+from Smartscope.core.protocols import get_or_set_protocol
 from datetime import datetime
 
 
@@ -105,7 +105,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                             else:
                                 logger.debug(f'{grid} exists')
                             logger.debug(f'Setting protocol {protocol} for {grid}')
-                            get_protocol(grid,protocol)
+                            get_or_set_protocol(grid,protocol)
 
                 # session.export(export_all=False)
                 return redirect(f'../session/{session.session_id}')

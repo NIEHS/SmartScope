@@ -144,6 +144,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def acquire_medium_mag(self):
         sem.GoToLowDoseArea('V')
+        time.sleep(1)
         self.checkDewars()
         self.checkPump()
         sem.View()
@@ -151,7 +152,7 @@ class SerialemInterface(MicroscopeInterface):
     def medium_mag_hole(self, tiltAngle, file=''):
         sem.TiltTo(tiltAngle)
         sem.AllowFileOverwrite(1)
-        sem.SetImageShift(0, 0)
+        # sem.SetImageShift(0, 0)
         self.acquire_medium_mag()
         sem.OpenNewFile(file)
         sem.Save()

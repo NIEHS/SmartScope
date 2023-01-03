@@ -73,5 +73,6 @@ protocolCommandsFactory = dict(
     eucentricMediumMag=eucentricMediumMag,
     mediumMagHole=mediumMagHole,
     alignToHoleRef=alignToHoleRef,
+    loadHoleRef=loadHoleRef,
     highMag=highMag,
 )

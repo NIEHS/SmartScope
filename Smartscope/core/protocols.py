@@ -65,7 +65,7 @@ def set_protocol(protocol_name:str,protocol_file:Path):
     save_protocol(protocol,protocol_file)
     return protocol
 
-def get_protocol(grid, protocol_name:str, force_set=False):
+def get_or_set_protocol(grid, protocol_name:str='auto', force_set=False):
     if (protocol:=load_protocol(file=grid.protocol)) is not None and not force_set:
         logger.debug(f'Loading protocol from file')
         return protocol

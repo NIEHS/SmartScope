@@ -1,6 +1,5 @@
 
 import os
-from random import random
 import sys
 import time
 import shlex
@@ -11,6 +10,7 @@ from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, PROTOCOL_COMMANDS
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
+from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
@@ -128,7 +128,7 @@ def run_grid(grid, session, processing_queue, scope):
     processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
     # ADD the new protocol loader
-    protocol = PROTOCOLS_FACTORY[grid.protocol]
+    protocol = get_or_set_protocol(grid)
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
     subprocess.Popen(shlex.split(f'smartscope.py highmag_processing smartscopePipeline {grid.grid_id} 1'))
     is_stop_file(session_id)
@@ -238,7 +238,7 @@ def create_process(session):
 
 
 def process_square_image(square, grid, microscope_id):
-    protocol = PROTOCOLS_FACTORY[grid.protocol].square.targets
+    protocol = get_or_set_protocol(grid).square.targets
     params = grid.params_id
     is_bis = params.bis_max_distance > 0
     montage = None
@@ -275,7 +275,7 @@ def process_square_image(square, grid, microscope_id):
 
 
 def process_hole_image(hole, grid, microscope_id):
-    protocol = PROTOCOLS_FACTORY[grid.protocol].mediumMag
+    protocol = get_or_set_protocol(grid).mediumMag
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     if hole.bis_group is not None:

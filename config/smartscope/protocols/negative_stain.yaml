@@ -12,7 +12,7 @@ square:
   acquisition:
     - moveStage
     - realignToSquare
-    - eucentricity
+    - eucentricSearch
     - square
   targets:
     finders:
