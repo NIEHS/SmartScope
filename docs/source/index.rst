@@ -33,6 +33,7 @@ Site Map
    run_smartscope.rst
    testing.rst
    plugins/index.rst
+   external_plugins/index.rst
    restAPI/index.rst
    citation.rst
    contact.rst

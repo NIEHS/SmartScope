@@ -18,16 +18,17 @@ def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max
     return np.array([up, left, down, right])
 
 
-def extract_from_image(image, center: tuple, apix: float, binned_apix: float = -1, box_size: float = 2):
-    if binned_apix == -1:
-        binned_apix = apix
-    unbinned_centroid = np.array(center) * binned_apix // apix
-    box_size = box_size / (apix / 10000) // 2
-    topleft = unbinned_centroid - box_size
-    topleft = tuple(topleft.astype(int))
-    botright = unbinned_centroid + box_size
-    botright = tuple(botright.astype(int))
-    return image[topleft[1]:botright[1], topleft[0]:botright[0]], apix, box_size, topleft
+def extract_from_image(image, center: np.array, apix: float, box_size: float = 2):
+    overLimits = False
+    box_size = box_size / (apix / 10000) 
+    shape = np.array([image.shape[1],image.shape[0]])
+    topleft = center - (box_size // 2)
+    botright = topleft + box_size
+    botright = botright.astype(int)
+    topleft = topleft.astype(int)
+    if np.any(topleft,where=topleft<0) or np.any(botright, where=botright > shape):
+        overLimits = True
+    return image[topleft[1]:botright[1], topleft[0]:botright[0]], apix, box_size, topleft, overLimits
 
 
 def save_mrc(file, image, apix, start_values, overwrite=True):
@@ -63,7 +64,6 @@ def auto_contrast(img, cutperc=[0.05, 0.01], to_8bits=True):
     while max_accum < cutperc[1]:
         max_accum += hist[max_side] / total * 100
         max_side -= 1
-    # print(f'Using auto_contrast {min_side} ({x[min_side]}), {max_side} ({x[max_side]})')
     max_side = x[max_side] - x[min_side]
     img = (img.astype('float32') - x[min_side]) / max_side
     img[img < 0] = 0
@@ -95,7 +95,6 @@ def auto_contrast_sigma(img, sigmas=3, to_8bits=True):
 def save_image(img, filename, extension='png', resize_to: int = None, destination=None):
     if resize_to is not None:
         img = imutils.resize(img, width=resize_to)
-
     if destination is None:
         destination = 'pngs'
     file = os.path.join(destination, f'{filename}.{extension}')

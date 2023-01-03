@@ -240,18 +240,17 @@ class SvgSerializer(RESTserializers.Serializer):
         self.display_type = display_type
         self.method = method
 
-    def read_svg(self):
+    # def read_svg(self):
 
-        if self.instance.is_aws:
-            storage = SmartscopeStorage()
-            with storage.open(self.instance.svg, 'r') as f:
-                url = self.instance.png['url']
-                return f.read().replace(f'{self.instance.name}.png', url)
-        with open(self.instance.svg, 'r') as f:
-            return f.read().replace(f'{self.instance.name}.png', self.instance.png['url'])
+    #     if self.instance.is_aws:
+    #         storage = SmartscopeStorage()
+    #         with storage.open(self.instance.svg, 'r') as f:
+    #             url = self.instance.png['url']
+    #             return f.read().replace(f'{self.instance.name}.png', url)
+    #     with open(self.instance.svg, 'r') as f:
+    #         return f.read().replace(f'{self.instance.name}.png', self.instance.png['url'])
 
     def load_meta(self):
-        # json_meta = dict()
         targets = self.instance.targets
         if len(targets) == 0:
             return dict()

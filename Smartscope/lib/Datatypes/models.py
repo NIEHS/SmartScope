@@ -52,3 +52,4 @@ class HighMagModel(Target):
     astig: Union[float,None]= None
     angast: Union[float,None]= None
     ctffit: Union[float,None]= None
+    
