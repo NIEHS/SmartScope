@@ -24,6 +24,9 @@ author = 'Jonathan Bouvette and Elizabeth Viverette'
 # The full version, including alpha/beta/rc tags
 # release = '0.7beta'
 
+# -- Autodoc conf
+
+add_module_names = False
 
 # -- General configuration ---------------------------------------------------
 

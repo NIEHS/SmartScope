@@ -4,7 +4,8 @@ Latest Changes
 Main changes
 ~~~~~~~~~~~~
 
-- Ptolemy is now partly integrated as an optional plugin.
+- Added a :doc:`/protocolAPI/index` to add more flexibility to the workflow.
+- Ptolemy is now integrated as an :doc:`external plugin</external_plugins/index>`.
 	- Used as a medium mag hole finder for refinining the hole positions. Targeting of the holes is now much more precise.
 - Support for Falcon detectors
 	- Created an interface without the gatan-only serialem commands
@@ -17,7 +18,7 @@ Main changes
 - Added scale bars and extra metadata to the High-mag cards
 - Added image-shift offsets for the hole imaging to get a sampling of the ice across the hole.
 	- Can also set a hard offset value to acquire all targets with specific offset.
-- Changed the plugin interface to make it more usable
+- Changed the plugin interface to make it more usable and flexible.
 
 
 Minor changes

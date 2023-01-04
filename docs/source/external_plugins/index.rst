@@ -5,6 +5,12 @@ Third-party or external plugins should be installed in the :code:`external_plugi
 
 The plugin directory name needs to be added in a new line to the :code:`config/smartscope/plugins/external_plugins.txt`. This allows to only load the plugins within specific subdirectories of the external_plugins.
 
+Available plugins
+#################
+
+- Ptolemy has been built into a SmartScope plugin. It is available on `Github <https://github.com/JoQCcoz/ptolemy-smartscope>`_
+
+
 Capabilities
 ############
 
