@@ -6,3 +6,4 @@ Protocol API
 
    configuration.rst
    protocol_commands.rst
+   auto_protocol.rst

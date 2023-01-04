@@ -7,14 +7,14 @@ This section outlines the steps to update your SmartScope installation with Podm
 
     This step is mostly to protect your data in case the update fails.
 
-    .. code-block:: bash
+    .. code-block:: shell-session
 
         ## REPLACE YYYYMMDD by the current date ##
         sudo podman exec smartscope-db /bin/bash -c 'mysqldump --user=$MYSQL_USER --password=$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE > /var/lib/mysql/YYYYMMDD_dump.sql'
 
 #. Stop SmartScope
 
-    .. code-block:: bash
+    .. code-block:: shell-session
 
         sudo docker-compose down
 
@@ -24,17 +24,16 @@ This section outlines the steps to update your SmartScope installation with Podm
     To update your docker installation, first go to your smartscope directory, where you initially cloned the repository,
     Copy your docker-compose.yml file in case there is an update to that file and pull the update.
 
-    .. code-block:: bash
+    .. code-block:: shell-session
 
         cd /to/Smartscope/directory/
-        cp docker-compose.yml docker-compose-bak.yml
         git pull
 
     If the docker-compose.yml was changed, make that your volume and enviroment sections are the correct. Use the back up file to copy the values back in.
 
 #. Restart the pod
 
-    .. code-block:: bash
+    .. code-block:: shell-session
 
         sudo docker-compose up -d
 
@@ -44,7 +43,7 @@ This section outlines the steps to update your SmartScope installation with Podm
 
     There is a chance that something changed in the database and, to avoid errors, try applying the migrations
 
-    .. code-block:: bash
+    .. code-block:: shell-session
 
         sudo docker exec smartscope manage.py migrate
 

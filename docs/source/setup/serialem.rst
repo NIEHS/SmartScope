@@ -148,8 +148,8 @@ The following table provides guidelines on how to set up the low-dose mode setti
    "Pixel size (A/pix)", 196, 152
    "Mode", "Linear", "Counting"
    "**View**", "", "" 
-   "magnification", 1250,8700
-   "Pixel size (A/pix)", 34.2, 10.1
+   "magnification", 1250,2250
+   "Pixel size (A/pix)", 34.2, 38.9
    "Mode", "Linear", "Counting"
    "**Focus/Record**", "", "" 
    "magnification", "36,000","81,000"
