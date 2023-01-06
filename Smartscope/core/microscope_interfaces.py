@@ -192,7 +192,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
 
-    def disconnect(self, close_valves=False):
+    def disconnect(self, close_valves=True):
         
         logger.info("Closing Valves and disconnecting from SerialEM")
         if close_valves:
