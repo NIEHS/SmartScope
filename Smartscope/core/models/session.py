@@ -6,11 +6,11 @@ from django.core.cache import cache
 from datetime import datetime
 import Smartscope
 import os
-import json
+# import json
 import numpy as np
 from .misc_func import *
 from django.utils import timezone
-from django.core import serializers
+# from django.core import serializers
 from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *

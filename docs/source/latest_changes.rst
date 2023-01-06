@@ -34,6 +34,8 @@ Minor changes
 Bug fixes
 ~~~~~~~~~
 
+- Fixed issue with column valves not closing after session.
+- Fixed issue with being unable to click sqaures on the right part of the atlas while using a small browser window.
 - Added atlas and medium mag completion times
 - Fixed where the active square would not turn yellow until eucentricity was finished
 - Fixed  where data could be fetched by all logged-in users to any groups through the REST api. Now gives permission denied if the user isn't staff or in the group.
