@@ -109,7 +109,7 @@ $('#main').on("click", '.legend', function () {
 
 $('#main').on('click', '.showLegend', function () {
     console.log($(this), $(this).closest('.mapCard'))
-    $(this).closest('.mapCard').find('#legend').toggleClass('d-none')
+    $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
 
 $("#main").find(".hasTooltip").tooltip();
@@ -513,7 +513,10 @@ async function updateTargets(model, display_type, method, key, new_value, ids = 
         new_value: new_value
     }
     console.log('updateClassifier request: ', request)
-    resp = await websocketSend('update.target', request)
+    var url = `/api/updatetargets/`
+    resp = await apifetchAsync(url, request, "PATCH")
+    updateData(resp)
+    // resp = await websocketSend('update.target', request)
     console.log('updateClassifier response: ', resp)
     clearSelection(sele, model)
 }
@@ -769,3 +772,25 @@ $("#main").on('click', '.zoomBtn', function () {
     card.addClass('popupFull')
     icon.removeClass("bi-zoom-in").addClass("bi-zoom-out")
 }) 
+
+
+function updateData(data) {
+    if (data.type == 'update') {
+        updateFullMeta(data.fullmeta)
+        if (Object.keys(data.fullmeta.atlas).length === 0) {
+            console.log('UPDATING!!')
+            let svgToUpdate = { ...data.fullmeta.squares, ...data.fullmeta.holes }
+            svgUpdate(svgToUpdate)
+            populateReportHead()
+            return
+        } else if (data.fullmeta.atlas[Object.keys(data.fullmeta.atlas)[0]].status == 'completed') {
+            reportMain()
+            return
+        }
+    }
+    else if (data.type == 'reload') {
+        loadSVG(data, $(`#main ${data.element}`))
+    } else {
+        console.log(data)
+    }
+}

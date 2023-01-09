@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def add_scale_bar(pixelsize, w, h, id_type='atlas'):
     ft_sz = floor(w / 40)
-    scalebarGroup = draw.Group(id='scaleBar_' + id_type)
+    scalebarGroup = draw.Group(id='scaleBar')
     startpoint = w * 0.98
     if pixelsize > 500:
         text = '100 \u03BCm'
