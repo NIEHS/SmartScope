@@ -20,7 +20,8 @@ class DetailedDetectorSerializer(ModelSerializer):
 
     class Meta:
         model= models.Detector
-        exclude = ['detector_id']
+        fields = '__all__'
+        # exclude = ['detector_id']
 
 
 class DetailedSessionSerializer(ModelSerializer):
