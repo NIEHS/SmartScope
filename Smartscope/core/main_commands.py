@@ -71,7 +71,7 @@ def regroup_bis(grid_id, square_id):
     square = SquareModel.objects.get(square_id=square_id)
     logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
-    all_holes = list(HoleModel.objects.filter(square_id=square_id))
+    all_holes = list(HoleModel.display.filter(square_id=square_id))
     excluded_groups = []
     for hole in all_holes:
         if hole.bis_type == 'center' and hole.status not in [None, 'queued']:

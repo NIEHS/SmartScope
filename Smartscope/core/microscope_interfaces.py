@@ -131,6 +131,7 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ReportStageXYZ()
 
     def moveStage(self,stage_x,stage_y,stage_z):
+        sem.SetImageShift(0, 0)
         sem.MoveStageTo(stage_x,stage_y,stage_z)
     
     def get_conversion_matrix(self, magIndex=0):
