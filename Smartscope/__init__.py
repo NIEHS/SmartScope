@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "0.8b4"
+__version__ = "0.8b5"
 
 import logging
 import logging.config
@@ -26,14 +26,9 @@ LOG = {
         },
     },
     'loggers': {
-        # '': {
-        #     'level': LOGLEVEL,
-        #     'handlers': ['console', ],
-        # },
         __name__: {
             'level': LOGLEVEL,
             'handlers': ['console', ],
-            # 'propagate': True
         },
     }
 }
@@ -49,7 +44,5 @@ if os.getenv('LOGDIR') is not None:
         'encoding': 'utf-8',
     }
     LOG['loggers'][__name__]['handlers'].append('file')
-
-# print(LOG)
 
 logging.config.dictConfig(LOG)

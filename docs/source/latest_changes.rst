@@ -4,6 +4,8 @@ Latest Changes
 Main changes
 ~~~~~~~~~~~~
 
+- Grid metadata can now be exported and re-imported into the same or new SmartScope instance.
+	- This feature will require more work for automatically creating the directory structure and move the data automatically but this is a start.
 - Added a :doc:`/protocolAPI/index` to add more flexibility to the workflow.
 - Ptolemy is now integrated as an :doc:`external plugin</external_plugins/index>`.
 	- Used as a medium mag hole finder for refinining the hole positions. Targeting of the holes is now much more precise.
@@ -24,6 +26,7 @@ Main changes
 Minor changes
 ~~~~~~~~~~~~~
 
+- Added a link to submit issues on gihub in the navbar
 - Now using an updated version of the SerialEM python module to access new commands
 - Frames default name is now automatically set to `date_gridname_???.tif`
 - The display options are now preserved if the webpage is refreshed instead of resetting to default.
@@ -34,6 +37,12 @@ Minor changes
 Bug fixes
 ~~~~~~~~~
 
+- Moved all the database writing actions back to restAPI for authentication simplicity. More secure until authentication can be confirmed in the websocket layer.
+  - Websocket still used for receiving data from the backend
+- Mouse cursor properly changing when hovering over the sidepanel links
+- Fixed issue where toggling the legend display on a map didn't remove the scale bar, thus preventing clicking the areas beneath it.
+- Fixed issue with column valves not closing after session.
+- Fixed issue with being unable to click sqaures on the right part of the atlas while using a small browser window.
 - Added atlas and medium mag completion times
 - Fixed where the active square would not turn yellow until eucentricity was finished
 - Fixed  where data could be fetched by all logged-in users to any groups through the REST api. Now gives permission denied if the user isn't staff or in the group.

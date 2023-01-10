@@ -131,6 +131,7 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ReportStageXYZ()
 
     def moveStage(self,stage_x,stage_y,stage_z):
+        sem.SetImageShift(0, 0)
         sem.MoveStageTo(stage_x,stage_y,stage_z)
     
     def get_conversion_matrix(self, magIndex=0):
@@ -192,7 +193,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
 
-    def disconnect(self, close_valves=False):
+    def disconnect(self, close_valves=True):
         
         logger.info("Closing Valves and disconnecting from SerialEM")
         if close_valves:

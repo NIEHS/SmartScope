@@ -6,11 +6,11 @@ from django.core.cache import cache
 from datetime import datetime
 import Smartscope
 import os
-import json
+# import json
 import numpy as np
 from .misc_func import *
 from django.utils import timezone
-from django.core import serializers
+# from django.core import serializers
 from django.conf import settings
 from django.apps import apps
 from Smartscope.lib.s3functions import *
@@ -280,7 +280,7 @@ class GridCollectionParams(BaseModel):
 class ScreeningSession(BaseModel):
     session = models.CharField(max_length=30)
     group = models.ForeignKey(Group, null=True, on_delete=models.SET_NULL, to_field='name')
-    date = models.CharField(max_length=8, editable=False)
+    date = models.CharField(max_length=8)
     version = models.CharField(max_length=8, editable=False)
     microscope_id = models.ForeignKey(Microscope, null=True, on_delete=models.SET_NULL, to_field='microscope_id')
     detector_id = models.ForeignKey(Detector, null=True, on_delete=models.SET_NULL)

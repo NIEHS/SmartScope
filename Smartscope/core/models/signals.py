@@ -6,6 +6,7 @@ import os
 from django.contrib.auth.models import User, Group
 
 from Smartscope.lib.file_manipulations import create_scope_dirs
+from Smartscope.core.utils.export_import import export_grid
 from .session import *
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -20,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 @receiver(pre_save, sender=SquareModel)
 @receiver(pre_save, sender=HoleModel)
-# @receiver(pre_save, sender=HighMagModel)
 def pre_update(sender, instance, **kwargs):
     if not instance._state.adding:
         original = sender.objects.get(pk=instance.pk)
@@ -72,8 +72,8 @@ def grid_modification(sender, instance, **kwargs):
             os.rename(original.directory, instance.directory)
             return
 
-        # if instance.status == 'complete' and original.status != 'complete':
-        #     instance.export()
+        if instance.status == 'complete' and original.status != 'complete':
+            export_grid(instance,instance.session_id.directory)
         #     if settings.USE_STORAGE:
         #         try:
         #             com = f'rsync -au {instance.session_id.directory}/ {instance.session_id.storage}/'
@@ -93,7 +93,7 @@ def grid_modification(sender, instance, **kwargs):
         #     instance.start_time = timezone.now()
 @ receiver(post_save, sender=HoleModel)
 def queue_bis_group(sender,instance,created, **kwargs):
-    if not created:
+    if not created and instance.bis_type == 'center':
         if instance.selected:
             logger.debug("Updating status bis target to 'queued'")
             HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')

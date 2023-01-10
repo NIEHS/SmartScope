@@ -1,8 +1,35 @@
 from rest_framework.serializers import ModelSerializer
 from Smartscope.core import models
-from Smartscope.server.api.serializers import GridCollectionParamsSerializer
+from Smartscope.server.api.serializers import GridCollectionParamsSerializer, MicroscopeSerializer,DetectorSerializer
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class DetailedMicroscopeSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Microscope
+        exclude = ['microscope_id']
+
+
+class DetailedDetectorSerializer(ModelSerializer):
+    microscope_id = DetailedMicroscopeSerializer()
+
+    class Meta:
+        model= models.Detector
+        fields = '__all__'
+        # exclude = ['detector_id']
+
+
+class DetailedSessionSerializer(ModelSerializer):
+    detector_id = DetailedDetectorSerializer()
+
+    class Meta:
+        model = models.ScreeningSession
+        exclude = ['session_id','working_dir','microscope_id']
 
 
 class FinderSerializer(ModelSerializer):
@@ -75,6 +102,7 @@ def create_target_label_instances(target_labels,instance,content_type):
 class ExportMetaSerializer(ModelSerializer):
     atlas = DetailedAtlasSerializer(many=True)
     params_id = GridCollectionParamsSerializer()
+    session_id = DetailedSessionSerializer()
 
     class Meta:
         model = models.AutoloaderGrid
@@ -82,10 +110,21 @@ class ExportMetaSerializer(ModelSerializer):
         extra_fields = ['atlas']
 
     def create(self,validated_data):
+        logger.debug(f"Importing {validated_data['name']}")
+        session = validated_data.pop('session_id')
+        detector_id = session.pop('detector_id')
+        microscope_id = detector_id.pop('microscope_id')
+        microscope_id_model,created = models.Microscope.objects.get_or_create(**microscope_id)
+        logger.info(f'Microscope created: {created}')
+        detector_id_model,created = models.Detector.objects.get_or_create(**detector_id, microscope_id=microscope_id_model)
+        logger.info(f'Detector created: {created}')
+        session_model, created = models.ScreeningSession.objects.get_or_create(**session, microscope_id = microscope_id_model, detector_id=detector_id_model)
+        logger.info(f'Session created: {created}')
         atlas = validated_data.pop('atlas')[0]
         params_id = validated_data.pop('params_id')
         params_id_model,created = models.GridCollectionParams.objects.get_or_create(**params_id)
-        grid_model = models.AutoloaderGrid(**validated_data, params_id=params_id_model)
+        logger.info(f'Params created: {created}')
+        grid_model = models.AutoloaderGrid(**validated_data, params_id=params_id_model, session_id=session_model)
         squares = atlas.pop('targets')
         atlas_model = models.AtlasModel(**atlas, grid_id=grid_model)
         target_models = []

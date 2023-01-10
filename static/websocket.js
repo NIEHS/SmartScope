@@ -15,24 +15,7 @@ function connect() {
         console.log('Message', e)
         let data = JSON.parse(e.data)
         console.log('Data: ', data)
-        if (data.type == 'update') {
-            updateFullMeta(data.fullmeta)
-            if (Object.keys(data.fullmeta.atlas).length === 0) {
-                console.log('UPDATING!!')
-                let svgToUpdate = { ...data.fullmeta.squares, ...data.fullmeta.holes }
-                svgUpdate(svgToUpdate)
-                populateReportHead()
-                return
-            } else if (data.fullmeta.atlas[Object.keys(data.fullmeta.atlas)[0]].status == 'completed') {
-                reportMain()
-                return
-            }
-        }
-        else if (data.type == 'reload') {
-            loadSVG(data, $(`#main ${data.element}`))
-        } else {
-            console.log(data)
-        }
+        updateData(data)
     }
     socket.onopen = function (e) {
         console.log('Open', e)
