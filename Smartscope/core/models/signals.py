@@ -30,7 +30,7 @@ def pre_update(sender, instance, **kwargs):
                 old_val = old[1]
                 if col == 'selected':
                     # print('New_val: ', new_val, 'Status: ', instance.status is None)
-                    if new_val and instance.status is None:
+                    if new_val:
                         # print('Setting status to queued')
                         instance.status = 'queued'
                     else:
