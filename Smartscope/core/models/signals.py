@@ -72,8 +72,8 @@ def grid_modification(sender, instance, **kwargs):
             os.rename(original.directory, instance.directory)
             return
 
-        if instance.status == 'complete' and original.status != 'complete':
-            export_grid(instance,instance.session_id.directory)
+        # if instance.status == 'complete' and original.status != 'complete':
+            # export_grid(instance,Path(instance.session_id.directory, instance.verbose_name + '.yaml'))
         #     if settings.USE_STORAGE:
         #         try:
         #             com = f'rsync -au {instance.session_id.directory}/ {instance.session_id.storage}/'
