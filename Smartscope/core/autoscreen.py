@@ -279,7 +279,7 @@ def process_hole_image(hole, grid, microscope_id):
     montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
     export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     if hole.bis_group is not None:
-        hole_group = list(HoleModel.objects.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+        hole_group = list(HoleModel.display.filter(square_id=hole.square_id,bis_group=hole.bis_group))
     else:
         hole_group = [hole]
     hole.targets.delete()
