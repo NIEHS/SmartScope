@@ -88,51 +88,42 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
     return average, std
 
 
-def test_finder(plugin_name: str, raw_image_path: str, output_dir: str):  # output_dir='/mnt/data/testing/'
+def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=1):  # output_dir='/mnt/data/testing/'
     from Smartscope.lib.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
     import cv2
     import math
+
+    
     output_dir = Path(output_dir)
     try:
         output_dir.mkdir(exist_ok=True)
     except:
         logger.info(f'Could not create or find {str(output_dir)}')
+        
     image = Path(raw_image_path)
-    logger.info(f'Testing finder {plugin_name} on image {raw_image_path}')
-    logger.debug(f'{image.name}, {image.parent}')
-    montage = Montage(image.stem, working_dir=output_dir)
-    montage.raw = image
-    montage.load_or_process()
-    output, _ , _ , additional_outputs = find_targets(montage, [plugin_name])
-    bit8_montage = auto_contrast(montage.image)
-    bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
-    for i in output:
-        cv2.circle(bit8_color, (i.x,i.y),20, (0, 0, 255), cv2.FILLED)
-    if 'lattice_angle' in additional_outputs.keys():
+    iterations = []
+    for ind in range(int(repeats)):
+        start = time.time()
+        logger.info(f'Testing finder {plugin_name} on image {raw_image_path}')
+        logger.debug(f'{image.name}, {image.parent}')
+        montage = Montage(image.stem, working_dir=output_dir)
+        montage.raw = image
+        montage.load_or_process()
+        output, _ , _ , additional_outputs = find_targets(montage, [plugin_name])
+        bit8_montage = auto_contrast(montage.image)
+        bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
+        for i in output:
+            cv2.circle(bit8_color, (i.x,i.y),20, (0, 0, 255), cv2.FILLED)
+        if 'lattice_angle' in additional_outputs.keys():
 
-        cv2.line(bit8_color,tuple(montage.center),(int(3000*math.sin(math.radians(additional_outputs['lattice_angle']))+montage.center[0]), int(3000*math.cos(math.radians(additional_outputs['lattice_angle'])))+ montage.center[1]),(0,255,0),10)
-    logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name.replace(' ', '_') + '.png')}")
-    save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
-
-# def test_grid_export(grid_id, export_to:str):
-#     from Smartscope.core.models import AutoloaderGrid
-#     from Smartscope.server.api.export_serializers import ExportMetaSerializer
-#     from rest_framework_yaml.renderers import YAMLRenderer
-    
-#     serializer = ExportMetaSerializer(instance=AutoloaderGrid.objects.get(grid_id=grid_id))
-#     with open(export_to,'wb') as file:
-#         file.write(YAMLRenderer().render(data=serializer.data))
-
-# def test_grid_import(file_to_import:str):
-#     from Smartscope.server.api.export_serializers import ExportMetaSerializer
-#     import yaml
-#     with open(file_to_import,'r') as file:
-#         data = yaml.safe_load(file) 
-#     grid= ExportMetaSerializer(data=data)
-#     grid.is_valid()
-#     print(grid.errors) 
-#     grid.save()
+            cv2.line(bit8_color,tuple(montage.center),(int(3000*math.sin(math.radians(additional_outputs['lattice_angle']))+montage.center[0]), int(3000*math.cos(math.radians(additional_outputs['lattice_angle'])))+ montage.center[1]),(0,255,0),10)
+        logger.info(f"Saving diagnosis image in {Path(montage.directory,plugin_name.replace(' ', '_') + '.png')}")
+        save_image(bit8_color, plugin_name, destination=montage.directory, resize_to=512)
+        elapsed = time.time() - start
+        iterations.append(f'{elapsed:.2f}')
+        logger.info(f'Repeat {ind} took {elapsed} sec')
+    logger.info(f"Time for each iterations {', '.join(iterations)}")
 
 def test_protocol_command(microscope_id,detector_id,command):
     from Smartscope.core.models import Microscope, Detector

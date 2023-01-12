@@ -74,6 +74,10 @@ class HoleDisplayManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors').prefetch_related('highmagmodel_set')
 
+class SquareDisplayManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors').prefetch_related('holemodel_set')
 
 class SquareImageManager(models.Manager):
     def get_queryset(self):
@@ -583,7 +587,8 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
         return self.squaremodel_set.all()
 
     def toSVG(self, display_type, method):
-        return drawAtlas(self, list(SquareModel.display.filter(atlas_id=self.atlas_id)), display_type, method)
+        targets = list(SquareModel.display.filter(atlas_id=self.atlas_id))
+        return drawAtlas(self,targets , display_type, method)
 
     class Meta(BaseModel.Meta):
         unique_together = ('grid_id', 'name')
@@ -692,18 +697,18 @@ class Target(BaseModel):
                 return False
         return True
 
-    def css_color(self, display_type, method):
+    # def css_color(self, display_type, method):
 
-        if method is None:
-            return 'blue', 'target', ''
+    #     if method is None:
+    #         return 'blue', 'target', ''
 
-        # Must use list comprehension instead of a filter query to use the prefetched data
-        # Reduces the amount of queries subsitantially.
-        labels = list(getattr(self, display_type).all())
-        label = [i for i in labels if i.method_name == method]
-        if len(label) == 0:
-            return 'blue', 'target', ''
-        return PLUGINS_FACTORY[method].get_label(label[0].label)
+    #     # Must use list comprehension instead of a filter query to use the prefetched data
+    #     # Reduces the amount of queries subsitantially.
+    #     labels = list(getattr(self, display_type).all())
+    #     label = [i for i in labels if i.method_name == method]
+    #     if len(label) == 0:
+    #         return 'blue', 'target', ''
+    #     return PLUGINS_FACTORY[method].get_label(label[0].label)
 
 
 class SquareModel(Target, ExtraPropertyMixin):
@@ -714,6 +719,7 @@ class SquareModel(Target, ExtraPropertyMixin):
     # Managers
     withholes = SquareImageManager()
     objects = ImageManager()
+    display = SquareDisplayManager()
     # aliases
 
     @ property
@@ -840,7 +846,7 @@ class HoleModel(Target, ExtraPropertyMixin):
             return HighMagModel.objects.filter(hole_id__in=[self.hole_id])
 
         holes_in_group = HoleModel.objects.filter(bis_group=self.bis_group).values_list('hole_id', flat=True)
-        return HighMagModel.objects.filter(hole_id__in=holes_in_group)
+        return HighMagModel.display.filter(hole_id__in=holes_in_group)
 
     @ property
     def targets_prefix(self):
@@ -933,6 +939,7 @@ class HighMagModel(Target, ExtraPropertyMixin):
     ctffit = models.FloatField(null=True)
     # aliases
     objects = HighMagImageManager()
+    display = DisplayManager()
 
     class Meta(BaseModel.Meta):
         db_table = 'highmagmodel'

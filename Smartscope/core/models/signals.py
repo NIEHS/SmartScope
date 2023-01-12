@@ -62,6 +62,7 @@ def grid_modification(sender, instance, **kwargs):
         if instance.status == 'aborting':
             targets = list(instance.squaremodel_set.filter(status='queued'))
             targets += list(instance.holemodel_set.filter(status='queued'))
+            targets += list(instance.highmagmodel_set.filter(status='queued'))
             for target in targets:
                 target.selected = False
                 target.save()
