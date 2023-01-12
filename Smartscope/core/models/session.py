@@ -1,23 +1,22 @@
+import os
+import numpy as np
+import logging
 from django.db import connection, models, reset_queries
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from datetime import datetime
-import Smartscope
-import os
-# import json
-import numpy as np
-from .misc_func import *
 from django.utils import timezone
-# from django.core import serializers
 from django.conf import settings
 from django.apps import apps
+from datetime import datetime
+from Smartscope import __version__ as SmartscopeVersion
 from Smartscope.lib.s3functions import *
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image_manipulations import embed_image
-import logging
+from .misc_func import Cached_model_property, generate_unique_id, set_shape_values, cached_model_property
+
 
 logger = logging.getLogger(__name__)
 
@@ -354,7 +353,7 @@ class ScreeningSession(BaseModel):
     def save(self, *args, **kwargs):
         self.session = self.session.replace(' ', '_')
         if not self.version:
-            self.version = Smartscope.__version__
+            self.version = SmartscopeVersion
         self.working_dir = os.path.join(self.group.name, f'{self.date}_{self.session}')
         super().save(*args, **kwargs)
         return self
@@ -586,6 +585,7 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     def targets(self):
         return self.squaremodel_set.all()
 
+    @cached_model_property(key_suffix='svg', timeout=180)
     def toSVG(self, display_type, method):
         targets = list(SquareModel.display.filter(atlas_id=self.atlas_id))
         return drawAtlas(self,targets , display_type, method)
@@ -759,11 +759,12 @@ class SquareModel(Target, ExtraPropertyMixin):
     def targets(self):
         return self.holemodel_set.all()
 
+
+    @cached_model_property(key_suffix='svg')
     def toSVG(self, display_type, method):
-        reset_queries()
         holes = list(HoleModel.display.filter(square_id=self.square_id))
         sq = drawSquare(self, holes, display_type, method)
-        logger.debug(f'Loading square required {len(connection.queries)} queries')
+        
         return sq
 
     @ property
@@ -860,8 +861,8 @@ class HoleModel(Target, ExtraPropertyMixin):
     def id(self):
         return self.hole_id
 
+    @cached_model_property(key_suffix='svg')
     def toSVG(self, display_type, method):
-        reset_queries()
         holes = list(self.targets)
         if self.shape_x is None:  # There was an error in previous version where shape wasn't set.
             set_shape_values(self)
@@ -870,7 +871,6 @@ class HoleModel(Target, ExtraPropertyMixin):
             radius = self.grid_id.holeType.hole_size/2 
         
         sq = drawMediumMag(self, holes, display_type, method, radius=radius)
-        logger.debug(f'Loading hole required {len(connection.queries)} queries')
         return sq
 
     @ property

@@ -75,23 +75,7 @@ def grid_modification(sender, instance, **kwargs):
 
         if instance.status == 'complete' and original.status != 'complete':
             export_grid(instance,instance.session_id.directory)
-        #     if settings.USE_STORAGE:
-        #         try:
-        #             com = f'rsync -au {instance.session_id.directory}/ {instance.session_id.storage}/'
-        #             print(com)
-        #             sub.Popen(shlex.split(com))
-        #         except Exception as err:
-        #             print(err)
-        #     if settings.USE_AWS:
-        #         try:
-        #             com = f'aws s3 sync {instance.session_id.directory} s3://{settings.AWS_STORAGE_BUCKET_NAME}/{settings.AWS_DATA_PREFIX}/{instance.session_id.working_dir}'
-        #             print(com)
-        #             sub.Popen(shlex.split(com))
-        #         except Exception as err:
-        #             print(err)
 
-        # if instance.status == 'started' and original.status is None:
-        #     instance.start_time = timezone.now()
 @ receiver(post_save, sender=HoleModel)
 def queue_bis_group(sender,instance,created, **kwargs):
     if not created and instance.bis_type == 'center':
@@ -101,17 +85,6 @@ def queue_bis_group(sender,instance,created, **kwargs):
             return
         logger.debug("Updating status bis target to 'null'")
         HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status='queued').update(status=None)
-# @ receiver(pre_save, sender=HoleModel)
-# def unqueue_bis_group(sender, instance, **kwargs):
-#     if not instance._state.adding:
-#         original = sender.objects.get(pk=instance.pk)
-#         if not original.selected:
-#             return instance
-#         if not instance.selected:
-#             logger.debug("Updating status bis target to 'null'")
-#             HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,status='queued').update(status=None)
-#     return instance
-
 
 @ receiver(pre_save, sender=HoleModel)
 @ receiver(pre_save, sender=SquareModel)
@@ -119,6 +92,27 @@ def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
         if instance.status == 'completed' and instance.completion_time is None:
             instance.completion_time = timezone.now()
+
+@ receiver(post_save, sender=HoleModel)
+@ receiver(post_save, sender=SquareModel)
+@ receiver(post_save, sender=HighMagModel)
+def clear_svg_cache_target(sender, instance, **kwargs):
+    key = '_'.join([instance.parent.pk,'svg'])
+    logger.debug(f'Trying to remove {instance.parent} svg key from cache')
+    if cache.delete(key):
+        logger.debug(f'{instance.parent} svg key removed from cache after {instance} update')
+
+@ receiver(post_save, sender=Classifier)
+@ receiver(post_save, sender=Selector)
+def clear_svg_cache_label(sender, instance, **kwargs):
+    instance_to_update = instance.content_object.parent
+    key = '_'.join([instance_to_update.pk,'svg'])
+    logger.debug(f'Trying to remove {instance_to_update} svg key from cache')
+    if cache.delete(key):
+        logger.debug(f'{instance_to_update} svg key removed from cache after {instance} update')
+
+
+
 
 
 @ receiver(post_save, sender=Group)
