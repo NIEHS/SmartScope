@@ -8,6 +8,7 @@ from django.contrib.auth.models import User, Group
 from Smartscope.lib.file_manipulations import create_scope_dirs
 from Smartscope.core.utils.export_import import export_grid
 from .session import *
+from .misc_func import get_fields
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
