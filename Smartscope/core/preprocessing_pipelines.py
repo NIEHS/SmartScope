@@ -108,12 +108,14 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             movie = self.processed_queue.get()
             if not movie.check_metadata():
                 continue
+            logger.debug(f'Updating {movie.name}')
             data = get_CTFFIN4_data(movie.ctf)
+            
             data['status'] = 'completed'
             movie.read_image()
             data['shape_x'] = movie.shape_x
             data['shape_y'] = movie.shape_y
-            logger.debug(f'Updating {movie.name}')
+            logger.debug(f'Updating {movie.name} with Data: {data}')
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
             self.to_update += [update_fields(instance, data), update_fields(parent, dict(status='completed'))]

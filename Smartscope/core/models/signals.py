@@ -74,8 +74,8 @@ def grid_modification(sender, instance, **kwargs):
             os.rename(original.directory, instance.directory)
             return
 
-        if instance.status == 'complete' and original.status != 'complete':
-            export_grid(instance,instance.session_id.directory)
+        # if instance.status == 'complete' and original.status != 'complete':
+        #     export_grid(instance,instance.session_id.directory)
 
 @ receiver(post_save, sender=HoleModel)
 def queue_bis_group(sender,instance,created, **kwargs):

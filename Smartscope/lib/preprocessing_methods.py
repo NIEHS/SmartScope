@@ -20,7 +20,7 @@ def get_CTFFIN4_data(path: Path) -> List[float]:
         lines = [[float(j) for j in i.split(' ')] for i in f.readlines() if '#' not in i]
 
         ctf = pd.DataFrame.from_records(lines, columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit'], exclude=[
-            'l', 'phshift'])
+            'l', 'phshift']).iloc[0]
 
         return dict(defocus=(ctf.df1 + ctf.df2) / 2,
                     astig=ctf.df1 - ctf.df2,
