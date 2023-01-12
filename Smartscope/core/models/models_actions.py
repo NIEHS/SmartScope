@@ -2,7 +2,6 @@ from typing import Dict
 from django.core.cache import cache
 from .session import Finder, Classifier, Selector
 from django.contrib.contenttypes.models import ContentType
-# from Smartscope.lib.config import deep_get, load_plugins
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.metadata_viewer import CTFFitViewer
 import logging
@@ -39,3 +38,5 @@ def update_fields(instance, fields: Dict):
     for key, val in fields.items():
         setattr(instance, key, val)
     return instance
+
+
