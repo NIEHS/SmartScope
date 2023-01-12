@@ -217,6 +217,7 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
 
         if queue_all:
             center.selected = True
+            center.status = 'queued'
 
         bis = g[g != i]
         for item in bis:

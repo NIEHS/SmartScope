@@ -87,6 +87,7 @@ def regroup_bis(grid_id, square_id):
         h.bis_group = None
         h.bis_type = None
         h.selected = False
+        h.status = None
         if h.is_good() and not h.is_excluded()[0]:
             holes_for_grouping.append(h)
         else:
@@ -95,10 +96,10 @@ def regroup_bis(grid_id, square_id):
     logger.info(f'\nAll Holes = {len(all_holes)}\nFiltered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 
     holes = group_holes_for_BIS(holes_for_grouping, max_radius=collection_params.bis_max_distance,
-                                min_group_size=collection_params.min_bis_group_size, queue_all=collection_params.holes_per_square == -1)
+                                min_group_size=collection_params.min_bis_group_size, queue_all=collection_params.holes_per_square == 0)
 
     with transaction.atomic():
-        for hole in holes + other_holes:
+        for hole in other_holes + holes:
             hole.save()
     
     logger.info('Regrouping BIS done.')
