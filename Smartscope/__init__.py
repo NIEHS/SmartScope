@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "0.8b5"
+__version__ = "0.8b6"
 
 import logging
 import logging.config

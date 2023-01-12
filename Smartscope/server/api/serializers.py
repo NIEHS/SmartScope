@@ -95,12 +95,12 @@ class GridCollectionParamsSerializer(RESTserializers.ModelSerializer):
 
 class AtlasSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    targets_methods = RESTserializers.ReadOnlyField()
+    # targets_methods = RESTserializers.ReadOnlyField()
 
     class Meta:
         model = AtlasModel
         fields = '__all__'
-        extra_fields = ['id', 'targets_methods']  # ['svg', 'png', 'raw', 'mrc']
+        extra_fields = ['id']  # ['svg', 'png', 'raw', 'mrc']
 
 
 class FilePathsSerializer(RESTserializers.Serializer):
@@ -120,9 +120,9 @@ class FilePathSerializer(RESTserializers.Serializer):
 
 class SquareSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    has_queued = RESTserializers.ReadOnlyField()
-    has_completed = RESTserializers.ReadOnlyField()
-    has_active = RESTserializers.ReadOnlyField()
+    # has_queued = RESTserializers.ReadOnlyField()
+    # has_completed = RESTserializers.ReadOnlyField()
+    # has_active = RESTserializers.ReadOnlyField()
 
     class Meta:
         model = SquareModel
@@ -135,9 +135,9 @@ class SquareSerializer(RESTserializers.ModelSerializer):
 class HighMagSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
     # svg = RESTserializers.ReadOnlyField()
-    png = RESTserializers.ReadOnlyField()
+    # png = RESTserializers.ReadOnlyField()
     # hole_id = HoleSerializer()
-    ctf_img = RESTserializers.ReadOnlyField()
+    # ctf_img = RESTserializers.ReadOnlyField()
 
 
     class Meta:
@@ -156,9 +156,9 @@ class HighMagBasicSerializer(RESTserializers.ModelSerializer):
 class HoleSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
 
-    def get_high_mag(self, obj):
-        if obj.status == 'completed':
-            return HighMagSerializer(obj.high_mag, many=False).data
+    # def get_high_mag(self, obj):
+    #     if obj.status == 'completed':
+    #         return HighMagSerializer(obj.high_mag, many=False).data
 
     class Meta:
         model = HoleModel

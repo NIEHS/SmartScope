@@ -140,7 +140,7 @@ def drawAtlas(atlas, targets, display_type, method):
 
     labels_list = []
     for i in targets:
-        color, label, prefix = i.css_color(display_type, method)
+        color, label, prefix = css_color(i, display_type, method)
         if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]

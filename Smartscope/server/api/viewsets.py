@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User, Group
+from django.db import connection, models, reset_queries
 import mrcfile
 import mrcfile.mrcinterpreter
 import mrcfile.mrcfile
@@ -43,6 +44,7 @@ class ExtraActionsMixin:
         return Response(serializer.data, template_name='mapcard.html')
 
     def load_card(self, request, **kwargs):
+        reset_queries()
         context = dict()
         obj = self.queryset.filter(pk=kwargs['pk']).first()
         display_type = request.query_params.get('display_type')
@@ -63,6 +65,7 @@ class ExtraActionsMixin:
         context = {**context, **serializer.data}
         context['card'] = render_to_string('mapcard.html', context=context, )
         logger.debug(f"{context['method']}, {context['display_type']}")
+        logger.debug(f'Loading card required {len(connection.queries)} queries')
         return Response(dict(fullmeta=context['fullmeta'], card=context['card'], displayType=context['display_type'], method=context['method']))
 
     @ action(detail=True, methods=['get'])
