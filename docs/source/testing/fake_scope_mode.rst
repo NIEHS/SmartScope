@@ -16,14 +16,14 @@ To download:
 
 .. code-block:: bash
 
-    wget docs.smartscope.org/downloads/smartscope_testfiles.tar.gz
-    tar -xvf smartscope_testfiles.tar.gz
+    wget docs.smartscope.org/downloads/smartscope_testfiles.tar
+    tar -xvf smartscope_testfiles.tar
 
 **Podman/Docker Installation**
 
     Mount the location of smartscope_testfiles to /mnt/fake_scope/.
 
-**Anaconda**
+.. **Anaconda**
 
-    Change the TEST_FILES enviroment variable to the smartscope_testfiles location.
+..     Change the TEST_FILES enviroment variable to the smartscope_testfiles location.
 

@@ -1,0 +1,39 @@
+atlas_x : 
+  initial: 3
+atlas_y :
+  initial: 3
+square_x :
+  initial: 1
+  readonly: True
+square_y :
+  initial: 1
+  readonly: True
+squares_num :
+  initial: 3
+holes_per_square :
+  initial: 2
+bis_max_distance :
+  initial: 3
+min_bis_group_size :
+  initial: 1
+target_defocus_min :
+  initial: -2
+target_defocus_max :
+  initial: -2
+step_defocus :
+  initial: 0
+drift_crit :
+  initial: -1
+tilt_angle :
+  initial: 0
+save_frames :
+  initial: True
+force_process_from_average :
+  initial: False
+  disabled: True
+offset_targeting :
+  initial: True
+offset_distance :
+  initial: -1
+zeroloss_delay :
+  initial: -1

@@ -99,7 +99,7 @@
   transform: translate(-50%, 0);
   width: 90%;
   height: 90vh;
-  z-index: 9999999999;
+  z-index: 1029;
 
   /* align-items: center; */
   /* justify-content: center; */
@@ -129,4 +129,11 @@
 body{
   max-width:100%;
   font-family: sans-serif;
+}
+
+#loadingMessages {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 1030;
 }

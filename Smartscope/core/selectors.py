@@ -27,8 +27,6 @@ def generate_equal_clusters(parent, targets, n_groups):
 def cluster_by_field(parent, n_groups, field='area', **kwargs):
 
     targets = np.array(parent.targets.order_by(field))
-    output = []
-
     return generate_equal_clusters(parent, targets, n_groups)
 
 
@@ -44,7 +42,6 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
     for target in targets:
         finder = list(target.finders.all())[0]
         x, y = finder.x, finder.y
-        # logger.debug(f'X:{type(x)},Y:{type(y)},Radius:{type(target.radius)}')
         target.median = np.mean(img[y - target.radius:y + target.radius, x - target.radius:x + target.radius])
         if save:
             cv2.circle(img, (x, y), target.radius, target.median, 10)
@@ -53,9 +50,6 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         save_image(img, 'gray_level_selector', extension='png', destination=parent.directory, resize_to=1024)
 
     targets.sort(key=lambda x: x.median)
-    # logger.debug([t.median for t in targets])
-    # split_targets = np.array_split(np.array(targets), n_groups)
-    # output = list()
     return generate_equal_clusters(parent, targets, n_groups)
 
 
@@ -64,12 +58,7 @@ def selector_wrapper(selectors, selection, *args, **kwargs):
     for method in selectors:
         method = PLUGINS_FACTORY[method]
 
-        # try:
         outputs = method.run(selection, *args, **kwargs)
         with transaction.atomic():
             for obj in outputs:
-                # obj['method_name'] = method['name']
                 Selector(**obj, method_name=method.name).save()
-                # obj.save()
-        # except Exception as err:
-        #     logger.exception(err)

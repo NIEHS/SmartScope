@@ -1,13 +1,54 @@
 import random
 import string
 from itertools import chain
-import os
-import json
-from django.core import serializers
+from typing import Callable, Union
+from django.core.cache import cache
+from django.db import models, connection, reset_queries
 from Smartscope.lib.montage import Montage
+
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class Cached_model_property:
+    instance: Union[models.Model, None] = None
+
+    def __init__(self, key_suffix:str):
+        self.key_suffix= key_suffix
+
+    @property
+    def key(self):
+        return '_'.join([self.instance,self.key_suffix])
+
+    def __call__(self,func, *args, **kwargs):
+        reset_queries()
+        self.instance = args[0]
+        if (cached_outputs := cache.get(self.key)) is not None:
+            logger.debug(f'Loading {self.instance} {self.key_suffix} from cache. Required {len(connection.queries)} queries')
+            return cached_outputs
+        outputs = func(*args, **kwargs)
+        logger.debug(f'Caching {self.instance} {self.key_suffix}. Required {len(connection.queries)} queries')
+        cache.set(self.key, outputs, timeout=3600)
+
+        return outputs
+
+def cached_model_property(key_suffix, timeout=3600):
+    def outer(func):
+        def inner(*args,**kwargs):
+            reset_queries()
+            instance = args[0]
+            key = '_'.join([instance.pk,key_suffix])
+            if (cached_outputs := cache.get(key)) is not None:
+                logger.debug(f'Loading {instance} {key_suffix} from cache. Required {len(connection.queries)} queries')
+                return cached_outputs
+            outputs = func(*args,**kwargs)
+            logger.debug(f'Caching {instance} {key_suffix}. Required {len(connection.queries)} queries')
+            cache.set(key, outputs, timeout=timeout)
+            return outputs
+        return inner
+    return outer
+            
 
 
 def generate_unique_id(extra_inputs=[], N=30):
@@ -56,6 +97,7 @@ def get_fields_names(model):
 
 def set_shape_values(instance):
     montage = Montage(name=instance.name, working_dir=instance.grid_id.directory)
+    montage.load_or_process()
     logger.info(f'No shape found for completed image. Setting values to {montage.shape_x} X {montage.shape_y}')
     instance.shape_x = montage.shape_x
     instance.shape_y = montage.shape_y

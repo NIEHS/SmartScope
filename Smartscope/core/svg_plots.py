@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 def add_scale_bar(pixelsize, w, h, id_type='atlas'):
     ft_sz = floor(w / 40)
-    scalebarGroup = draw.Group(id='scaleBar_' + id_type)
+    scalebarGroup = draw.Group(id='scaleBar')
     startpoint = w * 0.98
     if pixelsize > 500:
         text = '100 \u03BCm'
         lineLenght = 1_000_000 / pixelsize
-    elif pixelsize > 10:
+    elif pixelsize > 100:
         text = '10 \u03BCm'
         lineLenght = 100_000 / pixelsize
     elif pixelsize > 3:
@@ -48,8 +48,6 @@ def add_legend(label_list, w, h, prefix):
         startpoint -= step
         t = draw.Text(f"{prefix} {label}", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                       stroke_width=floor(ft_sz / 5), stroke='black', class_='legend', label=label, fill=color)
-        # logger.debug(t.__dict__)
-
         legend.append(t)
     return legend
 
@@ -134,25 +132,22 @@ class myDrawging(draw.Drawing):
 
 
 def drawAtlas(atlas, targets, display_type, method):
-    # plugins = load_plugins()
-
-    # d = myDrawging(atlas.shape_y // atlas.binning_factor, atlas.shape_x // atlas.binning_factor, id='square-svg', displayInline=False)
     d = myDrawging(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False)
-    # print(atlas.png)
-    d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed=True))
+
     shapes = draw.Group(id='atlasShapes')
     text = draw.Group(id='atlasText')
 
     labels_list = []
     for i in targets:
-        color, label, prefix = i.css_color(display_type, method)
-        if color is not None:  # style = f"stroke: {color}; fill: {color}; color: {color}; "
+        color, label, prefix = css_color(i, display_type, method)
+        if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
             x = finder.x - sz // 2
             y = -(finder.y - sz // 2) + d.height - sz
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
-                               class_=f'target', onclick="clickSquare(this)")  # style=style,
+                               class_=f'target', onclick="clickSquare(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 35)
@@ -171,17 +166,15 @@ def drawAtlas(atlas, targets, display_type, method):
             shapes.append(r)
     d.append(shapes)
     d.append(text)
-    # d.append(add_scale_bar(atlas.pixel_size * atlas.binning_factor, d.width, d.height))
     d.append(add_scale_bar(atlas.pixel_size, d.width, d.height))
     d.append(add_legend(set(labels_list), d.width, d.height, atlas.pixel_size))
-    # d.setRenderSize()
-    # print(d.asSvg())
     return d.asSvg()
 
 
 def drawSquare(square, targets, display_type, method):
     d = myDrawging(square.shape_y, square.shape_x, id='square-svg', displayInline=False)
-    d.append(draw.Image(0, 0, d.width, d.height, path=square.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=square.png, embed=True))
+
     shapes = draw.Group(id='squareShapes')
     text = draw.Group(id='squareText')
     labels_list = []
@@ -220,27 +213,48 @@ def drawSquare(square, targets, display_type, method):
         shapes.append(g)
     d.append(shapes)
     d.append(text)
-    # d.append(add_scale_bar(square.pixel_size * square.binning_factor, d.width, d.height, id_type='square'))
     d.append(add_scale_bar(square.pixel_size, d.width, d.height, id_type='square'))
     d.append(add_legend(set(labels_list), d.width, d.height, square.pixel_size))
-    # d.setRenderSize()
-    # print(d.asSvg())
+    return d.asSvg()
+
+
+def drawMediumMag(hole, targets, display_type, method, **kwargs):
+    d = myDrawging(hole.shape_y, hole.shape_x, id='hole-svg', displayInline=False)
+    d.append(draw.Image(0, 0, d.width, d.height, path=hole.png, embed=True))
+
+    shapes = draw.Group(id='holeShapes')
+    text = draw.Group(id='holeText')
+    labels_list = []
+    radius = kwargs.pop('radius', 0.05) / (hole.pixel_size / 10_000) 
+    for i in targets:
+
+        color, label, prefix = css_color(i, display_type, method)
+        if color is not None:
+            finders = list(i.finders.all())
+            if len(finders) == 0:
+                break
+            finder = list(i.finders.all())[0]
+            x = finder.x
+            y = -(finder.y) + d.height
+            
+            c = draw.Circle(x, y, radius, id=i.pk, stroke_width=floor(d.width / 100), stroke=color, fill=color, fill_opacity=0, label=label,
+                            class_=f'target', number=i.number)
+            if i.status is not None:
+                c.args['class'] += f" {i.status}"
+                c.args['fill-opacity'] = 0.6 if color != 'blue' else 0
+            labels_list.append((color, label, prefix))
+            shapes.append(c)
+    d.append(shapes)
+    d.append(text)
+    d.append(add_scale_bar(hole.pixel_size, d.width, d.height, id_type='hole'))
+    d.append(add_legend(set(labels_list), d.width, d.height, hole.pixel_size))
     return d.asSvg()
 
 
 def drawHighMag(highmag):
     d = myDrawging(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False)
-    d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png['url'], embed=False))
+    d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png, embed=True))
+
     d.append(add_scale_bar(highmag.pixel_size, d.width, d.height, id_type=highmag.name))
 
     return d.asSvg
-
-
-if __name__ == "__main__":
-    s = Svg()
-    s.set_size(400, 400)
-    s.add_bg_image("test_db/1_grid1/pngs/grid1_square0_hole65.png")
-    r = s.add_anchor(s.add_rect, link='http://www.google.com')
-    s.content += r(100, 100, 10, 10, rotation=45)
-
-    s.save("/Users/bouvettej2/Documents/Cryolo/test.svg")

@@ -1,10 +1,12 @@
 #! /usr/env/bin python
+from pathlib import Path
 import mrcfile
 import numpy as np
 from math import floor
 import os
 import cv2
 import imutils
+import base64
 
 
 def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max_x: float, max_y: float, diameter_in_um: float = 1.2) -> np.ndarray:
@@ -16,16 +18,17 @@ def convert_centers_to_boxes(center: np.ndarray, pixel_size_in_angst: float, max
     return np.array([up, left, down, right])
 
 
-def extract_from_image(image, center: tuple, apix: float, binned_apix: float = -1, box_size: float = 2):
-    if binned_apix == -1:
-        binned_apix = apix
-    unbinned_centroid = np.array(center) * binned_apix // apix
-    box_size = box_size / (apix / 10000) // 2
-    topleft = unbinned_centroid - box_size
-    topleft = tuple(topleft.astype(int))
-    botright = unbinned_centroid + box_size
-    botright = tuple(botright.astype(int))
-    return image[topleft[1]:botright[1], topleft[0]:botright[0]], apix, box_size, topleft
+def extract_from_image(image, center: np.array, apix: float, box_size: float = 2):
+    overLimits = False
+    box_size = box_size / (apix / 10000) 
+    shape = np.array([image.shape[1],image.shape[0]])
+    topleft = center - (box_size // 2)
+    botright = topleft + box_size
+    botright = botright.astype(int)
+    topleft = topleft.astype(int)
+    if np.any(topleft,where=topleft<0) or np.any(botright, where=botright > shape):
+        overLimits = True
+    return image[topleft[1]:botright[1], topleft[0]:botright[0]], apix, box_size, topleft, overLimits
 
 
 def save_mrc(file, image, apix, start_values, overwrite=True):
@@ -61,7 +64,6 @@ def auto_contrast(img, cutperc=[0.05, 0.01], to_8bits=True):
     while max_accum < cutperc[1]:
         max_accum += hist[max_side] / total * 100
         max_side -= 1
-    # print(f'Using auto_contrast {min_side} ({x[min_side]}), {max_side} ({x[max_side]})')
     max_side = x[max_side] - x[min_side]
     img = (img.astype('float32') - x[min_side]) / max_side
     img[img < 0] = 0
@@ -93,17 +95,18 @@ def auto_contrast_sigma(img, sigmas=3, to_8bits=True):
 def save_image(img, filename, extension='png', resize_to: int = None, destination=None):
     if resize_to is not None:
         img = imutils.resize(img, width=resize_to)
-
     if destination is None:
         destination = 'pngs'
     file = os.path.join(destination, f'{filename}.{extension}')
     if os.path.isfile(file):
         os.rename(file, os.path.join(destination, f'{filename}_old.{extension}'))
     cv2.imwrite(file, img)
-    
-def export_as_png(image, output, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
+
+
+def export_as_png(image, output, height=1024, normalization=auto_contrast, binning_method=imutils.resize) -> Path:
     resized = normalization(binning_method(image, height=height))
     cv2.imwrite(str(output), resized)
+    return output
 
 
 def mrc_to_png(mrc_file, ):
@@ -139,3 +142,71 @@ def generate_hole_ref(hole_size_in_um: float, pixel_size: float, out_type: str =
 
     cv2.circle(im, (im_size // 2, im_size // 2), radius=radius, color=int(color), thickness=max([1, int(80 / pixel_size)]))
     return im.astype(out_type)
+
+def gaussian_kernel(size, sigma, two_d=True):
+    'returns a one-dimensional gaussian kernel if two_d is False, otherwise 2d'
+    if two_d:
+        kernel = np.fromfunction(lambda x, y: (1 / (2 * math.pi * sigma**2)) * math.e **
+                                 ((-1 * ((x - (size - 1) / 2)**2 + (y - (size - 1) / 2)**2)) / (2 * sigma**2)), (size, size))
+    else:
+        kernel = np.fromfunction(lambda x: math.e ** ((-1 * (x - (size - 1) / 2)**2) / (2 * sigma**2)), (size,))
+    return kernel / np.sum(kernel)
+
+
+def power_spectrum(im):
+    f = np.fft.fft2(im)
+    fshift = np.fft.fftshift(f)
+    fabs = np.abs(fshift)
+    contrasted = auto_contrast_sigma(fabs, sigmas=0.5, to_8bits=True)
+    img = imutils.resize(contrasted, height=800)
+    is_succes, buffer = cv2.imencode(".png", img)
+    return io.BytesIO(buffer)
+
+
+def highpass(im, pixel_size, filter_size=4):
+    f = np.fft.fft2(im)
+    fshift = np.fft.fftshift(f)
+    fabs = np.abs(fshift)
+    fang = np.angle(fshift)
+
+    size = pixel_size / 10000 / filter_size * np.array(im.shape)
+    size = round_up_to_odd(size)
+
+    center = np.floor(np.array(im.shape) / 2).astype(int)
+    high = np.ones(im.shape)
+    cv2.ellipse(high, (center[0], center[1]), (size[0], size[1]), 0.0, 0.0, 360.0, 0, -1)
+    padding = np.array(high.shape) * 0.002
+    padding = padding.astype(int)
+    high[center[0] - padding[0]:center[0] + padding[0], :] *= 0.2
+    high[:, center[1] - padding[1]:center[1] + padding[1]] *= 0.2
+    fabs *= high
+    fabs = auto_contrast(fabs, cutperc=[90, 0.001], to_8bits=True)
+    F = fabs * np.exp(1j * fang)
+    reversed = to_8bits(np.real(np.fft.ifft2(np.fft.ifftshift(F))))
+    return reversed, fabs
+
+def auto_canny(image, limits=None, sigma=0.33, dilation=5):
+    # compute the median of the single channel pixel intensities
+    v = np.median(image)
+    if limits is None:
+        lower = int(max(0, (1.0 - sigma) * v))
+        upper = int(min(255, (1.0 + sigma) * v))
+    else:
+        lower = min(limits)
+        upper = max(limits)
+    edged = cv2.Canny(image, lower, upper)
+
+    if dilation is None:
+        return edged, lower, upper
+    else:
+        kernel = np.ones((dilation, dilation), np.uint8)
+        dilated = cv2.dilate(edged, kernel, iterations=1)
+        erosion = cv2.erode(dilated, kernel, iterations=1)
+        return erosion, lower, upper
+
+def embed_image(path):
+    mimeType = 'image/png'
+    with open(path, 'rb') as f:
+        data = f.read()
+    encData = base64.b64encode(data).decode(encoding='ascii')
+    return 'data:{};base64,{}'.format(mimeType, encData)

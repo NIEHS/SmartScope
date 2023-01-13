@@ -5,7 +5,7 @@
 version: "3"
 services:
   smartscope:
-    image: localhost/smartscope:0.7
+    image: localhost/smartscope:0.8b3
     container_name: smartscope
     build:
       context: .
@@ -50,8 +50,6 @@ services:
     ports:
       - 48000:80
     volumes:
-      ######## FILL ONLY THE FIRST VALUE ##########
-      - :/mnt/data/ #This is the same what is bound to /mnt/data in the smartscope service.
       - ./static/:/opt/smartscope/static/ #Doesn't need to be changed
       - ./config/docker/templates_noSSL/:/etc/nginx/templates/ #Change if using SSL, view docs for more info.
     networks:

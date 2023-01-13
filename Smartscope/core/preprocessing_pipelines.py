@@ -84,8 +84,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 break
 
     def list_incomplete_processes(self):
-        self.incomplete_processes = list(self.grid.highmagmodel_set.exclude(
-            status__in=['queued', 'started', 'completed']).order_by('completion_time')[:20])
+        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time')[:20])
 
     def queue_incomplete_processes(self):
         from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,
@@ -93,7 +92,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         from_frames = partial(process_hm_from_frames, frames_directories=self.frames_directory,
                               spherical_abberation=self.microscope.spherical_abberation)
         for obj in self.incomplete_processes:
-            if obj.frames is None or self.detector.detector_model not in ['K2', 'K3']:
+            if obj.frames is None or self.detector.detector_model not in ['K2', 'K3'] or self.grid.params_id.force_process_from_average:
                 self.to_process_queue.put([from_average, [], dict(raw=obj.raw, name=obj.name)])
             else:
                 self.to_process_queue.put([from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)])
@@ -109,12 +108,14 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             movie = self.processed_queue.get()
             if not movie.check_metadata():
                 continue
+            logger.debug(f'Updating {movie.name}')
             data = get_CTFFIN4_data(movie.ctf)
+            
             data['status'] = 'completed'
             movie.read_image()
             data['shape_x'] = movie.shape_x
             data['shape_y'] = movie.shape_y
-            logger.debug(f'Updating {movie.name}')
+            logger.debug(f'Updating {movie.name} with Data: {data}')
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
             self.to_update += [update_fields(instance, data), update_fields(parent, dict(status='completed'))]

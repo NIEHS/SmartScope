@@ -1,9 +1,28 @@
 name: NegativeStain
-squareFinders:
-  - AI square finder
-holeFinders:
-  - Regular pattern
-squareSelectors:
-  - Size selector
-holeSelectors:
-  - Graylevel selector
+atlas:
+  acquisition:
+      - setAtlasOptics 
+      - atlas
+  targets:
+    finders:
+      - AI square finder
+    selectors:
+      - Size selector
+square:
+  acquisition:
+    - moveStage
+    - realignToSquare
+    - eucentricSearch
+    - square
+  targets:
+    finders:
+      - Regular pattern
+    selectors:
+      - Graylevel selector
+mediumMag:
+  acquisition:
+    - moveStage
+    - mediumMagHole
+highMag:
+  acquisition:
+    - highMag

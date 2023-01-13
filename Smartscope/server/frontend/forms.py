@@ -1,5 +1,7 @@
 from django import forms
 from Smartscope.core.models import *
+from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG, PROTOCOLS_FACTORY 
+import yaml
 
 
 class ScreeningSessionForm(forms.ModelForm):
@@ -26,7 +28,13 @@ class ScreeningSessionForm(forms.ModelForm):
             visible.field.widget.attrs['class'] = 'form-control'
 
 
+def read_config():
+    file = SMARTSCOPE_CONFIG / 'default_collection_params.yaml'
+    return yaml.safe_load(file.read_text())
+
 class AutoloaderGridForm(forms.ModelForm):
+    protocol = forms.ChoiceField(choices=[('auto','auto')] + [(protocol,protocol) for protocol in PROTOCOLS_FACTORY.keys()])
+
     class Meta:
         model = AutoloaderGrid
         fields = ('name', 'position', 'holeType', 'meshSize', 'meshMaterial')
@@ -72,7 +80,7 @@ class AutoloaderGridReportForm(forms.ModelForm):
 class GridCollectionParamsForm(forms.ModelForm):
     class Meta:
         model = GridCollectionParams
-        fields = '__all__'
+        exclude = ['square_x','square_y']
         help_texts = dict(
             atlas_x='Number of tiles in X for the Atlas',
             atlas_y='Number of tiles in Y for the Atlas',
@@ -129,6 +137,12 @@ class GridCollectionParamsForm(forms.ModelForm):
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
+
+        for field, data in read_config().items():
+            if field not in self.fields.keys():
+                continue
+            self.fields[field].initial = data.pop('initial')
+            self.fields[field].widget.attrs.update(data)
 
 
 class AssingBisGroupsForm(forms.Form):

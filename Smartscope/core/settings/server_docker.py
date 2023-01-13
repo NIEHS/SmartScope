@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-from django.core.files.storage import FileSystemStorage
+# from django.core.files.storage import FileSystemStorage
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -41,7 +41,7 @@ USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
 USE_AWS = eval(os.getenv('USE_AWS'))
 USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
 
-WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
+# WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
 
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
@@ -50,9 +50,9 @@ else:
     AUTOSCREENSTORAGE = None
     AUTOSCREENINGSTORAGE_URL = None
 
-if DEPLOY is False:
-    autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
-    autoscreening_storage = FileSystemStorage(location=AUTOSCREENSTORAGE, base_url=AUTOSCREENINGSTORAGE_URL)
+# if DEPLOY is False:
+#     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
+#     autoscreening_storage = FileSystemStorage(location=AUTOSCREENSTORAGE, base_url=AUTOSCREENINGSTORAGE_URL)
 
 
 INSTALLED_APPS = [
@@ -169,6 +169,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework_yaml.renderers.YAMLRenderer'
     ],
 }
 

@@ -2,7 +2,7 @@
 
 {% for item in items %}
 <a class="bg-dark list-group-item list-group-item-action h-100" id="{{item.pk}}"
-    onclick={{jsfunction}}("{{field}}","{{item.pk}}")>
+    onclick={{jsfunction}}("{{field}}","{{item.pk}}") href="#">
     <div class="d-flex w-100 justify-content-start align-items-center {{item.extraCSS}}">
         <span class="menu-collapsed">{{ item }}</span>
     </div>

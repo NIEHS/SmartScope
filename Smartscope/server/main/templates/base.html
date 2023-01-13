@@ -49,6 +49,8 @@
                 </li> -->
             </ul>
             <ul class="navbar-nav">
+                <li class="nav-item d-flex align-items-center"><a class="nav-link py-0"
+                    href="https://github.com/NIEHS/SmartScope/issues" target="_blank">Report issue <i class="bi bi-github"></i></a></li>               
                 <li class="nav-item d-flex align-items-center"><a class="nav-link bi bi-question-square py-0"
                         href="https://docs.smartscope.org" style="font-size:1.5rem;" target="_blank"></a></li>
                 {% if request.user.is_staff %}<li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
@@ -59,9 +61,10 @@
     </nav>
 
 
+
     {% block content %}{% endblock content %}
+    <div id="loadingMessages" class="m-2 d-flex flex-column">
+    </div>
 
-
-</body>
 
 {% block script %}{% endblock script %}

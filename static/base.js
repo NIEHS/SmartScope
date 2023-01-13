@@ -51,8 +51,39 @@ function updateFullMeta(data) {
     console.log(fullmeta)
 }
 
-async function fetchAsync(url) {
+let idGen = () => {
+    return Math.floor((1 + Math.random()) * 0x10000)
+        .toString(16)
+        .substring(1);
+}
+
+let createLoadingMessage = (message) => {
+    let id = idGen()
+    $('#loadingMessages').append(
+        `<div class="notification d-inline-flex justify-content-end">
+            <div id="${id}" class="alert alert-primary fade show" role="alert">
+                <span>${message}</span>
+            </div>
+        </div>`)
+    return id
+}
+
+let processLoadingMessage = (response, id) => {
+    if (response.ok) {
+        $(`#loadingMessages #${id}`).removeClass('alert-primary').addClass('alert-success')
+        setTimeout(function() {
+            $(`#loadingMessages #${id}`).alert('close');
+            $(`#loadingMessages #${id}`).parent().remove()
+        }, 2000);
+    } else {
+        $(`#loadingMessages #${id}`).removeClass('alert-primary').addClass('alert-danger')
+    }
+}
+
+async function fetchAsync(url, message='alert') {
+    let id = createLoadingMessage(message)
     let response = await fetch(url);
+    processLoadingMessage(response,id)
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
         return response.json()
@@ -62,7 +93,7 @@ async function fetchAsync(url) {
 };
 
 
-async function apifetchAsync(url, dict, method) {
+async function apifetchAsync(url, dict, method, message='alert!') {
     content = {
         method: method,
         headers: {
@@ -72,10 +103,12 @@ async function apifetchAsync(url, dict, method) {
             'mode': 'same-origin'
         },
     }
+    let id = createLoadingMessage(message)
     if (dict != null) {
         content.body = JSON.stringify(dict)
     }
     let response = await fetch(url, content);
+    processLoadingMessage(response,id)
     let data = await response.json();
     return data;
 };
@@ -149,7 +182,7 @@ async function loadSidePanel(requestfield = null, id = null, push = true) {
         loadinto = loadInto[requestfield]
     }
     console.log(url, push)
-    let models = await fetchAsync(url)
+    let models = await fetchAsync(url, message=`Loading ${requestfield}.`)
     $(`#${loadinto}`).html(models)
 
     if (push) {
@@ -162,7 +195,7 @@ async function loadReport(requestfield = null, id = null, push = true) {
     console.log(`Loading report for grid: ${requestfield}, ${id}, ${push}`)
     var url = `/api/report/?grid_id=${id}`
     console.log(url)
-    var report = await fetchAsync(url)
+    var report = await fetchAsync(url,message=`Loading report for grid ${id}`)
     console.log('Previous grid:', currentState.grid_id)
     if (currentState.grid_id && currentState.grid_id != id) {
         console.log('Resetting hole and square state')
@@ -191,4 +224,5 @@ async function loadReport(requestfield = null, id = null, push = true) {
     await reportMain()
     websocketMain()
 }
+
 

@@ -5,44 +5,82 @@
         <div class="row p-0 align-items-center justify-content-between">
             <h3 class="d-inline">{{instance.alias_name}}</h3>
 
-            <div class="div col-4 p-0 justify-content-center d-none d-md-block">
-                <button id='' class='a btn btn-outline-secondary showLegend hasTooltip' type="button" value='1'
-                    data-toggle="tooltip" data-placement="top" title="Toggle legend">
-                    <i class="bi bi-card-list "></i></button>
-                <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown" role="button"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-display"></i></a>
-                <div class="dropdown-menu">
-                    <div class="div" id="quality">
-                        <h6 class="dropdown-header">Classifiers</h6>
+            <div class="div col-4 p-0 justify-content-center d-none d-md-flex row">
+                <div>
+                    <button id='' class='a btn btn-outline-secondary showLegend hasTooltip' type="button" value='1'
+                        data-toggle="tooltip" data-placement="top" title="Toggle legend">
+                        <i class="bi bi-card-list "></i></button>
+                </div>
+                <div>
+                    <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="downloadDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
+                            class="bi bi-download"></i></a>
+                    <div class="dropdown-menu">
+                        <div class="div" id="quality">
+                            <h6 class="dropdown-header">Download</h6>
 
-                        {% for classifier in targets_methods.classifiers %}
-                        <button id='opt-classifiers'
-                            class="dropdown-item hasTooltip {% if classifier.name == method %}active{% endif %}"
-                            data-toggle="tooltip" data-placement="left" title="{{classifier.description}}"
-                            onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %} false,'classifiers','{{classifier.name}}')">{{classifier.name}}</button>
-                        {% endfor %}
-
-                        <h6 class="dropdown-header">Selectors</h6>
-                        {% for selector in targets_methods.selectors %}
-                        <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
-                            title="{{selector.description}}"
-                            class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
-                            onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'selectors','{{selector.name}}')">{{selector.name}}</button>
-                        {% endfor %}
-                        {% if instance.targets_prefix == 'hole' %}
-                        <h6 class="dropdown-header">Metadata</h6>
-                        {% for metadata in targets_methods.metadata %}
-                        <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
-                            title="{{metadata.description}}"
-                            class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
-                            onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'metadata','{{metadata.name}}')">{{metadata.name}}</button>
-                        {% endfor %}
-                        {% endif %}
+                            <a id='opt-mrc' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                                title="Download mrc"
+                                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=mrc">
+                                .mrc
+                            </a>
+                            <a id='opt-png' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                                title="Download png"
+                                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=png">
+                                .png
+                            </a>
+                            <a id='opt-raw' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                                title="Download raw file saved by the scope"
+                                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=raw">
+                                raw
+                            </a>
+                            <!-- <a id='opt-svg' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                                title="Download png"
+                                href="#" onclick="downloadSVGasPNG()">
+                                png with annotations
+                            </a> -->
+                        </div>
                     </div>
                 </div>
-                <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
-                        class="bi bi-zoom-in zoomIcon"></i></button>
+                <div>
+                    <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
+                            class="bi bi-display"></i></a>
 
+                    <div class="dropdown-menu">
+                        <div class="div" id="quality">
+                            <h6 class="dropdown-header">Classifiers</h6>
+
+                            {% for classifier in targets_methods.classifiers %}
+                            <button id='opt-classifiers'
+                                class="dropdown-item hasTooltip {% if classifier.name == method %}active{% endif %}"
+                                data-toggle="tooltip" data-placement="left" title="{{classifier.description}}"
+                                onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %} false,'classifiers','{{classifier.name}}')">{{classifier.name}}</button>
+                            {% endfor %}
+
+                            <h6 class="dropdown-header">Selectors</h6>
+                            {% for selector in targets_methods.selectors %}
+                            <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
+                                title="{{selector.description}}"
+                                class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
+                                onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'selectors','{{selector.name}}')">{{selector.name}}</button>
+                            {% endfor %}
+                            {% if instance.targets_prefix == 'hole' %}
+                            <h6 class="dropdown-header">Metadata</h6>
+                            {% for metadata in targets_methods.metadata %}
+                            <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
+                                title="{{metadata.description}}"
+                                class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
+                                onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'metadata','{{metadata.name}}')">{{metadata.name}}</button>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
+                            class="bi bi-zoom-in zoomIcon"></i></button>
+                </div>
 
 
             </div>
@@ -123,8 +161,7 @@
     </nav>
 
     <div class="row h-100 w-100 m-0 p-0 justify-content-center">
-        <div id="{% if instance.alias_name == 'Atlas' %}Atlas{% else %}Square{% endif %}_im"
-            class="d-flex w-100 mh-100 justify-content-center">
+        <div id="{{instance.prefix}}_im" class="d-flex w-100 mh-100 justify-content-center">
             {{ svg | safe }}
         </div>
     </div>

@@ -2,7 +2,6 @@
 
 
 import re
-from typing import Tuple
 import pandas as pd
 import logging
 

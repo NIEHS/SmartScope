@@ -22,8 +22,11 @@ copyright = '2022, NIEHS/NIH Molecular Microscopy Consortium and Bartesaghi Lab'
 author = 'Jonathan Bouvette and Elizabeth Viverette'
 
 # The full version, including alpha/beta/rc tags
-release = '0.7beta'
+# release = '0.7beta'
 
+# -- Autodoc conf
+
+add_module_names = False
 
 # -- General configuration ---------------------------------------------------
 
@@ -36,14 +39,26 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.autosectionlabel',
+    "sphinx_multiversion",
 ]
 
 # source_suffix = '.rst'
 source_suffix = ['.rst', '.md']
 # Add any paths that contain templates here, relative to this directory.
-master_doc = 'index'
+# master_doc = 'sitemap'
 templates_path = ['_templates']
 
+html_sidebars = {
+    '**': [
+        'sidebar-logo.html',
+        'search-field.html',
+        'sbt-sidebar-nav.html',
+        'versioning.html',
+    ],
+}
+smv_remote_whitelist = 'niehs'
+smv_branch_whitelist = r'^(stable|dev)$'
+smv_outputdir_format = '{ref.name}' 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -56,7 +71,8 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'sphinx_book_theme'
-
+html_title = "SmartScope Documentation"
+html_css_files = ["custom.css"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -66,5 +82,6 @@ html_theme_options = {
     "repository_url": "https://github.com/NIEHS/SmartScope",
     "use_repository_button": True,
     "use_issues_button": True,
-
+    "home_page_in_toc": True
+    # "extra_navbar": 'versioning.html'
 }

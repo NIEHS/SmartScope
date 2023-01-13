@@ -71,7 +71,7 @@ function setSVGcss(item, el) {
 async function queueSquareTargets(elem) {
     var url = `/api/squares/${currentState.square}/all/`
     console.log(url)
-    await apifetchAsync(url, { 'action': elem.value }, "PATCH");
+    await apifetchAsync(url, { 'action': elem.value }, "PATCH", message=`Adding all target to queue for ${currenState.square}`);
     loadSquare(currentState.square)
 }
 
@@ -80,7 +80,7 @@ async function queueSquareTargets(elem) {
 async function loadAtlas(metaonly = false, display_type = null, method = null) {
     var url = `/api/atlas/${Object.keys(fullmeta.atlas)[0]}/load/?format=json&display_type=${display_type}&method=${method}&metaonly=${metaonly}`
     console.log(url)
-    const data = await fetchAsync(url);
+    const data = await fetchAsync(url, message='Loading Atlas');
     currentState['atlasDisplayType'] = data.displayType
     currentState['atlasMethod'] = data.method
     loadSVG(data, generalElements.atlas)
@@ -109,7 +109,7 @@ $('#main').on("click", '.legend', function () {
 
 $('#main').on('click', '.showLegend', function () {
     console.log($(this), $(this).closest('.mapCard'))
-    $(this).closest('.mapCard').find('#legend').toggleClass('d-none')
+    $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
 
 $("#main").find(".hasTooltip").tooltip();
@@ -184,7 +184,7 @@ async function loadSquare(full_id, metaonly = false, display_type = null, method
     if (meta.status == 'completed') {
         var url = `/api/squares/${meta.id}/load/?format=json&display_type=${display_type}&method=${method}&metaonly=${metaonly}`
         console.log('URL:', url)
-        const data = await fetchAsync(url)
+        const data = await fetchAsync(url, message=`Loading Square ${meta.id}`)
         currentState['squareDisplayType'] = data.displayType
         currentState['squareMethod'] = data.method
         loadSVG(data, generalElements.square)
@@ -195,21 +195,25 @@ async function loadSquare(full_id, metaonly = false, display_type = null, method
 
 async function loadHole(elem, metaonly = false) {
     var center = elem
-    if (elem.classList.contains('completed')) {
+    if (elem.classList.contains('completed') | elem.classList.contains('processed')) {
         if (!metaonly) {
             //Find center hole
             if (elem.classList.contains('is_area')) {
                 center = elem.parentElement.getElementsByClassName('center')[0]
             }
             var imglm = document.createElement('img')
-            let lm_data = await fetchAsync(`/api/holes/${center.id}/file_paths?png`)
-            imglm.src = lm_data.png.url
-            imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
-            $("#mmHole").html(imglm)
+            let data = await fetchAsync(`/api/holes/${center.id}/load`, message=`Loading Hole ${center.id}`)
+            loadSVG(data, generalElements.hole)
+            // $("#Atlas_div").html(data.card)
+            // imglm.src = lm_data.png.url
+            // imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
+            $("#mmHole").html(data.card)
         }
-        hm_data = await fetchAsync(`/api/holes/${center.id}/highmag/`)
+        if (elem.classList.contains('completed')) {  
+        hm_data = await fetchAsync(`/api/holes/${center.id}/highmag/`, message=`Loading high mag data.`)
         $('#Hole').html(hm_data)
         grabCuration()
+        };
     };
 };
 
@@ -252,7 +256,7 @@ async function changeGridStatus(status) {
     if (r == true) {
         console.log(status, fullmeta.grid_id)
         var url = `/api/grids/${fullmeta.grid_id}/`
-        await apifetchAsync(url, { 'status': status }, "PATCH");
+        await apifetchAsync(url, { 'status': status }, "PATCH", message=`Setting grid status to ${status}`);
         await reportMain()
         websocketMain()
     } else {
@@ -264,7 +268,7 @@ function rateGrid(el) {
     document.getElementById("goodGrid").classList.remove('active');
     document.getElementById("badGrid").classList.remove('active');
     var url = `/api/grids/${fullmeta.grid_id}/`;
-    apifetchAsync(url, { 'quality': el.value }, "PATCH");
+    apifetchAsync(url, { 'quality': el.value }, "PATCH", message=`Setting grid quality to ${el.value}`);
     el.classList.add('active');
     $(`#sidebarGrids #${fullmeta.grid_id} div`).removeClass(function (index, className) {
         return (className.match(/(^|\s)quality-\S+/g) || []).join(' ')
@@ -388,7 +392,7 @@ $('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
     }), {});
     console.log(data)
     var url = `/api/grids/${fullmeta.grid_id}/`
-    apifetchAsync(url, data, "PATCH")
+    apifetchAsync(url, data, "PATCH", message=`Edit grid notes`)
 });
 
 $('#main').on('submit', '#editCollectionForm', function (e) {
@@ -400,7 +404,7 @@ $('#main').on('submit', '#editCollectionForm', function (e) {
     }), {});
     console.log(data)
     var url = `/api/grids/${currentState.grid_id}/editcollectionparams/`
-    apifetchAsync(url, data, "PATCH")
+    apifetchAsync(url, data, "PATCH", message=`Changing grid collection parameters`)
 });
 
 $('#main').on('click', '#gridParamBtn', function (e) {
@@ -490,32 +494,35 @@ async function popupSele(element) {
 
 
 async function updateTargets(model, display_type, method, key, new_value, ids = null) {
-    
+
     var sele = squareSelection
-    let stateKey= 'atlas'
+    let stateKey = 'atlas'
     if (model == 'holes') {
         sele = holeSelection
-        stateKey= 'square'
+        stateKey = 'square'
     }
     if (ids) {
         sele = ids
     }
     let request = {
-            type: model,
-            ids: sele,
-            display_type: display_type || currentState[`${stateKey}DisplayType`],
-            method: method || currentState[`${stateKey}Method`],
-            key: key,
-            new_value: new_value
-        }
+        type: model,
+        ids: sele,
+        display_type: display_type || currentState[`${stateKey}DisplayType`],
+        method: method || currentState[`${stateKey}Method`],
+        key: key,
+        new_value: new_value
+    }
     console.log('updateClassifier request: ', request)
-    resp = await websocketSend('update.target', request)
+    var url = `/api/updatetargets/`
+    resp = await apifetchAsync(url, request, "PATCH", message=`Updating targets ${key} to ${new_value}`)
+    updateData(resp)
+    // resp = await websocketSend('update.target', request)
     console.log('updateClassifier response: ', resp)
     clearSelection(sele, model)
 }
 
 async function loadMeta() {
-    return await fetchAsync(`/api/grids/${currentState.grid_id}/fullmeta`)
+    return await fetchAsync(`/api/grids/${currentState.grid_id}/fullmeta`, message='Loading specimen metadata')
 }
 
 function countBisGroupSizes() {
@@ -569,14 +576,14 @@ async function addTargets(btn, selection) {
     console.log(`Adding targets on square: ${currentState.square}`, coords)
     clearSelection(selection, 'targets')
     var url = "/api/addtargets/"
-    let res = await apifetchAsync(url, { 'session_id': fullmeta.session_id, 'square_id': currentState.square, 'targets': coords }, 'POST')
+    let res = await apifetchAsync(url, { 'session_id': fullmeta.session_id, 'square_id': currentState.square, 'targets': coords }, 'POST', message='Adding targets')
     console.log(res)
     loadSquare(currentState.square, false)
 }
 
 async function regroupBIS(square_id) {
     let url = `/api/squares/${square_id}/regroup_bis/`
-    let res = await apifetchAsync(url, {}, 'PATCH')
+    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${square_id}`)
     console.log('regroupBIS: ', res)
     await loadSquare(currentState.square, false)
 }
@@ -597,7 +604,8 @@ function populateReportHead() {
 async function reportMain() {
     generalElements = {
         'atlas': document.getElementById('Atlas_im'),
-        'square': document.getElementById('Square_im')
+        'square': document.getElementById('Square_im'),
+        'hole': document.getElementById('mmHole')
     }
     currentTarget = null
     hm_data = null
@@ -614,9 +622,9 @@ async function reportMain() {
     if (fullmeta.status != null) {
         console.log(fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status)
         if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {
-            await loadAtlas(metaonly = false, display_type = currentState['atlasDisplayType'] || null , method = currentState['atlasMethod'] || null);
+            await loadAtlas(metaonly = false, display_type = currentState['atlasDisplayType'] || null, method = currentState['atlasMethod'] || null);
             if (![null, undefined].includes(currentState.square)) {
-                await loadSquare(currentState.square, metaonly = false, display_type = currentState['squareDisplayType'] || null , method = currentState['squareMethod'] || null)
+                await loadSquare(currentState.square, metaonly = false, display_type = currentState['squareDisplayType'] || null, method = currentState['squareMethod'] || null)
             }
             if (![null, undefined].includes(currentState.hole)) {
                 await loadHole(document.getElementById(currentState.hole))
@@ -635,9 +643,14 @@ $('#main').on('change', ".card circle", function () {
 
 $('#main').on('mouseenter', ".holeCard", function (e) {
     var hole = document.getElementById($(this).attr('hole_id'))
+    var highmag = document.getElementById($(this).attr('id'))
     if (hole) {
         hovered.push(hole)
         hole.classList.add("hovered")
+    }
+    if (highmag) {
+        hovered.push(highmag)
+        highmag.classList.add("hovered")
     }
 }).on("mouseleave", ".holeCard", function () {
     for (let i in hovered) {
@@ -706,8 +719,10 @@ $('#sidebarCollapse').on('click', function () {
     console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
     if ($(this).attr('aria-expanded') == "false") {
         document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
+        // $('#sidebar-container').removeClass('col-md-2').addClass('col-md-auto')
     } else {
         document.getElementById("sidebarCollapseLogo").style.transform = ""
+        // $('#sidebar-container').classList.removeClass('col-md-auto').addClass('col-md-2')
     }
 })
 
@@ -757,3 +772,25 @@ $("#main").on('click', '.zoomBtn', function () {
     card.addClass('popupFull')
     icon.removeClass("bi-zoom-in").addClass("bi-zoom-out")
 }) 
+
+
+function updateData(data) {
+    if (data.type == 'update') {
+        updateFullMeta(data.fullmeta)
+        if (Object.keys(data.fullmeta.atlas).length === 0) {
+            console.log('UPDATING!!')
+            let svgToUpdate = { ...data.fullmeta.squares, ...data.fullmeta.holes }
+            svgUpdate(svgToUpdate)
+            populateReportHead()
+            return
+        } else if (data.fullmeta.atlas[Object.keys(data.fullmeta.atlas)[0]].status == 'completed') {
+            reportMain()
+            return
+        }
+    }
+    else if (data.type == 'reload') {
+        loadSVG(data, $(`#main ${data.element}`))
+    } else {
+        console.log(data)
+    }
+}

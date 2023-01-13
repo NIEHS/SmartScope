@@ -26,17 +26,17 @@ class MetadataConsumer(AsyncWebsocketConsumer):
         user = self.scope["user"]
 
         logger.info(f'{self.groups[0]}, received: {response}, user: {user}, {type(user)}')
-        is_viewer_only = await sync_to_async(viewer_only)(user)
-        # This needs to be changed, implemented quickly for the demo server
-        if is_viewer_only:
-            return await self.send(text_data='Cannot edit, user is part of the viewer_only group')
+        # is_viewer_only = await sync_to_async(viewer_only)(user)
+        # # This needs to be changed, implemented quickly for the demo server
+        # if is_viewer_only:
+        #     return await self.send(text_data='Cannot edit, user is part of the viewer_only group')
         return await self.channel_layer.group_send(self.groups[0], response)
 
-    async def update_target(self, event):
-        response = await sync_to_async(update_target)(event['data'])
-        # response.setdefault('type', 'update')
-        await self.send(text_data=json.dumps(
-            response))
+    # async def update_target(self, event):
+    #     response = await sync_to_async(update_target)(event['data'])
+    #     # response.setdefault('type', 'update')
+    #     await self.send(text_data=json.dumps(
+    #         response))
 
     async def update_metadata(self, event):
         await self.send(text_data=json.dumps(

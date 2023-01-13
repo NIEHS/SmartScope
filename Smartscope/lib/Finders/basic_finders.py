@@ -191,7 +191,7 @@ def fft_method(montage, diameter_in_um=1.2):
                                                     montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
             cv2.circle(bit8_color, np.array(center).astype(int), int(radius), (0, 255, 0), cv2.FILLED)
     save_image(bit8_color, 'fft_method', destination=montage.directory, resize_to=512)
-    return outputs, True
+    return outputs, True, dict()
 
 
 def regular_pattern(montage, spacing_in_um=3, diameter_in_um=1.2):
@@ -220,7 +220,7 @@ def regular_pattern(montage, spacing_in_um=3, diameter_in_um=1.2):
     logger.info(f'Filtered a total of {len(output)} targets within the square')
     # save_image(bit8_color, 'regular_pattern', destination=montage.directory, resize_to=512)
     # logger.debug(output)
-    return output, True
+    return output, True, dict()
 
 
 def find_square_center(img):

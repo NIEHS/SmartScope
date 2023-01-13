@@ -19,15 +19,6 @@ There are a few steps that are requied within SerialEM prior to running SmartSco
     You should have a mont-map imaging state pre-saved. Double-click it to enable it.
 
 
-#. Go to file -> setup montage
-
-    In the dialog, click the use montage mapping, not record option.
-
-    Click ok until prompted to save a file. Don't save any file and cancel. The options in the dialog will be saved.
-
-    .. note:: We are aware that this is an odd procedure but it avoids many errors and warnings.
-
-
 #. You're all set!
 
     Refer on how to prepare the SmartScope run from the web page.
