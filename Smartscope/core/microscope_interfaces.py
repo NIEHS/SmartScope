@@ -364,7 +364,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
-    def highmag(self, isX, isY, tiltAngle, file='', frames=True, earlyReturn=False):
+    def highmag(self, file='', frames=True, earlyReturn=False):
         generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
 
     def connect(self):
