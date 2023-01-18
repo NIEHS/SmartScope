@@ -24,13 +24,12 @@ class Websocket_update_decorator:
         self.grid = grid
 
     def __call__(self, *args, **kwargs):
-        objs = outputs = self.f(*args, **kwargs)
-        if not isinstance(outputs, list):
+        objs = self.f(*args, **kwargs)
+        if not isinstance(objs, list):
             objs = [objs]
         if self.grid is not None:
             websocket_update(objs, self.grid.grid_id)
-
-        return outputs
+        return objs
 
 
 def websocket_update(objs, grid_id):
