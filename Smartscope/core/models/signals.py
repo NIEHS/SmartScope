@@ -1,10 +1,10 @@
 # from models import *
 from pathlib import Path
 from django.conf import settings
+# from django.core.cache import cache
 import shutil
 import os
 from django.contrib.auth.models import User, Group
-
 from Smartscope.lib.file_manipulations import create_scope_dirs
 from Smartscope.core.utils.export_import import export_grid
 from .session import *
@@ -13,7 +13,6 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 import subprocess as sub
-import shlex
 from Smartscope.server.lib.worker_jobs import *
 import logging
 
@@ -94,27 +93,21 @@ def grid_modification(sender, instance, **kwargs):
         if instance.status == 'completed' and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
-@ receiver(post_save, sender=HoleModel)
-@ receiver(post_save, sender=SquareModel)
-@ receiver(post_save, sender=HighMagModel)
-def clear_svg_cache_target(sender, instance, **kwargs):
-    key = '_'.join([instance.parent.pk,'svg'])
-    logger.debug(f'Trying to remove {instance.parent} svg key from cache')
-    if cache.delete(key):
-        logger.debug(f'{instance.parent} svg key removed from cache after {instance} update')
+# @ receiver(post_save, sender=HoleModel)
+# @ receiver(post_save, sender=SquareModel)
+# @ receiver(post_save, sender=HighMagModel)
+# def clear_svg_cache_target(sender, instance, **kwargs):
+#     key = '_'.join(['svg',instance.parent.pk,])
+#     if cache.delete_many(f'{key}*'):
+#         logger.debug(f'{instance.parent} svg key removed from cache after {instance} update')
 
-@ receiver(post_save, sender=Classifier)
-@ receiver(post_save, sender=Selector)
-def clear_svg_cache_label(sender, instance, **kwargs):
-    instance_to_update = instance.content_object.parent
-    key = '_'.join([instance_to_update.pk,'svg'])
-    logger.debug(f'Trying to remove {instance_to_update} svg key from cache')
-    if cache.delete(key):
-        logger.debug(f'{instance_to_update} svg key removed from cache after {instance} update')
-
-
-
-
+# @ receiver(post_save, sender=Classifier)
+# @ receiver(post_save, sender=Selector)
+# def clear_svg_cache_label(sender, instance, **kwargs):
+#     instance_to_update = instance.content_object.parent
+#     key = '_'.join(['svg',instance_to_update.pk])
+#     if cache.delete_many(f'{key}*'):
+#         logger.debug(f'{instance_to_update} svg key removed from cache after {instance} update')
 
 @ receiver(post_save, sender=Group)
 def create_group_directory(sender, instance, created, *args, **kwargs):
@@ -128,7 +121,6 @@ def create_group_directory(sender, instance, created, *args, **kwargs):
                 print(f'Creating group dir at: ', d)
                 os.mkdir(d)
 
-
 @ receiver(pre_save, sender=ScreeningSession)
 def change_group(sender, instance, **kwargs):
     if not instance._state.adding:
@@ -139,14 +131,12 @@ def change_group(sender, instance, **kwargs):
             shutil.move(original.directory, destination)
     return instance
 
-
 @receiver(post_save, sender=ScreeningSession)
 def create_session_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         logger.debug(f'Creating session {instance} directories')
         create_scope_dirs(instance.microscope_id.scope_path)
         Path(instance.directory).mkdir(parents=True, exist_ok=True)
-
 
 @receiver(post_save, sender=Microscope)
 def create_scope_directory(sender, instance, created, *args, **kwargs):

@@ -17,7 +17,7 @@ from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_
 from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS
 from Smartscope.lib.logger import add_log_handlers
-from Smartscope.lib.diagnostics import generate_diagnostic_figure
+from Smartscope.lib.diagnostics import generate_diagnostic_figure, Timer
 from django.db import transaction
 from django.utils import timezone
 import multiprocessing
@@ -275,30 +275,35 @@ def process_square_image(square, grid, microscope_id):
 
 
 def process_hole_image(hole, grid, microscope_id):
-    protocol = get_or_set_protocol(grid).mediumMag
-    montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
-    export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
-    if hole.bis_group is not None:
-        hole_group = list(HoleModel.display.filter(square_id=hole.square_id,bis_group=hole.bis_group))
-    else:
-        hole_group = [hole]
-    hole.targets.delete()
-    image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
-    if len(protocol.targets.finders) != 0:
-        targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.targets.finders)
-        generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it.png'))
-    else:
-        targets = create_targets_from_center(image_coords, montage)
-        finder_method = 'Registration'
-        classifier_method=None
-    
-    register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
-    for h, index in zip(hole_group,register):
-        target = targets[index]
-        add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
-
-    update(hole, shape_x=montage.shape_x,
-                        shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
+    with Timer(text='Processing hole') as timer:
+        protocol = get_or_set_protocol(grid).mediumMag
+        montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
+        export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
+        timer.report_timer('Getting and processing montage')
+        if hole.bis_group is not None:
+            hole_group = list(HoleModel.display.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+        else:
+            hole_group = [hole]
+        hole.targets.delete()
+        timer.report_timer('Querying and deleting previous targerts in BIS group')
+        image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
+        timer.report_timer('Initial registration to the higher mag image')
+        if len(protocol.targets.finders) != 0:
+            targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.targets.finders)
+            generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it.png'))
+        else:
+            targets = create_targets_from_center(image_coords, montage)
+            finder_method = 'Registration'
+            classifier_method=None
+        timer.report_timer('Identifying and registering targets')
+        
+        register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
+        for h, index in zip(hole_group,register):
+            target = targets[index]
+            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
+        timer.report_timer('Final registration and saving to db')
+        update(hole, shape_x=montage.shape_x,
+                            shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
 
 
 def write_sessionLock(session, lockFile):
