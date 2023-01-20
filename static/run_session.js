@@ -4,7 +4,7 @@ var interval = null
 async function loadlogs() {
     console.log('SENDING REQUEST!')
     let url = `/api/sessions/${session_id}/get_logs`
-    data = await apifetchAsync(url, null, 'GET')
+    data = await apifetchAsync(url, null, 'GET', 'Loading log files')
     console.log(data)
     if (data.reload === true) {
         location.reload();
@@ -35,7 +35,7 @@ async function startSession(start = true) {
     var r = confirm(`Do you want to ${str} this session?`);
     if (r == true) {
         console.log("starting")
-        response = await apifetchAsync(url, { 'start': start }, 'POST');
+        response = await apifetchAsync(url, { 'start': start }, 'POST', 'Starting session');
         return response
     } else {
         console.log("Cancel")
@@ -47,7 +47,7 @@ async function startSession(start = true) {
 async function togglePause() {
     console.log('toggling pause')
     let url = `/api/sessions/${session_id}/pause_between_grids/`
-    resp = await apifetchAsync(url, { 'pause': '' }, 'PUT');
+    resp = await apifetchAsync(url, { 'pause': '' }, 'PUT', 'Toggling auto-pause');
     setPause(resp)
     console.log('Response:', resp)
 
@@ -55,7 +55,7 @@ async function togglePause() {
 
 async function continueRun(value) {
     let url = `/api/sessions/${session_id}/continue_run/`
-    resp = await apifetchAsync(url, { 'continue': value }, 'PUT');
+    resp = await apifetchAsync(url, { 'continue': value }, 'PUT', 'Continuing or skipping');
     isPaused(resp)
     console.log('Response:', resp)
 
@@ -110,7 +110,7 @@ function autoRefresh(enable = true) {
 async function checkIsRunning(element, response = null) {
     let url = `/api/sessions/${session_id}/check_is_running/`
     if (response === null) {
-        response = await apifetchAsync(url, null, 'GET')
+        response = await apifetchAsync(url, null, 'GET', 'Checking is session is running')
     }
     if (response.status === 'running') {
         element.className = 'btn btn-outline-danger'
@@ -147,7 +147,7 @@ $('#force-start-button').on('click', async function () {
 $('#removeLockButton, #forceKill').on('click', async function () {
     console.log(`Running ${this.value}`)
     let url = `/api/sessions/${session_id}/${this.value}/`
-    data = await apifetchAsync(url, null, 'POST')
+    data = await apifetchAsync(url, null, 'POST', 'Removing microscope lock file')
     console.log(data)
 })
 
