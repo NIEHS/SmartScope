@@ -1,6 +1,7 @@
 # from models import *
 from pathlib import Path
 from django.conf import settings
+# from django.core.cache import cache
 import shutil
 import os
 from django.contrib.auth.models import User, Group
@@ -72,8 +73,8 @@ def grid_modification(sender, instance, **kwargs):
             os.rename(original.directory, instance.directory)
             return
 
-        if instance.status == 'complete' and original.status != 'complete':
-            export_grid(instance,instance.session_id.directory)
+        # if instance.status == 'complete' and original.status != 'complete':
+        #     export_grid(instance,instance.session_id.directory)
 
 @ receiver(post_save, sender=HoleModel)
 def queue_bis_group(sender,instance,created, **kwargs):
@@ -92,21 +93,21 @@ def grid_modification(sender, instance, **kwargs):
         if instance.status == 'completed' and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
-@ receiver(post_save, sender=HoleModel)
-@ receiver(post_save, sender=SquareModel)
-@ receiver(post_save, sender=HighMagModel)
-def clear_svg_cache_target(sender, instance, **kwargs):
-    key = '_'.join([instance.parent.pk,'svg'])
-    if cache.delete(key):
-        logger.debug(f'{instance.parent} svg key removed from cache after {instance} update')
+# @ receiver(post_save, sender=HoleModel)
+# @ receiver(post_save, sender=SquareModel)
+# @ receiver(post_save, sender=HighMagModel)
+# def clear_svg_cache_target(sender, instance, **kwargs):
+#     key = '_'.join(['svg',instance.parent.pk,])
+#     if cache.delete_many(f'{key}*'):
+#         logger.debug(f'{instance.parent} svg key removed from cache after {instance} update')
 
-@ receiver(post_save, sender=Classifier)
-@ receiver(post_save, sender=Selector)
-def clear_svg_cache_label(sender, instance, **kwargs):
-    instance_to_update = instance.content_object.parent
-    key = '_'.join([instance_to_update.pk,'svg'])
-    if cache.delete(key):
-        logger.debug(f'{instance_to_update} svg key removed from cache after {instance} update')
+# @ receiver(post_save, sender=Classifier)
+# @ receiver(post_save, sender=Selector)
+# def clear_svg_cache_label(sender, instance, **kwargs):
+#     instance_to_update = instance.content_object.parent
+#     key = '_'.join(['svg',instance_to_update.pk])
+#     if cache.delete_many(f'{key}*'):
+#         logger.debug(f'{instance_to_update} svg key removed from cache after {instance} update')
 
 @ receiver(post_save, sender=Group)
 def create_group_directory(sender, instance, created, *args, **kwargs):

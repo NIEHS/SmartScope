@@ -1,7 +1,7 @@
 import random
 import string
 from itertools import chain
-from typing import Callable, Union
+from typing import Callable, Union, List
 from django.core.cache import cache
 from django.db import models, connection, reset_queries
 from Smartscope.lib.montage import Montage
@@ -33,17 +33,24 @@ class Cached_model_property:
 
         return outputs
 
-def cached_model_property(key_suffix, timeout=3600):
+def cached_model_property(key_prefix,extra_suffix_from_function:Union[List[str],None]=None, timeout=7200):
     def outer(func):
         def inner(*args,**kwargs):
             reset_queries()
             instance = args[0]
-            key = '_'.join([instance.pk,key_suffix])
+            kwargs.update(zip(func.__code__.co_varnames, args))
+            logger.debug(f'Kwargs are {kwargs}')
+            key_parts = [key_prefix, instance.pk]
+            if extra_suffix_from_function is not None:
+                for key in extra_suffix_from_function:
+                    if key in kwargs:
+                        key_parts.append(kwargs[key])
+            key = '_'.join(key_parts)
             if (cached_outputs := cache.get(key)) is not None:
-                logger.debug(f'Loading {instance} {key_suffix} from cache. Required {len(connection.queries)} queries')
+                logger.debug(f'Loading {instance} {key_prefix} from cache. Required {len(connection.queries)} queries')
                 return cached_outputs
-            outputs = func(*args,**kwargs)
-            logger.debug(f'Caching {instance} {key_suffix}. Required {len(connection.queries)} queries')
+            outputs = func(**kwargs)
+            logger.debug(f'Caching {instance} {key_prefix}. Required {len(connection.queries)} queries')
             cache.set(key, outputs, timeout=timeout)
             return outputs
         return inner
