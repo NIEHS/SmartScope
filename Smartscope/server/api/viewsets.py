@@ -83,7 +83,7 @@ class ExtraActionsMixin:
         extension_factory = {
             'mrc': 'mrc',
             'raw': 'raw_mrc',
-            'png': 'png_img'
+            'png': 'png'
         }
         img = Path(getattr(instance, extension_factory[extension]))
         response = FileResponse(open(img, 'rb'), content_type='image/*')
