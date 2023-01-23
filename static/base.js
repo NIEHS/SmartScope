@@ -201,6 +201,10 @@ async function loadReport(requestfield = null, id = null, push = true) {
         console.log('Resetting hole and square state')
         delete currentState['hole']
         delete currentState['square']
+        delete currentState['squareMethod']
+        delete currentState['squareDisplayType']
+        delete currentState['atlasMethod']
+        delete currentState['atlasDisplayType']
     }
 
     currentState[requestfield] = id
