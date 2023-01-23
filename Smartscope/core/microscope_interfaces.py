@@ -102,6 +102,7 @@ class SerialemInterface(MicroscopeInterface):
         
 
     def realign_to_square(self):
+        self.tiltTo(0)
         while True:
             logger.info('Running square realignment')
             sem.Search()
@@ -133,6 +134,7 @@ class SerialemInterface(MicroscopeInterface):
     def moveStage(self,stage_x,stage_y,stage_z):
         sem.SetImageShift(0, 0)
         sem.MoveStageTo(stage_x,stage_y,stage_z)
+        self.state.setStage(stage_x,stage_y,stage_z)
     
     def get_conversion_matrix(self, magIndex=0):
         return sem.CameraToSpecimenMatrix(magIndex)
@@ -150,10 +152,15 @@ class SerialemInterface(MicroscopeInterface):
         self.checkPump()
         sem.View()
 
-    def medium_mag_hole(self, tiltAngle, file=''):
+    def tiltTo(self,tiltAngle):
+        if self.state.tiltAngle == tiltAngle:
+            return
         sem.TiltTo(tiltAngle)
+        self.state.tiltAngle = tiltAngle
+
+
+    def medium_mag_hole(self, file=''):
         sem.AllowFileOverwrite(1)
-        # sem.SetImageShift(0, 0)
         self.acquire_medium_mag()
         sem.OpenNewFile(file)
         sem.Save()
