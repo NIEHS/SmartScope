@@ -71,7 +71,7 @@ function setSVGcss(item, el) {
 async function queueSquareTargets(elem) {
     var url = `/api/squares/${currentState.square}/all/`
     console.log(url)
-    await apifetchAsync(url, { 'action': elem.value }, "PATCH", message=`Adding all target to queue for ${currenState.square}`);
+    await apifetchAsync(url, { 'action': elem.value }, "PATCH", message=`Adding all target to queue for ${currentState.square}`);
     loadSquare(currentState.square)
 }
 
