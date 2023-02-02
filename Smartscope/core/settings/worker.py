@@ -3,9 +3,9 @@ from pathlib import Path
 from Smartscope.core.config import register_plugins, register_protocols, register_external_plugins, get_active_plugins_list, get_protocol_commands
 from Smartscope.core.metadata_viewer import CTFFitViewer
 
-SMARTSCOPE_CONFIG = Path(os.getenv('APP'), 'config/smartscope/')
+SMARTSCOPE_CONFIG = Path(os.getenv('CONFIG'))
 SMARTSCOPE_PLUGINS = SMARTSCOPE_CONFIG / 'plugins'
-EXTERNAL_PLUGINS_DIRECTORY = Path(os.getenv('APP'), 'external_plugins')
+EXTERNAL_PLUGINS_DIRECTORY = Path(os.getenv('EXTERNAL_PLUGINS_DIRECTORY'))
 EXTERNAL_PLUGINS_LIST:list = get_active_plugins_list(EXTERNAL_PLUGINS_DIRECTORY, SMARTSCOPE_PLUGINS / 'external_plugins.txt')
 SMARTSCOPE_PROTOCOLS = SMARTSCOPE_CONFIG / 'protocols'
 

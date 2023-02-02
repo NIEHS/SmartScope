@@ -1,7 +1,7 @@
 atlas_x : 
-  initial: 3
+  initial: 6
 atlas_y :
-  initial: 3
+  initial: 2
 square_x :
   initial: 1
   readonly: True

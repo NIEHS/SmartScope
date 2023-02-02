@@ -18,7 +18,6 @@
 --
 -- Table structure for table `atlasmodel`
 --
-
 DROP TABLE IF EXISTS `atlasmodel`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -498,7 +497,7 @@ CREATE TABLE `django_session` (
 
 LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
-INSERT INTO `django_session` VALUES ('v88l0mjgrjjqfxc1eb88pehgl1uwisqd','.eJxVjMsOwiAURP-FtSFAebp07zeQy70oVQNJaVfGf5cmXWhmN-fMvFmEbS1x63mJM7EzM5adfssE-Mx1J_SAem8cW12XOfFd4Qft_Noovy6H-3dQoJex1kTJSSGcUFrdUh6ZgnKehCUMzgXIClFbp72cwHgNftJCUjZDA4Xs8wUE6zek:1oEXsO:DzXWo_m3rXR3b4z9Oq4ZeYyWIuEnwGYhA6IIv22lfLU','2022-08-04 15:14:08.973010');
+-- INSERT INTO `django_session` VALUES ('v88l0mjgrjjqfxc1eb88pehgl1uwisqd','.eJxVjMsOwiAURP-FtSFAebp07zeQy70oVQNJaVfGf5cmXWhmN-fMvFmEbS1x63mJM7EzM5adfssE-Mx1J_SAem8cW12XOfFd4Qft_Noovy6H-3dQoJex1kTJSSGcUFrdUh6ZgnKehCUMzgXIClFbp72cwHgNftJCUjZDA4Xs8wUE6zek:1oEXsO:DzXWo_m3rXR3b4z9Oq4ZeYyWIuEnwGYhA6IIv22lfLU','2022-08-04 15:14:08.973010');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 
