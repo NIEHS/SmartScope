@@ -16,6 +16,18 @@ General
     Useful to change if an instance will only be used as a worker.
     More details coming soon.
 
+* USE_SSL *Default: false*
+
+    If set to true, the nginx service will use a different config file to encrypt the connection. More setup will have to be done on the nginx service to enable that functionality
+
+* CONFIG *Default: /opt/config*
+
+    This will copy the smartscope configuration to a volume area where it can be persistent and edited
+
+* EXTERNAL_PLUGINS_DIRECTORY *Default /opt/smartscope/external_plugins*
+
+    The location of the directory where the external plugins are installed. It shouldn't need to be changed unless for development purposes.
+
 * USE_STORAGE *Default: True*
 
     *options: True|False*
@@ -61,7 +73,7 @@ General
 Fake-scope mode
 ***************************************
 
-* TEST_FILES *Default:/mnt/data/tmp/smartscope_testfiles/*
+* TEST_FILES *Default:/mnt/testfiles/*
 
     The location of the dummy files to run in "fake scope" mode.
 
@@ -94,6 +106,8 @@ Database
 
 AWS connection information
 **************************
+
+.. note:: This feature is currently not functional in v0.8
 
 This section is required if the USE_AWS=True and if the information is not stored in ~/.aws
 Please view `AWS S3 <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html>`_ information on these variables

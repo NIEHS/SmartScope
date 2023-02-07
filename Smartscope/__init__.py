@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-__version__ = "0.8rc1"
-
 import logging
 import logging.config
 import os
 import sys
+
+__version__ = os.getenv('VERSION')
 
 LOGLEVEL = os.getenv('LOGLEVEL') if os.getenv('LOGLEVEL') is not None else 'DEBUG'
 

@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.5.16-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.16  Distrib 10.1.48-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: localhost    Database: smartscope
+-- Host: db    Database: smartscope
 -- ------------------------------------------------------
--- Server version	10.5.16-MariaDB-1:10.5.16+maria~focal
+-- Server version	10.5.18-MariaDB-1:10.5.18+maria~ubu2004
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,6 +18,7 @@
 --
 -- Table structure for table `atlasmodel`
 --
+
 DROP TABLE IF EXISTS `atlasmodel`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -35,7 +36,7 @@ CREATE TABLE `atlasmodel` (
   PRIMARY KEY (`atlas_id`),
   UNIQUE KEY `atlasmodel_grid_id_id_name_4486e537_uniq` (`grid_id_id`,`name`),
   CONSTRAINT `atlasmodel_grid_id_id_c1918cd9_fk_autoloadergrid_grid_id` FOREIGN KEY (`grid_id_id`) REFERENCES `autoloadergrid` (`grid_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -59,7 +60,7 @@ CREATE TABLE `auth_group` (
   `name` varchar(150) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -88,7 +89,7 @@ CREATE TABLE `auth_group_permissions` (
   KEY `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` (`permission_id`),
   CONSTRAINT `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`),
   CONSTRAINT `auth_group_permissions_group_id_b120cbf9_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -115,7 +116,7 @@ CREATE TABLE `auth_permission` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `auth_permission_content_type_id_codename_01ab375a_uniq` (`content_type_id`,`codename`),
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -149,7 +150,7 @@ CREATE TABLE `auth_user` (
   `date_joined` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -178,7 +179,7 @@ CREATE TABLE `auth_user_groups` (
   KEY `auth_user_groups_group_id_97559544_fk_auth_group_id` (`group_id`),
   CONSTRAINT `auth_user_groups_group_id_97559544_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`),
   CONSTRAINT `auth_user_groups_user_id_6a12ed8b_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -206,7 +207,7 @@ CREATE TABLE `auth_user_user_permissions` (
   KEY `auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm` (`permission_id`),
   CONSTRAINT `auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`),
   CONSTRAINT `auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -232,7 +233,7 @@ CREATE TABLE `authtoken_token` (
   PRIMARY KEY (`key`),
   UNIQUE KEY `user_id` (`user_id`),
   CONSTRAINT `authtoken_token_user_id_35299eff_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -279,7 +280,7 @@ CREATE TABLE `autoloadergrid` (
   CONSTRAINT `autoloadergrid_meshSize_id_da6200b1_fk_meshsize_name` FOREIGN KEY (`meshSize_id`) REFERENCES `meshsize` (`name`),
   CONSTRAINT `autoloadergrid_params_id_id_abb5e2f8_fk_gridcolle` FOREIGN KEY (`params_id_id`) REFERENCES `gridcollectionparams` (`params_id`),
   CONSTRAINT `autoloadergrid_session_id_id_4389af90_fk_screening` FOREIGN KEY (`session_id_id`) REFERENCES `screeningsession` (`session_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -313,7 +314,7 @@ CREATE TABLE `changelog` (
   KEY `changelog_user_id_81dee4a9_fk_auth_user_username` (`user_id`),
   CONSTRAINT `changelog_grid_id_id_de6bf00a_fk_autoloadergrid_grid_id` FOREIGN KEY (`grid_id_id`) REFERENCES `autoloadergrid` (`grid_id`),
   CONSTRAINT `changelog_user_id_81dee4a9_fk_auth_user_username` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=1572 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1572 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -340,8 +341,9 @@ CREATE TABLE `classifier` (
   `content_type_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `classifier_content_type_id_c177300c_fk_django_content_type_id` (`content_type_id`),
+  KEY `genericKey` (`object_id`,`content_type_id`),
   CONSTRAINT `classifier_content_type_id_c177300c_fk_django_content_type_id` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9218 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=9218 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -374,10 +376,14 @@ CREATE TABLE `detector` (
   `energy_filter` tinyint(1) NOT NULL,
   `microscope_id_id` varchar(30) NOT NULL,
   `c2_perc` double NOT NULL,
+  `frames_directory` varchar(200) NOT NULL,
+  `frames_windows_directory` varchar(200) NOT NULL,
+  `atlas_to_search_offset_x` double NOT NULL,
+  `atlas_to_search_offset_y` double NOT NULL,
   PRIMARY KEY (`id`),
   KEY `detector_microscope_id_id_c62bb405_fk_microscope_microscope_id` (`microscope_id_id`),
   CONSTRAINT `detector_microscope_id_id_c62bb405_fk_microscope_microscope_id` FOREIGN KEY (`microscope_id_id`) REFERENCES `microscope` (`microscope_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -386,7 +392,7 @@ CREATE TABLE `detector` (
 
 LOCK TABLES `detector` WRITE;
 /*!40000 ALTER TABLE `detector` DISABLE KEYS */;
-INSERT INTO `detector` VALUES (3,'test_K2','K2',62,6,6,5,'alignframes',3,1,0,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',100);
+INSERT INTO `detector` VALUES (3,'test_K2','K2',62,6,6,5,'alignframes',3,1,0,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',100,'/mnt/scope/movies/','movies',0,0);
 /*!40000 ALTER TABLE `detector` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -411,7 +417,7 @@ CREATE TABLE `django_admin_log` (
   KEY `django_admin_log_user_id_c564eba6_fk_auth_user_id` (`user_id`),
   CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`),
   CONSTRAINT `django_admin_log_user_id_c564eba6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=276 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=276 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -436,7 +442,7 @@ CREATE TABLE `django_content_type` (
   `model` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -462,7 +468,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -471,7 +477,7 @@ CREATE TABLE `django_migrations` (
 
 LOCK TABLES `django_migrations` WRITE;
 /*!40000 ALTER TABLE `django_migrations` DISABLE KEYS */;
-INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192'),(27,'API','0004_v07','2022-07-21 15:57:10.854652'),(28,'API','0005_v07_2','2022-07-21 15:57:10.980773');
+INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192'),(27,'API','0004_v07','2022-07-21 15:57:10.854652'),(28,'API','0005_v07_2','2022-07-21 15:57:10.980773'),(29,'API','0006_detector_frames_directory_and_more','2023-02-06 19:00:42.786828'),(30,'API','0007_detector_atlas_to_search_offset_x_and_more','2023-02-06 19:00:42.834656'),(31,'API','0008_highmagmodel_selected_alter_microscope_location_and_more','2023-02-06 19:00:42.874391'),(32,'API','0009_selector_value','2023-02-06 19:00:42.887843');
 /*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -488,7 +494,7 @@ CREATE TABLE `django_session` (
   `expire_date` datetime(6) NOT NULL,
   PRIMARY KEY (`session_key`),
   KEY `django_session_expire_date_a5c62663` (`expire_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -497,7 +503,6 @@ CREATE TABLE `django_session` (
 
 LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
--- INSERT INTO `django_session` VALUES ('v88l0mjgrjjqfxc1eb88pehgl1uwisqd','.eJxVjMsOwiAURP-FtSFAebp07zeQy70oVQNJaVfGf5cmXWhmN-fMvFmEbS1x63mJM7EzM5adfssE-Mx1J_SAem8cW12XOfFd4Qft_Noovy6H-3dQoJex1kTJSSGcUFrdUh6ZgnKehCUMzgXIClFbp72cwHgNftJCUjZDA4Xs8wUE6zek:1oEXsO:DzXWo_m3rXR3b4z9Oq4ZeYyWIuEnwGYhA6IIv22lfLU','2022-08-04 15:14:08.973010');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -520,8 +525,9 @@ CREATE TABLE `finder` (
   `content_type_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `finder_content_type_id_8e30ce07_fk_django_content_type_id` (`content_type_id`),
+  KEY `genericKey` (`object_id`,`content_type_id`),
   CONSTRAINT `finder_content_type_id_8e30ce07_fk_django_content_type_id` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=77221 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=77221 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -559,8 +565,9 @@ CREATE TABLE `gridcollectionparams` (
   `zeroloss_delay` int(11) NOT NULL,
   `offset_distance` double NOT NULL,
   `offset_targeting` tinyint(1) NOT NULL,
+  `force_process_from_average` tinyint(1) NOT NULL,
   PRIMARY KEY (`params_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -598,12 +605,13 @@ CREATE TABLE `highmagmodel` (
   `offset` double NOT NULL,
   `shape_x` int(11) DEFAULT NULL,
   `shape_y` int(11) DEFAULT NULL,
+  `selected` tinyint(1) NOT NULL,
   PRIMARY KEY (`hm_id`),
   KEY `highmagmodel_grid_id_id_8f8f1849_fk_autoloadergrid_grid_id` (`grid_id_id`),
   KEY `highmagmodel_hole_id_id_0259a98e_fk_holemodel_hole_id` (`hole_id_id`),
   CONSTRAINT `highmagmodel_grid_id_id_8f8f1849_fk_autoloadergrid_grid_id` FOREIGN KEY (`grid_id_id`) REFERENCES `autoloadergrid` (`grid_id`),
   CONSTRAINT `highmagmodel_hole_id_id_0259a98e_fk_holemodel_hole_id` FOREIGN KEY (`hole_id_id`) REFERENCES `holemodel` (`hole_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -644,7 +652,7 @@ CREATE TABLE `holemodel` (
   KEY `holemodel_square_id_id_b73a5e24_fk_squaremodel_square_id` (`square_id_id`),
   CONSTRAINT `holemodel_grid_id_id_e0af6c4d_fk_autoloadergrid_grid_id` FOREIGN KEY (`grid_id_id`) REFERENCES `autoloadergrid` (`grid_id`),
   CONSTRAINT `holemodel_square_id_id_b73a5e24_fk_squaremodel_square_id` FOREIGN KEY (`square_id_id`) REFERENCES `squaremodel` (`square_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -668,7 +676,7 @@ CREATE TABLE `holetype` (
   `hole_size` double DEFAULT NULL,
   `hole_spacing` double DEFAULT NULL,
   PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -691,7 +699,7 @@ DROP TABLE IF EXISTS `meshmaterial`;
 CREATE TABLE `meshmaterial` (
   `name` varchar(100) NOT NULL,
   PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -717,7 +725,7 @@ CREATE TABLE `meshsize` (
   `bar_width` int(11) NOT NULL,
   `pitch` int(11) NOT NULL,
   PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -750,8 +758,9 @@ CREATE TABLE `microscope` (
   `serialem_PORT` int(11) NOT NULL,
   `windows_path` varchar(200) NOT NULL,
   `scope_path` varchar(200) NOT NULL,
+  `vendor` varchar(30) NOT NULL,
   PRIMARY KEY (`microscope_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -760,7 +769,7 @@ CREATE TABLE `microscope` (
 
 LOCK TABLES `microscope` WRITE;
 /*!40000 ALTER TABLE `microscope` DISABLE KEYS */;
-INSERT INTO `microscope` VALUES ('fake_scope','test',200,2.7,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',12,'localhost','smartscope.py','xxx.xxx.xxx.xxx',48888,'X:\\\\auto_screening\\','/mnt/fake_scope');
+INSERT INTO `microscope` VALUES ('fake_scope','test',200,2.7,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',12,'localhost','smartscope.py','xxx.xxx.xxx.xxx',48888,'X:\\\\auto_screening\\','/mnt/fake_scope','TFS');
 /*!40000 ALTER TABLE `microscope` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -781,7 +790,7 @@ CREATE TABLE `process` (
   PRIMARY KEY (`id`),
   KEY `process_session_id_id_d846cfec_fk_screeningsession_session_id` (`session_id_id`),
   CONSTRAINT `process_session_id_id_d846cfec_fk_screeningsession_session_id` FOREIGN KEY (`session_id_id`) REFERENCES `screeningsession` (`session_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -816,7 +825,7 @@ CREATE TABLE `screeningsession` (
   CONSTRAINT `screeningsession_detector_id_id_703010a5_fk_detector_id` FOREIGN KEY (`detector_id_id`) REFERENCES `detector` (`id`),
   CONSTRAINT `screeningsession_group_id_f67b3201_fk_auth_group_name` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`name`),
   CONSTRAINT `screeningsession_microscope_id_id_6d084875_fk_microscop` FOREIGN KEY (`microscope_id_id`) REFERENCES `microscope` (`microscope_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -841,10 +850,12 @@ CREATE TABLE `selector` (
   `method_name` varchar(50) DEFAULT NULL,
   `label` varchar(30) DEFAULT NULL,
   `content_type_id` int(11) NOT NULL,
+  `value` double DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `selector_content_type_id_3e5dbd50_fk_django_content_type_id` (`content_type_id`),
+  KEY `genericKey` (`object_id`,`content_type_id`),
   CONSTRAINT `selector_content_type_id_3e5dbd50_fk_django_content_type_id` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=76524 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=76524 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -882,7 +893,7 @@ CREATE TABLE `squaremodel` (
   KEY `squaremodel_grid_id_id_775a3fee_fk_autoloadergrid_grid_id` (`grid_id_id`),
   CONSTRAINT `squaremodel_atlas_id_id_89647666_fk_atlasmodel_atlas_id` FOREIGN KEY (`atlas_id_id`) REFERENCES `atlasmodel` (`atlas_id`),
   CONSTRAINT `squaremodel_grid_id_id_775a3fee_fk_autoloadergrid_grid_id` FOREIGN KEY (`grid_id_id`) REFERENCES `autoloadergrid` (`grid_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -903,4 +914,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-07-21 16:45:25
+-- Dump completed on 2023-02-06 19:04:07
