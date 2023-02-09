@@ -5,7 +5,7 @@
 version: "3"
 services:
   smartscope:
-    image: smartscope:0.8-rc.2
+    image: ghcr.io/niehs/smartscope:0.8-rc.2
     container_name: smartscope
     restart: always
     volumes:
@@ -17,8 +17,8 @@ services:
       # Example:
       # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
       ###### OTHER DEFAULT VOLUMES - NO NEED TO CHANGE ####### 
-      - shared-config:/opt/shared/:rw
-      - config:/opt/config/:rw
+      - ./shared/nginx/:/opt/shared/:rw
+      - ./shared/smartscope/:/opt/config/:rw
     env_file:
       - smartscope.conf
       - database.conf
@@ -34,7 +34,8 @@ services:
     env_file:
       - database.conf
     volumes:
-      - smartscope-db:/var/lib/mysql/
+      - ./db/:/var/lib/mysql/
+      - ./shared/initialdb.sql:/docker-entrypoint-initdb.d/initialdb.sql
     networks:
       - smartscopenet
   cache:
@@ -48,7 +49,7 @@ services:
     ports:
       - 48000:80
     volumes:
-      - shared-config:/opt/shared/:ro #Doesn't need to be changed
+      - ./shared/nginx/:/opt/shared/:ro #Doesn't need to be changed
     networks:
       - smartscopenet
     depends_on:
@@ -57,8 +58,3 @@ services:
     
 networks:
   smartscopenet: {}
-
-volumes:
-  shared-config:
-  config:
-  smartscope-db:

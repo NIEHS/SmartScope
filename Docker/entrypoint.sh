@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #Copy shared data to mount
-cp /opt/smartscope/config/docker/nginx-entrypoint.sh /opt/shared
+cp /opt/smartscope/config/docker/nginx-entrypoint.sh /opt/shared/
 cp -r /opt/smartscope/static /opt/shared/
 
 version=$(cat /opt/config/version)
@@ -21,23 +21,23 @@ else
 fi
 
 
-#Make sure that the database server is running first.
-until mysqladmin ping --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST > /dev/null;
-do
-  echo "Database server is not up. Will retryn in 2 seconds"
-  sleep 2
-done
-echo "Database server is running."
+# #Make sure that the database server is running first.
+# until mysqladmin ping --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST > /dev/null;
+# do
+#   echo "Database server is not up. Will retryn in 2 seconds"
+#   sleep 2
+# done
+# echo "Database server is running."
 
-#Check that the database already exists
-result=$(mysql -s -N --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME -e "SHOW TABLES");
-if [ -z "$result" ];
-then
-  echo "DATABASE DOES NOT EXIST, INITIATING DB."
-  mysql --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME < config/docker/initialdb.sql;
-else
-  echo "DATABASE EXISTS"
-fi
+# #Check that the database already exists
+# result=$(mysql -s -N --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME -e "SHOW TABLES");
+# if [ -z "$result" ];
+# then
+#   echo "DATABASE DOES NOT EXIST, INITIATING DB."
+#   mysql --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME < config/docker/initialdb.sql;
+# else
+#   echo "DATABASE EXISTS"
+# fi
 
 # Create a random secret key for hashing requests
 export SECRET_KEY=$($RANDOM | md5sum | head -c 25);
