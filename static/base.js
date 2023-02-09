@@ -61,7 +61,7 @@ let createLoadingMessage = (message) => {
     let id = idGen()
     $('#loadingMessages').append(
         `<div class="notification d-inline-flex justify-content-end">
-            <div id="${id}" class="alert alert-primary fade show" role="alert">
+            <div id="${id}" class="alert mb-0 mt-1 alert-primary fade show" role="alert">
                 <span>${message}</span>
             </div>
         </div>`)
