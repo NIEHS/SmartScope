@@ -61,7 +61,7 @@ let createLoadingMessage = (message) => {
     let id = idGen()
     $('#loadingMessages').append(
         `<div class="notification d-inline-flex justify-content-end">
-            <div id="${id}" class="alert alert-primary fade show" role="alert">
+            <div id="${id}" class="alert mb-0 mt-1 alert-primary fade show" role="alert">
                 <span>${message}</span>
             </div>
         </div>`)
@@ -134,6 +134,7 @@ function arrayRemove(arr, value) {
 }
 
 $("img[id$='_help']").tooltip();
+
 
 async function updateTarget(type, ids, key, new_value, useAPI = false) {
     console.log(`UPDATING ${type}, ${ids}, ${key} to ${new_value}`)

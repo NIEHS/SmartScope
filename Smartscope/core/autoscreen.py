@@ -14,7 +14,7 @@ from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
-from Smartscope.lib.transformations import register_stage_to_montage, register_targets_by_proximity
+from Smartscope.lib.transformations import register_to_other_montage, register_targets_by_proximity
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS
 from Smartscope.lib.logger import add_log_handlers
 from Smartscope.lib.diagnostics import generate_diagnostic_figure, Timer
@@ -286,7 +286,10 @@ def process_hole_image(hole, grid, microscope_id):
             hole_group = [hole]
         hole.targets.delete()
         timer.report_timer('Querying and deleting previous targerts in BIS group')
-        image_coords = register_stage_to_montage(np.array([x.stage_coords for x in hole_group]),hole.stage_coords,montage.center,montage.pixel_size,montage.rotation_angle)
+        square_montage = Montage(name=hole.square_id.name,working_dir=hole.grid_id.directory)
+        square_montage.load_or_process()
+        hole_group = list(HoleModel.display.filter(square_id=hole.square_id,bis_group=hole.bis_group))
+        image_coords = register_to_other_montage(np.array([x.coords for x in hole_group]),hole.coords, montage, square_montage)
         timer.report_timer('Initial registration to the higher mag image')
         if len(protocol.targets.finders) != 0:
             targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.targets.finders)

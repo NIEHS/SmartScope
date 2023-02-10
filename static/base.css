@@ -131,7 +131,7 @@ body{
   font-family: sans-serif;
 }
 
-#loadingMessages {
+#loadingMessagesContainer {
   position: fixed;
   right: 0;
   bottom: 0;

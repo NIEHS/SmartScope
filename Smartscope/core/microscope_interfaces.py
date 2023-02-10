@@ -365,7 +365,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def numpy_to_buffer(sekf,image):
         export_as_png(image, output=os.path.join(os.getenv('TEMPDIR'),'mockNumpyToBuffer.png'),height=max([image.shape[0],1024]))
 
-    def medium_mag_hole(self, tiltAngle, file=''):
+    def medium_mag_hole(self, file=''):
         generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.microscope.scopePath)
 
     def focusDrift(self, def1, def2, step, drifTarget):
