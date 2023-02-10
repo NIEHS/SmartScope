@@ -21,13 +21,13 @@ else
 fi
 
 
-# #Make sure that the database server is running first.
-# until mysqladmin ping --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST > /dev/null;
-# do
-#   echo "Database server is not up. Will retryn in 2 seconds"
-#   sleep 2
-# done
-# echo "Database server is running."
+#Make sure that the database server is running first.
+until mysqladmin ping --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST > /dev/null;
+do
+  echo "Database server is not up. Will retryn in 2 seconds"
+  sleep 2
+done
+echo "Database server is running."
 
 # #Check that the database already exists
 # result=$(mysql -s -N --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME -e "SHOW TABLES");
