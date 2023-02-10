@@ -674,6 +674,11 @@ class Target(BaseModel):
     def stage_coords(self) -> np.ndarray:
         finder = self.finders.first()
         return np.array([finder.stage_x, finder.stage_y])
+    
+    @property
+    def coords(self) -> np.ndarray:
+        finder = self.finders.first()
+        return np.array([finder.x, finder.y])
 
     def is_excluded(self):
         for selector in self.selectors.all():
