@@ -6,8 +6,30 @@
                 {% if grid.collection_mode == "screening" %}Screening{% else %}Data Collection{% endif %}:
             </span><span>{{grid.position}} {{grid.name}}</span>
         </h1>
-        <button id="goToSeleMenu" class="btn btn-outline-primary col-auto" type="button" onclick="openGoTo(this)">Go
-            To</button>
+        <div class="">
+
+            <span class=''><b>Microscope:</b> <i id="microscope">{{grid.session_id.microscope_id}}</i></span>
+            <div class="w-100 d-none d-md-block"></div>
+            <span class=''><b>Detector:</b> <i id="detector">{{grid.session_id.detector_id}}</i></span>
+            <!-- <div class="w-100 d-none d-md-block"></div> -->
+            <!-- <div class="p-0">
+                <span class=''><b> Status:</b> <span id="gridStatus">loading...</span>
+                    <button id="stop-button" class="btn btn-xs btn-outline-danger" type="button" value="aborting"
+                        onclick="changeGridStatus(this.value)">Stop</button>
+                    {% if request.user.is_staff %}<button id="restart-button" class="btn btn-xs btn-outline-primary"
+                        type="button" value="started" onclick="changeGridStatus(this.value)">Restart</button>{% endif %}
+                </span>
+            </div> -->
+
+
+        </div>
+        {% if useMicroscope %}
+        <a id='runAutoscreen' class="btn btn-outline-primary col-auto" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
+            target="_blank">View
+            Session Controls</a>
+        {% endif %}        
+        <!-- <button id="goToSeleMenu" class="btn btn-outline-primary col-auto" type="button" onclick="openGoTo(this)">Go
+            To</button> -->
         <div class="">
 
             <span class=''><b>Last update:</b> <i id="gridLastUpdate">loading...</i></span>
@@ -205,7 +227,7 @@
     </div>
 </div>
 
-<div id='popupMenuGoTo' class="dropdown-menu">
+<!-- <div id='popupMenuGoTo' class="dropdown-menu">
     <div class="div" id="quality">
         <a id='curateMics' class="dropdown-item"
             href="{% url 'evaluatemicrographs' %}?grid_id={{grid.grid_id}}&format=json" target="_blank">
@@ -216,7 +238,7 @@
             Logs</a>
         {% endif %}
     </div>
-</div>
+</div> -->
 
 <div id='zoomedView' class="popupFull hidden">
     <button class="btn btn-outline-primary close-btn" onclick='closePopup(this.parentElement)' value=''>X</button>

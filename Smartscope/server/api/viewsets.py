@@ -427,10 +427,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMi
                 selected = True
                 status = 'queued'
             elif action == 'cancelall':
-                query_filters = dict(status='queued')
-                query = obj.holemodel_set.all().filter(**query_filters)
-                selected = False
-                status = None
+                query = obj.holemodel_set.filter(status='queued').update(selected=False,status=None)
 
             with transaction.atomic():
                 for target in query:
