@@ -4,7 +4,6 @@ services:
     # image: ghcr.io/niehs/smartscope:0.8-rc.2  #Change version here
     user: ${UID}:${GID} #This corresponds to the user running the smarscope.sh script
     volumes: 
-      - /home/ubuntu/SmartScope/:/opt/smartscope/
       ######## ADD YOUR MAIN DATA LOCATION ##########
       # - /where/smartscope/should/save/data/:/mnt/data/
       # Example:
