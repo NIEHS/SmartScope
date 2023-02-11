@@ -74,16 +74,9 @@ def regroup_bis(grid_id, square_id):
     logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
     logger.debug(f"Removing all holes from queue")
-    HoleModel.objects.filter(square_id=square,status='queued').update(selected=False,status=None,bis_group=None,bis_type=None)
-    HoleModel.objects.filter(square_id=square,status__isnull=True).update(bis_group=None,bis_type=None)
-    # all_holes = list(HoleModel.display.filter(square_id=square_id))
-    # excluded_groups = []
-    # for hole in all_holes:
-    #     if hole.bis_type == 'center' and hole.status not in [None, 'queued']:
-    #         logger.info(f'Excluding group: {hole.bis_group}')
-    #         excluded_groups.append(hole.bis_group)
+    HoleModel.objects.filter(square_id=square,status__isnull=True).update(selected=False,status=None,bis_group=None,bis_type=None)
+    HoleModel.objects.filter(square_id=square,status='queued',).update(selected=False,status=None,bis_group=None,bis_type=None)
     filtered_holes = HoleModel.display.filter(square_id=square,status__isnull=True)
-    # filtered_holes = [h for h in all_holes if h.bis_group not in excluded_groups and h.status in [None, 'queued']]
     holes_for_grouping = []
     other_holes = []
     for h in filtered_holes:
@@ -101,7 +94,7 @@ def regroup_bis(grid_id, square_id):
                                 min_group_size=collection_params.min_bis_group_size, queue_all=collection_params.holes_per_square == 0)
 
     with transaction.atomic():
-        for hole in holes:
+        for hole in sorted(holes, key=lambda x: x.selected):
             hole.save()
     
     logger.info('Regrouping BIS done.')
