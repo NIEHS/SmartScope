@@ -4,6 +4,9 @@ Latest Changes
 Main changes
 ~~~~~~~~~~~~
 
+- Simplified installation procedure
+	- Added a docker repositoty with prebuilt images
+	- Astracted the docker commands behind a simple bash script
 - Grid metadata can now be exported and re-imported into the same or new SmartScope instance.
 	- This feature will require more work for automatically creating the directory structure and move the data automatically but this is a start.
 - Added a :doc:`/protocolAPI/index` to add more flexibility to the workflow.
@@ -26,6 +29,7 @@ Main changes
 Minor changes
 ~~~~~~~~~~~~~
 
+- Added notification for commands that are currently issued to the backend and waiting for response.
 - Added a link to submit issues on gihub in the navbar
 - Now using an updated version of the SerialEM python module to access new commands
 - Frames default name is now automatically set to `date_gridname_???.tif`
@@ -37,6 +41,9 @@ Minor changes
 Bug fixes
 ~~~~~~~~~
 
+- Fixed not being able to click on the edge of maps on smaller browser windows
+- Fixed issue with the Regular Pattern plugin not setting targets on the entire width of the K3 images
+- Fixed issues with the Regrouping BIS command not putting all the targets correctly back into the queue
 - Moved all the database writing actions back to restAPI for authentication simplicity. More secure until authentication can be confirmed in the websocket layer.
   - Websocket still used for receiving data from the backend
 - Mouse cursor properly changing when hovering over the sidepanel links
