@@ -5,7 +5,7 @@ services:
     user: ${UID}:${GID} #This corresponds to the user running the smarscope.sh script
     volumes: 
       ######## ADD YOUR MAIN DATA LOCATION ##########
-      # - /where/smartscope/should/save/data/:/mnt/data/
+      - ./data:/mnt/data
       # Example:
       # - /nfs/data/:/mnt/data/
       ######## ADD YOUR MICROSCOPES #########

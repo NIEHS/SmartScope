@@ -29,15 +29,15 @@ do
 done
 echo "Database server is running."
 
-# #Check that the database already exists
-# result=$(mysql -s -N --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME -e "SHOW TABLES");
-# if [ -z "$result" ];
-# then
-#   echo "DATABASE DOES NOT EXIST, INITIATING DB."
-#   mysql --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME < config/docker/initialdb.sql;
-# else
-#   echo "DATABASE EXISTS"
-# fi
+#Check that the database already exists
+result=$(mysql -s -N --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME -e "SHOW TABLES");
+if [ -z "$result" ];
+then
+  echo "DATABASE DOES NOT EXIST, INITIATING DB."
+  mysql --user=$MYSQL_USERNAME --password=$MYSQL_ROOT_PASSWORD --host=$MYSQL_HOST $DB_NAME < config/docker/initialdb.sql;
+else
+  echo "DATABASE EXISTS"
+fi
 
 # Create a random secret key for hashing requests
 export SECRET_KEY=$($RANDOM | md5sum | head -c 25);
