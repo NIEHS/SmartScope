@@ -1,0 +1,29 @@
+name: NegativeStain
+atlas:
+  acquisition:
+      - setAtlasOptics 
+      - atlas
+  targets:
+    finders:
+      - AI square finder
+    selectors:
+      - Size selector
+square:
+  acquisition:
+    - moveStage
+    - realignToSquare
+    - eucentricSearch
+    - square
+  targets:
+    finders:
+      - Regular pattern
+    selectors:
+      - Graylevel selector
+mediumMag:
+  acquisition:
+    - tiltToAngle
+    - moveStage
+    - mediumMagHole
+highMag:
+  acquisition:
+    - highMag

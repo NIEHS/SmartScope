@@ -110,8 +110,10 @@ Here's a example:
 
 .. note:: Please make sure that this path is writable by both SerialEM and SmartScope.
 
-3- Register a microscope to the SmartScope database
+3- Register a detector to the SmartScope database
 ****************************************************************
+
+Each microscope must have least one detector.
 
 Similarly to adding a microscope, navigate to the admin portal and then the Detectors section and add. It should bring you to `<localhost:48000/admin/detector/add/>`_.
 
@@ -120,7 +122,9 @@ Similarly to adding a microscope, navigate to the admin portal and then the Dete
    :align: center
    :figclass: align-center
 
-Details coming soon.
+To accomodate for Falcon detectors which have hard-coded frames root directory, the frames directory can be set seperately from the Microscope 
+with the `Frames windows directory` and `Frames directory`. If you are not using a Falcon detector, it is recommended to set this value to the same as for the microscope
+with the addition of `/movies`. As with the example above, it would become :code:`Frames windows directory= X:\\smartscope\movies` and :code:`Frames directory= /mnt/krios/smartscope/movies`
 
 4- Low-dose Presets
 *******************
@@ -144,8 +148,8 @@ The following table provides guidelines on how to set up the low-dose mode setti
    "Pixel size (A/pix)", 196, 152
    "Mode", "Linear", "Counting"
    "**View**", "", "" 
-   "magnification", 2600,8700
-   "Pixel size (A/pix)", 16.1, 10.1
+   "magnification", 1250,2250
+   "Pixel size (A/pix)", 34.2, 38.9
    "Mode", "Linear", "Counting"
    "**Focus/Record**", "", "" 
    "magnification", "36,000","81,000"
@@ -163,7 +167,7 @@ On a K2 detector, we suggest using linear mode for search to maximize contrasts.
 
 View
 #######
-The view mag is using a low SA mode magnification to view a few holes. It is currently only used to re-center on a hole.
+The view mag is using a low SA or M mode magnification to view a few holes. It is currently only used to re-center on a hole.
 
 Preview
 #######
@@ -189,22 +193,3 @@ Used for autofocus and drift correction. For autofocus, the specified image-shif
 
 The easiest way to set up for the atlas is to create an imaging state for mont-mapping. This way, when acquiring the atlas, it will use the mont-map setting instead of Record.
 
-6- Hole Reference Image
-************************
-
-.. note:: This procedure will need to be repeated if a different hole size or the View preset is modified.
-
-A hole reference needs to be provided to realign to holes at the View mag. Here's how to create it:
-
-#. Run eucentricity and autofocus on a square
-#. Acquire View
-#. Center on a hole
-#. Change the cropping of View to only view one hole
-#. Acquire View
-#. Save the image with the following name:
-    
-    File -> Save to other -> Save to /scope_path/reference/holeref.mrc
-
-#. Reset cropping to full.
-
-.. note:: Using a single static hole reference is a temporary solution that will be modified in the near future.

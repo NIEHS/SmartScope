@@ -6,8 +6,30 @@
                 {% if grid.collection_mode == "screening" %}Screening{% else %}Data Collection{% endif %}:
             </span><span>{{grid.position}} {{grid.name}}</span>
         </h1>
-        <button id="goToSeleMenu" class="btn btn-outline-primary col-auto" type="button" onclick="openGoTo(this)">Go
-            To</button>
+        <div class="">
+
+            <span class=''><b>Microscope:</b> <i id="microscope">{{grid.session_id.microscope_id}}</i></span>
+            <div class="w-100 d-none d-md-block"></div>
+            <span class=''><b>Detector:</b> <i id="detector">{{grid.session_id.detector_id}}</i></span>
+            <!-- <div class="w-100 d-none d-md-block"></div> -->
+            <!-- <div class="p-0">
+                <span class=''><b> Status:</b> <span id="gridStatus">loading...</span>
+                    <button id="stop-button" class="btn btn-xs btn-outline-danger" type="button" value="aborting"
+                        onclick="changeGridStatus(this.value)">Stop</button>
+                    {% if request.user.is_staff %}<button id="restart-button" class="btn btn-xs btn-outline-primary"
+                        type="button" value="started" onclick="changeGridStatus(this.value)">Restart</button>{% endif %}
+                </span>
+            </div> -->
+
+
+        </div>
+        {% if useMicroscope %}
+        <a id='runAutoscreen' class="btn btn-outline-primary col-auto" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
+            target="_blank">View
+            Session Controls</a>
+        {% endif %}        
+        <!-- <button id="goToSeleMenu" class="btn btn-outline-primary col-auto" type="button" onclick="openGoTo(this)">Go
+            To</button> -->
         <div class="">
 
             <span class=''><b>Last update:</b> <i id="gridLastUpdate">loading...</i></span>
@@ -141,81 +163,15 @@
 
 <div>
     <div class="row">
-        <div id="Atlas_div" class="col-12 col-xl-6 justify-content-center text-center">
+        <div id="Atlas_div" class="col-12 px-1 py-0 col-xl-4 justify-content-center text-center">
             <div class="card holeCard mapCard">
                 <div class="card-header">
                     <div class="row p-0 align-items-center justify-content-between">
                         <h3 class="d-inline">Atlas</h3>
 
-                        <!-- <div class="div col-4 p-0 justify-content-center d-none d-md-block">
-                            <button id='' class='a btn btn-outline-secondary showLegend hasTooltip' type="button"
-                                value='1' data-toggle="tooltip" data-placement="top" title="Toggle legend">
-                                <i class="bi bi-card-list "></i></button>
-                            <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown"
-                                role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
-                                    class="bi bi-display"></i></a>
-                            <div class="dropdown-menu">
-                                <div class="div" id="quality">
-                                    <button id='opt-classifiers' class="dropdown-item" value='good'
-                                        onclick="loadAtlas(false,'classifiers')">Classifiers</button>
-                                    <button id='opt-selectors' class="dropdown-item" value='good'
-                                        onclick="loadAtlas(false,'selectors')">Selectors</button>
-                                </div>
-                            </div>
-                            <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
-                                    class="bi bi-plus-lg zoomIcon"></i></button>
-
-
-
-                        </div> -->
                     </div>
                 </div>
-                <!-- <div class="card-header"> -->
-                <!-- <nav class=" card-header navbar navbar-expand-xl navbar-light bg-light" role="navigation">
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#atlasNavBar">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse justify-content-center" id="atlasNavBar">
-                        <ul id="queueBtns" class="navbar-nav">
-                            <li id="squareSeleMenu" class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle disabled" href="#" id="squareSeleMenuBtn"
-                                    role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                                    onclick="optionMenu(squareSelection, 'squares')">Selection
-                                    Actions</a>
-                                <div class="dropdown-menu">
-                                    <div class="div" id="quality">
-                                        <h6 class="dropdown-header">Edit quality</h6>
-                                        <button id='opt-good' class="dropdown-item" value='good'
-                                            onclick="popupSele(this)">Good</button>
-                                        <button id='opt-bad' class="dropdown-item" value='bad'
-                                            onclick="popupSele(this)">Bad</button>
-                                        <button id='opt-cracked' class="dropdown-item" value='cracked'
-                                            onclick="popupSele(this)">Cracked</button>
-                                        <button id='opt-contaminated' class="dropdown-item" value='contaminated'
-                                            onclick="popupSele(this)">Contaminated</button>
-                                        <button id='opt-fractioned' class="dropdown-item" value='fractioned'
-                                            onclick="popupSele(this)">Fractioned</button>
-                                        <button id='opt-dry' class="dropdown-item" value='dry'
-                                            onclick="popupSele(this)">Dry</button>
-                                    </div>
 
-                                    <div class="div" id="squareQueue">
-                                        <div class="dropdown-divider"></div>
-                                        <h6 class="dropdown-header">Add/remove from Queue</h6>
-                                        <button id='opt-queued' class="dropdown-item" value='1'
-                                            onclick="popupSele(this)">Queue</button>
-                                    </div>
-
-                                </div>
-                            </li>
-                            <li class="nav-item">
-                                <a id='squareClearSele' class="nav-link disabled"
-                                    onclick="clearSelection(squareSelection,'square')">Clear
-                                    Selection</a>
-                            </li>
-                        </ul>
-                    </div>
-                </nav> -->
 
                 <div class="row h-100 w-100 m-0 p-0 justify-content-center">
                     <div id="Atlas_im" class="d-flex w-100 mh-100 justify-content-center">
@@ -224,78 +180,14 @@
                 </div>
             </div>
         </div>
-        <div id="Square_div" class="col-12 col-xl-6 justify-content-center text-center">
+        <div id="Square_div" class="col-12 px-1 py-0 col-xl-4 justify-content-center text-center">
             <div class="card holeCard mapCard">
                 <div class="card-header">
                     <div class="row p-0 align-items-center justify-content-between">
                         <h3 class="d-inline" id="squareNum">Square</h3>
-                        <!-- <div class="div col-2 p-0 justify-content-center d-none d-md-block">
-                            <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
-                                    class="bi bi-plus-lg zoomIcon"></i></button>
 
-                        </div> -->
                     </div>
                 </div>
-                <!-- <nav class="card-header navbar navbar-expand-xl navbar-light bg-light" role="navigation">
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#squareNavBar">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse justify-content-center" id="squareNavBar">
-                        <ul id="queueBtns" class="navbar-nav">
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-toggle="dropdown"
-                                    aria-haspopup="true" aria-expanded="false">All Holes</a>
-                                <div id='' class="dropdown-menu">
-                                    <button class="dropdown-item" onclick='queueSquareTargets(this)'
-                                        value='addall'>Queue
-                                        all holes</button>
-                                    <button class="dropdown-item" onclick='queueSquareTargets(this)'
-                                        value='cancelall'>Cancel all holes</button>
-                                    <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS()"
-                                        value=''>Regroup
-                                        BIS</button>
-                                </div>
-                            </li>
-                            <li id="holeSeleMenu" class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle disabled" href="#" id="holeSeleMenuBtn" role="button"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                                    onclick="optionMenu(holeSelection, 'holes')">Selection</a>
-                                <div class="dropdown-menu">
-                                    <div class="div" id="quality">
-                                        <h6 class="dropdown-header">Edit quality</h6>
-                                        {% for quality in quality_choices %}
-                                        <button id='opt-{{quality.0}}' class="dropdown-item" value='{{quality.0}}'
-                                            onclick="popupSele(this)">{{quality.1}}</button>
-                                        {% endfor %}
-                                    </div>
-                                    <div class="div" id="holeQueue">
-                                        <div class="dropdown-divider"></div>
-                                        <h6 class="dropdown-header">Add/remove from Queue</h6>
-                                        <button id='opt-queued-hole' class="dropdown-item" value='1'
-                                            onclick="popupSele(this)">Queue</button>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="nav-item">
-                                <a id='holeClearSele' class="nav-link disabled"
-                                    onclick="clearSelection(holeSelection,'hole')">Clear Selection</a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle disabled" href="#" id="addTargetsBtn" role="button"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">New targets</a>
-                                <div class="div dropdown-menu">
-                                    <button id='addTargets' class="dropdown-item"
-                                        onclick="addTargets(this, targetsSelection)" value='addTargets'>Add
-                                        Targets</button>
-                                    <button id='clearTargets' class="dropdown-item"
-                                        onclick="clearSelection(targetsSelection,'targets')" value='addTargets'>Clear
-                                        Targets</button>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                </nav> -->
-
 
                 <div class="row h-100 w-100 m-0 p-0 justify-content-center">
                     <div id="Square_im" class="d-flex w-100 mh-100 justify-content-center">
@@ -304,28 +196,49 @@
                 </div>
             </div>
         </div>
+        <div id="mmHole" class="col-12 px-1 py-0 col-xl-4 text-center justify-content-center">
+            <div class="card holeCard mapCard">
+                <div class="card-header">
+                    <div class="row p-0 align-items-center justify-content-between">
+                        <h3 class="d-inline" id="holeNum">Hole</h3>
+
+                    </div>
+                </div>
+
+                <div class="row h-100 w-100 m-0 p-0 justify-content-center">
+                    <div id="Hole_im" class="d-flex w-100 mh-100 justify-content-center">
+                        <img src="{% static 'images/holeholder.png' %}">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<hr>
 
 <div id="Hole_div" class="row justify-content-center">
-    <h3 id=holeNum class="col-12 justify-content-center text-center"> Hole</h3>
-    <div id="mmHole" class="col-12 text-center p-0 row justify-content-center"></div>
-    <div id="Hole" class="col-12 text-center p-0 row justify-content-center ">
-        <img src="{% static 'images/holeholder.png' %}">
+    <!-- <h3 id=holeNum class="col-12 justify-content-center text-center"> Hole</h3> -->
+
+    <div id="Hole_container" class="cardGroup col-11">
+        <div id="Hole" class="row row col-12 p-0">
+            <!-- <img src="{% static 'images/holeholder.png' %}"> -->
+        </div>
     </div>
 </div>
-</div>
 
-<div id='popupMenuGoTo' class="dropdown-menu">
+<!-- <div id='popupMenuGoTo' class="dropdown-menu">
     <div class="div" id="quality">
         <a id='curateMics' class="dropdown-item"
             href="{% url 'evaluatemicrographs' %}?grid_id={{grid.grid_id}}&format=json" target="_blank">
             Curate micrographs </a>
-        <a id='curateMics' class="dropdown-item" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
+        {% if useMicroscope %}
+        <a id='runAutoscreen' class="dropdown-item" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
             target="_blank">View
             Logs</a>
+        {% endif %}
     </div>
-</div>
+</div> -->
 
 <div id='zoomedView' class="popupFull hidden">
     <button class="btn btn-outline-primary close-btn" onclick='closePopup(this.parentElement)' value=''>X</button>

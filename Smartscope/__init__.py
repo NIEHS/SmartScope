@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-__version__ = "0.7"
-
 import logging
 import logging.config
 import os
 import sys
+
+__version__ = os.getenv('VERSION')
 
 LOGLEVEL = os.getenv('LOGLEVEL') if os.getenv('LOGLEVEL') is not None else 'DEBUG'
 
@@ -26,14 +26,9 @@ LOG = {
         },
     },
     'loggers': {
-        # '': {
-        #     'level': LOGLEVEL,
-        #     'handlers': ['console', ],
-        # },
         __name__: {
             'level': LOGLEVEL,
             'handlers': ['console', ],
-            # 'propagate': True
         },
     }
 }
@@ -49,7 +44,5 @@ if os.getenv('LOGDIR') is not None:
         'encoding': 'utf-8',
     }
     LOG['loggers'][__name__]['handlers'].append('file')
-
-# print(LOG)
 
 logging.config.dictConfig(LOG)

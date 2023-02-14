@@ -1,53 +1,29 @@
 #! /usr/bin/env python
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-import time
 from typing import List, Union
 import cv2
 import mrcfile
 import os
-import io
 import numpy as np
 import imutils
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
-from scipy.optimize import curve_fit
-from math import radians, sin, cos, floor, sqrt, degrees, atan2
-from scipy.spatial.distance import cdist
+
 import pandas as pd
-import math
 from Smartscope.lib.generic_position import parse_mdoc
-from Smartscope.lib.Classifiers.basic_pred import decide_type
 from Smartscope.lib.Finders.basic_finders import *
-from Smartscope.lib.image_manipulations import save_mrc, to_8bits, auto_contrast, auto_contrast_sigma, save_image, mrc_to_png, fourier_crop
+from Smartscope.lib.s3functions import TemporaryS3File
+from Smartscope.lib.image_manipulations import fourier_crop, save_mrc
+from Smartscope.lib.transformations import closest_node, pixel_to_stage
 from torch import Tensor
 import logging
 
 mpl.use('Agg')
 
 logger = logging.getLogger(__name__)
-
-
-def auto_canny(image, limits=None, sigma=0.33, dilation=5):
-    # compute the median of the single channel pixel intensities
-    v = np.median(image)
-    if limits is None:
-        lower = int(max(0, (1.0 - sigma) * v))
-        upper = int(min(255, (1.0 + sigma) * v))
-    else:
-        lower = min(limits)
-        upper = max(limits)
-    edged = cv2.Canny(image, lower, upper)
-
-    if dilation is None:
-        return edged, lower, upper
-    else:
-        kernel = np.ones((dilation, dilation), np.uint8)
-        dilated = cv2.dilate(edged, kernel, iterations=1)
-        erosion = cv2.erode(dilated, kernel, iterations=1)
-        return erosion, lower, upper
 
 
 def quantize(x, mi=-3, ma=3, dtype=np.uint8):
@@ -63,23 +39,7 @@ def quantize(x, mi=-3, ma=3, dtype=np.uint8):
     return x
 
 
-def closest_node(node, nodes, num=1):
-    nodes = np.stack((nodes))
-    cd = cdist([node], nodes)
-    index = cd.argmin()
-    dist = nodes[index] - node
-    return index, dist
 
-
-def pixel_to_stage(dist, tile, tiltAngle):
-    apix = tile.PixelSpacing / 10000
-    dist *= apix
-    theta = radians(tile.RotationAngle)
-    c, s = cos(theta), sin(theta)
-    R = np.array(((c, -s), (s, c)))
-    specimen_dist = np.sum(R * np.reshape(dist, (-1, 1)), axis=0)
-    coords = tile.StagePosition + specimen_dist / np.array([1, cos(radians(round(tiltAngle, 1)))])
-    return np.around(coords, decimals=3)
 
 
 def plot_hist(image, size=254, **kwargs):
@@ -103,47 +63,6 @@ def plot_hist(image, size=254, **kwargs):
     return hist
 
 
-def gaussian_kernel(size, sigma, two_d=True):
-    'returns a one-dimensional gaussian kernel if two_d is False, otherwise 2d'
-    if two_d:
-        kernel = np.fromfunction(lambda x, y: (1 / (2 * math.pi * sigma**2)) * math.e **
-                                 ((-1 * ((x - (size - 1) / 2)**2 + (y - (size - 1) / 2)**2)) / (2 * sigma**2)), (size, size))
-    else:
-        kernel = np.fromfunction(lambda x: math.e ** ((-1 * (x - (size - 1) / 2)**2) / (2 * sigma**2)), (size,))
-    return kernel / np.sum(kernel)
-
-
-def power_spectrum(im):
-    f = np.fft.fft2(im)
-    fshift = np.fft.fftshift(f)
-    fabs = np.abs(fshift)
-    contrasted = auto_contrast_sigma(fabs, sigmas=0.5, to_8bits=True)
-    img = imutils.resize(contrasted, height=800)
-    is_succes, buffer = cv2.imencode(".png", img)
-    return io.BytesIO(buffer)
-
-
-def highpass(im, pixel_size, filter_size=4):
-    f = np.fft.fft2(im)
-    fshift = np.fft.fftshift(f)
-    fabs = np.abs(fshift)
-    fang = np.angle(fshift)
-
-    size = pixel_size / 10000 / filter_size * np.array(im.shape)
-    size = round_up_to_odd(size)
-
-    center = np.floor(np.array(im.shape) / 2).astype(int)
-    high = np.ones(im.shape)
-    cv2.ellipse(high, (center[0], center[1]), (size[0], size[1]), 0.0, 0.0, 360.0, 0, -1)
-    padding = np.array(high.shape) * 0.002
-    padding = padding.astype(int)
-    high[center[0] - padding[0]:center[0] + padding[0], :] *= 0.2
-    high[:, center[1] - padding[1]:center[1] + padding[1]] *= 0.2
-    fabs *= high
-    fabs = auto_contrast(fabs, cutperc=[90, 0.001], to_8bits=True)
-    F = fabs * np.exp(1j * fang)
-    reversed = to_8bits(np.real(np.fft.ifft2(np.fft.ifftshift(F))))
-    return reversed, fabs
 
 
 def plot_thresholds(im, blur, thresh, thresholded, cnts, file, mu=None, sigma=None, a=None, polygon='Circle'):
@@ -197,21 +116,34 @@ class BaseImage(ABC):
 
     name: str
     working_dir: str = ''
-    # fourier_crop: bool = False
     is_movie: bool = False
     metadata: Union[pd.DataFrame, None] = None
+    _raw = None
+    _mdoc = None
 
     @property
     def directory(self):
-        return Path(self.working_dir, self.name)
+        return self._directory
+
+    @directory.setter
+    def directory(self, value):
+        self._directory = value
 
     @property
     def image_path(self):
-        return Path(self.directory, f'{self.name}.mrc')
+        return self._image_path
+
+    @image_path.setter
+    def image_path(self, value):
+        self._image_path = value
 
     @property
     def metadataFile(self):
-        return Path(self.directory, f'{self.name}_metadata.pkl')
+        return self._metadataFile
+
+    @metadataFile.setter
+    def metadataFile(self, value):
+        self._metadataFile = value
 
     @property
     def png(self):
@@ -219,10 +151,19 @@ class BaseImage(ABC):
 
     @property
     def raw(self):
+        if self._raw is not None:
+            return self._raw
         return Path(self.working_dir, 'raw', f'{self.name}.mrc')
+    
+    @raw.setter
+    def raw(self, value):
+        self._raw = value 
+        self._mdoc = Path(str(value) + '.mdoc')
 
     @property
     def mdoc(self):
+        if self._mdoc is not None:
+            return self._mdoc
         return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
 
     @property
@@ -232,6 +173,21 @@ class BaseImage(ABC):
     @property
     def shape_y(self):
         return self.image.shape[1]
+    
+    @property
+    def center(self):
+        return np.array([self.shape_y/2, self.shape_x//2],dtype=int)
+
+    # @property
+    # def image_center(self):
+    #     return np.array([self.shape_x, self.shape_y]) // 2
+
+    @property
+    def rotation_angle(self):
+        return self.metadata.iloc[0].RotationAngle
+
+    def get_tile(self, tileIndex=0):
+        return self.metadata.iloc[tileIndex]
 
     @property
     def stage_z(self):
@@ -246,17 +202,33 @@ class BaseImage(ABC):
         return Path(self.directory, 'ctf.txt')
 
     def read_image(self):
-        with mrcfile.open(self.image_path) as mrc:
-            self.image = mrc.data
+        try:
+            with mrcfile.open(self.image_path) as mrc:
+                self.image = mrc.data
+        except FileNotFoundError:
+            with mrcfile.open(self.raw) as mrc:
+                self.image = mrc.data            
+        return
 
     def read_data(self):
         self.read_image()
         self.read_metadata()
 
-    def check_metadata(self):
+    # def downsample(self, scale=2) -> np.ndarray:
+    #     return imutils.resize(self.image, height=int(self.shape_x // scale))
+
+    def check_metadata(self, check_AWS=False):
         if self.image_path.exists() and self.metadataFile.exists():
             logger.info('Found metadata, reading...')
             self.read_data()
+            return True
+
+        if check_AWS:
+            logger.debug(f'{self.image_path}, {self.metadataFile}')
+            with TemporaryS3File([self.image_path, self.metadataFile]) as temp:
+                self.image_path, self.metadataFile = temp.temporary_files
+                self.read_data()
+
             return True
         return False
 
@@ -266,24 +238,30 @@ class BaseImage(ABC):
     def read_metadata(self):
         self.metadata = pd.read_pickle(self.metadataFile)
 
-    def export_as_png(self, height=1024, normalization=auto_contrast, binning_method=imutils.resize):
-        resized = normalization(binning_method(self.image, height=height))
-        cv2.imwrite(str(self.png), resized)
-
     def make_symlink(self):
-        os.symlink(f'../raw/{self.name}.mrc', self.image_path)
+        relative = os.path.relpath(self.raw,self.directory)
+        if self.image_path.exists():
+            return
+        logger.debug(f'Relative path from {self.directory} to raw = {relative}')
+        os.symlink(relative, self.image_path)
+
+    def __post_init__(self):
+        self._directory = Path(self.working_dir, self.name)
+        self._image_path = Path(self._directory, f'{self.name}.mrc')
+        self._metadataFile = Path(self._directory, f'{self.name}_metadata.pkl')
 
 
 @dataclass
 class Montage(BaseImage):
 
     def __post_init__(self):
+        super().__post_init__()
         self.directory.mkdir(exist_ok=True)
-        if self.check_metadata():
+
+    def load_or_process(self, check_AWS=False, force_process=False):
+        if not force_process and self.check_metadata(check_AWS=check_AWS):
             return
-
         self.metadata = parse_mdoc(self.mdoc, self.is_movie)
-
         self.build_montage()
         self.read_image()
         self.save_metadata()
@@ -306,8 +284,7 @@ class Montage(BaseImage):
             self.metadata['PieceCoordinates'] = [[0, 0, 0]]
             self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
             self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-            montage = img
-            self.image = montage
+            self.image = img
             self.make_symlink()
             return
 
@@ -328,7 +305,6 @@ class Montage(BaseImage):
 
         save_mrc(self.image_path, self.image, self.pixel_size, [0, 0])
 
-
 @dataclass
 class Movie(BaseImage):
 
@@ -339,43 +315,21 @@ class Movie(BaseImage):
         return Path(self.directory, 'ali.xf')
 
     def __post_init__(self):
+        super().__post_init__()
         self.directory.mkdir(exist_ok=True)
 
     def check_metadata(self):
         if self.image_path.exists() and self.shifts.exists() and self.ctf.exists():
             return True
 
-
-def find_targets(montage: Montage, methods: list):
-    logger.debug(f'Using method: {methods}')
-    for method in methods:
-        if not 'args' in method.keys():
-            method['args'] = []
-        if not 'kwargs' in method.keys():
-            method['kwargs'] = dict()
-
-        import_cmd = f"from {method['package']} import {method['method']}"
-        logger.debug(import_cmd)
-        logger.debug(f"kwargs = {method['kwargs']}")
-        exec(import_cmd)
-        try:
-            output, success = locals()[method['method']](montage, *method['args'], **method['kwargs'])
-        except Exception as err:
-            logger.exception(err)
-            continue
-        if success:
-            logger.debug(f'{method} was successful: {success}')
-            return output, method['name'], method['name'] if 'Classifier' in method['targetClass'] else None
-
-
-def create_targets(targets: List, montage: BaseImage, target_type: str = 'square'):
+def create_targets_from_box(targets: List, montage: BaseImage, target_type: str = 'square'):
     output_targets = []
     if isinstance(targets, tuple):
         targets, labels = targets
     else:
         labels = [None] * len(targets)
     for target, label in zip(targets, labels):
-        t = AITarget(target, quality=label)
+        t = Target(target, quality=label)
         t.convert_image_coords_to_stage(montage)
         t.set_area_radius(target_type)
         output_targets.append(t)
@@ -384,10 +338,24 @@ def create_targets(targets: List, montage: BaseImage, target_type: str = 'square
 
     return output_targets
 
+def create_targets_from_center(targets: List, montage: BaseImage):
+    output_targets = []
 
-@dataclass
-class AITarget:
+    for target in targets:
+        t = Target(target,from_center=True)
+        t.convert_image_coords_to_stage(montage)
+        output_targets.append(t)
 
+    output_targets.sort(key=lambda x: (x.stage_x, x.stage_y))
+
+    return output_targets
+
+
+
+class Target:
+
+    _x: Union[int,None] = None
+    _y: Union[int,None] = None
     shape: Union[list, Tensor]
     quality: Union[str, None] = None
     area: Union[float, None] = None
@@ -396,30 +364,69 @@ class AITarget:
     stage_y: Union[float, None] = None
     stage_z: Union[float, None] = None
 
+    def __init__(self,shape: Union[list, np.array], quality: Union[str,None]=None, from_center=False) -> None:
+        self.quality = quality
+        if from_center:
+            self.x = shape[0]
+            self.y = shape[1]
+            return
+        self.shape = shape
+        self.x = None
+        self.y = None
+        
+
+
     @property
     def x(self):
-        return int(self.shape[0] + (self.shape[2] - self.shape[0]) // 2)
+        return self._x
+
+    @x.setter
+    def x(self, value = None):
+        if isinstance(value,list):
+            self._x = int(value[0] + (value[2] - value[0]) // 2)
+            return 
+        if value is None:
+            self._x = int(self.shape[0] + (self.shape[2] - self.shape[0]) // 2)
+            return
+        self._x = value    
 
     @property
     def y(self):
-        return int(self.shape[1] + (self.shape[3] - self.shape[1]) // 2)
+        return self._y
+    
+    @property
+    def coords(self):
+        return np.array([self._x,self._y])
+
+    @property
+    def stage_coords(self):
+        return np.array([self.stage_x,self.stage_y])
+
+    @y.setter
+    def y(self, value = None):
+        if isinstance(value,list):
+            self._y = int(value[1] + (value[3] - value[1]) // 2)
+            return
+        if value is None:
+            self._y = int(self.shape[1] + (self.shape[3] - self.shape[1]) // 2) 
+            return
+        self._y = value
 
     def set_area_radius(self, shape_type):
 
         len1 = int(self.shape[2] - self.shape[0])
         len2 = int(self.shape[3] - self.shape[1])
 
-        if shape_type == 'square':
-            self.area = len1 * len2
-            return
+        # if shape_type == 'square':
+        self.area = len1 * len2
+            # return
 
-        if shape_type == 'hole':
+        # if shape_type == 'hole':
 
-            self.radius = min(len1, len2) / 2
-            self.area = np.pi * (self.radius ** 2)
-            return
+        self.radius = min(len1, len2) / 2
+            # self.area = np.pi * (self.radius ** 2)
 
     def convert_image_coords_to_stage(self, montage):
-        tile, dist = closest_node([self.x, self.y], montage.metadata.piece_center)
+        tile, dist = closest_node(self.coords.reshape(-1,2), montage.metadata.piece_center)
         self.stage_x, self.stage_y = pixel_to_stage(dist, montage.metadata.iloc[tile], montage.metadata.iloc[tile].TiltAngle)
         self.stage_z = montage.stage_z

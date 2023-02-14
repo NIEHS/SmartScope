@@ -1,0 +1,62 @@
+########################################################################
+# For details about the docker-compose file, please refer to           #
+# https://docs.smartscope.org/installation/docker-compose_details.html #
+########################################################################
+version: "3"
+services:
+  smartscope:
+    image: ghcr.io/niehs/smartscope:0.8
+    container_name: smartscope
+    restart: always
+    volumes:
+      ######## FILL THIS ##########
+      # - :/mnt/data/
+      ######## ADD YOUR MICROSCOPES #########
+      # The synthax from the microscope volumes is as follows:
+      # - /path/to/where/serialem/will/write/files/:/mnt/your_scope_name_here/
+      # Example:
+      # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
+      ###### OTHER DEFAULT VOLUMES - NO NEED TO CHANGE ####### 
+      - ./shared/nginx/:/opt/shared/:rw
+      - ./shared/smartscope/:/opt/config/:rw
+      - ./testfiles/:/mnt/testfiles/:rw
+    env_file:
+      - smartscope.conf
+      - database.conf
+    depends_on:
+      - db
+      - cache
+    networks:
+      - smartscopenet
+  db:
+    image: mariadb:10.5
+    container_name: smartscope-db
+    restart: always
+    env_file:
+      - database.conf
+    volumes:
+      - ./db/:/var/lib/mysql/
+      # - ./shared/initialdb.sql:/docker-entrypoint-initdb.d/initialdb.sql
+    networks:
+      - smartscopenet
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning
+    networks:
+      - smartscopenet
+  nginx:
+    image: nginx
+    restart: always
+    ports:
+      - 48000:80
+    volumes:
+      - ./shared/nginx/:/opt/shared/:ro #Doesn't need to be changed
+    networks:
+      - smartscopenet
+    depends_on:
+      - smartscope
+    command: /opt/shared/nginx-entrypoint.sh
+    
+networks:
+  smartscopenet: {}

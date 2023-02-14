@@ -1,17 +1,18 @@
 # from models import *
 from pathlib import Path
 from django.conf import settings
+# from django.core.cache import cache
 import shutil
 import os
 from django.contrib.auth.models import User, Group
-
 from Smartscope.lib.file_manipulations import create_scope_dirs
+from Smartscope.core.utils.export_import import export_grid
 from .session import *
+from .misc_func import get_fields
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 import subprocess as sub
-import shlex
 from Smartscope.server.lib.worker_jobs import *
 import logging
 
@@ -20,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 @receiver(pre_save, sender=SquareModel)
 @receiver(pre_save, sender=HoleModel)
-# @receiver(pre_save, sender=HighMagModel)
 def pre_update(sender, instance, **kwargs):
     if not instance._state.adding:
         original = sender.objects.get(pk=instance.pk)
@@ -30,7 +30,7 @@ def pre_update(sender, instance, **kwargs):
                 old_val = old[1]
                 if col == 'selected':
                     # print('New_val: ', new_val, 'Status: ', instance.status is None)
-                    if new_val and instance.status is None:
+                    if new_val:
                         # print('Setting status to queued')
                         instance.status = 'queued'
                     else:
@@ -62,6 +62,7 @@ def grid_modification(sender, instance, **kwargs):
         if instance.status == 'aborting':
             targets = list(instance.squaremodel_set.filter(status='queued'))
             targets += list(instance.holemodel_set.filter(status='queued'))
+            targets += list(instance.highmagmodel_set.filter(status='queued'))
             for target in targets:
                 target.selected = False
                 target.save()
@@ -72,35 +73,41 @@ def grid_modification(sender, instance, **kwargs):
             os.rename(original.directory, instance.directory)
             return
 
-        if instance.status == 'complete' and original.status != 'complete':
-            instance.export()
-            if settings.USE_STORAGE:
-                try:
-                    com = f'rsync -au {instance.session_id.directory}/ {instance.session_id.storage}/'
-                    print(com)
-                    sub.Popen(shlex.split(com))
-                except Exception as err:
-                    print(err)
-            if settings.USE_AWS:
-                try:
-                    com = f'aws s3 sync {instance.session_id.directory} s3://{settings.AWS_STORAGE_BUCKET_NAME}/{settings.AWS_DATA_PREFIX}/{instance.session_id.working_dir}'
-                    print(com)
-                    sub.Popen(shlex.split(com))
-                except Exception as err:
-                    print(err)
+        # if instance.status == 'complete' and original.status != 'complete':
+        #     export_grid(instance,instance.session_id.directory)
 
-        # if instance.status == 'started' and original.status is None:
-        #     instance.start_time = timezone.now()
-
+@ receiver(post_save, sender=HoleModel)
+def queue_bis_group(sender,instance,created, **kwargs):
+    if not created and instance.bis_type == 'center':
+        if instance.selected:
+            logger.debug("Updating status bis target to 'queued'")
+            HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')
+            return
+        logger.debug("Updating status bis target to 'null'")
+        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status='queued').update(status=None)
 
 @ receiver(pre_save, sender=HoleModel)
 @ receiver(pre_save, sender=SquareModel)
 def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
-        # original = sender.objects.get(pk=instance.pk)
         if instance.status == 'completed' and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
+# @ receiver(post_save, sender=HoleModel)
+# @ receiver(post_save, sender=SquareModel)
+# @ receiver(post_save, sender=HighMagModel)
+# def clear_svg_cache_target(sender, instance, **kwargs):
+#     key = '_'.join(['svg',instance.parent.pk,])
+#     if cache.delete_many(f'{key}*'):
+#         logger.debug(f'{instance.parent} svg key removed from cache after {instance} update')
+
+# @ receiver(post_save, sender=Classifier)
+# @ receiver(post_save, sender=Selector)
+# def clear_svg_cache_label(sender, instance, **kwargs):
+#     instance_to_update = instance.content_object.parent
+#     key = '_'.join(['svg',instance_to_update.pk])
+#     if cache.delete_many(f'{key}*'):
+#         logger.debug(f'{instance_to_update} svg key removed from cache after {instance} update')
 
 @ receiver(post_save, sender=Group)
 def create_group_directory(sender, instance, created, *args, **kwargs):
@@ -114,7 +121,6 @@ def create_group_directory(sender, instance, created, *args, **kwargs):
                 print(f'Creating group dir at: ', d)
                 os.mkdir(d)
 
-
 @ receiver(pre_save, sender=ScreeningSession)
 def change_group(sender, instance, **kwargs):
     if not instance._state.adding:
@@ -125,24 +131,14 @@ def change_group(sender, instance, **kwargs):
             shutil.move(original.directory, destination)
     return instance
 
-
 @receiver(post_save, sender=ScreeningSession)
 def create_session_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
+        logger.debug(f'Creating session {instance} directories')
         create_scope_dirs(instance.microscope_id.scope_path)
         Path(instance.directory).mkdir(parents=True, exist_ok=True)
-
 
 @receiver(post_save, sender=Microscope)
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.scope_path)
-
-
-# @ receiver(post_save, sender=Process)
-# def clean_scope_dir(sender, instance, created, **kwargs):
-#     if created:
-#         print('Starting new session, Cleaning scope directory')
-#         send_to_worker(os.getenv('SMARTSCOPE_EXE'), arguments=['clean_scope_dir'])
-#     else:
-#         print('Reloading existing session')

@@ -26,7 +26,8 @@ def find_squares(montage, **kwargs):
         success = False
     logger.info(f'AI square finder found {len(squares)} squares')
     logger.debug(f'{squares},{type(squares)}')
-    return (squares, labels), success
+    squares = [i.numpy() for i in squares]
+    return (squares, labels), success, dict()
 
 
 def find_holes(montage, **kwargs):
@@ -39,9 +40,9 @@ def find_holes(montage, **kwargs):
     success = True
     if len(holes) < 10:
         success = False
-
+    # holes = [i.numpy() for i in holes]
     logger.info(f'AI hole detection found {len(holes)} holes')
-    return holes, success
+    return holes, success, dict()
 
 
 def find_and_classify_holes(montage, **kwargs):

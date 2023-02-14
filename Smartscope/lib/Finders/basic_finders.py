@@ -191,36 +191,32 @@ def fft_method(montage, diameter_in_um=1.2):
                                                     montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
             cv2.circle(bit8_color, np.array(center).astype(int), int(radius), (0, 255, 0), cv2.FILLED)
     save_image(bit8_color, 'fft_method', destination=montage.directory, resize_to=512)
-    return outputs, True
+    return outputs, True, dict()
 
 
 def regular_pattern(montage, spacing_in_um=3, diameter_in_um=1.2):
     """ Applies a regular pattern of targets on the image. """
-    radius_in_pix = int(diameter_in_um * 10000 / montage.pixel_size // 2)
-    pixel_spacing = int(floor(spacing_in_um * 10000 // montage.pixel_size))
-    n_pt_x = int(montage.shape_x // pixel_spacing)
-    n_pt_y = int(montage.shape_y // pixel_spacing)
-    logger.info(f'Initiaing a {n_pt_x*n_pt_y} points lattice')
+    pixel_size = montage.pixel_size/10000
+    radius_in_pix = int(diameter_in_um / pixel_size // 2)
+    pixel_spacing = int(spacing_in_um / pixel_size)
     bit8_montage = auto_contrast(montage.image)
-    bit8_color = cv2.cvtColor(bit8_montage, cv2.COLOR_GRAY2RGB)
     square, _, _ = find_square(bit8_montage)
     output = []
-    mask = np.zeros(bit8_montage.shape, dtype="uint8")
+    total_positions = 0
+    mask = np.zeros([montage.shape_x,montage.shape_y] , dtype="uint8")
     cv2.drawContours(mask, [square], -1, 255, cv2.FILLED)
-    cv2.drawContours(bit8_color, [square], -1, (255, 0, 0), 20)
-
-    for x in range(n_pt_x):
-        x *= pixel_spacing
-        for y in range(n_pt_y):
-            y *= pixel_spacing
-            cv2.circle(bit8_color, [y, x], radius_in_pix, (0, 0, int(mask[x, y])), cv2.FILLED)
-            if mask[y, x] == 255:
+    x = radius_in_pix
+    while x <= montage.shape_y:
+        y = radius_in_pix
+        while y <= montage.shape_x:
+            if mask[y,x] == 255:
                 output.append(convert_centers_to_boxes(np.array([x, y]), montage.pixel_size,
-                              montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
-    logger.info(f'Filtered a total of {len(output)} targets within the square')
-    save_image(bit8_color, 'regular_pattern', destination=montage.directory, resize_to=512)
-    # logger.debug(output)
-    return output, True
+                            montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
+            y+= pixel_spacing
+            total_positions+=1
+        x+= pixel_spacing
+    logger.info(f'Filtered a total of {len(output)} targets from {total_positions} positions within the square')
+    return output, True, dict()
 
 
 def find_square_center(img):

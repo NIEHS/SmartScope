@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import serialem as sem
 from abc import ABC, abstractmethod
-from typing import Any
-
+from typing import Any, List
+from pydantic import BaseModel, Field
 from Smartscope.lib.montage import Montage
 
 
@@ -15,26 +15,61 @@ class MicroscopeState:
     stageX: float = 0
     stageY: float = 0
     stageZ: float = 0
-    tiltAngle: float = 0
+    tiltAngle: float = None
+
+    def setStage(self,stageX,stageY,stageZ):
+        self.stageX = stageX
+        self.stageY = stageY
+        self.stageZ = stageZ
+    
+    def getStage(self):
+        return self.stageX, self.stageY, self.stageZ
 
     def reset_image_shift_values(self):
         self.imageShiftX = 0
         self.imageShiftY = 0
 
+class AtlasSettings(BaseModel):
+    mag:int = Field(alias='atlas_mag')
+    maxX:int = Field(alias='atlas_max_tiles_X')
+    maxY:int = Field(alias='atlas_max_tiles_Y')
+    spotSize:int = Field(alias='spot_size')
+    c2:float = Field(alias='c2_perc')
+
+    class Config:
+        orm_mode=True
+
+class Detector(BaseModel):
+    energyFilter:bool = Field(alias='energy_filter')
+    framesDir:str = Field(alias='frames_windows_directory')
+
+    class Config:
+        orm_mode=True
+
+class Microscope(BaseModel):
+    loaderSize:int = Field(alias='loader_size')
+    ip:str = Field(alias='serialem_IP')
+    port:int = Field(alias='serialem_PORT')
+    directory:str= Field(alias='windows_path')
+    scopePath:str = Field(alias='scope_path')
+
+    class Config:
+        orm_mode=True
+
+class CartridgeLoadingError(Exception):
+    pass
 
 @dataclass
 class MicroscopeInterface(ABC):
-    ip: str
-    port: int
-    directory: str
-    scope_path: str
-    energyfilter: bool
+    microscope: Microscope
+    detector: Detector
+    atlasSettings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
-    imageHandler: Any = Montage
-    loader_size: int = 12
+    has_hole_ref: bool = False
+    hole_crop_size: int = 0
 
     def __enter__(self):
-        self.connect(self.directory)
+        self.connect()
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -59,8 +94,36 @@ class MicroscopeInterface(ABC):
             defocusTarget = mindef
         self.state.defocusTarget = defocusTarget
 
+    def clear_hole_ref(self):
+        self.has_hole_ref = False
+
+    
+    @abstractmethod
+    def report_stage(self):
+        return 0,0,0
+
     @abstractmethod
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
+        pass
+
+    @abstractmethod
+    def eucentricity():
+        pass
+
+    @abstractmethod
+    def get_image_settings(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def buffer_to_numpy():
+        pass
+
+    @abstractmethod
+    def numpy_to_buffer():
+        pass
+
+    @abstractmethod
+    def set_atlas_optics(self):
         pass
 
     @abstractmethod
@@ -68,19 +131,48 @@ class MicroscopeInterface(ABC):
         pass
 
     @abstractmethod
-    def square(self, stageX, stageY, stageZ, file=''):
+    def realign_to_square(self):
+        return 0,0,0
+
+    @abstractmethod
+    def square(self, file=''):
         pass
 
     @abstractmethod
-    def align():
+    def align_to_hole_ref(self):
+        return 0,0 
+
+    @abstractmethod
+    def reset_image_shift(self):
         pass
 
     @abstractmethod
-    def lowmagHole(self, stageX, stageY, stageZ, tiltAngle, file='', is_negativestain=False, aliThreshold=500):
+    def align_to_coord(self, coord):
+        pass
+
+    @abstractmethod
+    def moveStage(self, stage_x, stage_y, stage_z):
+        pass
+
+    @abstractmethod
+    def acquire_medium_mag(self):
+        pass
+
+
+    @abstractmethod
+    def medium_mag_hole(self, tiltAngle, file=''):
         pass
 
     @abstractmethod
     def focusDrift(self, def1, def2, step, drifTarget):
+        pass
+
+    @abstractmethod
+    def load_hole_ref(self):
+        pass
+
+    @abstractmethod
+    def image_shift_by_microns(self,isX,isY,tiltAngle):
         pass
 
     @abstractmethod

@@ -13,36 +13,32 @@ The software bundles a database, the main imaging workflow and a web user-intefa
 To run Smartscope, simply fill the form about which grids to be screened, press start and wait for live results to come in.
 
 .. figure:: /_static/webui.png
-   :width: 90%
+   :width: 100%
    :align: center
    :figclass: align-center
 
-   SmartScope webUI example
+   SmartScope webUI
 
-
-
-Site map
+Site Map
 ========
 
 .. toctree::
 
    news.rst
-   beta.rst
-   installation.rst
+   latest_changes.rst
+   installation/index.rst
    update.rst
    setup.rst
    overview.rst
    run_smartscope.rst
    testing.rst
+   protocolAPI/index.rst
+   plugins/index.rst
+   external_plugins/index.rst
+   restAPI/index.rst
    citation.rst
    contact.rst
    license.rst
 
-
    
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

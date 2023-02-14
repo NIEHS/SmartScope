@@ -53,22 +53,6 @@ def copy_file(file, remove=True):
     return split_path(new_file)
 
 
-# def process_montage(obj, mag_level='atlas', save=True, raw_only=False, frames=False, force_reprocess=False, **kwargs):
-#     MAG_LEVELS = {'atlas': Atlas, 'square': Square, 'hole': Hole, 'high_mag': High_Mag}
-#     try:
-#         montage = MAG_LEVELS[mag_level.lower()](**obj.__dict__, **kwargs)
-#     except Exception as err:
-#         logger.error(err)
-#     is_metadata = montage.create_dirs(force_reproces=force_reprocess)
-#     if not is_metadata:
-#         montage.parse_mdoc(file=obj.raw)
-#         montage.build_montage(raw_only=raw_only)
-#         save_image(montage.montage, montage._id, extension='png')
-#         if save:
-#             montage.save_metadata()
-#     return montage, is_metadata
-
-
 def get_file(file, remove=True):
     path = split_path(file)
     file_busy(path.file, path.root)
@@ -138,8 +122,7 @@ def create_grid_directories(path: str) -> None:
         directory.mkdir(exist_ok=True)
 
 
-def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
-    logger.info(f"Generating fake {file} from {funcname}")
+def select_random_fake_file(funcname):
     TEST_FILES_ROOT = os.getenv('TEST_FILES')
     dirs = dict(atlas=os.path.join(TEST_FILES_ROOT, 'atlas'),
                 square=os.path.join(TEST_FILES_ROOT, 'square'),
@@ -148,10 +131,11 @@ def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('
                 highmagframes=os.path.join(TEST_FILES_ROOT, 'highmag_frames'),
                 )
     dirname = dirs[funcname]
-    # if 'frames' in kwargs.keys() and kwargs['frames']:
-    #     dirname = dir[f'{funcname}_frames']
+    return random.choice(glob.glob(f'{dirname}/*.???'))
 
-    randomfile = random.choice(glob.glob(f'{dirname}/*.???'))
+def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('MOUNTLOC'), **kwargs):
+    logger.info(f"Generating fake {file} from {funcname}")
+    randomfile = select_random_fake_file(funcname)
     destination = os.path.join(destination_dir, file)
     shutil.copy(randomfile, destination)
     shutil.copy(f'{randomfile}.mdoc', f'{destination}.mdoc')
@@ -173,9 +157,10 @@ def locate_file_in_directories(directory_list: List[str], file_name: str) -> Uni
     return None, None
 
 
-def get_file_and_process(raw, name, directory=''):
-    if not os.path.isfile(raw):
+def get_file_and_process(raw, name, directory='', force_reprocess=False):
+    if force_reprocess or not os.path.isfile(raw):
         path = os.path.join(directory, raw)
         get_file(path, remove=True)
     montage = Montage(name)
+    montage.load_or_process(force_process=force_reprocess)
     return montage

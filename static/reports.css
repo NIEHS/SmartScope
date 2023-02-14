@@ -403,3 +403,9 @@ body {
 
     color: l
 }
+
+.cardGroup>.row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}

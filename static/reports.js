@@ -13,12 +13,6 @@ async function loadSVG(data, element) {
         if ("svg" in data) {
             element.html(data['svg'])
         }
-
-        // } else if ("card" in data) {
-        //         element.innerHTML = data['svg']
-        // } else {
-        //     svgUpdate({ ...data['fullmeta']['squares'], ...data['fullmeta']['holes'] })
-        // }
         updateFullMeta(data['fullmeta'])
         grabCuration()
     }
@@ -38,8 +32,6 @@ function setSVGcss(item, el) {
     } else {
         el.classList.remove(...el.classList);
     }
-
-    // console.log(el)
     if (item.has_active) {
         el.classList.add('has_active')
     } else if (item.has_queued) {
@@ -79,7 +71,7 @@ function setSVGcss(item, el) {
 async function queueSquareTargets(elem) {
     var url = `/api/squares/${currentState.square}/all/`
     console.log(url)
-    await apifetchAsync(url, { 'action': elem.value }, "PATCH");
+    await apifetchAsync(url, { 'action': elem.value }, "PATCH", message=`Adding all target to queue for ${currentState.square}`);
     loadSquare(currentState.square)
 }
 
@@ -88,9 +80,12 @@ async function queueSquareTargets(elem) {
 async function loadAtlas(metaonly = false, display_type = null, method = null) {
     var url = `/api/atlas/${Object.keys(fullmeta.atlas)[0]}/load/?format=json&display_type=${display_type}&method=${method}&metaonly=${metaonly}`
     console.log(url)
-    const data = await fetchAsync(url);
+    const data = await fetchAsync(url, message='Loading Atlas');
+    currentState['atlasDisplayType'] = data.displayType
+    currentState['atlasMethod'] = data.method
     loadSVG(data, generalElements.atlas)
     $("#Atlas_div").html(data.card)
+    pushState()
 
 };
 
@@ -114,7 +109,7 @@ $('#main').on("click", '.legend', function () {
 
 $('#main').on('click', '.showLegend', function () {
     console.log($(this), $(this).closest('.mapCard'))
-    $(this).closest('.mapCard').find('#legend').toggleClass('d-none')
+    $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
 
 $("#main").find(".hasTooltip").tooltip();
@@ -157,29 +152,7 @@ function checkSelection(type = 'square') {
 
 }
 
-// function clearSelection(selection, type) {
-//     console.log(`Clearing Selection`)
 
-//     if (type == 'hole') {
-//         button = document.getElementById('holeClearSele')
-//     } else if (type == 'targets') {
-//         button = document.getElementById('clearTargets')
-//     } else {
-//         button = document.getElementById('squareClearSele')
-//     }
-//     while (selection.length != 0) {
-//         if (type != 'targets') {
-//             document.getElementById(selection[0]).classList.remove('clicked')
-//         } else {
-//             selection[0][0].remove()
-//         }
-
-//         selection.shift()
-//     }
-//     button.disabled = true
-//     popup_sele = null
-//     checkSelection(type)
-// }
 function clearSelection(selection, type) {
     console.log(`Clearing Selection`)
 
@@ -190,11 +163,6 @@ function clearSelection(selection, type) {
     } else {
         button = $('#squareClearSele')
     }
-    // if (selection.length != 0) {
-    //     $('#' + selection.join(',#')).removeClass('clicked')
-    //     selection = []
-    // }
-    // console.log('Selection: ', selection)
     while (selection.length != 0) {
         if (type != 'targets') {
             document.getElementById(selection[0]).classList.remove('clicked')
@@ -212,86 +180,47 @@ function clearSelection(selection, type) {
 async function loadSquare(full_id, metaonly = false, display_type = null, method = null) {
     console.log('Loading Square:', full_id)
     let meta = fullmeta.squares[full_id]
-    // console.log(meta)
+
     if (meta.status == 'completed') {
-        // document.getElementById("squareNum").innerHTML = 'Square ' + meta.number;
         var url = `/api/squares/${meta.id}/load/?format=json&display_type=${display_type}&method=${method}&metaonly=${metaonly}`
         console.log('URL:', url)
-        const data = await fetchAsync(url)
+        const data = await fetchAsync(url, message=`Loading Square ${meta.id}`)
+        currentState['squareDisplayType'] = data.displayType
+        currentState['squareMethod'] = data.method
         loadSVG(data, generalElements.square)
         $("#Square_div").html(data.card)
+        pushState()
     };
 };
 
-// async function loadHole(elem, metaonly = false) {
-//     var center = elem
-//     if (elem.classList.contains('completed')) {
-//         if (!metaonly) {
-//             //Find center hole
-
-//             if (elem.classList.contains('is_area')) {
-//                 center = elem.parentElement.getElementsByClassName('center')[0]
-//             }
-//             console.log('center', center, center.number)
-//             document.getElementById("Hole").innerHTML = '';
-//             document.getElementById("holeNum").innerHTML = 'Hole ' + center.getAttribute('number');
-//             var imglm = document.createElement('img')
-//             let lm_data = await fetchAsync(`/ api / holes / ${ center.id } / file_paths ? png`)
-//             imglm.src = lm_data.png.url
-//             imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
-//             document.getElementById("Hole").appendChild(imglm)
-
-//         }
-//         hm_data = await fetchAsync(`/ api / holes / ${ center.id } / highmag /? png`)
-//         console.log('hm_data', hm_data)
-//         for (const [key, value] of Object.entries(hm_data)) {
-//             console.log(key, value)
-//             if (!metaonly) {
-//                 var imghm = document.createElement('img')
-//                 imghm.src = value.png.url
-//                 imghm.id = key
-//                 document.getElementById("Hole").appendChild(imghm)
-//             } else {
-//                 imghm = document.getElementById(key)
-//             }
-//             imghm.className = "highmag col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
-//             var hole = fullmeta.holes[value.hole_id]
-//             if (hole.quality !== null) {
-//                 imghm.classList.add(`quality - ${ hole.quality }`)
-//             }
-
-
-//         }
-
-//     };
-// };
-
 async function loadHole(elem, metaonly = false) {
     var center = elem
-    if (elem.classList.contains('completed')) {
+    if (elem.classList.contains('completed') | elem.classList.contains('processed')) {
         if (!metaonly) {
             //Find center hole
             if (elem.classList.contains('is_area')) {
                 center = elem.parentElement.getElementsByClassName('center')[0]
             }
             var imglm = document.createElement('img')
-            let lm_data = await fetchAsync(`/api/holes/${center.id}/file_paths?png`)
-            imglm.src = lm_data.png.url
-            imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
-            $("#mmHole").html(imglm)
+            let data = await fetchAsync(`/api/holes/${center.id}/load`, message=`Loading Hole ${center.id}`)
+            loadSVG(data, generalElements.hole)
+            // $("#Atlas_div").html(data.card)
+            // imglm.src = lm_data.png.url
+            // imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
+            $("#mmHole").html(data.card)
         }
-        hm_data = await fetchAsync(`/api/holes/${center.id}/highmag/`)
+        if (elem.classList.contains('completed')) {  
+        hm_data = await fetchAsync(`/api/holes/${center.id}/highmag/`, message=`Loading high mag data.`)
         $('#Hole').html(hm_data)
         grabCuration()
+        };
     };
 };
 
 function grabCuration() {
     $('#Hole_div .holeCard').each(function () {
-        // console.log($(this).attr('hole_id'))
         var related = $(`#square-svg #${$(this).attr('hole_id')}`)
         var label = related.attr('label')
-        // console.log(related.attr('stroke'), label)
         if (label != "target") {
             $(this).css("border", `3px solid ${related.attr('stroke')}`)
             console.log($(this).find('.dropdown-item .active'))
@@ -327,7 +256,7 @@ async function changeGridStatus(status) {
     if (r == true) {
         console.log(status, fullmeta.grid_id)
         var url = `/api/grids/${fullmeta.grid_id}/`
-        await apifetchAsync(url, { 'status': status }, "PATCH");
+        await apifetchAsync(url, { 'status': status }, "PATCH", message=`Setting grid status to ${status}`);
         await reportMain()
         websocketMain()
     } else {
@@ -339,7 +268,7 @@ function rateGrid(el) {
     document.getElementById("goodGrid").classList.remove('active');
     document.getElementById("badGrid").classList.remove('active');
     var url = `/api/grids/${fullmeta.grid_id}/`;
-    apifetchAsync(url, { 'quality': el.value }, "PATCH");
+    apifetchAsync(url, { 'quality': el.value }, "PATCH", message=`Setting grid quality to ${el.value}`);
     el.classList.add('active');
     $(`#sidebarGrids #${fullmeta.grid_id} div`).removeClass(function (index, className) {
         return (className.match(/(^|\s)quality-\S+/g) || []).join(' ')
@@ -378,8 +307,6 @@ function hideSVGlabel(el, parentid) {
 }
 
 function openMenu(el, menu) {
-    // console.log(el)
-    // console.log(menu)
     menu.classList.remove('show')
     report = document.getElementById('main').getBoundingClientRect()
     elBox = el.getBoundingClientRect()
@@ -394,12 +321,9 @@ function openGoTo(el) {
 }
 
 function optionMenu(meta, type = 'holes') {
-
-    // var menu = document.getElementById("popupMenu")
     var queueBtn = document.getElementById('opt-queued-square')
     var queueDiv = document.getElementById('squareQueue')
     if (type == 'holes') {
-        // var menu = document.getElementById("popupMenuHole")
         var queueBtn = document.getElementById('opt-queued-hole')
         var queueDiv = document.getElementById('holeQueue')
     }
@@ -436,57 +360,13 @@ function optionMenu(meta, type = 'holes') {
         queueDiv.classList.remove('d-block')
     }
     popupsele = [meta, type]
-    // openMenu(el, menu)
-
 }
 
 function closeOptionMenu() {
-    // menu = document.getElementById("popupMenu")
-    // menu.classList.remove('show')
-    // menu = document.getElementById("popupMenuHole")
-    // menu.classList.remove('show')
     menu = document.getElementById("popupMenuGoTo")
     menu.classList.remove('show')
 }
 
-// async function zoomedView(element) {
-//     var clnSrc = element.src
-//     let meta = jQuery.map(hm_data, function (obj) {
-//         if (obj.hm_id === element.id) {
-//             return obj;
-//         }
-//     });
-
-//     hmSelection = meta[0]
-//     console.log('Hm selection =', hmSelection)
-//     var holeQuality = fullmeta.holes[hmSelection.hole_id].quality
-//     if (holeQuality !== null && holeQuality.length == 1) {
-//         document.getElementById(`rateQuality - ${ holeQuality }`).classList.add('active')
-//     }
-//     document.getElementById('hm_name').innerHTML = hmSelection.name
-//     var zoomMic = document.getElementById('mic')
-//     zoomMic.src = clnSrc
-//     let popup = document.getElementById('zoomedView')
-
-//     var imgfft = document.getElementById('fftImg')
-//     if (hmSelection.ctffit !== null) {
-//         imgfft.src = hmSelection.ctf_img
-//         document.getElementById('defocus').innerHTML = `Defocus: ${ Math.round(hmSelection.defocus / 1000) / 10 } & microm`
-//         document.getElementById('astig').innerHTML = `Astig: ${ Math.round(hmSelection.astig) } A`
-//         document.getElementById('ctffit').innerHTML = `CTFfit: ${ Math.round(hmSelection.ctffit * 10) / 10 } A`
-//         document.getElementById('angast').innerHTML = `Angle: ${ Math.round(hmSelection.angast) } &#176`
-
-//     } else {
-//         let fft = await fetchAsync(`/ api / highmag / ${ element.id } / fft / `)
-//         imgfft.src = `data: image / png; charset = utf - 8; base64, ${ fft.img } `
-//     }
-
-
-//     imgfft.classList.add('mh-100', 'mw-100')
-//     document.getElementById('fft').appendChild(imgfft)
-//     popup.classList.remove('hidden')
-//     console.log(popup)
-// }
 function closePopup(element) {
     console.log(element);
     element.classList.add('hidden');
@@ -512,7 +392,7 @@ $('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
     }), {});
     console.log(data)
     var url = `/api/grids/${fullmeta.grid_id}/`
-    apifetchAsync(url, data, "PATCH")
+    apifetchAsync(url, data, "PATCH", message=`Edit grid notes`)
 });
 
 $('#main').on('submit', '#editCollectionForm', function (e) {
@@ -524,14 +404,12 @@ $('#main').on('submit', '#editCollectionForm', function (e) {
     }), {});
     console.log(data)
     var url = `/api/grids/${currentState.grid_id}/editcollectionparams/`
-    apifetchAsync(url, data, "PATCH")
+    apifetchAsync(url, data, "PATCH", message=`Changing grid collection parameters`)
 });
 
 $('#main').on('click', '#gridParamBtn', function (e) {
     target = e.target
     var expanded = target.getAttribute('aria-expanded')
-    // console.log(expanded)
-
     if (expanded == 'false') {
         target.innerHTML = '- Grid details'
         target.classList.add('active')
@@ -544,8 +422,6 @@ $('#main').on('click', '#gridParamBtn', function (e) {
 $('#main').on('click', '#legendsBtn', function (e) {
     target = e.target
     var expanded = target.getAttribute('aria-expanded')
-    // console.log(expanded)
-
     if (expanded == 'false') {
         target.innerHTML = 'Hide legend'
         target.classList.add('active')
@@ -617,32 +493,36 @@ async function popupSele(element) {
 
 
 
-async function updateClassifier(model, method, label, ids = null) {
-    if (ids == null) {
-        var sele = squareSelection
-        if (model == 'holes') {
-            sele = holeSelection
-        }
-    } else {
+async function updateTargets(model, display_type, method, key, new_value, ids = null) {
+
+    var sele = squareSelection
+    let stateKey = 'atlas'
+    if (model == 'holes') {
+        sele = holeSelection
+        stateKey = 'square'
+    }
+    if (ids) {
         sele = ids
     }
-    resp = await websocketSend('update.target',
-        {
-            type: model,
-            ids: sele,
-            display_type: 'classifiers',
-            method: method,
-            key: 'label',
-            new_value: label
-        })
-    console.log(resp)
-    if (ids != null) {
-        clearSelection(sele, model)
+    let request = {
+        type: model,
+        ids: sele,
+        display_type: display_type || currentState[`${stateKey}DisplayType`],
+        method: method || currentState[`${stateKey}Method`],
+        key: key,
+        new_value: new_value
     }
+    console.log('updateClassifier request: ', request)
+    var url = `/api/updatetargets/`
+    resp = await apifetchAsync(url, request, "PATCH", message=`Updating targets ${key} to ${new_value}`)
+    updateData(resp)
+    // resp = await websocketSend('update.target', request)
+    console.log('updateClassifier response: ', resp)
+    clearSelection(sele, model)
 }
 
 async function loadMeta() {
-    return await fetchAsync(`/api/grids/${currentState.grid_id}/fullmeta`)
+    return await fetchAsync(`/api/grids/${currentState.grid_id}/fullmeta`, message='Loading specimen metadata')
 }
 
 function countBisGroupSizes() {
@@ -656,7 +536,6 @@ function countBisGroupSizes() {
 };
 
 function renderCounts() {
-    // counts = countHoles()
     document.getElementById('holeCountQueued').innerHTML = fullmeta.counts.queued
     document.getElementById('holeCountAcquired').innerHTML = fullmeta.counts.completed
     document.getElementById('holeCountPerhour').innerHTML = fullmeta.counts.perhour
@@ -680,11 +559,9 @@ function SvgCoords(evt) {
 }
 
 function add_target(item) {
-    // ft_sz = Math.floor(size / 3000 * 80)
     el = document.createElementNS("http://www.w3.org/2000/svg", 'path')
     el.setAttribute("d", `M${item.x - 10} ${item.y - 30} h20 v20 h20 v20 h-20 v20 h-20 v-20 h-20 v-20 h20 z`)
     el.setAttribute("class", "temporaryTarget")
-    // el.setAttribute("r", 10)
     el.setAttribute('style', 'fill: red')
     return el
 }
@@ -699,15 +576,15 @@ async function addTargets(btn, selection) {
     console.log(`Adding targets on square: ${currentState.square}`, coords)
     clearSelection(selection, 'targets')
     var url = "/api/addtargets/"
-    let res = await apifetchAsync(url, { 'session_id': fullmeta.session_id, 'square_id': currentState.square, 'targets': coords }, 'POST')
+    let res = await apifetchAsync(url, { 'session_id': fullmeta.session_id, 'square_id': currentState.square, 'targets': coords }, 'POST', message='Adding targets')
     console.log(res)
     loadSquare(currentState.square, false)
 }
 
 async function regroupBIS(square_id) {
     let url = `/api/squares/${square_id}/regroup_bis/`
-    let res = await apifetchAsync(url, {}, 'PATCH')
-    console.log(res)
+    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${square_id}`)
+    console.log('regroupBIS: ', res)
     await loadSquare(currentState.square, false)
 }
 
@@ -727,7 +604,8 @@ function populateReportHead() {
 async function reportMain() {
     generalElements = {
         'atlas': document.getElementById('Atlas_im'),
-        'square': document.getElementById('Square_im')
+        'square': document.getElementById('Square_im'),
+        'hole': document.getElementById('mmHole')
     }
     currentTarget = null
     hm_data = null
@@ -741,13 +619,12 @@ async function reportMain() {
     fullmeta = await loadMeta()
     populateReportHead()
     renderCounts()
-    // checkState()
     if (fullmeta.status != null) {
         console.log(fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status)
         if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {
-            await loadAtlas();
+            await loadAtlas(metaonly = false, display_type = currentState['atlasDisplayType'] || null, method = currentState['atlasMethod'] || null);
             if (![null, undefined].includes(currentState.square)) {
-                await loadSquare(currentState.square)
+                await loadSquare(currentState.square, metaonly = false, display_type = currentState['squareDisplayType'] || null, method = currentState['squareMethod'] || null)
             }
             if (![null, undefined].includes(currentState.hole)) {
                 await loadHole(document.getElementById(currentState.hole))
@@ -765,11 +642,15 @@ $('#main').on('change', ".card circle", function () {
 })
 
 $('#main').on('mouseenter', ".holeCard", function (e) {
-    // console.log(e.target.id)
     var hole = document.getElementById($(this).attr('hole_id'))
+    var highmag = document.getElementById($(this).attr('id'))
     if (hole) {
         hovered.push(hole)
         hole.classList.add("hovered")
+    }
+    if (highmag) {
+        hovered.push(highmag)
+        highmag.classList.add("hovered")
     }
 }).on("mouseleave", ".holeCard", function () {
     for (let i in hovered) {
@@ -778,19 +659,6 @@ $('#main').on('mouseenter', ".holeCard", function (e) {
     hovered = []
 }
 );
-
-// $('#main').on('click', '.hmQuality', async function (e) {
-//     // console.log(hmSelection)
-//     let card = $(this).closest('.holeCard')
-//     console.log(card)
-//     // deactivateButton(document.getElementById('hmQuality'))
-//     // if (!e.target.classList.contains('active'))
-//     await updateTarget('holes', [card.attr("hole_id")], 'quality', e.target.value)
-
-//     // await loadSquare(currentState.square, true)
-//     // await loadHole(document.getElementById(hmSelection.hole_id), true)
-//     // await zoomedView(document.getElementById(hmSelection.hm_id))
-// })
 
 function clickHole(elem) {
     selectElement(elem, holeSelection);
@@ -818,7 +686,6 @@ function showIframe() {
     iframe.src = `/autoscreenViewer/run/session/${fullmeta.session_id}`
     iframe.width = '100%'
     iframe.height = '100%'
-    // iframe.contentWindow.document.open();
     iframepopup.appendChild(iframe)
 };
 
@@ -844,24 +711,20 @@ function clickSquare(elem) {
 
 $('#main').on('click', function (event) {
     if (event.target.id != 'goToSeleMenu' && !$(event.target).closest('#popupMenu').length) {
-        // console.log('Hidding!')
         closeOptionMenu()
     }
-    // console.log(currentState)
 });
 
 $('#sidebarCollapse').on('click', function () {
     console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
     if ($(this).attr('aria-expanded') == "false") {
         document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
+        // $('#sidebar-container').removeClass('col-md-2').addClass('col-md-auto')
     } else {
         document.getElementById("sidebarCollapseLogo").style.transform = ""
+        // $('#sidebar-container').classList.removeClass('col-md-auto').addClass('col-md-2')
     }
 })
-
-// $('#main').on('click', '#holeSeleMenu', function () { console.log('optionmenu'); optionMenu(holeSelection, 'holes') })
-
-// $('#main').on('click', '#Hole_div .highmag', function () { console.log(this); zoomedView(this) });
 
 $('#main').on("mouseenter", '#Square_div circle', function () {
     hovered = []
@@ -885,8 +748,6 @@ $('#main').on("mouseenter", '#Square_div circle', function () {
 
 function colorBISgroups() {
     console.log('Coloring!')
-    // groups = new Object
-    // randomColor = Math.floor(Math.random() * 16777215).toString(16)
     let colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
     var count = 0
     $('#squareShapes').children("*[id]").each(function () {
@@ -911,3 +772,25 @@ $("#main").on('click', '.zoomBtn', function () {
     card.addClass('popupFull')
     icon.removeClass("bi-zoom-in").addClass("bi-zoom-out")
 }) 
+
+
+function updateData(data) {
+    if (data.type == 'update') {
+        updateFullMeta(data.fullmeta)
+        if (Object.keys(data.fullmeta.atlas).length === 0) {
+            console.log('UPDATING!!')
+            let svgToUpdate = { ...data.fullmeta.squares, ...data.fullmeta.holes }
+            svgUpdate(svgToUpdate)
+            populateReportHead()
+            return
+        } else if (data.fullmeta.atlas[Object.keys(data.fullmeta.atlas)[0]].status == 'completed') {
+            reportMain()
+            return
+        }
+    }
+    else if (data.type == 'reload') {
+        loadSVG(data, $(`#main ${data.element}`))
+    } else {
+        console.log(data)
+    }
+}

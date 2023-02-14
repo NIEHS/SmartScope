@@ -16,7 +16,6 @@ After login, the admin portal link is fount at the right corner of the screen in
    :align: center
    :figclass: align-center
 
-..    SmartScope admin portal
 
 Users
 **********************

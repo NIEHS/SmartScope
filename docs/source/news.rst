@@ -1,6 +1,17 @@
 Latest News
 ###########
 
+2022-12-07:
+
+   Ptolemy is now used withing SmartScope as an optional plugin in v0.8b3 and later.
+
+2022-08-02:
+
+   Open beta has begun!
+   SmartScope is now publicly available for download and installation.
+   At this point, we're still making stability improvements and trying to improve documentation and installation.
+   v0.7 has been deployed as the first public release.
+
 2022-06-29:
 
    v0.62 has been deployed as a result of our internal testing to improve stability. 

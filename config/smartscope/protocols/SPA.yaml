@@ -1,0 +1,32 @@
+name: SPA
+atlas:
+  acquisition:
+      - setAtlasOptics 
+      - atlas
+  targets:
+    finders:
+      - AI square finder
+    selectors:
+      - Size selector
+square:
+  acquisition:
+    - moveStage
+    - realignToSquare
+    - eucentricSearch
+    - square
+  targets:
+    finders:
+      - AI hole finder
+      - Regular pattern
+    selectors:
+      - Graylevel selector
+mediumMag:
+  acquisition:
+    - tiltToAngle
+    - moveStage
+    - loadHoleRef
+    - alignToHoleRef
+    - mediumMagHole
+highMag:
+  acquisition:
+    - highMag

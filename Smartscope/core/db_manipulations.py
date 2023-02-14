@@ -1,6 +1,5 @@
 
 from typing import Any, Callable, List, Union
-from Smartscope.lib.config import load_plugins, load_protocol
 from Smartscope.core.models import *
 from scipy.spatial.distance import cdist
 import numpy as np
@@ -25,22 +24,18 @@ class Websocket_update_decorator:
         self.grid = grid
 
     def __call__(self, *args, **kwargs):
-        objs = outputs = self.f(*args, **kwargs)
-        if not isinstance(outputs, list):
-            objs = [objs]
+        objs = self.f(*args, **kwargs)
+        if not isinstance(objs, list):
+            ws_objs = [objs]
         if self.grid is not None:
-            websocket_update(objs, self.grid.grid_id)
-
-        return outputs
+            websocket_update(ws_objs, self.grid.grid_id)
+        return objs
 
 
 def websocket_update(objs, grid_id):
-
     channel_layer = get_channel_layer()
-
     outputDict = {'type': 'update.metadata',
                   'update': {}}
-
     logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')
     outputDict['update'] = update_to_fullmeta(objs)
     async_to_sync(channel_layer.group_send)(grid_id, outputDict)
@@ -76,19 +71,19 @@ def update_target(data):
         response['error'] = 'Invalid model specified'
         return response
     content_type = ContentType.objects.get_for_model(model)
-    if method is None:
+
+    if key == 'selected':
+        new_value = True if new_value == '1' else False
         objs = list(model.objects.filter(pk__in=ids))
-        if key == 'selected' and model is HoleModel:
+        if model is HoleModel:
             for i, obj in enumerate(objs):
                 if obj.bis_type == 'is_area':
                     objs[i] = HoleModel.objects.get(square_id=obj.square_id, bis_group=obj.bis_group, bis_type='center')
-
     else:
         logger.debug('Updating Classifier objects')
         objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
     logger.debug(f'From {len(ids)} ids, found {len(objs)}. Updating {key} to {new_value}')
     all_found = len(ids) == len(objs)
-    # return_objs = []
     with transaction.atomic():
         if all_found:
             for obj in objs:
@@ -100,42 +95,50 @@ def update_target(data):
                                                     content_type=content_type, defaults=dict(label=new_value))
     try:
         instance = model.objects.get(pk=ids[0]).parent
-        response = SvgSerializer(instance=instance, display_type=display_type, method=None).data
+        response = SvgSerializer(instance=instance, display_type=display_type, method=method).data
 
         response['success'] = True
         return response
     except Exception as err:
-        logger.exception("An error occured while updating the page.")
+        logger.exception(f"An error occured while updating the page. {err}")
         return response
 
 
+def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
+    refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
+    if refined:
+        refined.update(stage_x=stage_x,
+                        stage_y=stage_y,
+                        stage_z=stage_z,)
+        return
+    original = Finder.objects.filter(object_id=object_id).first()
+    new = Finder(
+        content_type=original.content_type,
+        x=original.x,
+        y=original.y,
+        method_name='Recentering',
+        object_id=object_id,
+        stage_x=stage_x,
+        stage_y=stage_y,
+        stage_z=stage_z,
+    )
+    new.save()
+
+
 def get_hole_count(grid, hole_list=None):
-    plugins = load_plugins()
-    protocol = load_protocol(os.path.join(grid.directory, 'protocol.yaml'))
     if hole_list is not None:
-        all_holes = hole_list
+        queued = len(hole_list)
     else:
-        all_holes = list(HoleModel.display.filter(grid_id=grid.grid_id))
-    completed = [hole for hole in all_holes if hole.status == 'completed']
-    if len(completed) == 0:
-        return dict(completed=0, queued=0, perhour=0, last_hour=0)
-    num_completed = len(completed)
-    queued = 0
-    all_queued = [hole for hole in all_holes if hole.status == 'queued']
-    for hole in all_queued:
-        if hole.bis_group is not None:
-            queued += len([h for h in all_holes if h.bis_group == hole.bis_group and h.is_good(plugins=plugins)
-                          and not h.is_excluded(protocol, 'hole')[0]])
-        else:
-            queued += 1
-    holes_per_hour = None
-    last_hour = None
+        queued = HoleModel.display.filter(grid_id=grid.grid_id,status='queued').count()
+    completed = HighMagModel.objects.filter(grid_id=grid.grid_id)
+    num_completed = completed.count()
+
+    holes_per_hour = 0
+    last_hour = 0
     if grid.start_time is not None:
-
         holes_per_hour = round(num_completed / (grid.time_spent.total_seconds() / 3600), 1)
-
         last_hour_date_time = grid.end_time - timedelta(hours=1)
-        last_hour = len([h for h in completed if h.completion_time >= last_hour_date_time])
+        last_hour = completed.filter(completion_time__gte=last_hour_date_time).count()
     logger.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
     return dict(completed=num_completed, queued=queued, perhour=holes_per_hour, lasthour=last_hour)
 
@@ -213,6 +216,7 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
 
         if queue_all:
             center.selected = True
+            center.status = 'queued'
 
         bis = g[g != i]
         for item in bis:
@@ -227,7 +231,6 @@ def queue_atlas(grid):
     atlas, created = AtlasModel.objects.get_or_create(
         name=f'{grid.name}_atlas',
         grid_id=grid)
-    # print('Atlas newly created? ', created, ' Status: ', atlas.status)
     if created or atlas.status is None:
         atlas.status = 'queued'
     return atlas
@@ -240,7 +243,6 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
     for key, val in kwargs.items():
         updated_fields.append(key)
         setattr(instance, key, val)
-    # close_old_connections()
     instance = instance.save(update_fields=updated_fields)
     if refresh_from_db:
         instance.refresh_from_db()
@@ -258,11 +260,9 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
         defaut_field_dict['hole_id'] = parent
     fields = get_fields_names(model)
     model_content_type_id = ContentType.objects.get_for_model(model)
-    # all_objects = model.objects.all().filter(**defaut_field_dict)
     with transaction.atomic():
         for ind, target in enumerate(targets):
             fields_dict = defaut_field_dict.copy()
-
             fields_dict['number'] = ind + start_number
             for field in fields:
                 val = getattr(target, field, None)
@@ -284,7 +284,6 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
                 classifier_model = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=classifier,
                                               label=target.quality)
                 classifier_model.save()
-
     return output
 
 
@@ -300,9 +299,7 @@ def add_high_mag(grid, parent):
 
 def select_n_squares(parent, n):
     squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
-    plugins = load_plugins()['squareFinders']
-    logger.debug(plugins)
-    squares = [s for s in squares if s.is_good(plugins=plugins)]
+    squares = [s for s in squares if s.is_good()]
     if len(squares) > 0:
         split_squares = np.array_split(squares, n)
         selection = []
@@ -314,21 +311,13 @@ def select_n_squares(parent, n):
 
 
 def select_n_holes(parent, n, is_bis=False):
-    plugins = load_plugins()['holeFinders']
-    filter_fields = dict(selected=False, status=None)  # , class_num__lt=2
+    filter_fields = dict(selected=False, status=None) 
     if is_bis:
         filter_fields['bis_type'] = 'center'
     holes = list(parent.holemodel_set.filter(
         **filter_fields).order_by('dist_from_center'))
-    # if len(holes) == 0:
-    #     # To still select holes when they are all predicted to be bad. Because we're not sure the classifier is working well yet (added v.0.44)
-    #     logger.info('No holes new selected, overlooking prediction classes')
-    #     filter_fields.pop('class_num__lt')
-    #     logger.debug(filter_fields)
-    #     holes = list(parent.holemodel_set.filter(
-    #         **filter_fields).order_by('dist_from_center'))
 
-    holes = [h for h in holes if h.is_good(plugins=plugins)]
+    holes = [h for h in holes if h.is_good()]
 
     if n <= 0:
         with transaction.atomic():
@@ -347,7 +336,7 @@ def select_n_holes(parent, n, is_bis=False):
                 groups[group].append(h)
         except:
             groups = np.array_split(np.array(holes), n)
-        # print(groups)
+
         with transaction.atomic():
             for bucket in groups[:-1]:
                 if len(bucket) > 0:
@@ -356,24 +345,22 @@ def select_n_holes(parent, n, is_bis=False):
 
 
 def select_n_areas(parent, n, is_bis=False):
-    plugins = load_plugins()
-    protocol = load_protocol(os.path.join(parent.grid_id.directory, 'protocol.yaml'))
     filter_fields = dict(selected=False, status=None)
     if is_bis:
         filter_fields['bis_type'] = 'center'
-    targets = parent.base_target_query.filter(**filter_fields)
+    targets = parent.targets.filter(**filter_fields)
 
     if n <= 0:
         with transaction.atomic():
             for t in targets:
-                if t.is_good(plugins=plugins) and not t.is_excluded(protocol, parent.targets_prefix)[0]:
+                if t.is_good() and not t.is_excluded()[0]:
                     update(t, selected=True, extra_fields=['status'])
         return
 
     clusters = dict()
     for t in targets:
-        if t.is_good(plugins=plugins):
-            excluded, label = t.is_excluded(protocol, parent.targets_prefix)
+        if t.is_good():
+            excluded, label = t.is_excluded()
             if not excluded:
                 try:
                     clusters[label].append(t)
@@ -390,6 +377,3 @@ def select_n_areas(parent, n, is_bis=False):
                 update(sele, selected=True, extra_fields=['status'])
     else:
         logger.info('All targets are rejected, skipping')
-    # targets_filtered = [t for t in targets if t.is_good(plugins=plugins) and not t.is_excluded(protocol, parent.targets_prefix)]
-
-    # logger.debug(f"{len(targets)}, {len(targets_filtered)}")

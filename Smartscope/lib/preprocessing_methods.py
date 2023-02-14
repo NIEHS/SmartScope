@@ -1,10 +1,9 @@
-from re import A
-from typing import List
+from typing import List, Union
 import pandas as pd
 from pathlib import Path
 import logging
 from Smartscope.lib.file_manipulations import locate_file_in_directories, get_file_and_process
-from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop
+from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage, Movie
 from Smartscope.lib.logger import add_log_handlers
 from Smartscope.lib.generic_position import parse_mdoc
@@ -21,7 +20,7 @@ def get_CTFFIN4_data(path: Path) -> List[float]:
         lines = [[float(j) for j in i.split(' ')] for i in f.readlines() if '#' not in i]
 
         ctf = pd.DataFrame.from_records(lines, columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit'], exclude=[
-            'l', 'phshift'])
+            'l', 'phshift']).iloc[0]
 
         return dict(defocus=(ctf.df1 + ctf.df2) / 2,
                     astig=ctf.df1 - ctf.df2,
@@ -43,8 +42,11 @@ def CTFfind(input_mrc: str, output_directory: str, pixel_size: float, voltage: i
     mrc_to_png(output_file)
 
 
-def align_frames(frames: str, output_file: str, output_shifts: str, gain: str, mdoc: str, voltage: int):
-    com = f'alignframes -input {frames} -output {output_file} -gain {gain} -rotation -1 -dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
+def align_frames(frames: str, output_file: str, output_shifts: str, gain: Union[str, None], mdoc: str, voltage: int):
+
+    com = f'alignframes -input {frames} -output {output_file} -rotation -1 -dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
+    if gain is not None:
+       com += f' -gain {gain}'
     logger.debug(com)
     p = subprocess.run(shlex.split(com), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     logger.debug(p.stdout.decode('utf-8'))
@@ -70,14 +72,17 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         return movie
     movie.metadata = parse_mdoc(mdocFile=mdoc, movie=True)
     if not movie.shifts.exists() or not movie.ctf.exists():
-        align_frames(frames_file, output_file=movie.raw, output_shifts=movie.shifts, gain=Path(
-            directory, movie.metadata.iloc[-1].GainReference), mdoc=mdoc, voltage=movie.metadata.Voltage.iloc[-1])
+        try:
+            gain = Path( directory, movie.metadata.GainReference.iloc[-1])
+        except AttributeError:
+            gain = None
+        align_frames(frames_file, output_file=movie.raw, output_shifts=movie.shifts, gain=gain, mdoc=mdoc, voltage=movie.metadata.Voltage.iloc[-1])
         if not movie.image_path.exists():
             movie.make_symlink()
         CTFfind(input_mrc=movie.image_path, output_directory=movie.name,
                 voltage=movie.metadata.Voltage.iloc[-1], pixel_size=movie.pixel_size, spherical_abberation=spherical_abberation)
     movie.read_image()
-    movie.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    export_as_png(movie.image, movie.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     movie.save_metadata()
 
     return movie
@@ -85,7 +90,7 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
 
 def process_hm_from_average(raw, name, scope_path_directory, spherical_abberation: float = 2.7):
     montage = get_file_and_process(raw, name, directory=scope_path_directory)
-    montage.export_as_png(normalization=auto_contrast_sigma, binning_method=fourier_crop)
+    export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     if not montage.ctf.exists():
         CTFfind(input_mrc=montage.image_path, output_directory=montage.name,
                 voltage=montage.metadata.Voltage.iloc[-1], pixel_size=montage.pixel_size, spherical_abberation=spherical_abberation)

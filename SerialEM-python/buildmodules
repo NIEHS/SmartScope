@@ -1,4 +1,5 @@
 #!/bin/bash
+curVer=4.1
 
 if [ $# -gt 0 ] ; then
     if [ "$1" == "-f" ] ; then rm -r build ; fi
@@ -63,10 +64,21 @@ cp build/lib.win-amd64-3.4/serialem.pyd PythonModules/3.4-64
 cp "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/redist/x64/Microsoft.VC140.CRT/msvcp140.dll" PythonModules
 chmod u+w PythonModules/msvcp140.dll
 
+if [ -n "$SIGNWRAPPER" ] ; then
+    files=`ls PythonModules/*.pyd PythonModules/*/*.pyd PythonModules/*.dll`
+    for i in $files
+    do
+        "$SIGNWRAPPER" $i
+    done
+fi
 C:/Program\ Files/WinRAR/WinRAR a -r -z./path.txt PythonModules.rar PythonModules
 C:/Program\ Files/WinRAR/WinRAR s -y PythonModules.rar
 chmod a+rx PythonModules.exe
-scp PythonModules.exe bio3d.colorado.edu:SerialEM/Testing-3.9-32
-if [ $? -ne 0 ] ; then echo "Error copying to Testing-3.9-32" ; exit 1 ; fi
-scp PythonModules.exe bio3d.colorado.edu:SerialEM/Testing-3.9-64
-if [ $? -ne 0 ] ; then echo "Error copying to Testing-3.9-64" ; exit 1 ; fi
+if [ -n "$SIGNWRAPPER" ] ; then
+   "$SIGNWRAPPER" PythonModules.exe
+   if [ $? -ne 0 ] ; then echo "Error signing PythonModules.exe" ; exit 1 ; fi
+fi
+scp PythonModules.exe bio3d.colorado.edu:SerialEM/Testing-${curVer}-32
+if [ $? -ne 0 ] ; then echo "Error copying to Testing-${curVer}-32" ; exit 1 ; fi
+scp PythonModules.exe bio3d.colorado.edu:SerialEM/Testing-${curVer}-64
+if [ $? -ne 0 ] ; then echo "Error copying to Testing-${curVer}-64" ; exit 1 ; fi

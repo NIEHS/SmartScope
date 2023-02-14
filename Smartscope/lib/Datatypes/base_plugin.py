@@ -1,7 +1,16 @@
+from enum import Enum
 import importlib
-from abc import ABC
-from typing import Any, Optional, Protocol, List, Dict
+from abc import ABC, abstractclassmethod
+from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
+from Smartscope.lib.montage import create_targets_from_box, Montage
+import sys
+
+class TargetClass(Enum):
+    FINDER = 'Finder'
+    CLASSIFIER = 'Classifier'
+    SELECTOR = 'Selector'
+    METADATA = 'Metadata'
 
 
 class classLabel(BaseModel):
@@ -16,20 +25,35 @@ class FeatureAnalyzer(Protocol):
 
 
 class BaseFeatureAnalyzer(BaseModel, ABC):
+    name: str
     description: Optional[str] = ''
+    reference: Optional[str]= ''
     method: Optional[str] = ''
     module: Optional[str] = ''
     kwargs: Optional[Dict[str, Any]]
+    importPaths: Union[str,List] = Field(default_factory=list)
 
     @property
     def is_classifer(self) -> bool:
         """Check wheter this class is a classifier"""
+    
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        [sys.path.insert(0, path) for path in self.importPaths]
 
-    def run(self, *args, **kwargs):
+
+    def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
         """Where the main logic for the algorithm is"""
+        module = importlib.import_module(self.module)
+        function = getattr(module, self.method)
+        output = function(montage,*args, **kwargs, **self.kwargs)
+        targets = create_targets_method(output[0],montage)
+
+        return targets, output[1],output[2]
 
 
 class Finder(BaseFeatureAnalyzer):
+    target_class = TargetClass.FINDER
 
     @property
     def is_classifier(self):
@@ -38,8 +62,9 @@ class Finder(BaseFeatureAnalyzer):
 
 class Classifier(BaseFeatureAnalyzer):
     classes: Dict[(str, classLabel)]
-    target_class = 'Classifier'
+    target_class = TargetClass.CLASSIFIER
 
+    @property
     def is_classifier(self):
         return True
 
@@ -48,17 +73,31 @@ class Classifier(BaseFeatureAnalyzer):
 
 
 class Finder_Classifier(Classifier):
-    target_class = 'Classifier'
-
-    @property
-    def is_classifier(self):
-        return True
+    target_class = TargetClass.CLASSIFIER
 
 
 class Selector(BaseFeatureAnalyzer):
     clusters: Dict[(str, Any)]
     exclude: List[str] = Field(default_factory=list)
-    target_class: str = 'Selector'
+    target_class: str = TargetClass.SELECTOR
+    kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     def get_label(self, label):
-        return self.clusters['colors'][int(label)], label, 'Cluster'
+        return self.clusters['colors'][int(label)], int(label), 'Cluster'
+
+    def run(self, *args, **kwargs):
+        """Where the main logic for the algorithm is"""
+        module = importlib.import_module(self.module)
+        function = getattr(module, self.method)
+        output = function(*args, **kwargs, **self.kwargs)
+
+        return output
+
+
+class ImagingProtocol(BaseModel):
+    squareFinders: List[str]
+    holeFinders: List[str]
+    highmagFinders: List[str] = Field(default_factory=list)
+    squareSelectors: List[str]
+    holeSelectors: List[str]
+    

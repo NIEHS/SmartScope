@@ -38,7 +38,7 @@ urlpatterns = [
     path('smartscope/', include('Smartscope.server.frontend.urls')),
     path('login/', views.MyLoginView.as_view(authentication_form=forms.UserLoginForm), name='login'),
     path('logout/', LogoutView.as_view()),
-    path('log/<file>', views.ChangeLog.as_view(), name='Log'),
+    # path('log/<file>', views.ChangeLog.as_view(), name='Log'),
     path('', RedirectView.as_view(url="smartscope/browse")),
 ]
 
