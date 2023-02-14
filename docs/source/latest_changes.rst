@@ -5,8 +5,8 @@ Main changes
 ~~~~~~~~~~~~
 
 - Simplified installation procedure
-	- Added a docker repositoty with prebuilt images
-	- Astracted the docker commands behind a simple bash script
+	- Added a docker repository with prebuilt images
+	- Abstracted the docker commands behind a simple bash script
 - Grid metadata can now be exported and re-imported into the same or new SmartScope instance.
 	- This feature will require more work for automatically creating the directory structure and move the data automatically but this is a start.
 - Added a :doc:`/protocolAPI/index` to add more flexibility to the workflow.
