@@ -16,6 +16,7 @@ python                  Runs an interactive ipython shell inside the smartscope 
 
 [ -n "$1" ] && argument=$1 || {
     helpText
+    exit 1
 }
 cd $(dirname "$(readlink -f "$0")")
 
@@ -32,7 +33,7 @@ case $argument in
         cmd="docker exec smartscope smartscope.py ${@:2}"
         echo -e "Executing command inside the smartscope container:
     \e[3m$cmd\e[0m"
-        exec $cmd ;;
+        exec $cmd;;
     help|-h|--help)
         helpText;;
     python)
@@ -40,6 +41,6 @@ case $argument in
         docker exec -it smartscope manage.py shell -i ipython ;;
     *)
         echo Unkown command error: $argument
-        helpText;;
-
+        helpText
+        exit 1;;
 esac
