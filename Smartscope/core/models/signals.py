@@ -93,6 +93,7 @@ def grid_modification(sender, instance, **kwargs):
         if instance.status == 'completed' and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
+
 # @ receiver(post_save, sender=HoleModel)
 # @ receiver(post_save, sender=SquareModel)
 # @ receiver(post_save, sender=HighMagModel)

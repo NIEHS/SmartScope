@@ -28,3 +28,4 @@ external_plugins/*
 docker-compose.yml.bak
 .bash_history
 MyDocker/*
+

@@ -288,7 +288,6 @@ def process_hole_image(hole, grid, microscope_id):
         timer.report_timer('Querying and deleting previous targerts in BIS group')
         square_montage = Montage(name=hole.square_id.name,working_dir=hole.grid_id.directory)
         square_montage.load_or_process()
-        hole_group = list(HoleModel.display.filter(square_id=hole.square_id,bis_group=hole.bis_group))
         image_coords = register_to_other_montage(np.array([x.coords for x in hole_group]),hole.coords, montage, square_montage)
         timer.report_timer('Initial registration to the higher mag image')
         if len(protocol.targets.finders) != 0:
