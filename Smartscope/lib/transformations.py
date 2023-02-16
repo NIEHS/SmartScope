@@ -27,6 +27,16 @@ def pixel_to_stage(dist, tile, tiltAngle=0):
     coords = tile.StagePosition + specimen_dist / np.array([1, cos(radians(round(tiltAngle, 1)))])
     return np.around(coords, decimals=3)
 
+def register_to_other_montage(coords, center_coords, montage, parent_montage, extra_angle=0):
+    centered_coords =  coords - center_coords
+    scale = parent_montage.pixel_size / montage.pixel_size
+    scaled_coords = centered_coords * scale 
+    delta_rotation = parent_montage.rotation_angle - montage.rotation_angle + extra_angle
+    logger.debug(f'Image Rotation = {montage.rotation_angle}\nParent Rotation = {parent_montage.rotation_angle}\nDelta = {parent_montage.rotation_angle - montage.rotation_angle}\nCurrently testing = {delta_rotation}')
+    pixel_coords = np.apply_along_axis(rotate_axis, 1, scaled_coords, angle=delta_rotation)
+    centered_pixel_coords = pixel_coords + montage.center
+    return centered_pixel_coords
+
 def register_stage_to_montage(targets_stage_coords:np.ndarray,center_stage_coords:np.ndarray,center_pixel_coords:np.ndarray,apix:float,rotation_angle:float):
     """Converts stage coordinates calculated at a given magnification to another magnification image. 
     i.e. Draw holes found at low SA on the Atlas or vice-versa

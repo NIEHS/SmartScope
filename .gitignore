@@ -18,7 +18,6 @@ config/singularity/etc.hosts
 config/singularity/resolv.conf
 config/singularity/env.sh
 Smartscope/lib/Finders/AIFinder/detectors/AR3-0528-3_atlas.png
-docker-compose.yml
 test.ipynb
 others/testing.ipynb
 docs/build/
@@ -26,3 +25,7 @@ static/docs
 others/*
 external_plugins/*
 .cache/matplotlib/fontlist-v330.json
+docker-compose.yml.bak
+.bash_history
+MyDocker/*
+

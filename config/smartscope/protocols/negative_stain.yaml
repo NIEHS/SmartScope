@@ -21,6 +21,7 @@ square:
       - Graylevel selector
 mediumMag:
   acquisition:
+    - tiltToAngle
     - moveStage
     - mediumMagHole
 highMag:

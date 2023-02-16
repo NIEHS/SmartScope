@@ -81,3 +81,4 @@ USER smartscope_user
 WORKDIR /opt/smartscope/
 
 CMD [ "gunicorn", "-c", "/opt/smartscope/config/docker/gunicorn.conf.py" ]
+

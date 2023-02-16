@@ -63,8 +63,25 @@
 
 
     {% block content %}{% endblock content %}
-    <div id="loadingMessages" class="m-2 d-flex flex-column">
+    <div id="loadingMessagesContainer" class="">
+        <div id="loadingMessages" class="mx-2 d-flex flex-column">
+            <!-- <div class="notification d-inline-flex justify-content-end">
+                <div id="${id}" class="alert alert-primary fade show" role="alert">
+                    <span>${message}</span>
+                </div>
+            </div>
+            <div class="notification d-inline-flex justify-content-end">
+                <div id="${id}" class="alert mb-0 mt- alert-primary fade show" role="alert">
+                    <span>${message}</span>
+                </div>
+            </div> -->
+        </div>
+    
+        <div class="mx-2 d-flex justify-content-end"><button id='clearAlerts' class="btn btn-light" data-toggle="tooltip" data-placement="left" title="Clear all alerts" onclick="$('#loadingMessages').html('')"><i class="bi bi-x-circle"></i></button></div>
+    
     </div>
 
-
+<script>
+    $('#clearAlerts').tooltip();
+</script>
 {% block script %}{% endblock script %}

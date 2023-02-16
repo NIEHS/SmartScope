@@ -15,7 +15,15 @@ class MicroscopeState:
     stageX: float = 0
     stageY: float = 0
     stageZ: float = 0
-    tiltAngle: float = 0
+    tiltAngle: float = None
+
+    def setStage(self,stageX,stageY,stageZ):
+        self.stageX = stageX
+        self.stageY = stageY
+        self.stageZ = stageZ
+    
+    def getStage(self):
+        return self.stageX, self.stageY, self.stageZ
 
     def reset_image_shift_values(self):
         self.imageShiftX = 0

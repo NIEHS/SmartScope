@@ -585,7 +585,7 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
     def targets(self):
         return self.squaremodel_set.all()
 
-    @cached_model_property(key_suffix='svg', timeout=180)
+    # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
     def toSVG(self, display_type, method):
         targets = list(SquareModel.display.filter(atlas_id=self.atlas_id))
         return drawAtlas(self,targets , display_type, method)
@@ -672,7 +672,13 @@ class Target(BaseModel):
 
     @property
     def stage_coords(self) -> np.ndarray:
-        return np.array([self.finders.first().stage_x, self.finders.first().stage_y])
+        finder = self.finders.first()
+        return np.array([finder.stage_x, finder.stage_y])
+    
+    @property
+    def coords(self) -> np.ndarray:
+        finder = self.finders.first()
+        return np.array([finder.x, finder.y])
 
     def is_excluded(self):
         for selector in self.selectors.all():
@@ -760,7 +766,7 @@ class SquareModel(Target, ExtraPropertyMixin):
         return self.holemodel_set.all()
 
 
-    @cached_model_property(key_suffix='svg')
+    # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
     def toSVG(self, display_type, method):
         holes = list(HoleModel.display.filter(square_id=self.square_id))
         sq = drawSquare(self, holes, display_type, method)
@@ -861,7 +867,7 @@ class HoleModel(Target, ExtraPropertyMixin):
     def id(self):
         return self.hole_id
 
-    @cached_model_property(key_suffix='svg')
+    # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
     def toSVG(self, display_type, method):
         holes = list(self.targets)
         if self.shape_x is None:  # There was an error in previous version where shape wasn't set.

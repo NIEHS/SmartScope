@@ -126,7 +126,7 @@ CACHES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME'),
+        'NAME': os.getenv('MYSQL_DATABASE'),
         'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
 
         'CONN_MAX_AGE': 0,
@@ -137,7 +137,7 @@ if os.getenv('MYSQL_HOST') == 'localhost':
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
 else:
-    DATABASES['default']['USER'] = os.getenv('MYSQL_USERNAME')
+    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
     DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
     DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST')
     DATABASES['default']['PORT'] = os.getenv('MYSQL_PORT')

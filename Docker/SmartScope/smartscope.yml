@@ -1,0 +1,15 @@
+version: "3"
+services:
+  smartscope:
+    # image: ghcr.io/niehs/smartscope:0.8-rc.2  #Change version here
+    user: ${UID}:${GID} #This corresponds to the user running the smarscope.sh script
+    volumes: 
+      ######## ADD YOUR MAIN DATA LOCATION ##########
+      - ./data:/mnt/data
+      # Example:
+      # - /nfs/data/:/mnt/data/
+      ######## ADD YOUR MICROSCOPES #########
+      # The synthax from the microscope volumes is as follows:
+      # - /path/to/where/serialem/will/write/files/:/mnt/your_scope_name_here/
+      # Example:
+      # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
