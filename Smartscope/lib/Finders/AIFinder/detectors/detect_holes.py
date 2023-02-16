@@ -95,7 +95,7 @@ def detect_holes(square, weights_circle, imgsz=1280, thresh=0.2, iou=0.15, devic
     if method == 'rcnn':
         hole_coords = detect_holes_rcnn(square, imgsz, thresh=thresh, iou = iou, device = device, weights_circle=weights_circle)
     if method == 'yolo':
-        hole_coords = detect_holes_yolo(square, imgsz, conf_thres = thresh, iou_thres = thresh, device=device weights_circle = weights_circle)
+        hole_coords = detect_holes_yolo(square, imgsz, conf_thres = thresh, iou_thres = thresh, device=device, weights_circle = weights_circle)
     return hole_coords
 
 def detect_and_classify_holes(square, weights_circle, weights_class, imgsz=1280,thresh=0.2, iou=0.15, device = '0', method = 'rcnn'):
