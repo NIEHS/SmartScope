@@ -2,10 +2,12 @@
 
 import logging
 import logging.config
+from pathlib import Path
 import os
 import sys
 
-__version__ = os.getenv('VERSION')
+version_file = Path(__file__).parents[1].resolve() / 'VERSION'
+__version__ = version_file.read_text()
 
 LOGLEVEL = os.getenv('LOGLEVEL') if os.getenv('LOGLEVEL') is not None else 'DEBUG'
 

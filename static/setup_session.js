@@ -25,6 +25,9 @@ $("input[name$='-name']").on('change', function () {
 
 $("img[id$='_help']").tooltip();
 
+$("#main").find(".hasTooltip").tooltip();
+
+
 function isNumber(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }

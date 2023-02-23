@@ -11,6 +11,7 @@ urlpatterns = [
     path('', RedirectView.as_view(url='browse/'), name=''),
     path('browse/', views.AutoScreenViewer.as_view(), name='browser'),
     path('evaluatemicrographs/', views.EvaluateMicrographs.as_view(), name='evaluatemicrographs'),
+    path('multishot/', views.MultiShotView.as_view(),name='setMultishot'),
 
 ]
 if settings.USE_MICROSCOPE:

@@ -15,7 +15,8 @@ from Smartscope.lib.s3functions import *
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image_manipulations import embed_image
-from .misc_func import Cached_model_property, generate_unique_id, set_shape_values, cached_model_property
+from Smartscope.lib.Datatypes.models import generate_unique_id
+from .misc_func import Cached_model_property, set_shape_values, cached_model_property
 
 
 logger = logging.getLogger(__name__)
@@ -263,6 +264,7 @@ class GridCollectionParams(BaseModel):
     offset_targeting = models.BooleanField(default=True)
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
+    multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):
         db_table = 'gridcollectionparams'
@@ -850,9 +852,9 @@ class HoleModel(Target, ExtraPropertyMixin):
     @ property
     def targets(self):
         if self.bis_group is None:
-            return HighMagModel.objects.filter(hole_id__in=[self.hole_id])
+            return HighMagModel.objects.filter(hole_id=self.hole_id)
 
-        holes_in_group = HoleModel.objects.filter(bis_group=self.bis_group).values_list('hole_id', flat=True)
+        holes_in_group = HoleModel.objects.filter(square_id=self.square_id,bis_group=self.bis_group).values_list('hole_id', flat=True)
         return HighMagModel.display.filter(hole_id__in=holes_in_group)
 
     @ property

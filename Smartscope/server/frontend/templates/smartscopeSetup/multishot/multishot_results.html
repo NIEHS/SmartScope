@@ -1,0 +1,8 @@
+<div class="row flex-nowrap overflow-auto">
+    {% for result in results %}
+        <div class="col-12 h-100">
+            {% include "./multishot_result_card.html" with result=result %}
+        </div>
+    {% endfor %}
+</div>
+
