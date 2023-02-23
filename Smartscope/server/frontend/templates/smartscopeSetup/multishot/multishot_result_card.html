@@ -1,0 +1,37 @@
+{% load static %}
+<div class="card" id="{{result.cache_id}}" onclick="selectMultishot(this)">
+    <div class="card-header">
+        <div class="row p-0 align-items-center justify-content-between">
+            <h3 class="d-inline">{{result.n_shots}} shots per hole</h3>
+
+            <div class="div col-4 p-0 justify-content-center d-none d-md-flex row">
+                <div>
+                    <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
+                            class="bi bi-zoom-in zoomIcon"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row h-100 w-100 m-0 p-0 justify-content-center">
+        <div id="_im" class="d-flex w-100 mh-100 justify-content-center">
+            <img class="w-100" src="data:image/jpg;base64, {{ result.display }}">
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="card-text text-left m-0">Total Field of view inside hole: {{ result.in_hole_percent }}%</p>
+        <p class="card-text text-left m-0">Hole coverage: {{result.coverage_percent }}%</p>
+    </div>
+    <div class="card-footer py-1">
+        Footer
+    </div>
+</div>
+
+<script>
+    
+    function selectMultishot(item) {
+        let id = item.id
+        $("[name='multishot_per_hole_id']").val(id)
+    }
+
+</script>

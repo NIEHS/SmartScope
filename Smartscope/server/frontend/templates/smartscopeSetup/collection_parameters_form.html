@@ -1,0 +1,20 @@
+{% load static %}
+<div class="div row align-items-center">
+    <h3 class="col-auto pr-1 mb-0">COLLECTION PARAMETERS</h3>
+    <button class="btn btn-outline-primary" hx-get="{% url 'setMultishot' %}" hx-target="#multishotMenu" hx-swap="outerHTML">Multishot per hole</button>
+</div>
+<div class="form-row">
+    {% for field in form_params %}
+
+    <div class="form-group col-auto">
+        <div class="row mw-100 mx-1 align-content-center justify-content-between">
+            <label class="mb-0" for="{{field.id}}">{{ field.label }}</label>
+            <img src="{% static 'images/info-circle.svg' %}" id='{{field.id_for_label}}_help' data-toggle="tooltip"
+                data-placement="left" title="{{ field.help_text }}">
+        </div>
+        {{ field }}
+        <div class="invalid-tooltip">{{ field.help_text }}</div>
+
+    </div>
+    {% endfor %}
+</div>

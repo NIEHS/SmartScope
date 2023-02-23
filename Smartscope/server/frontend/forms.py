@@ -2,6 +2,9 @@ from django import forms
 from Smartscope.core.models import *
 from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG, PROTOCOLS_FACTORY 
 import yaml
+from django.urls import reverse
+
+
 
 
 class ScreeningSessionForm(forms.ModelForm):
@@ -96,8 +99,13 @@ class GridCollectionParamsForm(forms.ModelForm):
             save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked',
             zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
             offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
-            offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable'
+            offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable',
+            multishot_per_hole='Enable multishot per hole.'
         )
+
+    # multishot_per_hole = forms.BooleanField(label='Multishot per hole', initial=False,help_text='Enable multishot per hole. The mutlishot menu will need to be filled.')
+    multishot_per_hole_id = forms.CharField(label='Multishot per hole ID',required=False)
+
 
     def __init__(self, *args, **kwargs):
 
@@ -134,6 +142,11 @@ class GridCollectionParamsForm(forms.ModelForm):
             "min": -1,
             "step": 0.05
         })
+        self.fields['multishot_per_hole'].widget.attrs.update({
+            'hx-get':reverse('setMultishot'),
+            'hx-target':"#multishotMenu",
+            'hx-swap':"outerHTML",
+        })
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
@@ -154,3 +167,18 @@ class AssingBisGroupsForm(forms.Form):
         super().__init__(*args, **kwargs)
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
+
+
+class SetMultiShotForm(forms.Form):
+    detector_size_x= forms.IntegerField(label='Detector size X (pix)' ,initial=5760,min_value=0,required=True,help_text='Detector Size along the horizontal axis') #np.array([5760,4092])
+    detector_size_y= forms.IntegerField(label='Detector size Y (pix)' ,initial=4096, min_value=0,required=True,help_text='Detector Size along the vertical axis')
+    pixel_size= forms.FloatField(label='Pixel Size (A/pix)',min_value=0,required=True,help_text='Pixel size of the Record preset')
+    beam_size = forms.IntegerField(label='Beam size (nm)', min_value=0, required=True, help_text='Beam diameter in nm')
+    hole_size = forms.FloatField(label='Hole Size (um)', min_value=0, required=True, help_text='Grid hole size in micrometers')
+    max_number_of_shots = forms.IntegerField(label='Maximum shots', min_value=2,initial=2,help_text='Maxmimum number of shots per hole to try.')
+    max_efficiency = forms.FloatField(label='Mininum field of view in hole (%)',initial=85, min_value=0, max_value=100,help_text="Minimum percentage of the total field of view accross all shots to fall within the hole.")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'   

@@ -1,9 +1,19 @@
 from abc import ABC
+import random
+import string
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Dict
 from pydantic import BaseModel, Field
 import numpy as np
+
+def generate_unique_id(extra_inputs=[], N=30):
+    if len(extra_inputs) != 0:
+        base_id = ''.join(extra_inputs)
+    else:
+        base_id = ''
+    random_id = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(N - len(base_id)))
+    return ''.join([base_id, random_id]).replace('.', '_').replace(' ', '_')
 
 class Finder(BaseModel):
     x: int
