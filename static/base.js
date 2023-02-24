@@ -61,7 +61,7 @@ let createLoadingMessage = (message) => {
     let id = idGen()
     $('#loadingMessages').append(
         `<div class="notification d-inline-flex justify-content-end">
-            <div id="${id}" class="alert mb-0 mt-1 alert-primary fade show" role="alert">
+            <div id="${id}" class="alert mb-0 mt-1 alert-primary fade " role="alert">
                 <span>${message}</span>
             </div>
         </div>`)
@@ -132,9 +132,6 @@ function arrayRemove(arr, value) {
         return ele != value;
     });
 }
-
-$("img[id$='_help']").tooltip();
-
 
 async function updateTarget(type, ids, key, new_value, useAPI = false) {
     console.log(`UPDATING ${type}, ${ids}, ${key} to ${new_value}`)
@@ -223,11 +220,11 @@ async function loadReport(requestfield = null, id = null, push = true) {
             console.log('loading script', typeof csrftoken)
             await new Promise(r => setTimeout(r, 500));
         }
-
     }
 
     await reportMain()
     websocketMain()
+    htmx.process(htmx.find('#main'))
 }
 
 

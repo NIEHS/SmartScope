@@ -1,0 +1,16 @@
+<div id="rightSidebarMenu" class="position-absolute top-0 end-0 bg-white h-100 border-start px-2 overflow-auto" style="width: 30%; z-index: 1070;">
+    
+    <div class="d-flex flex-row justify-content-between">
+        <h3 class="pt-2">{% block title %}{% endblock %}</h3>
+        <button id="close-right-sidebar" 
+            class="btn btn-light" 
+            data-bs-toggle="tooltip" 
+            data-placement="left" 
+            title="Close" 
+            onclick="$('#rightSidebarMenu,.tooltip').remove()">
+        <i class="bi bi-x-circle"></i>
+        </button>
+    </div>
+
+    {% block sidebar_content %}{% endblock %}
+</div>
