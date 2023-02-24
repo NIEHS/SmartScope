@@ -129,7 +129,9 @@
 body{
   max-width:100%;
   font-family: sans-serif;
+  padding-top: 59.19px;
 }
+
 
 #loadingMessagesContainer {
   position: fixed;

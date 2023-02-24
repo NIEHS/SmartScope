@@ -715,16 +715,7 @@ function clickSquare(elem) {
 //     }
 // });
 
-$('#sidebarCollapse').on('click', function () {
-    console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
-    if ($(this).attr('aria-expanded') == "false") {
-        document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
-        // $('#sidebar-container').removeClass('col-md-2').addClass('col-md-auto')
-    } else {
-        document.getElementById("sidebarCollapseLogo").style.transform = ""
-        // $('#sidebar-container').classList.removeClass('col-md-auto').addClass('col-md-2')
-    }
-})
+
 
 $('#main').on("mouseenter", '#Square_div circle', function () {
     hovered = []
