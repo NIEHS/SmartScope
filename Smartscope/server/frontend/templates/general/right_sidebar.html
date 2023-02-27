@@ -6,11 +6,20 @@
             class="btn btn-light" 
             data-bs-toggle="tooltip" 
             data-placement="left" 
-            title="Close" 
+            title="Click here to close or press ESC button" 
             onclick="$('#rightSidebarMenu,.tooltip').remove()">
         <i class="bi bi-x-circle"></i>
         </button>
     </div>
 
     {% block sidebar_content %}{% endblock %}
+
+    <script>
+
+    $(document).on('keydown', function(event) {
+       if (event.key == "Escape") {
+           $('#rightSidebarMenu,.tooltip').remove()
+       }
+   });
+    </script>
 </div>

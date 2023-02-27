@@ -490,7 +490,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
-            queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk']))
+            queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk'], status='completed'))
         else:
             queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
                                                         hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))

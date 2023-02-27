@@ -48,7 +48,7 @@ class AutoloaderGridForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['position'].widget.attrs.update({
-            'class': 'form-control col-8',
+            'class': 'form-control',
             'min': 0,
             'max': 12
         })
@@ -57,7 +57,7 @@ class AutoloaderGridForm(forms.ModelForm):
             # visible.label = ''
             visible.field.required = False
 
-        self.fields['name'].widget.attrs.update({'class': 'form-control col-10 p-0',
+        self.fields['name'].widget.attrs.update({'class': 'form-control',
                                                 'placeholder': self.fields['name'].label, 'aria-label': "...",
                                                  "pattern": "^[a-zA-Z0-9-_]+$"})
         self.fields['name'].label = ''

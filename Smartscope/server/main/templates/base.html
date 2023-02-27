@@ -34,14 +34,13 @@
 </head>
 
 <body>
-
+    <title>{% block title %}{% endblock %}</title>
     <nav class="navbar navbar-default navbar-expand-md navbar-dark bg-dark fixed-top" role="navigation">
         <div class="navbar-brand m-0 p-0 pl-1">
             <a class="" href="#"><img src="{% static 'images/icon256px.png' %}" height='40'></a>
         </div>
         <div class="navbar-brand m-0 mr-auto p-0 pl-1" style="font-size: 0.9rem;">
             <p class="p-0 m-0">{{request.user}}</p>
-            <p class="p-0 m-0"><a href="/logout"><small>Logout</small></a></p>
         </div>
         <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -70,8 +69,11 @@
     </nav>
 
 
-
+    <div class="mainContent">
+        <div id="body-row" class='d-flex flex-row h-100'>    
     {% block content %}{% endblock content %}
+    </div>
+    </div>  
     <div id="loadingMessagesContainer" class="">
         <div id="loadingMessages" class="mx-2 d-flex flex-column"></div>
    
@@ -79,7 +81,15 @@
     
     </div>
 
-
+<style>
+    .mainContent {
+        position:fixed;
+        top: 56px;
+        right: 0;
+        left: 0;
+        bottom:0;
+    }
+</style>
 
 <script>
     $(document).ready(function(){

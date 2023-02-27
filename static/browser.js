@@ -8,12 +8,14 @@ $(document).ready(async function () {
 
 $('#sidebarCollapse').on('click', function () {
     console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
+    let tooltip = $(this).parent().attr('aria-describedby')
+    console.log(tooltip,  $(this).parent())
+    $(this).parent().removeAttr('aria-describedby')
+    $(`#${tooltip}`).remove()
     if ($(this).attr('aria-expanded') == "false") {
-        document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
         $('#sidebar-container').removeClass('col-12 col-md-2')
         $('#main').removeClass('col-md-10')
     } else {
-        document.getElementById("sidebarCollapseLogo").style.transform = ""
         $('#sidebar-container').addClass('col-12 col-md-2')
         $('#main').addClass('col-md-10')
     }

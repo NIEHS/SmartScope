@@ -2,10 +2,10 @@
 {% load static %}
 <div class="card holeCard mapCard" targets="{{instance.targets_prefix}}">
     <div class="card-header">
-        <div class="d-flex p-0 align-items-center justify-content-between">
+        <div class="d-flex flex-row p-0 align-items-center justify-content-between">
             <h3 class="d-inline my-0">{{instance.alias_name}}</h3>
 
-            <div class="div col-4 p-0 justify-content-center d-none d-md-flex">
+            <div class="p-0 justify-content-center d-none d-md-flex">
                 <div>
                     <button id='' class='a btn btn-outline-secondary showLegend' type="button" value='1'
                         data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle legend">
@@ -103,7 +103,7 @@
                             BIS</button>
                     </div>
                 </li>
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown" data-bs-toggle="tooltip" title="Hold Shift+click to start adding new targets on the image">
                     <a class="nav-link dropdown-toggle disabled" href="#" id="addTargetsBtn" role="button"
                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">New targets</a>
                     <div class="dropdown-menu">

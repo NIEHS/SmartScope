@@ -109,7 +109,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                                 logger.debug(f'{grid} exists')
                             logger.debug(f'Setting protocol {protocol} for {grid}')
                             get_or_set_protocol(grid,protocol)
-                            if params.multishot_per_holet:
+                            if params.multishot_per_hole:
                                 save_multishot_from_cache(multishot_per_hole_id, grid.directory)
 
                 return redirect(f'../session/{session.session_id}')
