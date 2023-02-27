@@ -2,7 +2,7 @@ name: Regular pattern
 method: regular_pattern
 module: Smartscope.lib.Finders.basic_finders
 kwargs: 
-    spacing_in_um: 5
+    spacing_in_um: 4
 targetClass:
     - Finder
 description: |

@@ -57,8 +57,9 @@ def display_multishot_matplotlib(shots, hole_size,beam_size_um,detector_size_um)
     fig, ax = plt.subplots( nrows=1, ncols=1 )  # create figure & 1 axis
     hole = Circle([0,0],hole_size/2,fill=False, edgecolor='black',label='Hole')
     ax.add_patch(hole)
-    ax.set_xlim([-1,1])
-    ax.set_ylim([-1,1])
+    limit = hole_size * 1.5 / 2
+    ax.set_xlim([-limit,limit])
+    ax.set_ylim([-limit,limit])
     ax.set_aspect('equal')
     for shot in shots:
         ax.add_patch(Circle(shot,beam_size_um/2,fill=False,color='red',label='Beam'))

@@ -129,7 +129,10 @@
 body{
   max-width:100%;
   font-family: sans-serif;
+  height: 100vh;
+  overflow-y: hidden;
 }
+
 
 #loadingMessagesContainer {
   position: fixed;

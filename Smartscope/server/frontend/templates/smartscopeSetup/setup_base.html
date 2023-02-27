@@ -1,10 +1,8 @@
 {% extends "base.html" %}
+{% block title %}{% block subtitle %}{% endblock %}{% endblock %}
 {% block content %}
-<title>Session setup</title>
-<div id="body-row" class='row'>
-    <div id='main' class="col" style="background-color: #f5f5f5;">
+<!-- <title>Session setup</title> -->
+    <div id='main' class="col px-2" style="background-color: #f5f5f5; overflow-y: scroll;">
         {% block main %} {% endblock main %}
     </div>
-    <div id="multishotMenu" class=""></div>
-</div>
 {% endblock content %}

@@ -1,0 +1,19 @@
+
+<div class='{% if row %}row{% endif %} align-items-center'>
+    {% for field in form %}
+    <div class="{% if row %}col-3{% endif %} my-1">
+        <div class="input-group">
+            <span class="input-group-text" id="{{field.label}}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{field.help_text}}">{{field.label}}</span>
+            {{field}}
+        </div>
+    </div>
+    {% endfor %}
+    {% if includeSubmitButton %}
+    <div class="{% if row %}col-3{% endif %} my-1">
+        <input class="btn btn-sm btn-outline-primary" type="submit" value="Save">
+    </div>
+    {% endif %}
+</div>
+<script>
+    $('[data-bs-toggle="tooltip"]').tooltip();   
+</script>

@@ -48,7 +48,7 @@ class AutoloaderGridForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['position'].widget.attrs.update({
-            'class': 'form-control col-8',
+            'class': 'form-control',
             'min': 0,
             'max': 12
         })
@@ -57,7 +57,7 @@ class AutoloaderGridForm(forms.ModelForm):
             # visible.label = ''
             visible.field.required = False
 
-        self.fields['name'].widget.attrs.update({'class': 'form-control col-10 p-0',
+        self.fields['name'].widget.attrs.update({'class': 'form-control',
                                                 'placeholder': self.fields['name'].label, 'aria-label': "...",
                                                  "pattern": "^[a-zA-Z0-9-_]+$"})
         self.fields['name'].label = ''
@@ -79,6 +79,8 @@ class AutoloaderGridReportForm(forms.ModelForm):
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
 
+class MyCheckBox(forms.CheckboxInput):
+    template_name = 'general/mycheckbox.html'
 
 class GridCollectionParamsForm(forms.ModelForm):
     class Meta:
@@ -142,13 +144,18 @@ class GridCollectionParamsForm(forms.ModelForm):
             "min": -1,
             "step": 0.05
         })
-        self.fields['multishot_per_hole'].widget.attrs.update({
+        self.fields['multishot_per_hole'].widget = MyCheckBox(attrs={
             'hx-get':reverse('setMultishot'),
-            'hx-target':"#multishotMenu",
-            'hx-swap':"outerHTML",
+            'hx-target':"#main",
+            'hx-swap':"beforeend",
         })
         for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
+            if isinstance(visible.field.widget, forms.CheckboxInput ):
+                if not isinstance(visible.field.widget, MyCheckBox ):
+                    visible.field.widget = MyCheckBox()
+                visible.field.widget.attrs['class'] = 'form-check-input'
+            else:    
+                visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
 
         for field, data in read_config().items():

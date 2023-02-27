@@ -1,7 +1,7 @@
 {% load rest_framework %}
 {% load static %}
 <div id='report' class="container-fluid m-0 p-0">
-    <div class="row align-items-center justify-content-between mx-0 px-0">
+    <div class="d-flex align-items-center justify-content-between mx-0 px-0">
         <h1 class="col-auto title m-0 p-0"><span class='d-none d-md-inline'>
                 {% if grid.collection_mode == "screening" %}Screening{% else %}Data Collection{% endif %}:
             </span><span>{{grid.position}} {{grid.name}}</span>
@@ -11,27 +11,13 @@
             <span class=''><b>Microscope:</b> <i id="microscope">{{grid.session_id.microscope_id}}</i></span>
             <div class="w-100 d-none d-md-block"></div>
             <span class=''><b>Detector:</b> <i id="detector">{{grid.session_id.detector_id}}</i></span>
-            <!-- <div class="w-100 d-none d-md-block"></div> -->
-            <!-- <div class="p-0">
-                <span class=''><b> Status:</b> <span id="gridStatus">loading...</span>
-                    <button id="stop-button" class="btn btn-xs btn-outline-danger" type="button" value="aborting"
-                        onclick="changeGridStatus(this.value)">Stop</button>
-                    {% if request.user.is_staff %}<button id="restart-button" class="btn btn-xs btn-outline-primary"
-                        type="button" value="started" onclick="changeGridStatus(this.value)">Restart</button>{% endif %}
-                </span>
-            </div> -->
-
-
         </div>
         {% if useMicroscope %}
         <a id='runAutoscreen' class="btn btn-outline-primary col-auto" href="{% url 'run_autoscreen' %}{{grid.session_id.session_id}}"
             target="_blank">View
             Session Controls</a>
         {% endif %}        
-        <!-- <button id="goToSeleMenu" class="btn btn-outline-primary col-auto" type="button" onclick="openGoTo(this)">Go
-            To</button> -->
         <div class="">
-
             <span class=''><b>Last update:</b> <i id="gridLastUpdate">loading...</i></span>
             <div class="w-100 d-none d-md-block"></div>
             <div class="p-0">
@@ -42,42 +28,42 @@
                         type="button" value="started" onclick="changeGridStatus(this.value)">Restart</button>{% endif %}
                 </span>
             </div>
-
-
         </div>
 
-        <div class="row align-items-center justify-content-end">
-            <h3 class="title m-0">Quality:</h3>
+        <div class="col-auto align-items-center justify-content-end">
+            <span class="title m-0"><b>Quality:</b></span>
             <button id="goodGrid" class="btn btn-outline-success h-50 {% if grid.quality == 'good' %}active{% endif %}"
                 onclick='rateGrid(this)' value='good'>Good</button>
             <button id="badGrid" class="btn btn-outline-danger h-50 {% if grid.quality == 'bad' %}active{% endif %}"
                 onclick='rateGrid(this)' value='bad'>Bad</button>
         </div>
     </div>
-    <div class='row'>
-        <form id='editNotesForm' class='col-12 col-md-8 row align-items-center m-0' action='#'>
-            <div class='col-2 col-md-auto px-0'><b>Notes:</b>
+    <div class="d-flex flex-row align-items-center justify-content-between mx-0 px-0">
+        <form id='editNotesForm' class='row col-12 col-md-8 align-items-center m-0' action='#'>
+            <div class="col-10">
+                <div class="input-group">
+                    <span class='input-group-text'>Notes</span>
+                    <textarea class="form-control" type="text" id="notes" name="notes"
+                        rows="1">{{grid.notes}}</textarea>
+                </div>
             </div>
-            <textarea class="form-control col-8 col-md-9 pl-0" type="text" id="notes" name="notes"
-                rows="1">{{grid.notes}}</textarea>
-            <input id="editNotesSubmit" class="btn-sm btn-outline-primary col-2 col-md-auto" type="submit" value="Save">
+            <input id="editNotesSubmit" class="btn btn-sm btn-outline-primary col-2 col-md-auto" type="submit" value="Save">
+
         </form>
-        <div class='col-12 col-md-4 row align-items-center justify-content-center'>
-            <button id='gridStatsBtn' class="btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
-                data-toggle="collapse" data-target="#collapseGridStats" aria-expanded="false"
+        <div class='d-flex flex-row col-12 col-md-4 align-items-center justify-content-center'>
+            <button id='gridStatsBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapseGridStats" aria-expanded="false"
                 aria-controls="collapseExample">
                 Show stats
             </button>
 
-
-
-            <button id='gridParamBtn' class="btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
-                data-toggle="collapse" data-target="#collapseGridParams" aria-expanded="false"
+            <button id='gridParamBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapseGridParams" aria-expanded="false"
                 aria-controls="collapseExample">
                 + grid details
             </button>
-            <button id='legendsBtn' class="btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
-                data-toggle="collapse" data-target="#legends" aria-expanded="false" aria-controls="collapseExample">
+            <button id='legendsBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
+                data-bs-toggle="collapse" data-bs-target="#legends" aria-expanded="false" aria-controls="collapseExample">
                 Show legend
             </button>
         </div>
@@ -107,33 +93,25 @@
 </div>
 <div id="collapseGridParams" class="collapse">
     <form id='editGridForm' action='#'>
-        <div class='row align-items-center'>
+        {% include 'forms/formFieldsBase.html' with form=gridform row=True includeSubmitButton=True %}
+        <!-- <div class='d-flex flex-row align-items-center'>
             {% for field in gridform %}
             <div class='col-auto pr-0'><b>{{field.label}}:</b></div>
             <div class='col-2 pl-0'>{{field}}</div>
-
             {% endfor %}
             <input id="editGridSubmit" class="btn-sm btn-outline-primary" type="submit" value="Save">
-        </div>
+        </div> -->
     </form>
     <hr>
-    <form id='editCollectionForm' action='#'>
-        <div class='row align-items-center'>
-            {% for field in gridCollectionParamsForm %}
-            <div class='row col-3'>
-                <div class='col-8 pr-0'><b>{{field.label}}:</b></div>
-                <div class='col-4 pl-0'>{{field}}</div>
-            </div>
-            {% endfor %}
-            <input id="editCollectionSubmit" class="btn-sm btn-outline-primary" type="submit" value="Save">
-        </div>
+    <form id='editCollectionParamsForm' action='#'>
+        {% include 'forms/formFieldsBase.html' with form=gridCollectionParamsForm row=True includeSubmitButton=True %}
     </form>
     <hr>
 </div>
 
-<div id='legends' class="row collapse">
+<div id='legends' class="collapse">
     <div class='col-12'>
-        <div class='row align-items-center'>
+        <div class='d-flex flex-row align-items-center'>
             <b>General Toggle:</b>
             <button class='btn btn-sm btn-outline-primary active' onclick='hideSVG(this)' value='Numbers'>
                 Numbers</button>
@@ -162,7 +140,7 @@
 </div>
 
 <div>
-    <div class="row">
+    <div class="d-flex flex-row">
         <div id="Atlas_div" class="col-12 px-1 py-0 col-xl-4 justify-content-center text-center">
             <div class="card holeCard mapCard">
                 <div class="card-header">
@@ -217,11 +195,11 @@
 
 <hr>
 
-<div id="Hole_div" class="row justify-content-center">
+<div id="Hole_div" class="d-flex justify-content-center">
     <!-- <h3 id=holeNum class="col-12 justify-content-center text-center"> Hole</h3> -->
 
     <div id="Hole_container" class="cardGroup col-11">
-        <div id="Hole" class="row row col-12 p-0">
+        <div id="Hole" class="row col-12 p-0">
             <!-- <img src="{% static 'images/holeholder.png' %}"> -->
         </div>
     </div>

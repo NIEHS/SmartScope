@@ -1,10 +1,11 @@
 {% extends "smartscopeSetup/setup_base.html" %}
+{% block subtitle %}Session control{% endblock %}
 {% block main %}
 {% csrf_token %}
 
-<div class="row align-items-center justify-content-between">
+<div class="d-flex flex-row align-items-center justify-content-between">
     <h1 class="col-auto">Run {{session}}</h1>
-    <a class='btn btn-outline-primary' href="{% url 'browser' %}?session_id={{session.session_id}}">Go to session
+    <a class='btn btn-outline-primary' href="{% url 'browser' %}?group={{session.group.pk}}&session_id={{session.session_id}}">Go to session
         browser</a>
     <p id="disk" class="col-auto align-middle"> Loading...</p>
 </div>

@@ -23,9 +23,9 @@ $("input[name$='-name']").on('change', function () {
     $(this).parents().eq(4).find('select').removeAttr('required')
 });
 
-$("img[id$='_help']").tooltip();
+// $("img[id$='_help']").tooltip();
 
-$("#main").find(".hasTooltip").tooltip();
+// $("#main").find(".hasTooltip").tooltip();
 
 
 function isNumber(n) {

@@ -286,7 +286,7 @@ class ScreeningSession(BaseModel):
     session = models.CharField(max_length=30)
     group = models.ForeignKey(Group, null=True, on_delete=models.SET_NULL, to_field='name')
     date = models.CharField(max_length=8)
-    version = models.CharField(max_length=8, editable=False)
+    version = models.CharField(max_length=20, editable=False)
     microscope_id = models.ForeignKey(Microscope, null=True, on_delete=models.SET_NULL, to_field='microscope_id')
     detector_id = models.ForeignKey(Detector, null=True, on_delete=models.SET_NULL)
     working_dir = models.CharField(max_length=300, editable=False)
