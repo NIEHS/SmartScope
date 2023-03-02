@@ -12,6 +12,7 @@ urlpatterns = [
     path('browse/', views.AutoScreenViewer.as_view(), name='browser'),
     path('evaluatemicrographs/', views.EvaluateMicrographs.as_view(), name='evaluatemicrographs'),
     path('multishot/', views.MultiShotView.as_view(),name='setMultishot'),
+    path('protocol/<grid_id>',views.ProtocolView.as_view(), name='protocol'),
 
 ]
 if settings.USE_MICROSCOPE:

@@ -189,3 +189,18 @@ class SetMultiShotForm(forms.Form):
         super().__init__(*args, **kwargs)
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'   
+
+
+class SelectProtocolForm(forms.Form):
+    protocol = forms.ChoiceField(choices=[(protocol,protocol) for protocol in PROTOCOLS_FACTORY.keys()],
+                                 label="Protocol",
+                                 help_text='Select a different protocol. The session will need to be restarted to take effect')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['protocol'].widget.attrs.update({
+            'class': 'form-control'
+            # 'hx-get':reverse('setMultishot'),
+            # 'hx-target':"#main",
+            # 'hx-swap':"beforeend",
+        })            

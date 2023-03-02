@@ -56,6 +56,12 @@
                 aria-controls="collapseExample">
                 Show stats
             </button>
+            <button id='gridProtocolBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
+                hx-get="{% url 'protocol' grid_id=grid.grid_id %}",
+                hx-target="#main",
+                hx-swap="beforeend",>
+                Show protocol
+            </button>
 
             <button id='gridParamBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
                 data-bs-toggle="collapse" data-bs-target="#collapseGridParams" aria-expanded="false"

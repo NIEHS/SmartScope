@@ -20,6 +20,7 @@ from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.file_manipulations import create_grid_directories
 from Smartscope.lib.multishot import RecordParams,set_shots_per_hole
 from Smartscope.core.cache import save_multishot_from_cache
+from Smartscope.core.protocols import load_protocol, set_protocol
 
 logger =logging.getLogger(__name__)
 
@@ -319,3 +320,36 @@ class MultiShotView(TemplateView):
         except Exception as err:
             logger.exception(err)
             return HttpResponse(f"<div>{err}</div>")
+        
+class ProtocolView(TemplateView):
+    template_name = "autoscreenViewer/protocol.html"
+
+    def get_context_data(self, grid_id, **kwargs):
+        context = super().get_context_data(**kwargs)
+        grid= AutoloaderGrid.objects.get(pk=grid_id)
+        protocol = load_protocol(file=grid.protocol)
+        context['grid'] = grid
+        context['protocol'] = protocol
+        context['protocolDetails'] = yaml.dump(context['protocol'].dict())
+        context['form'] = SelectProtocolForm(dict(protocol=protocol.name))
+        return context
+    
+    def get(self,request, grid_id, *args, **kwargs):
+        context = self.get_context_data(grid_id, **kwargs)
+        return render(request,self.template_name, context)    
+    
+    def post(self, request, grid_id, *args, **kwargs):
+        context = self.get_context_data(grid_id, **kwargs)
+        try:
+            form = SelectProtocolForm(request.POST)
+            if form.is_valid(): 
+                logger.debug(form.cleaned_data)
+                data=form.cleaned_data
+                protocol = set_protocol(data['protocol'],context['grid'].protocol)
+                context = self.get_context_data(grid_id, **kwargs)
+                context['success'] = True
+                return render(request,self.template_name, context) 
+            return HttpResponse("<div>INVALID!</div>")
+        except Exception as err:
+            logger.exception(err)
+            return HttpResponse(f"<div>{err}</div>")  
