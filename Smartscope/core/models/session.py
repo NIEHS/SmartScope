@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import logging
-from django.db import connection, models, reset_queries
+from django.db import models
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -177,7 +177,23 @@ class Microscope(BaseModel):
 
     @ property
     def lockFile(self):
-        return f'{self.microscope_id}.lock'
+        return Path(settings.TEMPDIR,f'{self.microscope_id}.lock')
+    
+    @property
+    def isLocked(self):
+        if self.lockFile.exists():
+            return True
+        return False
+    
+    @property
+    def isPaused(self):
+        return Path(settings.TEMPDIR, f'paused_{self.microscope_id}').exists()
+    
+    @property
+    def currentSession(self):
+        if self.isLocked:
+            return ScreeningSession.objects.get(pk=self.lockFile.read_text())
+        return None
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -327,23 +343,20 @@ class ScreeningSession(BaseModel):
     @ property
     def stop_file(self):
         return os.path.join(os.getenv('TEMPDIR'), f'{self.session_id}.stop')
+    
+    @ property
+    def progress(self):
+        statuses= self.autoloadergrid_set.all().values_list('status', flat=True)
+        completed = list(filter(lambda x: x == 'complete',statuses))
+        return len(completed), len(statuses), int(len(completed)/len(statuses)*100)
+
+    @property
+    def currentGrid(self):
+        return self.autoloadergrid_set.all().order_by('position').exclude(status='complete').first()
 
     @ property
     def storage(self):
         return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
-
-    @ property
-    def scopeLockFile(self):
-        return self.microscope_id.lockFile
-
-    @ property
-    def isScopeLocked(self):
-        lockFile = os.path.join(settings.TEMPDIR, self.scopeLockFile)
-        if os.path.isfile(lockFile):
-            with open(lockFile, 'r') as lock:
-                session_id = lock.read()
-            return lockFile, session_id
-        return lockFile, None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

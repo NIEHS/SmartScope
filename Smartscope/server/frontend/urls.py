@@ -13,6 +13,7 @@ urlpatterns = [
     path('evaluatemicrographs/', views.EvaluateMicrographs.as_view(), name='evaluatemicrographs'),
     path('multishot/', views.MultiShotView.as_view(),name='setMultishot'),
     path('protocol/<grid_id>',views.ProtocolView.as_view(), name='protocol'),
+    path('microscopes/status/', views.MicroscopeStatus.as_view(), name='microscopeStatus'),
 
 ]
 if settings.USE_MICROSCOPE:

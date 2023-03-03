@@ -353,3 +353,16 @@ class ProtocolView(TemplateView):
         except Exception as err:
             logger.exception(err)
             return HttpResponse(f"<div>{err}</div>")  
+        
+class MicroscopeStatus(TemplateView):
+    template_name= "autoscreenViewer/microscopes_status.html"
+
+    def get_context_data(self,*args, **kwargs):
+        context = super().get_context_data(**kwargs)
+        microscopes = Microscope.objects.all()
+        context['microscopes'] = microscopes
+        return context
+    
+    def get(self,request, *args, **kwargs):
+        context = self.get_context_data(*args, **kwargs)
+        return render(request,self.template_name, context)    
