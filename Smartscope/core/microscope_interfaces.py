@@ -130,6 +130,10 @@ class SerialemInterface(MicroscopeInterface):
         sem.ImageShiftByPixels(coord[0], coord[1])
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
+    
+    def setFocusPosition(self, distance, angle):
+        sem.SetAxisPosition('F', distance, angle)
+        self.focus_position_set = True
 
     def moveStage(self,stage_x,stage_y,stage_z):
         sem.SetImageShift(0, 0)
@@ -353,6 +357,10 @@ class FakeScopeInterface(MicroscopeInterface):
     
     def report_stage(self):
         return super().report_stage()
+    
+    def setFocusPosition(self, distance, angle):
+        # sem.SetAxisPosition('F', distance, angle)
+        self.focus_position_set = True
     
     def buffer_to_numpy(self):
         file = select_random_fake_file('lowmagHole')

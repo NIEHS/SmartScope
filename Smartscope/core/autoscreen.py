@@ -371,7 +371,7 @@ def autoscreen(session_id):
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'
     finally:
-        os.remove(lockFile)
+        os.remove(microscope.lockFile)
         update(process, status=status)
         logger.debug('Wrapping up')
         processing_queue.put('exit')

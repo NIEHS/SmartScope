@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+from typing import Callable
 from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
 from scipy.spatial import KDTree
 from scipy.signal import correlate2d
@@ -108,8 +109,8 @@ def PCA_rotation(points, *args):
     angle = np.arctan2(eigenvectors[principal_component_index, 1], eigenvectors[principal_component_index, 0])
     return np.degrees(angle)
 
-def get_mesh_rotation(grid_id:str, level=hole_mesh, algo=PCA_rotation):
-    grid = AutoloaderGrid.objects.get(pk=grid_id)
+def get_mesh_rotation(grid:AutoloaderGrid, level:Callable=hole_mesh, algo:Callable=PCA_rotation):
+    # grid = AutoloaderGrid.objects.get(pk=grid_id)
     targets, mesh_spacing = level(grid)
     stage_coords = np.array([t.coords for t in targets])
     # stage_coords -= stage_coords[0]
