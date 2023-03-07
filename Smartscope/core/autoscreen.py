@@ -282,7 +282,8 @@ def process_hole_image(hole, grid, microscope_id):
         logger.debug(f'Acquisition parameters: {params.params_id}')
         mutlishot_file = Path(grid.directory,'multishot.json')
         multishot = load_multishot_from_file(mutlishot_file)
-        logger.info(f'Multishot enabled: {params.multishot_per_hole}, Shots: {multishot.shots}, File: {mutlishot_file}')
+        if multishot is not None:
+            logger.info(f'Multishot enabled: {params.multishot_per_hole}, Shots: {multishot.shots}, File: {mutlishot_file}')
         montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
         export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
         timer.report_timer('Getting and processing montage')
