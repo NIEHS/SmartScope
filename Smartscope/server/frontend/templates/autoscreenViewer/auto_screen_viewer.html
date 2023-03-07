@@ -2,10 +2,6 @@
 {% load static %}
 {% block title %}Smartscope Browser{% endblock %}
 {% block content %}
-
-
-
-
     <div id="sideNav" class="d-flex flex-column p-0 justify-content-between">
         <ul class="list-group px-0">
             <li class="list-group-item p-1" data-bs-toggle="tooltip" title="Toggle nagivation menu">
@@ -13,6 +9,14 @@
                     class="btn btn-sm btn-outline-light"
                     data-bs-toggle="collapse" data-bs-target="#sidebarNav" aria-expanded="true">
                     <i class="bi bi-list-nested" ></i>
+                </button>
+            </li>
+            <li class="list-group-item p-1" data-bs-toggle="tooltip" title="View microscope(s) status and current sessions">
+                <button id="microscopeActivity"
+                    class="btn btn-sm btn-outline-light"
+                    hx-get="{% url 'microscopeStatus' %}"
+                    hx-target="#main">
+                    <i class="bi bi-activity"></i>
                 </button>
             </li>
         </ul>
@@ -60,9 +64,6 @@
             style="background-color: #f5f5f5; overflow-y: scroll;"></div>
     </div>
     
-
-
-    </div>
 {% endblock content %}
 
 {% block script %}

@@ -1,0 +1,37 @@
+<div id="modal" class="modal fade" tabindex="-1" data-bs-backdrop="false" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">{{title}}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="$('#modal').remove()"></button>
+        </div>
+        <div class="modal-body">
+          <p>{{message}}</p>
+        </div>
+        <!-- <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div> -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    htmx.on("htmx:afterSwap", (e) => {
+        $("#modal").detach().appendTo("body");
+        $('#modal').modal('show');
+    })
+        // let modal = new bootstrap.Modal(document.getElementById("modal"))
+        // modal.show()})
+  </script>
+
+  <style>
+    /* .modal-backdrop {
+        z-index: 1031 !important;
+    } */
+
+    .modal {
+        z-index: 2000 !important;
+        top: 20vh
+    }
+  </style>

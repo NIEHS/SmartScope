@@ -89,7 +89,23 @@ def highMag(scope, params,instance):
     instance.is_y=isY
     instance.offset=offset
     instance.frames=frames
-    return instance    
+    return instance
+
+def setFocusPosition(scope,params,instance):
+    """Caculates the rotation and shift of the focus position
+
+    Will calculates the rotation from the identified holes.
+    The distance is calculared from the input grid type.
+    """
+    from Smartscope.core.mesh_rotation import get_mesh_rotation
+    if scope.focus_position_set:
+        logger.info(f'Focus position was already set')
+        return
+    angle = - get_mesh_rotation(instance.grid_id) +45
+    pitch = instance.grid_id.holeType.pitch
+    distance = np.round(np.sqrt(pitch**2*2)/2,2)
+    logger.info(f'Setting focus position at {distance} um offset and {angle} degrees rotation')
+    scope.setFocusPosition(distance, angle)
 
 
 protocolCommandsFactory = dict(
@@ -105,4 +121,5 @@ protocolCommandsFactory = dict(
     alignToHoleRef=alignToHoleRef,
     loadHoleRef=loadHoleRef,
     highMag=highMag,
+    setFocusPosition=setFocusPosition,
 )

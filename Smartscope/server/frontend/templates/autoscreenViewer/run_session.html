@@ -5,25 +5,25 @@
 
 <div class="d-flex flex-row align-items-center justify-content-between">
     <h1 class="col-auto">Run {{session}}</h1>
-    <a class='btn btn-outline-primary' href="{% url 'browser' %}?group={{session.group.pk}}&session_id={{session.session_id}}">Go to session
+    <a class='btn btn-outline-primary' href="{% url 'browser' %}?group={{session.group.pk}}&session_id={{session.pk}}&grid_id={{session.currentGrid.pk}}">Go to session
         browser</a>
     <p id="disk" class="col-auto align-middle"> Loading...</p>
 </div>
-{% if session.isScopeLocked.1 is not None %}
-<div class="row align-items-center justify-content-center">
-    {% if session.isScopeLocked.1 != session.session_id%}
-    <div class='alert-warning p-2 m-2'>Microscope {{session.microscope_id}} is currently busy: <a
-            href="{% url 'run_session' session.isScopeLocked.1 %}">View
+{% if session.microscope_id.isLocked %}
+<div class="d-flex align-items-center justify-content-center">
+    {% if session.microscope_id.currentSession.pk != session.session_id%}
+    <div class='alert alert-warning p-2 m-2' role="alert">Microscope {{session.microscope_id}} is currently busy: <a
+            class="alert-link" href="{% url 'run_session' session.microscope_id.currentSession.pk %}">View
             current session</a></div>
     {% else %}
-    <div class='alert-warning p-2 m-2'>Microscope {{session.microscope_id}} is currently busy running this session.
+    <div class='alert alert-warning p-2 m-2' role="alert">Microscope {{session.microscope_id}} is currently busy running this session.
     </div>
     {% endif %}
 </div>
 {% endif %}
 
-<div id='stopSignal' class="row align-items-center justify-content-center d-none">
-    <div class='alert-info p-2 m-2'>Stop signal was received, Session will stop after the current acquisition. This may
+<div id='stopSignal' class="d-flex align-items-center justify-content-center d-none">
+    <div class='alert alert-info p-2 m-2' role="alert">Stop signal was received, Session will stop after the current acquisition. This may
         take a few minutes. </div>
 </div>
 {% if process is not None%}

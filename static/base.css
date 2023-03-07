@@ -140,3 +140,13 @@ body{
   bottom: 0;
   z-index: 1030;
 }
+
+.my-indicator{
+  display:none;
+}
+.htmx-request .my-indicator{
+  display:inline-block;
+}
+.htmx-request.my-indicator{
+  display:inline-block;
+}

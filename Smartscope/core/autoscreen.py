@@ -326,16 +326,16 @@ def write_sessionLock(session, lockFile):
 def autoscreen(session_id):
     session = ScreeningSession.objects.get(session_id=session_id)
     microscope = session.microscope_id
-    lockFile, sessionLock = session.isScopeLocked
+    # lockFile, sessionLock = session.isScopeLocked
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
     is_stop_file(session.session_id)
-    if sessionLock is not None:
+    if microscope.isLocked:
         logger.warning(
-            f'\nThe requested microscope is busy.\n\tLock file {lockFile} found\n\tSession id: {sessionLock} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
+            f'\nThe requested microscope is busy.\n\tLock file {microscope.lockFile} found\n\tSession id: {sessionLock} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
         sys.exit(0)
-    else:
-        write_sessionLock(session, lockFile)
+
+    write_sessionLock(session, microscope.lockFile)
     process = create_process(session)
     try:
         grids = list(session.autoloadergrid_set.all().order_by('position'))
@@ -371,7 +371,7 @@ def autoscreen(session_id):
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'
     finally:
-        os.remove(lockFile)
+        os.remove(microscope.lockFile)
         update(process, status=status)
         logger.debug('Wrapping up')
         processing_queue.put('exit')

@@ -56,6 +56,12 @@
                 aria-controls="collapseExample">
                 Show stats
             </button>
+            <button id='gridProtocolBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
+                hx-get="{% url 'protocol' grid_id=grid.grid_id %}",
+                hx-target="#main",
+                hx-swap="beforeend",>
+                Show protocol
+            </button>
 
             <button id='gridParamBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
                 data-bs-toggle="collapse" data-bs-target="#collapseGridParams" aria-expanded="false"
@@ -152,7 +158,7 @@
 
 
                 <div class="row h-100 w-100 m-0 p-0 justify-content-center">
-                    <div id="Atlas_im" class="d-flex w-100 mh-100 justify-content-center">
+                    <div id="Atlas_im" class="d-flex w-100 m-100 justify-content-center">
                         <img src="{% static 'images/loading.png' %}" class="w-100">
                     </div>
                 </div>
@@ -168,7 +174,7 @@
                 </div>
 
                 <div class="row h-100 w-100 m-0 p-0 justify-content-center">
-                    <div id="Square_im" class="d-flex w-100 mh-100 justify-content-center">
+                    <div id="Square_im" class="d-flex w-100 h-100 justify-content-center">
                         <img src="{% static 'images/squareholder.png' %}">
                     </div>
                 </div>
@@ -184,7 +190,7 @@
                 </div>
 
                 <div class="row h-100 w-100 m-0 p-0 justify-content-center">
-                    <div id="Hole_im" class="d-flex w-100 mh-100 justify-content-center">
+                    <div id="Hole_im" class="d-flex w-100 m-100 justify-content-center">
                         <img src="{% static 'images/holeholder.png' %}">
                     </div>
                 </div>

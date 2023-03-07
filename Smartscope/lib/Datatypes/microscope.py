@@ -67,6 +67,7 @@ class MicroscopeInterface(ABC):
     state: MicroscopeState = MicroscopeState()
     has_hole_ref: bool = False
     hole_crop_size: int = 0
+    focus_position_set = False
 
     def __enter__(self):
         self.connect()
@@ -181,6 +182,10 @@ class MicroscopeInterface(ABC):
 
     @abstractmethod
     def connect(self, directory: str):
+        pass
+
+    @abstractmethod
+    def setFocusPosition(self, distance, angle):
         pass
 
     @abstractmethod
