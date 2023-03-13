@@ -1,6 +1,5 @@
 from pathlib import PureWindowsPath
 from typing import Callable, Tuple
-from Smartscope.lib.Datatypes.microscope import MicroscopeInterface, CartridgeLoadingError
 import serialem as sem
 import mrcfile
 import time
@@ -8,6 +7,7 @@ import logging
 import math
 import os
 import numpy as np
+from Smartscope.lib.Datatypes.microscope import MicroscopeInterface, CartridgeLoadingError
 from Smartscope.lib.Finders.basic_finders import find_square
 from Smartscope.lib.file_manipulations import generate_fake_file, select_random_fake_file
 from Smartscope.lib.image_manipulations import export_as_png
@@ -217,6 +217,11 @@ class SerialemInterface(MicroscopeInterface):
     def loadGrid(self, position):
         if self.microscope.loaderSize > 1:
             slot_status = sem.ReportSlotStatus(position)
+
+            #This was added to support the new 4.1 2023-02-27 version that reports the name of the grid along with the position
+            if isinstance(slot_status,tuple):
+                slot_status = slot_status[0]
+            
             if slot_status == -1:
                 raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
             if slot_status == 1:
@@ -227,7 +232,11 @@ class SerialemInterface(MicroscopeInterface):
                 sem.LoadCartridge(position)
             logger.info(f'Grid {position} is loaded')
             sem.Delay(5)
-            if sem.ReportSlotStatus(position) != 0:
+            slot_status = sem.ReportSlotStatus(position)
+            #This was added to support the new 4.1 2023-02-27 version that reports the name of the grid along with the position
+            if isinstance(slot_status,tuple):
+                slot_status = slot_status[0]
+            if  slot_status != 0:
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
 
