@@ -95,8 +95,9 @@ class MicroscopeInterface(ABC):
             defocusTarget = mindef
         self.state.defocusTarget = defocusTarget
 
-    def clear_hole_ref(self):
+    def reset_state(self):
         self.has_hole_ref = False
+        self.focus_position_set = False
 
     
     @abstractmethod
