@@ -22,6 +22,7 @@ square:
       - Graylevel selector
 mediumMag:
   acquisition:
+    - setFocusPosition
     - tiltToAngle
     - moveStage
     - loadHoleRef
