@@ -29,6 +29,7 @@ class Websocket_update_decorator:
             ws_objs = [objs]
         if self.grid is not None:
             websocket_update(ws_objs, self.grid.grid_id)
+
         return objs
 
 

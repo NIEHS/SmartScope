@@ -1,5 +1,3 @@
-import random
-import string
 from itertools import chain
 from typing import Callable, Union, List
 from django.core.cache import cache
@@ -56,21 +54,6 @@ def cached_model_property(key_prefix,extra_suffix_from_function:Union[List[str],
         return inner
     return outer
             
-
-
-def generate_unique_id(extra_inputs=[], N=30):
-    if len(extra_inputs) != 0:
-        base_id = ''.join(extra_inputs)
-    else:
-        base_id = ''
-    random_id = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(N - len(base_id)))
-    return ''.join([base_id, random_id]).replace('.', '_').replace(' ', '_')
-
-
-# def import_session(file):
-#     pass
-
-
 def model_to_dict(instance, fields=None, exclude=None):
     """
     Return a dict containing the data in ``instance`` suitable for passing as

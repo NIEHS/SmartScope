@@ -24,7 +24,11 @@ docs/build/
 static/docs
 others/*
 external_plugins/*
-.cache/matplotlib/fontlist-v330.json
+.cache
 docker-compose.yml.bak
 .bash_history
+.nv
+.config
+.python_history
 MyDocker/*
+

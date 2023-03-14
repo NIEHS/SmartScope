@@ -112,7 +112,7 @@ $('#main').on('click', '.showLegend', function () {
     $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
 
-$("#main").find(".hasTooltip").tooltip();
+// $("#main").find(".hasTooltip").tooltip();
 
 
 function selectElement(elem, selection) {
@@ -362,10 +362,10 @@ function optionMenu(meta, type = 'holes') {
     popupsele = [meta, type]
 }
 
-function closeOptionMenu() {
-    menu = document.getElementById("popupMenuGoTo")
-    menu.classList.remove('show')
-}
+// function closeOptionMenu() {
+//     menu = document.getElementById("popupMenuGoTo")
+//     menu.classList.remove('show')
+// }
 
 function closePopup(element) {
     console.log(element);
@@ -391,11 +391,11 @@ $('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
         [pair[0]]: pair[1],
     }), {});
     console.log(data)
-    var url = `/api/grids/${fullmeta.grid_id}/`
+    var url = `/api/grids/${currentState.grid_id}/`
     apifetchAsync(url, data, "PATCH", message=`Edit grid notes`)
 });
 
-$('#main').on('submit', '#editCollectionForm', function (e) {
+$('#main').on('submit', '#editCollectionParamsForm', function (e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Array.from(formData.entries()).reduce((memo, pair) => ({
@@ -407,43 +407,43 @@ $('#main').on('submit', '#editCollectionForm', function (e) {
     apifetchAsync(url, data, "PATCH", message=`Changing grid collection parameters`)
 });
 
-$('#main').on('click', '#gridParamBtn', function (e) {
-    target = e.target
-    var expanded = target.getAttribute('aria-expanded')
-    if (expanded == 'false') {
-        target.innerHTML = '- Grid details'
-        target.classList.add('active')
-    } else {
-        target.innerHTML = '+ Grid details'
-        target.classList.remove('active')
-    }
-})
+// $('#main').on('click', '#gridParamBtn', function (e) {
+//     target = e.target
+//     var expanded = target.getAttribute('aria-expanded')
+//     if (expanded == 'false') {
+//         target.innerHTML = '- Grid details'
+//         target.classList.add('active')
+//     } else {
+//         target.innerHTML = '+ Grid details'
+//         target.classList.remove('active')
+//     }
+// })
 
-$('#main').on('click', '#legendsBtn', function (e) {
-    target = e.target
-    var expanded = target.getAttribute('aria-expanded')
-    if (expanded == 'false') {
-        target.innerHTML = 'Hide legend'
-        target.classList.add('active')
-    } else {
-        target.innerHTML = 'Show legend'
-        target.classList.remove('active')
-    }
-})
+// $('#main').on('click', '#legendsBtn', function (e) {
+//     target = e.target
+//     var expanded = target.getAttribute('aria-expanded')
+//     if (expanded == 'false') {
+//         target.innerHTML = 'Hide legend'
+//         target.classList.add('active')
+//     } else {
+//         target.innerHTML = 'Show legend'
+//         target.classList.remove('active')
+//     }
+// })
 
-$('#main').on('click', '#gridStatsBtn', function (e) {
-    target = e.target
-    var expanded = target.getAttribute('aria-expanded')
-    console.log(expanded)
+// $('#main').on('click', '#gridStatsBtn', function (e) {
+//     target = e.target
+//     var expanded = target.getAttribute('aria-expanded')
+//     console.log(expanded)
 
-    if (expanded == 'false') {
-        target.innerHTML = 'Hide Stats'
-        target.classList.add('active')
-    } else {
-        target.innerHTML = 'Show Stats'
-        target.classList.remove('active')
-    }
-})
+//     if (expanded == 'false') {
+//         target.innerHTML = 'Hide Stats'
+//         target.classList.add('active')
+//     } else {
+//         target.innerHTML = 'Show Stats'
+//         target.classList.remove('active')
+//     }
+// })
 
 
 async function popupSele(element) {
@@ -709,22 +709,13 @@ function clickSquare(elem) {
     }
 };
 
-$('#main').on('click', function (event) {
-    if (event.target.id != 'goToSeleMenu' && !$(event.target).closest('#popupMenu').length) {
-        closeOptionMenu()
-    }
-});
+// $('#main').on('click', function (event) {
+//     if (event.target.id != 'goToSeleMenu' && !$(event.target).closest('#popupMenu').length) {
+//         closeOptionMenu()
+//     }
+// });
 
-$('#sidebarCollapse').on('click', function () {
-    console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
-    if ($(this).attr('aria-expanded') == "false") {
-        document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
-        // $('#sidebar-container').removeClass('col-md-2').addClass('col-md-auto')
-    } else {
-        document.getElementById("sidebarCollapseLogo").style.transform = ""
-        // $('#sidebar-container').classList.removeClass('col-md-auto').addClass('col-md-2')
-    }
-})
+
 
 $('#main').on("mouseenter", '#Square_div circle', function () {
     hovered = []

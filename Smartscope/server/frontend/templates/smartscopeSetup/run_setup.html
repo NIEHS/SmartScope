@@ -1,0 +1,81 @@
+{% extends "./setup_base.html" %}
+{% block subtitle %}Session setup{% endblock %}
+{% block main %}
+{% load static %}
+<form class="needs-validation" novalidate method="post" onsubmit="validateForm(event)">
+    {% csrf_token %}
+    <h3>GENERAL</h3>
+
+    {% include "forms/formFieldsBase.html" with form=form_general row=True %}
+    <h3 class="col-auto pr-1 mb-0">COLLECTION PARAMETERS</h3>
+
+    {% include "forms/formFieldsBase.html" with form=form_params row=True %}
+
+    <h3 class="col-auto pr-1 mb-0">AUTOLOADER</h3>
+    <div class="form-group">
+        <input id="autoloaderForm" class="form-control" type="hidden"></input>
+        <div id="autoloaderFormError" class="alert alert-danger collapse">At least one grid is required</div>
+    </div>
+    <div id='autoloader' class="d-flex flex-row">
+        {% for grid in grids %}
+        <div id="grid-{{ forloop.counter }}" class='col-12 col-md-6 col-lg-4 col-xl-3 p-1 topgrid'>
+            <div class="card">
+                <div class="card-header">
+                    <div class=" d-flex flex-row mw-100 align-items-center p-0 m-0 justify-content-between">
+                        <div class="col-8">
+                        {{ grid.name }}
+                        </div>
+                        {% if grid.name.help_text %}
+                        <div class="invalid-tooltip">{{ grid.name.help_text }}</div>
+                        {% endif %}
+                        <div class="div col-1 p-0 justify-content-end">
+                            <img id="copy_help" src="{% static 'images/clipboard.svg' %}" data-bs-toggle="tooltip"
+                                title="Fill from preceding grid card"
+                                onclick="fillFromPreviousWrapper(this)">
+                            <img id="copy_help" src="{% static 'images/x-lg.svg' %}" data-bs-toggle="tooltip"
+                                title="Remove Grid" onclick="removeGrid(this)">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% for field in grid %}
+                    {% if field != grid.name %}
+                    <div class="d-flex flex-row w-100 mb-0">
+                        <label class="col-form-label col-5 mb-0" for="{{field.id}}">{{ field.label }}</label>
+                        
+                        <div class="col-7">{{ field }}</div>
+                        <div class="invalid-tooltip">{{ field.help_text }}</div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div id="addGridDiv" class='col-12 col-md-6 col-lg-4 col-xl-3 p-1'>
+            <div class="card h-100">
+                <div class="card-body justify-content-center align-items-center d-flex">
+                    <button id='addGridbtn' class='col-auto btn btn-outline-secondary h-50 w-50' type="button" data-bs-toggle="tooltip" title="Add additional grid"
+                        value='1'><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                          </svg></button>
+                    <div>
+
+                    </div>
+                </div>
+
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <button class="btn btn-primary" type="submit" value="Submit">Submit</button>
+</form>
+
+
+{% endblock main %}
+
+{% block script %}
+
+
+<script src="{% static 'setup_session.js' %}"></script>
+
+{% endblock script %}

@@ -1,21 +1,28 @@
+import os
+import json
+import subprocess as sub
+import psutil
+from datetime import datetime
+import logging
+
 from django.shortcuts import render
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
-import os
-import json
-from .forms import *
-import subprocess as sub
-import psutil
 from django.utils.timezone import now
-from Smartscope.core.db_manipulations import viewer_only
-from Smartscope.lib.file_manipulations import create_grid_directories
-from Smartscope.core.protocols import get_or_set_protocol
-from datetime import datetime
 
+from .forms import *
+from Smartscope.core.db_manipulations import viewer_only
+from Smartscope.core.protocols import get_or_set_protocol
+from Smartscope.lib.file_manipulations import create_grid_directories
+from Smartscope.lib.multishot import RecordParams,set_shots_per_hole
+from Smartscope.core.cache import save_multishot_from_cache
+from Smartscope.core.protocols import load_protocol, set_protocol
+
+logger =logging.getLogger(__name__)
 
 def signup(request):
     if request.method == 'POST':
@@ -43,7 +50,7 @@ class AutoScreenViewer(LoginRequiredMixin, TemplateView):
     redirect_field_name = 'redirect_to'
 
 class AutoScreenSetup(LoginRequiredMixin, TemplateView):
-    template_name = "autoscreenViewer/run_setup.html"
+    template_name = "smartscopeSetup/run_setup.html"
     login_url = '/login'
     redirect_field_name = 'redirect_to'
 
@@ -82,15 +89,12 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                 if created:
                     logger.debug(f'{session} newly created')
 
-                else:
-                    logger.debug(f'{session} exists')
+                # multishot = form_params.cleaned_data.pop('multishot_per_hole')
+                multishot_per_hole_id = form_params.cleaned_data.pop('multishot_per_hole_id')
                 params, created = GridCollectionParams.objects.get_or_create(**form_params.cleaned_data)
                 if created:
                     logger.debug(f'{params} newly created')
-                else:
-                    logger.debug(f'{params} exists')
 
-                grids = []
                 for i in num_grids:
                     form = AutoloaderGridForm(request.POST, prefix=i)
 
@@ -106,8 +110,9 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                                 logger.debug(f'{grid} exists')
                             logger.debug(f'Setting protocol {protocol} for {grid}')
                             get_or_set_protocol(grid,protocol)
+                            if params.multishot_per_hole:
+                                save_multishot_from_cache(multishot_per_hole_id, grid.directory)
 
-                # session.export(export_all=False)
                 return redirect(f'../session/{session.session_id}')
 
         context = self.get_context_data(form_general=form_general, form_params=form_params)
@@ -268,3 +273,96 @@ class EvaluateMicrographs(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         return render(request, self.template_name, context)
+
+class MultiShotView(TemplateView):
+    template_name = 'smartscopeSetup/multishot/multishot.html'
+    results_template = 'smartscopeSetup/multishot/multishot_results.html'
+    login_url = '/login'
+    redirect_field_name = 'redirect_to'
+
+    def get_context_data(self,**kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = SetMultiShotForm()
+        return context
+    
+    def get(self,request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return render(request,self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            form = SetMultiShotForm(request.POST)
+
+            if form.is_valid(): 
+                logger.debug(form.cleaned_data)
+                data=form.cleaned_data
+                max_shots = data.pop('max_number_of_shots')
+                max_efficiency = data.pop('max_efficiency') / 100
+                params = RecordParams(**data)
+                results = []
+                for n_shots in range(1,max_shots):
+                    shot = set_shots_per_hole(number_of_shots=n_shots+1,
+                                                hole_size=params.hole_size,
+                                                beam_size=params.beam_size_um,
+                                                image_size=params.detector_size_um,
+                                                min_efficiency=max_efficiency)
+                    if shot is None:
+                        continue
+                    shot.set_display(params)
+                    cache.set(shot.cache_id,shot.json(exclude={'cache_id'}),timeout=30*60)
+                    results.append(shot) 
+                logger.debug(results)
+                context={'results':results}
+                      
+                return render(request,template_name=self.results_template,context=context)  
+            
+            return HttpResponse("<div>INVALID!</div>")
+        except Exception as err:
+            logger.exception(err)
+            return HttpResponse(f"<div>{err}</div>")
+        
+class ProtocolView(TemplateView):
+    template_name = "autoscreenViewer/protocol.html"
+
+    def get_context_data(self, grid_id, **kwargs):
+        context = super().get_context_data(**kwargs)
+        grid= AutoloaderGrid.objects.get(pk=grid_id)
+        protocol = load_protocol(file=grid.protocol)
+        context['grid'] = grid
+        context['protocol'] = protocol
+        context['protocolDetails'] = yaml.dump(context['protocol'].dict())
+        context['form'] = SelectProtocolForm(dict(protocol=protocol.name))
+        return context
+    
+    def get(self,request, grid_id, *args, **kwargs):
+        context = self.get_context_data(grid_id, **kwargs)
+        return render(request,self.template_name, context)    
+    
+    def post(self, request, grid_id, *args, **kwargs):
+        context = self.get_context_data(grid_id, **kwargs)
+        try:
+            form = SelectProtocolForm(request.POST)
+            if form.is_valid(): 
+                logger.debug(form.cleaned_data)
+                data=form.cleaned_data
+                protocol = set_protocol(data['protocol'],context['grid'].protocol)
+                context = self.get_context_data(grid_id, **kwargs)
+                context['success'] = True
+                return render(request,self.template_name, context) 
+            return HttpResponse("<div>INVALID!</div>")
+        except Exception as err:
+            logger.exception(err)
+            return HttpResponse(f"<div>{err}</div>")  
+        
+class MicroscopeStatus(TemplateView):
+    template_name= "autoscreenViewer/microscopes_status.html"
+
+    def get_context_data(self,*args, **kwargs):
+        context = super().get_context_data(**kwargs)
+        microscopes = Microscope.objects.all()
+        context['microscopes'] = microscopes
+        return context
+    
+    def get(self,request, *args, **kwargs):
+        context = self.get_context_data(*args, **kwargs)
+        return render(request,self.template_name, context)    

@@ -12,7 +12,7 @@ import torch
 logger = logging.getLogger(__name__)
 
 WEIGHT_DIR = os.path.join(os.getenv("TEMPLATE_FILES"), 'weights')
-IS_CUDA = torch.cuda.is_available()
+IS_CUDA = False if eval(os.getenv('FORCE_CPU')) else torch.cuda.is_available() 
 
 
 def find_squares(montage, **kwargs):

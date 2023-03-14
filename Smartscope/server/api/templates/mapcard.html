@@ -2,49 +2,44 @@
 {% load static %}
 <div class="card holeCard mapCard" targets="{{instance.targets_prefix}}">
     <div class="card-header">
-        <div class="row p-0 align-items-center justify-content-between">
-            <h3 class="d-inline">{{instance.alias_name}}</h3>
+        <div class="d-flex flex-row p-0 align-items-center justify-content-between">
+            <h3 class="d-inline my-0">{{instance.alias_name}}</h3>
 
-            <div class="div col-4 p-0 justify-content-center d-none d-md-flex row">
+            <div class="p-0 justify-content-center d-none d-md-flex">
                 <div>
-                    <button id='' class='a btn btn-outline-secondary showLegend hasTooltip' type="button" value='1'
-                        data-toggle="tooltip" data-placement="top" title="Toggle legend">
+                    <button id='' class='a btn btn-outline-secondary showLegend' type="button" value='1'
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle legend">
                         <i class="bi bi-card-list "></i></button>
                 </div>
                 <div>
                     <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="downloadDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
                             class="bi bi-download"></i></a>
                     <div class="dropdown-menu">
                         <div class="div" id="quality">
                             <h6 class="dropdown-header">Download</h6>
 
-                            <a id='opt-mrc' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                            <a id='opt-mrc' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
                                 title="Download mrc"
                                 href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=mrc">
                                 .mrc
                             </a>
-                            <a id='opt-png' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                            <a id='opt-png' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
                                 title="Download png"
                                 href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=png">
                                 .png
                             </a>
-                            <a id='opt-raw' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
+                            <a id='opt-raw' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
                                 title="Download raw file saved by the scope"
                                 href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=raw">
                                 raw
                             </a>
-                            <!-- <a id='opt-svg' class="dropdown-item hasTooltip" data-toggle="tooltip" data-placement="left"
-                                title="Download png"
-                                href="#" onclick="downloadSVGasPNG()">
-                                png with annotations
-                            </a> -->
                         </div>
                     </div>
                 </div>
                 <div>
                     <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
+                        data-bs-toggle="dropdown" aria-expanded="false"><i
                             class="bi bi-display"></i></a>
 
                     <div class="dropdown-menu">
@@ -53,24 +48,24 @@
 
                             {% for classifier in targets_methods.classifiers %}
                             <button id='opt-classifiers'
-                                class="dropdown-item hasTooltip {% if classifier.name == method %}active{% endif %}"
-                                data-toggle="tooltip" data-placement="left" title="{{classifier.description}}"
+                                class="dropdown-item {% if classifier.name == method %}active{% endif %}"
+                                data-bs-toggle="tooltip" data-bs-placement="left" title="{{classifier.description}}"
                                 onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %} false,'classifiers','{{classifier.name}}')">{{classifier.name}}</button>
                             {% endfor %}
 
                             <h6 class="dropdown-header">Selectors</h6>
                             {% for selector in targets_methods.selectors %}
-                            <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
+                            <button id='opt-classifiers' data-bs-toggle="tooltip" data-bs-placement="left"
                                 title="{{selector.description}}"
-                                class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
+                                class="dropdown-item {% if selector.name == method %}active{% endif %}"
                                 onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'selectors','{{selector.name}}')">{{selector.name}}</button>
                             {% endfor %}
                             {% if instance.targets_prefix == 'hole' %}
                             <h6 class="dropdown-header">Metadata</h6>
                             {% for metadata in targets_methods.metadata %}
-                            <button id='opt-classifiers' data-toggle="tooltip" data-placement="left"
+                            <button id='opt-classifiers' data-bs-toggle="tooltip" data-bs-placement="left"
                                 title="{{metadata.description}}"
-                                class="dropdown-item hasTooltip {% if selector.name == method %}active{% endif %}"
+                                class="dropdown-item {% if selector.name == method %}active{% endif %}"
                                 onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'metadata','{{metadata.name}}')">{{metadata.name}}</button>
                             {% endfor %}
                             {% endif %}
@@ -87,7 +82,7 @@
         </div>
     </div>
     <nav class=" card-header py-0 navbar navbar-expand-xl navbar-light bg-light" role="navigation">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#atlasNavBar">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#atlasNavBar">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-center" id="atlasNavBar">
@@ -96,7 +91,7 @@
 
                     {% if instance.targets_prefix == 'hole' %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-toggle="dropdown"
+                    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-bs-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">All Holes</a>
                     <div id='' class="dropdown-menu">
                         <button class="dropdown-item" onclick='queueSquareTargets(this)' value='addall'>Queue
@@ -108,9 +103,9 @@
                             BIS</button>
                     </div>
                 </li>
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown" data-bs-toggle="tooltip" title="Hold Shift+click to start adding new targets on the image">
                     <a class="nav-link dropdown-toggle disabled" href="#" id="addTargetsBtn" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">New targets</a>
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">New targets</a>
                     <div class="dropdown-menu">
                         <button id='addTargets' class="dropdown-item" onclick="addTargets(this, targetsSelection)"
                             value='addTargets'>Add
@@ -123,7 +118,7 @@
                 {% endif %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle disabled" href="#" id="{{instance.targets_prefix}}SeleMenuBtn"
-                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                        role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                         onclick="optionMenu({{instance.targets_prefix}}Selection, '{{instance.targets_prefix}}s')">
                         Actions</a>
                     <div class="dropdown-menu">
@@ -151,27 +146,27 @@
                     </div>
                 </li>
                 <li class="nav-item d-flex align-items-center">
-                    <a id='{{instance.targets_prefix}}ClearSele' class="nav-link disabled hasTooltip"
+                    <a id='{{instance.targets_prefix}}ClearSele' class="nav-link disabled"
                         onclick="clearSelection({{instance.targets_prefix}}Selection,'{{instance.targets_prefix}}')"
-                        data-toggle="tooltip" data-placement="top" title="Clear Selection"><i
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Clear Selection"><i
                             class="bi bi-x-square"></i></a>
                 </li>
             </ul>
         </div>
     </nav>
 
-    <div class="row h-100 w-100 m-0 p-0 justify-content-center">
-        <div id="{{instance.prefix}}_im" class="d-flex w-100 mh-100 justify-content-center">
+    <div class="d-flex h-100 w-100 m-0 p-0 justify-content-center align-items-center">
+        <div id="{{instance.prefix}}_im" class="d-flex w-100 h-100 justify-content-center">
             {{ svg | safe }}
         </div>
     </div>
 
     <div class="card-footer py-1">
-        <p class="card-text text-left m-0"><small class="text-muted">Completion time:
+        <p class="card-text text-start m-0"><small class="text-muted">Completion time:
                 {{instance.completion_time |date:'Y-m-d, H:i:s'}}</small></p>
     </div>
 </div>
 
 <script>
-    $("#main").find(".hasTooltip").tooltip();
+    $('[data-bs-toggle="tooltip"]').tooltip();   
 </script>
