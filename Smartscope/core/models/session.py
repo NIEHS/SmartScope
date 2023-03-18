@@ -134,7 +134,7 @@ class ExtraPropertyMixin:
 
     @ property
     def png(self):
-        return os.path.join(self.working_dir, 'pngs', f'{self.name}.png')
+        return self.get_full_path(os.path.join(self.working_dir, 'pngs', f'{self.name}.png'))
 
     @ property
     def mrc(self):
@@ -146,7 +146,7 @@ class ExtraPropertyMixin:
 
     @ property
     def ctf_img(self):
-        return os.path.join(self.working_dir, self.name, 'ctf.png')
+        return self.get_full_path(os.path.join(self.working_dir, self.name, 'ctf.png'))
 
 
 class Microscope(BaseModel):
@@ -988,6 +988,8 @@ class HighMagModel(Target, ExtraPropertyMixin):
     
     @property
     def power_spectrum(self):
+        if self.is_aws:
+            return self.ctf_img
         return embed_image(self.ctf_img)
 
 

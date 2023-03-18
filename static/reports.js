@@ -9,10 +9,10 @@ function escapeRegExp(string) {
 async function loadSVG(data, element) {
     console.log(data, element)
     if (data['fullmeta'] !== null) {
-        var targets = data['targets']
-        if ("svg" in data) {
-            element.html(data['svg'])
-        }
+        // var targets = data['targets']
+        // if ("svg" in data) {
+        //     element.html(data['svg'])
+        // }
         updateFullMeta(data['fullmeta'])
         grabCuration()
     }
