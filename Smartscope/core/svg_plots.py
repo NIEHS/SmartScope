@@ -12,22 +12,29 @@ def add_scale_bar(pixelsize, w, h, id_type='atlas'):
     ft_sz = floor(w / 40)
     scalebarGroup = draw.Group(id='scaleBar')
     startpoint = w * 0.98
+    unit = '\u03BCm'
     if pixelsize > 500:
-        text = '100 \u03BCm'
+        value = 100
         lineLenght = 1_000_000 / pixelsize
     elif pixelsize > 100:
-        text = '10 \u03BCm'
+        value = 10
         lineLenght = 100_000 / pixelsize
     elif pixelsize > 3:
-        text = '1 \u03BCm'
+        value = 1
         ft_sz = floor(w / 20)
         lineLenght = 10_000 / pixelsize
     else:
-        text = '100 nm'
+        value = 100
+        unit = 'nm'
         ft_sz = floor(w / 20)
         lineLenght = 1_000 / pixelsize
-    line = draw.Line(startpoint - lineLenght, h * 0.02, startpoint, h * 0.02, stroke='white', stroke_width=ft_sz / 2, id=f'line_{id_type}')
-    text = draw.Text(text, ft_sz, path=line, fill='white', text_anchor='middle', lineOffset=-0.5, id=f'text_{id_type}')
+    final_value = value
+    final_lineLenght = lineLenght
+    while final_lineLenght <= w*0.1:
+        final_value += value
+        final_lineLenght += lineLenght
+    line = draw.Line(startpoint - final_lineLenght, h * 0.02, startpoint, h * 0.02, stroke='white', stroke_width=ft_sz / 2, id=f'line_{id_type}')
+    text = draw.Text(f'{str(final_value)} {unit}', ft_sz, path=line, fill='white', text_anchor='middle', lineOffset=-0.5, id=f'text_{id_type}')
     scalebarGroup.append(line)
     scalebarGroup.append(text)
     return scalebarGroup
