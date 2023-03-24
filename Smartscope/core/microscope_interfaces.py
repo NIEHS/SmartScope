@@ -389,7 +389,11 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def highmag(self, file='', frames=True, earlyReturn=False):
-        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+        if not frames:
+            generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+            return
+        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=os.path.join(self.microscope.scopePath, 'movies'))
+        return frames.split('\\')[-1]
 
     def connect(self):
         logger.info('Connecting to fake scope.')
