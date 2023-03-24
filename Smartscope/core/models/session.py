@@ -237,9 +237,9 @@ class Detector(BaseModel):
     energy_filter = models.BooleanField(default=False)
 
     frames_windows_directory = models.CharField(
-        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command. Should not need change for K2/K3 setups.')
+        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command.')
     frames_directory = models.CharField(max_length=200, default='/mnt/scope/movies/',
-                                        help_text='Location of the frames directory from the smartscope container. Should not need change for K2/K3 detectors.')
+                                        help_text='Location of the frames directory from SmartScope that point to the same location as frames_windows_directory.')
 
     objects = DetectorManager()
 

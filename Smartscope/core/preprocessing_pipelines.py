@@ -109,12 +109,17 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             if not movie.check_metadata():
                 continue
             logger.debug(f'Updating {movie.name}')
-            data = get_CTFFIN4_data(movie.ctf)
-            
+            try:
+                data = get_CTFFIN4_data(movie.ctf)
+            except Exception as err:
+                logger.exception(err)
+                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again on the next cycle.')
+                continue
             data['status'] = 'completed'
-            movie.read_image()
+            movie.read_data()
             data['shape_x'] = movie.shape_x
             data['shape_y'] = movie.shape_y
+            data['pixel_size'] = movie.pixel_size
             logger.debug(f'Updating {movie.name} with Data: {data}')
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
@@ -126,7 +131,10 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             logger.info(f'No items to update, waiting 30 seconds before checking again.')
             return time.sleep(30)
         with transaction.atomic():
-            [obj.save() for obj in self.to_update]
+            for obj in self.to_update:
+                print(obj.shape_x)
+                obj.save()
+            # [obj.save() for obj in self.to_update]
         websocket_update(self.to_update, self.grid.grid_id)
         self.to_update = []
 
