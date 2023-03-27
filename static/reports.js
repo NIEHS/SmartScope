@@ -392,7 +392,7 @@ function deactivateButton(element) {
     }
 }
 
-$('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
+function grabFormData(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Array.from(formData.entries()).reduce((memo, pair) => ({
@@ -400,18 +400,22 @@ $('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
         [pair[0]]: pair[1],
     }), {});
     console.log(data)
+    return data
+}
+
+$('#main').on('keyup', '#editNotesForm', delay(function (e) {
+    $('#editNotesForm').submit();
+}, 500));
+
+
+$('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
+    let data = grabFormData(e)
     var url = `/api/grids/${currentState.grid_id}/`
     apifetchAsync(url, data, "PATCH", message=`Edit grid notes`)
 });
 
 $('#main').on('submit', '#editCollectionParamsForm', function (e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Array.from(formData.entries()).reduce((memo, pair) => ({
-        ...memo,
-        [pair[0]]: pair[1],
-    }), {});
-    console.log(data)
+    let data = grabFormData(e)
     var url = `/api/grids/${currentState.grid_id}/editcollectionparams/`
     apifetchAsync(url, data, "PATCH", message=`Changing grid collection parameters`)
 });
