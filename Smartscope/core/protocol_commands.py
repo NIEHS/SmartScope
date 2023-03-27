@@ -102,15 +102,19 @@ def setFocusPosition(scope,params,instance):
         logger.info(f'Focus position was already set')
         return
     pitch = instance.grid_id.holeType.pitch
-    if params.tilt_angle != 0:
-        distance = pitch/2
-        angle = 0
-        logger.info(f'Titled data collection. Setting focus at {distance} um offset and {angle} degrees rotation')
-        scope.setFocusPosition(distance, angle)
-        return 
-    distance = np.round(np.sqrt(pitch**2*2)/2,2)
-    angle = get_mesh_rotation(instance.grid_id) -45
-    logger.info(f'Setting focus position at {distance} um offset and {angle} degrees rotation')
+    if params.tilt_angle == 0:
+        try:
+            distance = np.round(np.sqrt(pitch**2*2)/2,2)
+            angle = get_mesh_rotation(instance.grid_id) -45
+            logger.info(f'Setting focus position at {distance} um offset and {angle} degrees rotation')
+            scope.setFocusPosition(distance, angle)
+            return
+        except Exception as err:
+            logger.exception(err)
+            logger.info('Could not set focus position at the moment since no holes were withing the specified distance.')
+    distance = pitch/2
+    angle = 0
+    logger.info(f'Setting focus at {distance} um offset and {angle} degrees rotation')
     scope.setFocusPosition(distance, angle)
 
 

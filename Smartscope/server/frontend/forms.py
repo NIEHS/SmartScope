@@ -1,3 +1,4 @@
+from typing import Optional, Dict, Any
 from django import forms
 from Smartscope.core.models import *
 from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG, PROTOCOLS_FACTORY 
@@ -82,6 +83,18 @@ class AutoloaderGridReportForm(forms.ModelForm):
 class MyCheckBox(forms.CheckboxInput):
     template_name = 'general/mycheckbox.html'
 
+class MultishotCheckBox(MyCheckBox):
+    template_name = 'smartscopeSetup/multishot/multishot_form_fied.html'
+
+    def __init__(self, attrs = None, check_test = None, grid_id=None) -> None:
+        self.grid_id = grid_id if grid_id is not None else ''
+        super().__init__(attrs, check_test)
+
+    def get_context(self, name: str, value: Any, attrs: Optional[Any]) -> Dict[str, Any]:
+        context = super().get_context(name, value, attrs)
+        context['grid_id'] = self.grid_id
+        return context
+
 class GridCollectionParamsForm(forms.ModelForm):
     class Meta:
         model = GridCollectionParams
@@ -109,7 +122,7 @@ class GridCollectionParamsForm(forms.ModelForm):
     multishot_per_hole_id = forms.CharField(label='Multishot per hole ID',required=False)
 
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, grid_id=None, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.fields['target_defocus_min'].widget.attrs.update({
@@ -144,11 +157,8 @@ class GridCollectionParamsForm(forms.ModelForm):
             "min": -1,
             "step": 0.05
         })
-        self.fields['multishot_per_hole'].widget = MyCheckBox(attrs={
-            'hx-get':reverse('setMultishot'),
-            'hx-target':"#main",
-            'hx-swap':"beforeend",
-        })
+        self.fields['multishot_per_hole'].widget = MultishotCheckBox(grid_id=grid_id)
+
         for visible in self.visible_fields():
             if isinstance(visible.field.widget, forms.CheckboxInput ):
                 if not isinstance(visible.field.widget, MyCheckBox ):
