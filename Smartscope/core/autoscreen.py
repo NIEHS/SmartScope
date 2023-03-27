@@ -136,7 +136,7 @@ def run_grid(grid, session, processing_queue, scope):
     atlas = queue_atlas(grid)
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
-    scope.setup(params.save_frames, params.zeroloss_delay, framesName=f'{session.date}_{grid.name}')
+    scope.setup(params.save_frames, framesName=f'{session.date}_{grid.name}')
     scope.reset_state()
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
@@ -188,6 +188,7 @@ def run_grid(grid, session, processing_queue, scope):
                 if hm.hole_id.bis_type != 'center':
                     update(hm.hole_id, status='acquired', completion_time=timezone.now())
             update(hole, status='completed')
+            scope.refineZLP(params.zeroloss_delay)
         elif len(squares) > 0:
             is_done = False
             square = squares[0]
