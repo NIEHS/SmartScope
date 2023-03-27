@@ -186,7 +186,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, zerolossDelay, framesName=None):
+    def setup(self, saveframes, framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
@@ -199,10 +199,12 @@ class SerialemInterface(MicroscopeInterface):
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
 
-        if self.detector.energyFilter and zerolossDelay > 0:
-            sem.RefineZPL(zerolossDelay * 60, 1)
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
+
+    def refineZLP(self, zerolossDelay):
+        if self.detector.energyFilter and zerolossDelay > 0:
+            sem.RefineZLP(zerolossDelay * 60, 1)
 
     def disconnect(self, close_valves=True):
         
@@ -398,7 +400,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def connect(self):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, zerolossDelay, framesName=None):
+    def setup(self, saveframes, framesName=None):
         pass
 
     def disconnect(self, close_valves=True):
