@@ -331,6 +331,7 @@ def autoscreen(session_id):
     # lockFile, sessionLock = session.isScopeLocked
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
+    process = create_process(session)
     is_stop_file(session.session_id)
     if microscope.isLocked:
         logger.warning(
@@ -338,7 +339,7 @@ def autoscreen(session_id):
         sys.exit(0)
 
     write_sessionLock(session, microscope.lockFile)
-    process = create_process(session)
+
     try:
         grids = list(session.autoloadergrid_set.all().order_by('position'))
         logger.info(f'Process: {process}')
