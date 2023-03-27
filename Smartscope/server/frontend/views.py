@@ -18,7 +18,7 @@ from .forms import *
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.file_manipulations import create_grid_directories
-from Smartscope.lib.multishot import RecordParams,set_shots_per_hole
+from Smartscope.lib.multishot import RecordParams,set_shots_per_hole, load_multishot_from_file
 from Smartscope.core.cache import save_multishot_from_cache
 from Smartscope.core.protocols import load_protocol, set_protocol
 
@@ -280,13 +280,21 @@ class MultiShotView(TemplateView):
     login_url = '/login'
     redirect_field_name = 'redirect_to'
 
-    def get_context_data(self,**kwargs):
+    def get_context_data(self,grid_id,**kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = SetMultiShotForm()
+        context['current'] = None
+        if grid_id is not None:
+            grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+            mutlishot_file = Path(grid.directory,'multishot.json')
+            multishot = load_multishot_from_file(mutlishot_file)
+            context['current'] = multishot
+            logger.debug(f'MultiShotViewGrid with {grid_id}')
         return context
     
-    def get(self,request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
+    def get(self,request, *args, grid_id=None, **kwargs):
+        context = self.get_context_data(grid_id=grid_id,**kwargs)
+
         return render(request,self.template_name, context)
     
     def post(self, request, *args, **kwargs):

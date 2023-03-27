@@ -107,7 +107,7 @@ def setFocusPosition(scope,params,instance):
         angle = 0
         logger.info(f'Titled data collection. Setting focus at {distance} um offset and {angle} degrees rotation')
         scope.setFocusPosition(distance, angle)
-        return 
+        return
     distance = np.round(np.sqrt(pitch**2*2)/2,2)
     angle = get_mesh_rotation(instance.grid_id) -45
     logger.info(f'Setting focus position at {distance} um offset and {angle} degrees rotation')

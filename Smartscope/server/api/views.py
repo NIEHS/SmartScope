@@ -160,7 +160,7 @@ class ReportPanel(APIView):
             context = dict()
             context['grid'] = grid
             context['gridform'] = AutoloaderGridReportForm(instance=context['grid'])
-            context['gridCollectionParamsForm'] = GridCollectionParamsForm(instance=context['grid'].params_id)
+            context['gridCollectionParamsForm'] = GridCollectionParamsForm(instance=context['grid'].params_id, grid_id=context['grid'].grid_id)
             context['useMicroscope'] = settings.USE_MICROSCOPE
             try:
                 context['atlas_id'] = context['grid'].atlasmodel_set.all().first().atlas_id
