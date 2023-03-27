@@ -265,14 +265,23 @@ async function changeGridStatus(status) {
 }
 
 function rateGrid(el) {
+    var url = `/api/grids/${fullmeta.grid_id}/`;
+    var value = el.value
+    let sidebar_element = $(`#sidebarGrids #${fullmeta.grid_id} div`)
+    if ( el.classList.contains('active')) {
+        value = null
+    }
     document.getElementById("goodGrid").classList.remove('active');
     document.getElementById("badGrid").classList.remove('active');
-    var url = `/api/grids/${fullmeta.grid_id}/`;
-    apifetchAsync(url, { 'quality': el.value }, "PATCH", message=`Setting grid quality to ${el.value}`);
-    el.classList.add('active');
-    $(`#sidebarGrids #${fullmeta.grid_id} div`).removeClass(function (index, className) {
-        return (className.match(/(^|\s)quality-\S+/g) || []).join(' ')
-    }).addClass(`quality - ${el.value}`)
+    
+    apifetchAsync(url, { 'quality': value }, "PATCH", message=`Setting grid quality to ${value}`);
+    
+    sidebar_element.removeClass(function (index, className) {
+        return (className.match(/(^|\s)quality-\S+/g) || []).join(' ')})
+    if (value != null) {
+        el.classList.add('active');
+        sidebar_element.addClass(`quality-${value}`)
+    }
 }
 
 function hideSVG(el) {
@@ -738,7 +747,7 @@ $('#main').on("mouseenter", '#Square_div circle', function () {
 );
 
 function colorBISgroups() {
-    console.log('Coloring!')
+    consope.log('Coloring!')
     let colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
     var count = 0
     $('#squareShapes').children("*[id]").each(function () {
