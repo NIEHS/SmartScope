@@ -75,6 +75,7 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         logger.info(f'Mdoc file not found {mdoc}. Skipping.')
         return movie
     movie.metadata = parse_mdoc(mdocFile=mdoc, movie=True)
+    time.sleep(10)
     if not movie.shifts.exists() or not movie.ctf.exists():
         try:
             gain = Path( directory, movie.metadata.GainReference.iloc[-1])
