@@ -87,7 +87,7 @@ class MultishotCheckBox(MyCheckBox):
     template_name = 'smartscopeSetup/multishot/multishot_form_fied.html'
 
     def __init__(self, attrs = None, check_test = None, grid_id=None) -> None:
-        self.grid_id = grid_id if grid_id is not None else ''
+        self.grid_id = grid_id if grid_id is not None else ""
         super().__init__(attrs, check_test)
 
     def get_context(self, name: str, value: Any, attrs: Optional[Any]) -> Dict[str, Any]:
