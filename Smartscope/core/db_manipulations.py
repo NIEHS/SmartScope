@@ -41,68 +41,103 @@ def websocket_update(objs, grid_id):
     outputDict['update'] = update_to_fullmeta(objs)
     async_to_sync(channel_layer.group_send)(grid_id, outputDict)
 
+# def get_center_hole(instance:HoleModel):
+#     if instance.bis_type == 'center':
+#         return instance
+#     return HoleModel.objects.get(square_id=instance.square_id, bis_group=instance.bis_group, bis_type='center')
 
-def update_target(data):
-    model = data.pop('type', False)
-    ids = data.pop('ids', [])
-    key = data.pop('key', False)
-    new_value = data.pop('new_value')
-    display_type = data.pop('display_type', 'classifiers')
-    method = data.pop('method', None)
+def update_target_selection(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
+    status = None
+    value = True if value == '1' else False
+    if value:
+        status = 'queued'
+    objs = list(model.objects.filter(pk__in=objects_ids))
+    if model is HoleModel:
+        bis_groups = set([obj.bis_group for obj in objs])
+        squares_ids = set([obj.square_id for obj in objs])
+        objs = model.objects.filter(square_id__in=squares_ids,bis_group__in=bis_groups,bis_type='center')
 
-    response = dict(success=False, error=None)
-    if not key:
-        response['error'] = 'No key specified'
-        return response
-
-    if not key in ['label', 'selected']:
-        response['error'] = 'Wrong key choice for updating'
-        return response
-
-    if not model:
-        response['error'] = 'No model specified'
-        return response
-
-    if model == 'holes':
-        model = HoleModel
-
-    elif model == 'squares':
-        model = SquareModel
-    else:
-        response['error'] = 'Invalid model specified'
-        return response
-    content_type = ContentType.objects.get_for_model(model)
-
-    if key == 'selected':
-        new_value = True if new_value == '1' else False
-        objs = list(model.objects.filter(pk__in=ids))
-        if model is HoleModel:
-            for i, obj in enumerate(objs):
-                if obj.bis_type == 'is_area':
-                    objs[i] = HoleModel.objects.get(square_id=obj.square_id, bis_group=obj.bis_group, bis_type='center')
-    else:
-        logger.debug('Updating Classifier objects')
-        objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
-    logger.debug(f'From {len(ids)} ids, found {len(objs)}. Updating {key} to {new_value}')
-    all_found = len(ids) == len(objs)
     with transaction.atomic():
-        if all_found:
-            for obj in objs:
-                setattr(obj, key, new_value)
-                obj.save()
-        else:
-            for id in ids:
-                Classifier.objects.update_or_create(object_id=id, method_name=method,
-                                                    content_type=content_type, defaults=dict(label=new_value))
-    try:
-        instance = model.objects.get(pk=ids[0]).parent
-        response = SvgSerializer(instance=instance, display_type=display_type, method=method).data
+        for obj in objs:
+            obj.selected = value
+            obj.status = status
+            obj.save()  
 
-        response['success'] = True
-        return response
-    except Exception as err:
-        logger.exception(f"An error occured while updating the page. {err}")
-        return response
+def update_target_label(model:models.Model,objects_ids:List[str],value:str,method:str, *args, **kwargs):
+    content_type = ContentType.objects.get_for_model(model)
+    logger.debug('Updating Classifier objects')
+    objs = Classifier.objects.filter(object_id__in=objects_ids, method_name=method)
+    new_objs = set(objects_ids).difference([obj.pk for obj in objs])
+    logger.debug(f'From {len(objects_ids)} ids, found {len(objs)}. Updating label to {value}')
+    with transaction.atomic():
+        for obj in objs: 
+            obj.label = value
+            obj.save()
+        for obj in new_objs:
+            Classifier(object_id=obj, method_name=method,content_type=content_type, label=value).save()
+
+
+# def update_target(data):
+#     model = data.pop('type', False)
+#     ids = data.pop('ids', [])
+#     key = data.pop('key', False)
+#     new_value = data.pop('new_value')
+#     display_type = data.pop('display_type', 'classifiers')
+#     method = data.pop('method', None)
+
+#     response = dict(success=False, error=None)
+#     if not key:
+#         response['error'] = 'No key specified'
+#         return response
+
+#     if not key in ['label', 'selected']:
+#         response['error'] = 'Wrong key choice for updating'
+#         return response
+
+#     if not model:
+#         response['error'] = 'No model specified'
+#         return response
+
+#     if model == 'holes':
+#         model = HoleModel
+
+#     elif model == 'squares':
+#         model = SquareModel
+#     else:
+#         response['error'] = 'Invalid model specified'
+#         return response
+#     content_type = ContentType.objects.get_for_model(model)
+
+#     if key == 'selected':
+#         new_value = True if new_value == '1' else False
+#         objs = list(model.objects.filter(pk__in=ids))
+#         if model is HoleModel:
+#             for i, obj in enumerate(objs):
+#                 if obj.bis_type == 'is_area':
+#                     objs[i] = HoleModel.objects.get(square_id=obj.square_id, bis_group=obj.bis_group, bis_type='center')
+#     else:
+#         logger.debug('Updating Classifier objects')
+#         objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
+#     logger.debug(f'From {len(ids)} ids, found {len(objs)}. Updating {key} to {new_value}')
+#     all_found = len(ids) == len(objs)
+#     with transaction.atomic():
+#         if all_found:
+#             for obj in objs:
+#                 setattr(obj, key, new_value)
+#                 obj.save()
+#         else:
+#             for id in ids:
+#                 Classifier.objects.update_or_create(object_id=id, method_name=method,
+#                                                     content_type=content_type, defaults=dict(label=new_value))
+#     try:
+#         instance = model.objects.get(pk=ids[0]).parent
+#         response = SvgSerializer(instance=instance, display_type=display_type, method=method).data
+
+#         response['success'] = True
+#         return response
+#     except Exception as err:
+#         logger.exception(f"An error occured while updating the page. {err}")
+#         return response
 
 
 def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
@@ -301,14 +336,16 @@ def add_high_mag(grid, parent):
 def select_n_squares(parent, n):
     squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
     squares = [s for s in squares if s.is_good()]
-    if len(squares) > 0:
-        split_squares = np.array_split(squares, n)
-        selection = []
-        with transaction.atomic():
-            for bucket in split_squares:
-                if len(bucket) > 0:
-                    selection = random.choice(bucket)
-                    update(selection, selected=True, extra_fields=['status'])
+    if len(squares) == 0:
+        return
+    split_squares = np.array_split(squares, n)
+    selection = []
+    with transaction.atomic():
+        for bucket in split_squares:
+            if len(bucket) == 0:
+                continue
+            selection = random.choice(bucket)
+            update(selection, selected=True, status='queued')
 
 
 def select_n_holes(parent, n, is_bis=False):
@@ -323,26 +360,28 @@ def select_n_holes(parent, n, is_bis=False):
     if n <= 0:
         with transaction.atomic():
             for h in holes:
-                update(h, selected=True, extra_fields=['status'])
+                update(h, selected=True, status='queued')
         return
-    if len(holes) > 0:
-        n += 1
-        minimum, maximum = holes[0].dist_from_center, holes[-1].dist_from_center
-        dist_range = maximum - minimum
-        group_dist = dist_range / (n)
-        groups = [[] for x in range(n)]
-        try:
-            for h in holes:
-                group = min([int((h.dist_from_center - minimum) // group_dist), n - 1])
-                groups[group].append(h)
-        except:
-            groups = np.array_split(np.array(holes), n)
+    if len(holes) == 0:
+        return 
+    n += 1
+    minimum, maximum = holes[0].dist_from_center, holes[-1].dist_from_center
+    dist_range = maximum - minimum
+    group_dist = dist_range / (n)
+    groups = [[] for x in range(n)]
+    try:
+        for h in holes:
+            group = min([int((h.dist_from_center - minimum) // group_dist), n - 1])
+            groups[group].append(h)
+    except:
+        groups = np.array_split(np.array(holes), n)
 
-        with transaction.atomic():
-            for bucket in groups[:-1]:
-                if len(bucket) > 0:
-                    selection = random.choice(bucket)
-                    update(selection, selected=True, extra_fields=['status'])
+    with transaction.atomic():
+        for bucket in groups[:-1]:
+            if len(bucket) == 0:
+                continue
+            selection = random.choice(bucket)
+            update(selection, selected=True, status='queued')
 
 
 def select_n_areas(parent, n, is_bis=False):
@@ -355,18 +394,20 @@ def select_n_areas(parent, n, is_bis=False):
         with transaction.atomic():
             for t in targets:
                 if t.is_good() and not t.is_excluded()[0]:
-                    update(t, selected=True, extra_fields=['status'])
+                    update(t, selected=True, status='queued')
         return
 
     clusters = dict()
     for t in targets:
-        if t.is_good():
-            excluded, label = t.is_excluded()
-            if not excluded:
-                try:
-                    clusters[label].append(t)
-                except:
-                    clusters[label] = [t]
+        if not t.is_good():
+            continue
+        excluded, label = t.is_excluded()
+        if excluded:
+            continue
+        try:
+            clusters[label].append(t)
+        except:
+            clusters[label] = [t]
 
     if len(clusters) > 0:
         randomized_sample = clusters if n == len(clusters) else random.sample(list(clusters), n) if n < len(clusters) else [
@@ -375,6 +416,6 @@ def select_n_areas(parent, n, is_bis=False):
             for choice in randomized_sample:
                 sele = random.choice(clusters[choice])
                 logger.debug(f'Selecting {sele.name} from cluster {choice}')
-                update(sele, selected=True, extra_fields=['status'])
+                update(sele, selected=True, status='queued')
     else:
         logger.info('All targets are rejected, skipping')

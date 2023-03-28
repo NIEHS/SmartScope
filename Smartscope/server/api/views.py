@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.conf import settings
 from rest_framework import response
-from Smartscope.core.db_manipulations import update, update_target
+from Smartscope.core.db_manipulations import update, update_target_selection, update_target_label
 from Smartscope.core.models import *
 from .serializers import *
 from rest_framework import generics
@@ -67,14 +67,34 @@ class ConvertAWS(APIView):
 
 
 class UpdateTargetsView(APIView):
-
     permission_classes = [permissions.IsAuthenticated]
+
+    _MODELS = {'holes': HoleModel,
+               'squares': SquareModel}
+    
+    _KEYS = {'selected': update_target_selection,
+                'label': update_target_label}
+
+    response = dict(success=False, error=None)
 
     def patch(self, request, format=None):
         data = request.data
         logger.debug(request.user)
         logger.debug(data)
-        response = update_target(data)
+        model = self._MODELS.get(data.pop('type'),False)
+        function = self._KEYS.get(data.pop('key'),False)
+        method = data.pop('method',None)
+        if not model or not function:
+            self.response['error'] = f'Model or method invalid.'
+            return Response(self.response)
+        objects_ids = data.pop('ids',[])
+        function(model=model,objects_ids=objects_ids,value=data.pop('new_value'),method=method)
+        try:
+            instance = model.objects.get(pk=objects_ids[0]).parent
+            response = SvgSerializer(instance=instance, display_type=data.pop('display_type','classifiers'), method=method).data
+            response['success'] = True
+        except Exception as err:
+            logger.exception(f"An error occured while updating the page. {err}")
         return Response(response)
 
 
