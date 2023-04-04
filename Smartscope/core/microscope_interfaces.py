@@ -204,7 +204,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def refineZLP(self, zerolossDelay):
         if self.detector.energyFilter and zerolossDelay > 0:
-            sem.RefineZLP(zerolossDelay * 60, 1)
+            sem.RefineZLP(zerolossDelay * 60)
 
     def disconnect(self, close_valves=True):
         
