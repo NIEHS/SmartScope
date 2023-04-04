@@ -12,7 +12,7 @@ square:
   acquisition:
     - moveStage
     - realignToSquare
-    - EucentricMediumMag
+    - eucentricMediumMag
     - square
   targets:
     finders:
