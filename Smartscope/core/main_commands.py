@@ -31,7 +31,7 @@ def add_holes(id, targets):
     logger.debug(targets)
     finder = 'Manual finder'
     targets = create_targets_from_box(targets=targets, montage=montage, target_type='hole')
-    start_number = instance.base_target_query.order_by('-number').values_list('number', flat=True).first() + 1
+    start_number = instance.holemodel_set.order_by('-number').values_list('number', flat=True).first() + 1
     holes = add_targets(grid=instance.grid_id, parent=instance, targets=targets, model=HoleModel, finder=finder, start_number=start_number)
     return holes
 
