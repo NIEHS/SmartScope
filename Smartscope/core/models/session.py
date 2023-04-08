@@ -702,7 +702,7 @@ class Target(BaseModel):
             if selector.label in plugin.exclude:
                 return True, selector.label
 
-        return False, selector.label
+        return False, ''
 
     def is_good(self):
         """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
