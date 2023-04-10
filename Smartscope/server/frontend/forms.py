@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from django import forms
 from Smartscope.core.models import *
-from Smartscope.core.settings.worker import SMARTSCOPE_CONFIG, PROTOCOLS_FACTORY 
+from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, PROTOCOLS_FACTORY 
 import yaml
 from django.urls import reverse
 
@@ -33,7 +33,7 @@ class ScreeningSessionForm(forms.ModelForm):
 
 
 def read_config():
-    file = SMARTSCOPE_CONFIG / 'default_collection_params.yaml'
+    file = SMARTSCOPE_CUSTOM_CONFIG / 'default_collection_params.yaml'
     return yaml.safe_load(file.read_text())
 
 class AutoloaderGridForm(forms.ModelForm):
