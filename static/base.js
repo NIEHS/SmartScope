@@ -7,6 +7,13 @@ var pathname = new URL(url).pathname;
 
 path = pathname.split('/')
 
+function delay(fn, ms) {
+    let timer = 0
+    return function(...args) {
+      clearTimeout(timer)
+      timer = setTimeout(fn.bind(this, ...args), ms || 0)
+    }
+  }
 
 function selected() {
     $('.active', '#sidebar-container').removeClass('active');
@@ -133,9 +140,6 @@ function arrayRemove(arr, value) {
     });
 }
 
-$("img[id$='_help']").tooltip();
-
-
 async function updateTarget(type, ids, key, new_value, useAPI = false) {
     console.log(`UPDATING ${type}, ${ids}, ${key} to ${new_value}`)
 
@@ -223,11 +227,11 @@ async function loadReport(requestfield = null, id = null, push = true) {
             console.log('loading script', typeof csrftoken)
             await new Promise(r => setTimeout(r, 500));
         }
-
     }
 
     await reportMain()
     websocketMain()
+    htmx.process(htmx.find('#main'))
 }
 
 

@@ -5,7 +5,7 @@ kwargs:
   imgsz: 1280
   thresh: 0.2
   iou: 0.15
-  device: 0
+  device: '0'
   weights_circle: circle_weights/circle_weight_12_7_21.pt
   method: yolo
 targetClass:

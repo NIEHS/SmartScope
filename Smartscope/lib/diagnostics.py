@@ -14,6 +14,7 @@ def generate_diagnostic_figure(image:np.array, coords_set, outputpath:Path):
     for coords, color, perc_im_radius in coords_set:
         radius = int(image_color.shape[0]*(perc_im_radius/100))
         for coord in coords:
+            print(coord, type(coord))
             cv2.circle(image_color,coord,radius,color=color, thickness=cv2.FILLED)
     cv2.imwrite(str(outputpath), imutils.resize(image_color,512))
 

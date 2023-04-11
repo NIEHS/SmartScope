@@ -39,7 +39,8 @@ ENV	ALLOWED_HOSTS=localhost \
 	DB_NAME=smartscope \
 	REDIS_HOST=cache \
 	REDIS_PORT=6379 \
-	USE_AWS=False 
+	USE_AWS=False \
+	FORCE_CPU=False
 
 ADD . /opt/smartscope/
 

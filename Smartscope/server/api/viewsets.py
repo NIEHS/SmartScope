@@ -1,36 +1,40 @@
+from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.db import connection, models, reset_queries
-import mrcfile
-import mrcfile.mrcinterpreter
-import mrcfile.mrcfile
-from rest_framework import viewsets
-from rest_framework import permissions
-from rest_framework import status
-from Smartscope.core.models.models_actions import targets_methods
-from Smartscope.server.api.permissions import HasGroupPermission
-from .serializers import *
-from .export_serializers import *
-from Smartscope.core.models import *
-from Smartscope.server.frontend.forms import *
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from django.db import connection, reset_queries, transaction
 from django.template.response import SimpleTemplateResponse
 from django.http import FileResponse
 from django.template.loader import render_to_string
-from django.db import transaction
+from rest_framework import viewsets
+from rest_framework import permissions
+from rest_framework import status
+from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 import base64
-from Smartscope.lib.image_manipulations import power_spectrum
-from Smartscope.lib.system_monitor import disk_space
-from Smartscope.core.db_manipulations import get_hole_count, viewer_only
-from Smartscope.lib.converters import *
-from Smartscope.server.lib.worker_jobs import send_to_worker
-from django.conf import settings
 import json
 import os
 import time
 import logging
-from rest_framework.renderers import TemplateHTMLRenderer
 from pathlib import Path
+import mrcfile
+import mrcfile.mrcinterpreter
+import mrcfile.mrcfile
+
+from .serializers import *
+from .export_serializers import *
+from Smartscope.server.api.permissions import HasGroupPermission
+from Smartscope.server.frontend.forms import *
+
+from Smartscope.lib.converters import *
+from Smartscope.lib.image_manipulations import power_spectrum
+from Smartscope.lib.system_monitor import disk_space
+from Smartscope.server.lib.worker_jobs import send_to_worker
+
+from Smartscope.core.models.models_actions import targets_methods
+from Smartscope.core.db_manipulations import get_hole_count, viewer_only
+from Smartscope.core.cache import save_multishot_from_cache
+from Smartscope.core.models import *
 
 logger = logging.getLogger(__name__)
 
@@ -360,8 +364,10 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         logger.debug(data)
         try:
             form_params = GridCollectionParamsForm(data)
-            logger.debug(form_params)
             if form_params.is_valid():
+                multishot_per_hole_id = form_params.cleaned_data.pop('multishot_per_hole_id')
+                if multishot_per_hole_id != "":
+                    save_multishot_from_cache(multishot_per_hole_id, obj.directory)
                 params, created = GridCollectionParams.objects.get_or_create(**form_params.cleaned_data)
                 logger.debug(f'Params newly created: {created}')
                 obj.params_id = params
@@ -484,7 +490,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         self.renderer_classes = [TemplateHTMLRenderer]
 
         if obj.bis_group is None:
-            queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk']))
+            queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk'], status='completed'))
         else:
             queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
                                                         hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
@@ -516,7 +522,7 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     serializer_class = HighMagSerializer
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize',
-                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status','name']
+                        'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status','name','frames']
 
     detailed_serializer = DetailedHighMagSerializer
 

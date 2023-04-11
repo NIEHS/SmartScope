@@ -22,10 +22,10 @@ def get_CTFFIN4_data(path: Path) -> List[float]:
         ctf = pd.DataFrame.from_records(lines, columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit'], exclude=[
             'l', 'phshift']).iloc[0]
 
-        return dict(defocus=(ctf.df1 + ctf.df2) / 2,
-                    astig=ctf.df1 - ctf.df2,
-                    angast=ctf.angast,
-                    ctffit=ctf.ctffit)
+    return dict(defocus=(ctf.df1 + ctf.df2) / 2,
+                astig=ctf.df1 - ctf.df2,
+                angast=ctf.angast,
+                ctffit=ctf.ctffit)
 
 
 def CTFfind(input_mrc: str, output_directory: str, pixel_size: float, voltage: int = 200, spherical_abberation: float = 2.7) -> None:
@@ -38,11 +38,12 @@ def CTFfind(input_mrc: str, output_directory: str, pixel_size: float, voltage: i
 
     logger.debug(p.stdout)
     logger.debug(p.stderr)
-
+    if not os.path.isfile(output_file):
+        return False
     mrc_to_png(output_file)
+    return True
 
-
-def align_frames(frames: str, output_file: str, output_shifts: str, gain: Union[str, None], mdoc: str, voltage: int):
+def align_frames(frames: str, output_file: Path, output_shifts: Path, gain: Union[str, None], mdoc: str, voltage: int):
 
     com = f'alignframes -input {frames} -output {output_file} -rotation -1 -dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
     if gain is not None:
@@ -51,6 +52,9 @@ def align_frames(frames: str, output_file: str, output_shifts: str, gain: Union[
     p = subprocess.run(shlex.split(com), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     logger.debug(p.stdout.decode('utf-8'))
     logger.debug(p.stderr.decode('utf-8'))
+    if all([output_file.exists(),output_shifts.exists()]):
+        return True
+    return False
 
 
 def process_hm_from_frames(name, frames_file_name, frames_directories: list, spherical_abberation: float = 2.7):
@@ -71,17 +75,23 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         logger.info(f'Mdoc file not found {mdoc}. Skipping.')
         return movie
     movie.metadata = parse_mdoc(mdocFile=mdoc, movie=True)
+    time.sleep(10)
     if not movie.shifts.exists() or not movie.ctf.exists():
         try:
             gain = Path( directory, movie.metadata.GainReference.iloc[-1])
         except AttributeError:
             gain = None
-        align_frames(frames_file, output_file=movie.raw, output_shifts=movie.shifts, gain=gain, mdoc=mdoc, voltage=movie.metadata.Voltage.iloc[-1])
+        has_aligned = align_frames(frames_file, output_file=movie.raw, output_shifts=movie.shifts, gain=gain, mdoc=mdoc, voltage=movie.metadata.Voltage.iloc[-1])
+        if not has_aligned:
+            return movie
         if not movie.image_path.exists():
             movie.make_symlink()
-        CTFfind(input_mrc=movie.image_path, output_directory=movie.name,
+        has_CTF = CTFfind(input_mrc=movie.image_path, output_directory=movie.name,
                 voltage=movie.metadata.Voltage.iloc[-1], pixel_size=movie.pixel_size, spherical_abberation=spherical_abberation)
+        if not has_CTF:
+            return movie
     movie.read_image()
+    movie.set_shape_from_image()
     export_as_png(movie.image, movie.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
     movie.save_metadata()
 

@@ -18,6 +18,7 @@ from Smartscope.lib.transformations import register_to_other_montage, register_t
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS
 from Smartscope.lib.logger import add_log_handlers
 from Smartscope.lib.diagnostics import generate_diagnostic_figure, Timer
+from Smartscope.lib.multishot import split_target_for_multishot, load_multishot_from_file
 from django.db import transaction
 from django.utils import timezone
 import multiprocessing
@@ -135,8 +136,8 @@ def run_grid(grid, session, processing_queue, scope):
     atlas = queue_atlas(grid)
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
-    scope.setup(params.save_frames, params.zeroloss_delay, framesName=f'{session.date}_{grid.name}')
-    scope.clear_hole_ref()
+    scope.setup(params.save_frames, framesName=f'{session.date}_{grid.name}')
+    scope.reset_state()
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
     if atlas.status == 'queued' or atlas.status == 'started':
@@ -187,6 +188,7 @@ def run_grid(grid, session, processing_queue, scope):
                 if hm.hole_id.bis_type != 'center':
                     update(hm.hole_id, status='acquired', completion_time=timezone.now())
             update(hole, status='completed')
+            scope.refineZLP(params.zeroloss_delay)
         elif len(squares) > 0:
             is_done = False
             square = squares[0]
@@ -277,6 +279,12 @@ def process_square_image(square, grid, microscope_id):
 def process_hole_image(hole, grid, microscope_id):
     with Timer(text='Processing hole') as timer:
         protocol = get_or_set_protocol(grid).mediumMag
+        params = grid.params_id
+        logger.debug(f'Acquisition parameters: {params.params_id}')
+        mutlishot_file = Path(grid.directory,'multishot.json')
+        multishot = load_multishot_from_file(mutlishot_file)
+        if multishot is not None:
+            logger.info(f'Multishot enabled: {params.multishot_per_hole}, Shots: {multishot.shots}, File: {mutlishot_file}')
         montage = get_file_and_process(hole.raw, hole.name, directory=microscope_id.scope_path, force_reprocess=True)
         export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
         timer.report_timer('Getting and processing montage')
@@ -302,7 +310,11 @@ def process_hole_image(hole, grid, microscope_id):
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
         for h, index in zip(hole_group,register):
             target = targets[index]
-            add_targets(grid,h,[target],HighMagModel,finder_method,classifier=classifier_method)
+            if not params.multishot_per_hole:
+                targets_to_register=[target]
+            else:
+                targets_to_register= split_target_for_multishot(multishot,target.coords,montage)
+            add_targets(grid,h,targets_to_register,HighMagModel,finder_method,classifier=classifier_method)
         timer.report_timer('Final registration and saving to db')
         update(hole, shape_x=montage.shape_x,
                             shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
@@ -316,17 +328,18 @@ def write_sessionLock(session, lockFile):
 def autoscreen(session_id):
     session = ScreeningSession.objects.get(session_id=session_id)
     microscope = session.microscope_id
-    lockFile, sessionLock = session.isScopeLocked
+    # lockFile, sessionLock = session.isScopeLocked
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
-    is_stop_file(session.session_id)
-    if sessionLock is not None:
-        logger.warning(
-            f'\nThe requested microscope is busy.\n\tLock file {lockFile} found\n\tSession id: {sessionLock} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
-        sys.exit(0)
-    else:
-        write_sessionLock(session, lockFile)
     process = create_process(session)
+    is_stop_file(session.session_id)
+    if microscope.isLocked:
+        logger.warning(
+            f'\nThe requested microscope is busy.\n\tLock file {microscope.lockFile} found\n\tSession id: {sessionLock} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
+        sys.exit(0)
+
+    write_sessionLock(session, microscope.lockFile)
+
     try:
         grids = list(session.autoloadergrid_set.all().order_by('position'))
         logger.info(f'Process: {process}')
@@ -361,7 +374,7 @@ def autoscreen(session_id):
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'
     finally:
-        os.remove(lockFile)
+        os.remove(microscope.lockFile)
         update(process, status=status)
         logger.debug('Wrapping up')
         processing_queue.put('exit')

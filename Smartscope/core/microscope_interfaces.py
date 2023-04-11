@@ -1,6 +1,5 @@
 from pathlib import PureWindowsPath
 from typing import Callable, Tuple
-from Smartscope.lib.Datatypes.microscope import MicroscopeInterface, CartridgeLoadingError
 import serialem as sem
 import mrcfile
 import time
@@ -8,6 +7,7 @@ import logging
 import math
 import os
 import numpy as np
+from Smartscope.lib.Datatypes.microscope import MicroscopeInterface, CartridgeLoadingError
 from Smartscope.lib.Finders.basic_finders import find_square
 from Smartscope.lib.file_manipulations import generate_fake_file, select_random_fake_file
 from Smartscope.lib.image_manipulations import export_as_png
@@ -130,6 +130,10 @@ class SerialemInterface(MicroscopeInterface):
         sem.ImageShiftByPixels(coord[0], coord[1])
         sem.ResetImageShift()
         return sem.ReportStageXYZ()
+    
+    def setFocusPosition(self, distance, angle):
+        sem.SetAxisPosition('F', distance, angle)
+        self.focus_position_set = True
 
     def moveStage(self,stage_x,stage_y,stage_z):
         sem.SetImageShift(0, 0)
@@ -182,7 +186,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, zerolossDelay, framesName=None):
+    def setup(self, saveframes, framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
@@ -195,10 +199,12 @@ class SerialemInterface(MicroscopeInterface):
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
 
-        if self.detector.energyFilter and zerolossDelay > 0:
-            sem.RefineZPL(zerolossDelay * 60, 1)
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
+
+    def refineZLP(self, zerolossDelay):
+        if self.detector.energyFilter and zerolossDelay > 0:
+            sem.RefineZLP(zerolossDelay * 60)
 
     def disconnect(self, close_valves=True):
         
@@ -213,6 +219,11 @@ class SerialemInterface(MicroscopeInterface):
     def loadGrid(self, position):
         if self.microscope.loaderSize > 1:
             slot_status = sem.ReportSlotStatus(position)
+
+            #This was added to support the new 4.1 2023-02-27 version that reports the name of the grid along with the position
+            if isinstance(slot_status,tuple):
+                slot_status = slot_status[0]
+            
             if slot_status == -1:
                 raise ValueError(f'SerialEM return an error when reading slot {position} of the autoloader.')
             if slot_status == 1:
@@ -223,7 +234,11 @@ class SerialemInterface(MicroscopeInterface):
                 sem.LoadCartridge(position)
             logger.info(f'Grid {position} is loaded')
             sem.Delay(5)
-            if sem.ReportSlotStatus(position) != 0:
+            slot_status = sem.ReportSlotStatus(position)
+            #This was added to support the new 4.1 2023-02-27 version that reports the name of the grid along with the position
+            if isinstance(slot_status,tuple):
+                slot_status = slot_status[0]
+            if  slot_status != 0:
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
 
@@ -354,6 +369,10 @@ class FakeScopeInterface(MicroscopeInterface):
     def report_stage(self):
         return super().report_stage()
     
+    def setFocusPosition(self, distance, angle):
+        # sem.SetAxisPosition('F', distance, angle)
+        self.focus_position_set = True
+    
     def buffer_to_numpy(self):
         file = select_random_fake_file('lowmagHole')
         logger.debug(f'Using {file} to generate fake buffer')
@@ -372,12 +391,16 @@ class FakeScopeInterface(MicroscopeInterface):
         pass
 
     def highmag(self, file='', frames=True, earlyReturn=False):
-        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+        if not frames:
+            generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+            return
+        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=os.path.join(self.microscope.scopePath, 'movies'))
+        return frames.split('\\')[-1]
 
     def connect(self):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, zerolossDelay, framesName=None):
+    def setup(self, saveframes, framesName=None):
         pass
 
     def disconnect(self, close_valves=True):

@@ -133,7 +133,7 @@ class SquareSerializer(RESTserializers.ModelSerializer):
 
 
 class HighMagSerializer(RESTserializers.ModelSerializer):
-    id = RESTserializers.ReadOnlyField()
+    # id = RESTserializers.ReadOnlyField()
     # svg = RESTserializers.ReadOnlyField()
     # png = RESTserializers.ReadOnlyField()
     # hole_id = HoleSerializer()

@@ -1,0 +1,7 @@
+{% include "general/mycheckbox.html" %}
+
+<button class="btn btn-outline-secondary" 
+hx-get="{% url 'setMultishot' %}{{grid_id}}" hx-target="#main" hx-swap="beforeend"
+data-bs-toggle="tooltip" data-bs-placement="top" title="Show/Edit multishot parameters.">
+    <i class="bi bi-pencil-square"></i>
+</button>

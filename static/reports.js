@@ -112,7 +112,7 @@ $('#main').on('click', '.showLegend', function () {
     $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
 
-$("#main").find(".hasTooltip").tooltip();
+// $("#main").find(".hasTooltip").tooltip();
 
 
 function selectElement(elem, selection) {
@@ -265,14 +265,23 @@ async function changeGridStatus(status) {
 }
 
 function rateGrid(el) {
+    var url = `/api/grids/${fullmeta.grid_id}/`;
+    var value = el.value
+    let sidebar_element = $(`#sidebarGrids #${fullmeta.grid_id} div`)
+    if ( el.classList.contains('active')) {
+        value = null
+    }
     document.getElementById("goodGrid").classList.remove('active');
     document.getElementById("badGrid").classList.remove('active');
-    var url = `/api/grids/${fullmeta.grid_id}/`;
-    apifetchAsync(url, { 'quality': el.value }, "PATCH", message=`Setting grid quality to ${el.value}`);
-    el.classList.add('active');
-    $(`#sidebarGrids #${fullmeta.grid_id} div`).removeClass(function (index, className) {
-        return (className.match(/(^|\s)quality-\S+/g) || []).join(' ')
-    }).addClass(`quality - ${el.value}`)
+    
+    apifetchAsync(url, { 'quality': value }, "PATCH", message=`Setting grid quality to ${value}`);
+    
+    sidebar_element.removeClass(function (index, className) {
+        return (className.match(/(^|\s)quality-\S+/g) || []).join(' ')})
+    if (value != null) {
+        el.classList.add('active');
+        sidebar_element.addClass(`quality-${value}`)
+    }
 }
 
 function hideSVG(el) {
@@ -362,10 +371,10 @@ function optionMenu(meta, type = 'holes') {
     popupsele = [meta, type]
 }
 
-function closeOptionMenu() {
-    menu = document.getElementById("popupMenuGoTo")
-    menu.classList.remove('show')
-}
+// function closeOptionMenu() {
+//     menu = document.getElementById("popupMenuGoTo")
+//     menu.classList.remove('show')
+// }
 
 function closePopup(element) {
     console.log(element);
@@ -383,7 +392,7 @@ function deactivateButton(element) {
     }
 }
 
-$('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
+function grabFormData(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Array.from(formData.entries()).reduce((memo, pair) => ({
@@ -391,59 +400,63 @@ $('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
         [pair[0]]: pair[1],
     }), {});
     console.log(data)
-    var url = `/api/grids/${fullmeta.grid_id}/`
+    return data
+}
+
+$('#main').on('keyup', '#editNotesForm', delay(function (e) {
+    $('#editNotesForm').submit();
+}, 500));
+
+
+$('#main').on('submit', '#editNotesForm, #editGridForm', function (e) {
+    let data = grabFormData(e)
+    var url = `/api/grids/${currentState.grid_id}/`
     apifetchAsync(url, data, "PATCH", message=`Edit grid notes`)
 });
 
-$('#main').on('submit', '#editCollectionForm', function (e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Array.from(formData.entries()).reduce((memo, pair) => ({
-        ...memo,
-        [pair[0]]: pair[1],
-    }), {});
-    console.log(data)
+$('#main').on('submit', '#editCollectionParamsForm', function (e) {
+    let data = grabFormData(e)
     var url = `/api/grids/${currentState.grid_id}/editcollectionparams/`
     apifetchAsync(url, data, "PATCH", message=`Changing grid collection parameters`)
 });
 
-$('#main').on('click', '#gridParamBtn', function (e) {
-    target = e.target
-    var expanded = target.getAttribute('aria-expanded')
-    if (expanded == 'false') {
-        target.innerHTML = '- Grid details'
-        target.classList.add('active')
-    } else {
-        target.innerHTML = '+ Grid details'
-        target.classList.remove('active')
-    }
-})
+// $('#main').on('click', '#gridParamBtn', function (e) {
+//     target = e.target
+//     var expanded = target.getAttribute('aria-expanded')
+//     if (expanded == 'false') {
+//         target.innerHTML = '- Grid details'
+//         target.classList.add('active')
+//     } else {
+//         target.innerHTML = '+ Grid details'
+//         target.classList.remove('active')
+//     }
+// })
 
-$('#main').on('click', '#legendsBtn', function (e) {
-    target = e.target
-    var expanded = target.getAttribute('aria-expanded')
-    if (expanded == 'false') {
-        target.innerHTML = 'Hide legend'
-        target.classList.add('active')
-    } else {
-        target.innerHTML = 'Show legend'
-        target.classList.remove('active')
-    }
-})
+// $('#main').on('click', '#legendsBtn', function (e) {
+//     target = e.target
+//     var expanded = target.getAttribute('aria-expanded')
+//     if (expanded == 'false') {
+//         target.innerHTML = 'Hide legend'
+//         target.classList.add('active')
+//     } else {
+//         target.innerHTML = 'Show legend'
+//         target.classList.remove('active')
+//     }
+// })
 
-$('#main').on('click', '#gridStatsBtn', function (e) {
-    target = e.target
-    var expanded = target.getAttribute('aria-expanded')
-    console.log(expanded)
+// $('#main').on('click', '#gridStatsBtn', function (e) {
+//     target = e.target
+//     var expanded = target.getAttribute('aria-expanded')
+//     console.log(expanded)
 
-    if (expanded == 'false') {
-        target.innerHTML = 'Hide Stats'
-        target.classList.add('active')
-    } else {
-        target.innerHTML = 'Show Stats'
-        target.classList.remove('active')
-    }
-})
+//     if (expanded == 'false') {
+//         target.innerHTML = 'Hide Stats'
+//         target.classList.add('active')
+//     } else {
+//         target.innerHTML = 'Show Stats'
+//         target.classList.remove('active')
+//     }
+// })
 
 
 async function popupSele(element) {
@@ -709,22 +722,13 @@ function clickSquare(elem) {
     }
 };
 
-$('#main').on('click', function (event) {
-    if (event.target.id != 'goToSeleMenu' && !$(event.target).closest('#popupMenu').length) {
-        closeOptionMenu()
-    }
-});
+// $('#main').on('click', function (event) {
+//     if (event.target.id != 'goToSeleMenu' && !$(event.target).closest('#popupMenu').length) {
+//         closeOptionMenu()
+//     }
+// });
 
-$('#sidebarCollapse').on('click', function () {
-    console.log($(this).attr('aria-expanded'), $(this).attr('aria-expanded') == "false")
-    if ($(this).attr('aria-expanded') == "false") {
-        document.getElementById("sidebarCollapseLogo").style.transform = "rotate(180deg)";
-        // $('#sidebar-container').removeClass('col-md-2').addClass('col-md-auto')
-    } else {
-        document.getElementById("sidebarCollapseLogo").style.transform = ""
-        // $('#sidebar-container').classList.removeClass('col-md-auto').addClass('col-md-2')
-    }
-})
+
 
 $('#main').on("mouseenter", '#Square_div circle', function () {
     hovered = []
@@ -747,7 +751,7 @@ $('#main').on("mouseenter", '#Square_div circle', function () {
 );
 
 function colorBISgroups() {
-    console.log('Coloring!')
+    consope.log('Coloring!')
     let colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
     var count = 0
     $('#squareShapes').children("*[id]").each(function () {

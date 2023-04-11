@@ -1,0 +1,31 @@
+{% extends "general/right_sidebar.html" %}
+{% block title %}Protocol Details{% endblock %}
+
+{% block sidebar_content %}
+<div class="col justify-content-center">
+    <form  method="post">
+        {% csrf_token %}
+        {% include "forms/formFieldsBase.html" with form=form row=false %}
+        <button type="submit" class="btn btn-primary" hx-post="{% url 'protocol' grid_id=grid.pk %}" hx-indicator="#spinner" hx-target="#rightSidebarMenu" hx-swap="outerHTML">
+            Save
+        </button>
+        <div id="spinner" class="my-indicator spinner-border text-primary" role="status">
+            <span class="sr-only"></span>
+        </div>
+    </form>
+    <h4>{{protocol.name}}</h4>
+    <div class="media">
+        <div class="media-body">
+            <textarea readonly id='queue' class="form-control z-depth-1" rows="30">{{protocolDetails}}</textarea>
+        </div>
+    </div>
+</div>
+
+{% if success %}
+{% include "general/modal_message.html" with title="Successfully Changed Protocol" message="If the grid being modified is currently running, you must stop and restart the session for the new protocol to be applied" %}
+{% endif %}
+
+<script>
+    $("img[id$='_help']").tooltip();
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% load static %}
+<h3>GENERAL</h3>
+<div class="form-row">
+    {% for field in form_general %}
+    <div class="form-group col-auto">
+        <div class="row mw-100 mx-1 align-content-center justify-content-between">
+            <label class="mb-0" for="{{field.id_for_label}}">{{ field.label }}</label>
+            {% if field.help_text %}
+            <img src="{% static 'images/info-circle.svg' %}" id='{{field.id_for_label}}_help' data-toggle="tooltip"
+                data-placement="left" title="{{ field.help_text }}">
+            {% endif %}
+        </div>
+        {{ field }}
+        <div class="invalid-tooltip">{{ field.help_text }}</div>
+    </div>
+    {% endfor %}
+</div>

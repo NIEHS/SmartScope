@@ -1,18 +1,18 @@
 import logging
 import os
 import json
-from Smartscope.lib.file_manipulations import clean_source_dir
-from Smartscope.core.export_optics import export_optics
-from Smartscope.core.models import *
-from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
 from django.db import transaction
-from Smartscope.lib.Finders.basic_finders import find_square_center
-from Smartscope.core.autoscreen import autoscreen
+from Smartscope.core.models import *
 from Smartscope.core.test_commands import *
-from Smartscope.core.utils.training_data import add_to_training_set
-from Smartscope.core.preprocessing_pipelines import highmag_processing
+from Smartscope.lib.file_manipulations import clean_source_dir
 from Smartscope.lib.montage import Montage, create_targets_from_box
 from Smartscope.lib.image_manipulations import convert_centers_to_boxes
+from Smartscope.lib.Finders.basic_finders import find_square_center
+from Smartscope.core.export_optics import export_optics
+from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
+from Smartscope.core.autoscreen import autoscreen
+from Smartscope.core.utils.training_data import add_to_training_set
+from Smartscope.core.preprocessing_pipelines import highmag_processing
 from Smartscope.core.utils.export_import import export_grid, import_grid
 
 import numpy as np
@@ -31,7 +31,7 @@ def add_holes(id, targets):
     logger.debug(targets)
     finder = 'Manual finder'
     targets = create_targets_from_box(targets=targets, montage=montage, target_type='hole')
-    start_number = instance.base_target_query.order_by('-number').values_list('number', flat=True).first() + 1
+    start_number = instance.holemodel_set.order_by('-number').values_list('number', flat=True).first() + 1
     holes = add_targets(grid=instance.grid_id, parent=instance, targets=targets, model=HoleModel, finder=finder, start_number=start_number)
     return holes
 
@@ -110,20 +110,6 @@ def continue_run(next_or_continue, microscope_id):
 
 def stop_session(sessionid):
     open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'), 'w').close()
-
-# def manage(*args):
-#     arguments = ["manage.py", *args]  # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.settings.server')
-#     logger.debug(arguments)
-#     try:
-#         from django.core.management import execute_from_command_line
-#     except ImportError as exc:
-#         raise ImportError(
-#             "Couldn't import Django. Are you sure it's installed and "
-#             "available on your PYTHONPATH environment variable? Did you "
-#             "forget to activate a virtual environment?"
-#         ) from exc
-#     execute_from_command_line(arguments)
-
 
 def run(command, *args):
     logger.debug(f"Running: {command} {' '.join(args)}")

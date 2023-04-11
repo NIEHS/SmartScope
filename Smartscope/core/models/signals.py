@@ -1,20 +1,21 @@
 # from models import *
 from pathlib import Path
-from django.conf import settings
-# from django.core.cache import cache
 import shutil
 import os
+import subprocess as sub
+import logging
+
+from django.conf import settings
 from django.contrib.auth.models import User, Group
-from Smartscope.lib.file_manipulations import create_scope_dirs
-from Smartscope.core.utils.export_import import export_grid
-from .session import *
-from .misc_func import get_fields
-from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
-import subprocess as sub
+from django.db import transaction
+from django.db.models.signals import post_save, pre_save
+
 from Smartscope.server.lib.worker_jobs import *
-import logging
+from Smartscope.lib.file_manipulations import create_scope_dirs
+from .session import *
+from .misc_func import get_fields
 
 logger = logging.getLogger(__name__)
 
@@ -25,53 +26,50 @@ def pre_update(sender, instance, **kwargs):
     if not instance._state.adding:
         original = sender.objects.get(pk=instance.pk)
         for new, old in zip(get_fields(instance), get_fields(original)):
-            if new != old:
-                col, new_val = new
-                old_val = old[1]
-                if col == 'selected':
-                    # print('New_val: ', new_val, 'Status: ', instance.status is None)
-                    if new_val:
-                        # print('Setting status to queued')
-                        instance.status = 'queued'
-                    else:
-                        instance.status = None
-                        # print('Setting status to none')
-                    change = ChangeLog(date=timezone.now(), table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
-                                       column_name=col, initial_value=old_val.encode(), new_value=new_val.encode())
-                    change.save()
-                elif col == 'quality':
-                    items = ChangeLog.objects.filter(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
-                                                     column_name=col)
-                    logger.debug([item.__dict__ for item in items])
-                    change, created = ChangeLog.objects.get_or_create(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
-                                                                      column_name=col)
-                    change.date = timezone.now()
-                    change.new_value = new_val.encode()
-                    if created:
-                        # print('New change log entry.')
-                        change.initial_value = old_val.encode()
-                    # else:
-                        # print('Modifying change log entry.')
-                    change.save()
+            if new == old:
+                return instance
+            col, new_val = new
+            old_val = old[1]
+            if col == 'selected':
+                change = ChangeLog(date=timezone.now(), table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
+                                    column_name=col, initial_value=old_val.encode(), new_value=new_val.encode())
+                change.save()
+            elif col == 'quality':
+                items = ChangeLog.objects.filter(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
+                                                    column_name=col)
+                logger.debug([item.__dict__ for item in items])
+                change, created = ChangeLog.objects.get_or_create(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
+                                                                    column_name=col)
+                change.date = timezone.now()
+                change.new_value = new_val.encode()
+                if created:
+                    # print('New change log entry.')
+                    change.initial_value = old_val.encode()
+                # else:
+                    # print('Modifying change log entry.')
+                change.save()
     return instance
 
 
 @ receiver(pre_save, sender=AutoloaderGrid)
 def grid_modification(sender, instance, **kwargs):
-    if not instance._state.adding:
-        if instance.status == 'aborting':
-            targets = list(instance.squaremodel_set.filter(status='queued'))
-            targets += list(instance.holemodel_set.filter(status='queued'))
-            targets += list(instance.highmagmodel_set.filter(status='queued'))
+    if instance._state.adding:
+        return
+    if instance.status == 'aborting':
+        targets = list(instance.squaremodel_set.filter(status='queued'))
+        targets += list(instance.holemodel_set.filter(status='queued'))
+        targets += list(instance.highmagmodel_set.filter(status='queued'))
+        with transaction.atomic():
             for target in targets:
                 target.selected = False
+                target.status = None
                 target.save()
-            return
-        original = sender.objects.get(pk=instance.pk)
-        if instance.name != original.name:
-            print(f'Changing grid name.\nMoving the grid from:\n\t{original.directory}\nTo:\n\t{instance.directory}')
-            os.rename(original.directory, instance.directory)
-            return
+        return
+    original = sender.objects.get(pk=instance.pk)
+    if instance.name != original.name:
+        print(f'Changing grid name.\nMoving the grid from:\n\t{original.directory}\nTo:\n\t{instance.directory}')
+        os.rename(original.directory, instance.directory)
+        return
 
         # if instance.status == 'complete' and original.status != 'complete':
         #     export_grid(instance,instance.session_id.directory)

@@ -120,6 +120,9 @@ class BaseImage(ABC):
     metadata: Union[pd.DataFrame, None] = None
     _raw = None
     _mdoc = None
+    _shape_x = None
+    _shape_y = None
+    _image = None
 
     @property
     def directory(self):
@@ -146,6 +149,12 @@ class BaseImage(ABC):
         self._metadataFile = value
 
     @property
+    def image(self):
+        if self._image is not None:
+            return self._image
+        raise AttributeError('Image is not loaded. Ensure that the image is loaded by using the BaseImage.read_image() or Montage.build_montage() method first')
+
+    @property
     def png(self):
         return Path(self.working_dir, 'pngs', f'{self.name}.png')
 
@@ -166,12 +175,20 @@ class BaseImage(ABC):
             return self._mdoc
         return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
 
+    def set_shape_from_image(self):
+        self._shape_x = self.image.shape[0]
+        self._shape_y = self.image.shape[1]
+
     @property
     def shape_x(self):
+        if self._shape_x is not None:
+            return self._shape_x
         return self.image.shape[0]
 
     @property
     def shape_y(self):
+        if self._shape_y is not None:
+            return self._shape_y
         return self.image.shape[1]
     
     @property
@@ -201,13 +218,15 @@ class BaseImage(ABC):
     def ctf(self):
         return Path(self.directory, 'ctf.txt')
 
-    def read_image(self):
+    def read_image(self, force=False):
+        if self._image is not None:
+            return
         try:
             with mrcfile.open(self.image_path) as mrc:
-                self.image = mrc.data
+                self._image = mrc.data
         except FileNotFoundError:
             with mrcfile.open(self.raw) as mrc:
-                self.image = mrc.data            
+                self._image = mrc.data            
         return
 
     def read_data(self):
@@ -284,7 +303,7 @@ class Montage(BaseImage):
             self.metadata['PieceCoordinates'] = [[0, 0, 0]]
             self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
             self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-            self.image = img
+            self._image = img
             self.make_symlink()
             return
 
@@ -301,9 +320,9 @@ class Montage(BaseImage):
         montage = montage[~np.all(montage == 0, axis=1)]
         montage = montage[:, ~(montage == 0).all(0)]
 
-        self.image = montage
+        self._image = montage
 
-        save_mrc(self.image_path, self.image, self.pixel_size, [0, 0])
+        save_mrc(self.image_path, self._image, self.pixel_size, [0, 0])
 
 @dataclass
 class Movie(BaseImage):

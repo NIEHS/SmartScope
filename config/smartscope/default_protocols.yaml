@@ -2,6 +2,7 @@
 - conditions:
     - [holeType.name, NegativeStain]
     - [holeType.name, Lacey]
+    - [holeType.name, MultiA]
   mode: any
   protocol: NegativeStain
 - conditions:

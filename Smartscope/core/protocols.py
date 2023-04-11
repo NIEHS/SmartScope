@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 import os
 from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, SMARTSCOPE_CONFIG
+from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, SMARTSCOPE_CUSTOM_CONFIG
 from Smartscope.lib.Datatypes.base_protocol import BaseProtocol
 from Smartscope.lib.converters import rgetattr
 
@@ -20,7 +20,7 @@ def load_protocol(file:Path):
     #             return yaml.safe_load(f)
 
 class AutoProtocol:
-    rules_file = SMARTSCOPE_CONFIG / 'default_protocols.yaml'
+    rules_file = SMARTSCOPE_CUSTOM_CONFIG / 'default_protocols.yaml'
 
     def __init__(self,grid):
         self.grid = grid

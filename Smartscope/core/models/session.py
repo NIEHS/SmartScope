@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import logging
-from django.db import connection, models, reset_queries
+from django.db import models
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -15,7 +15,8 @@ from Smartscope.lib.s3functions import *
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image_manipulations import embed_image
-from .misc_func import Cached_model_property, generate_unique_id, set_shape_values, cached_model_property
+from Smartscope.lib.Datatypes.models import generate_unique_id
+from .misc_func import Cached_model_property, set_shape_values, cached_model_property
 
 
 logger = logging.getLogger(__name__)
@@ -133,7 +134,7 @@ class ExtraPropertyMixin:
 
     @ property
     def png(self):
-        return os.path.join(self.working_dir, 'pngs', f'{self.name}.png')
+        return self.get_full_path(os.path.join(self.working_dir, 'pngs', f'{self.name}.png'))
 
     @ property
     def mrc(self):
@@ -145,7 +146,7 @@ class ExtraPropertyMixin:
 
     @ property
     def ctf_img(self):
-        return os.path.join(self.working_dir, self.name, 'ctf.png')
+        return self.get_full_path(os.path.join(self.working_dir, self.name, 'ctf.png'))
 
 
 class Microscope(BaseModel):
@@ -176,7 +177,23 @@ class Microscope(BaseModel):
 
     @ property
     def lockFile(self):
-        return f'{self.microscope_id}.lock'
+        return Path(settings.TEMPDIR,f'{self.microscope_id}.lock')
+    
+    @property
+    def isLocked(self):
+        if self.lockFile.exists():
+            return True
+        return False
+    
+    @property
+    def isPaused(self):
+        return Path(settings.TEMPDIR, f'paused_{self.microscope_id}').exists()
+    
+    @property
+    def currentSession(self):
+        if self.isLocked:
+            return ScreeningSession.objects.get(pk=self.lockFile.read_text())
+        return None
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -220,9 +237,9 @@ class Detector(BaseModel):
     energy_filter = models.BooleanField(default=False)
 
     frames_windows_directory = models.CharField(
-        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command. Should not need change for K2/K3 setups.')
+        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command.')
     frames_directory = models.CharField(max_length=200, default='/mnt/scope/movies/',
-                                        help_text='Location of the frames directory from the smartscope container. Should not need change for K2/K3 detectors.')
+                                        help_text='Location of the frames directory from SmartScope that point to the same location as frames_windows_directory.')
 
     objects = DetectorManager()
 
@@ -263,6 +280,7 @@ class GridCollectionParams(BaseModel):
     offset_targeting = models.BooleanField(default=True)
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
+    multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):
         db_table = 'gridcollectionparams'
@@ -284,7 +302,7 @@ class ScreeningSession(BaseModel):
     session = models.CharField(max_length=30)
     group = models.ForeignKey(Group, null=True, on_delete=models.SET_NULL, to_field='name')
     date = models.CharField(max_length=8)
-    version = models.CharField(max_length=8, editable=False)
+    version = models.CharField(max_length=20, editable=False)
     microscope_id = models.ForeignKey(Microscope, null=True, on_delete=models.SET_NULL, to_field='microscope_id')
     detector_id = models.ForeignKey(Detector, null=True, on_delete=models.SET_NULL)
     working_dir = models.CharField(max_length=300, editable=False)
@@ -325,23 +343,20 @@ class ScreeningSession(BaseModel):
     @ property
     def stop_file(self):
         return os.path.join(os.getenv('TEMPDIR'), f'{self.session_id}.stop')
+    
+    @ property
+    def progress(self):
+        statuses= self.autoloadergrid_set.all().values_list('status', flat=True)
+        completed = list(filter(lambda x: x == 'complete',statuses))
+        return len(completed), len(statuses), int(len(completed)/len(statuses)*100)
+
+    @property
+    def currentGrid(self):
+        return self.autoloadergrid_set.all().order_by('position').exclude(status='complete').first()
 
     @ property
     def storage(self):
         return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
-
-    @ property
-    def scopeLockFile(self):
-        return self.microscope_id.lockFile
-
-    @ property
-    def isScopeLocked(self):
-        lockFile = os.path.join(settings.TEMPDIR, self.scopeLockFile)
-        if os.path.isfile(lockFile):
-            with open(lockFile, 'r') as lock:
-                session_id = lock.read()
-            return lockFile, session_id
-        return lockFile, None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -687,7 +702,7 @@ class Target(BaseModel):
             if selector.label in plugin.exclude:
                 return True, selector.label
 
-        return False, selector.label
+        return False, ''
 
     def is_good(self):
         """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
@@ -850,9 +865,9 @@ class HoleModel(Target, ExtraPropertyMixin):
     @ property
     def targets(self):
         if self.bis_group is None:
-            return HighMagModel.objects.filter(hole_id__in=[self.hole_id])
+            return HighMagModel.objects.filter(hole_id=self.hole_id)
 
-        holes_in_group = HoleModel.objects.filter(bis_group=self.bis_group).values_list('hole_id', flat=True)
+        holes_in_group = HoleModel.objects.filter(square_id=self.square_id,bis_group=self.bis_group).values_list('hole_id', flat=True)
         return HighMagModel.display.filter(hole_id__in=holes_in_group)
 
     @ property
@@ -973,6 +988,8 @@ class HighMagModel(Target, ExtraPropertyMixin):
     
     @property
     def power_spectrum(self):
+        if self.is_aws:
+            return self.ctf_img
         return embed_image(self.ctf_img)
 
 

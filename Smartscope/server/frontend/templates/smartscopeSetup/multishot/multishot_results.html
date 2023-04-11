@@ -1,0 +1,18 @@
+<div class="row overflow-scroll">
+    {% for result in results %}
+        <div class="col-md-6 h-100">
+            {% include "./multishot_result_card.html" with result=result %}
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    function checkSelection() {
+        $('.multishotResult').removeClass('border border-4 border-primary')
+        let selected_id = $("[name='multishot_per_hole_id']").val()
+        console.log(selected_id, $(`#${selected_id}`))
+        $(`#${selected_id}`).addClass('border border-4 border-primary')
+    }
+
+</script>
+
