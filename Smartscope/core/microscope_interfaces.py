@@ -390,6 +390,9 @@ class FakeScopeInterface(MicroscopeInterface):
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
+    def tiltTo(self,tiltAngle):
+        pass
+
     def highmag(self, file='', frames=True, earlyReturn=False):
         if not frames:
             generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
