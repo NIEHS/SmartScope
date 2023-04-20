@@ -1,0 +1,33 @@
+name: SPA-precise
+atlas:
+  acquisition:
+      - setAtlasOptics 
+      - atlas
+  targets:
+    finders:
+      - AI square finder
+    selectors:
+      - Size selector
+square:
+  acquisition:
+    - moveStage
+    - realignToSquare
+    - eucentricMediumMag
+    - square
+  targets:
+    finders:
+      - AI hole finder
+      - Regular pattern
+    selectors:
+      - Graylevel selector
+mediumMag:
+  acquisition:
+    - setFocusPosition
+    - tiltToAngle
+    - moveStage
+    - loadHoleRef
+    - alignToHoleRef
+    - mediumMagHole
+highMag:
+  acquisition:
+    - highMag

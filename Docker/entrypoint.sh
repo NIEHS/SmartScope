@@ -9,7 +9,8 @@ echo "Config version is \"$version\" and current version is \"$VERSION\""
 if [ "$version" != "$VERSION" ]; then
   echo 'Updating config'
   echo $VERSION > /opt/config/version
-  cp -r /opt/smartscope/config/smartscope/* /opt/config/
+  mkdir -p /opt/config/plugins /opt/config/protocols
+  cp /opt/smartscope/config/smartscope/* /opt/config/
 fi
 
 if $USE_SSL; then

@@ -134,7 +134,7 @@ class ExtraPropertyMixin:
 
     @ property
     def png(self):
-        return os.path.join(self.working_dir, 'pngs', f'{self.name}.png')
+        return self.get_full_path(os.path.join(self.working_dir, 'pngs', f'{self.name}.png'))
 
     @ property
     def mrc(self):
@@ -146,7 +146,7 @@ class ExtraPropertyMixin:
 
     @ property
     def ctf_img(self):
-        return os.path.join(self.working_dir, self.name, 'ctf.png')
+        return self.get_full_path(os.path.join(self.working_dir, self.name, 'ctf.png'))
 
 
 class Microscope(BaseModel):
@@ -237,9 +237,9 @@ class Detector(BaseModel):
     energy_filter = models.BooleanField(default=False)
 
     frames_windows_directory = models.CharField(
-        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command. Should not need change for K2/K3 setups.')
+        max_length=200, default='movies', help_text='Location of the frames from the perspective of SerialEM. This values will use the SetDirectory command.')
     frames_directory = models.CharField(max_length=200, default='/mnt/scope/movies/',
-                                        help_text='Location of the frames directory from the smartscope container. Should not need change for K2/K3 detectors.')
+                                        help_text='Location of the frames directory from SmartScope that point to the same location as frames_windows_directory.')
 
     objects = DetectorManager()
 
@@ -702,7 +702,7 @@ class Target(BaseModel):
             if selector.label in plugin.exclude:
                 return True, selector.label
 
-        return False, selector.label
+        return False, ''
 
     def is_good(self):
         """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
@@ -988,6 +988,8 @@ class HighMagModel(Target, ExtraPropertyMixin):
     
     @property
     def power_spectrum(self):
+        if self.is_aws:
+            return self.ctf_img
         return embed_image(self.ctf_img)
 
 

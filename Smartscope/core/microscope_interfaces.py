@@ -186,7 +186,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, zerolossDelay, framesName=None):
+    def setup(self, saveframes, framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
@@ -199,10 +199,12 @@ class SerialemInterface(MicroscopeInterface):
             logger.info('Saving frames disabled')
             sem.SetDoseFracParams('P', 1, 0, 1)
 
-        if self.detector.energyFilter and zerolossDelay > 0:
-            sem.RefineZPL(zerolossDelay * 60, 1)
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
+
+    def refineZLP(self, zerolossDelay):
+        if self.detector.energyFilter and zerolossDelay > 0:
+            sem.RefineZLP(zerolossDelay * 60)
 
     def disconnect(self, close_valves=True):
         
@@ -388,13 +390,20 @@ class FakeScopeInterface(MicroscopeInterface):
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
 
+    def tiltTo(self,tiltAngle):
+        pass
+
     def highmag(self, file='', frames=True, earlyReturn=False):
-        generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+        if not frames:
+            generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+            return
+        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=os.path.join(self.microscope.scopePath, 'movies'))
+        return frames.split('\\')[-1]
 
     def connect(self):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, zerolossDelay, framesName=None):
+    def setup(self, saveframes, framesName=None):
         pass
 
     def disconnect(self, close_valves=True):

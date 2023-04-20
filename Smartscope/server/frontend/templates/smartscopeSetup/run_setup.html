@@ -16,7 +16,7 @@
         <input id="autoloaderForm" class="form-control" type="hidden"></input>
         <div id="autoloaderFormError" class="alert alert-danger collapse">At least one grid is required</div>
     </div>
-    <div id='autoloader' class="d-flex flex-row">
+    <div id='autoloader' class="d-flex flex-row flex-wrap">
         {% for grid in grids %}
         <div id="grid-{{ forloop.counter }}" class='col-12 col-md-6 col-lg-4 col-xl-3 p-1 topgrid'>
             <div class="card">

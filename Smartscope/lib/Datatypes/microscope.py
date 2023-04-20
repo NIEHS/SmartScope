@@ -200,3 +200,6 @@ class MicroscopeInterface(ABC):
     @abstractmethod
     def loadGrid(self, position):
         pass
+
+    def refineZLP(self, zerolossDelay):
+        pass
