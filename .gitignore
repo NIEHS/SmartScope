@@ -32,3 +32,6 @@ docker-compose.yml.bak
 .python_history
 MyDocker/*
 
+.mysql_history
+.gitignore
+.ipython/profile_default/history.sqlite
