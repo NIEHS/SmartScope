@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any
 from django import forms
 from Smartscope.core.models import *
 from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, PROTOCOLS_FACTORY 
+from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY
 import yaml
 from django.urls import reverse
 
@@ -119,7 +120,7 @@ class GridCollectionParamsForm(forms.ModelForm):
         )
 
     # multishot_per_hole = forms.BooleanField(label='Multishot per hole', initial=False,help_text='Enable multishot per hole. The mutlishot menu will need to be filled.')
-    multishot_per_hole_id = forms.CharField(label='Multishot per hole ID',required=False)
+    multishot_per_hole_id = forms.CharField(label='Multishot per hole ID', required=False)
 
 
     def __init__(self, *args, grid_id=None, **kwargs):
@@ -175,6 +176,10 @@ class GridCollectionParamsForm(forms.ModelForm):
             self.fields[field].widget.attrs.update(data)
 
 
+class PreprocessingPipelineIDForm(forms.Form):
+    preprocessing_pipeline_id = forms.CharField(label='Preprocessing pipeline ID', required=False)
+
+
 class AssingBisGroupsForm(forms.Form):
     directory = forms.CharField(max_length=100, empty_value='Micrographs', help_text='Relative directory from the root of the relion project')
     extension = forms.CharField(max_length=30, empty_value=None,
@@ -210,7 +215,13 @@ class SelectProtocolForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['protocol'].widget.attrs.update({
             'class': 'form-control'
-            # 'hx-get':reverse('setMultishot'),
-            # 'hx-target':"#main",
-            # 'hx-swap':"beforeend",
-        })            
+        })
+
+class SelectPeprocessingPipilelineForm(forms.Form):
+    pipeline = forms.ChoiceField( choices=[('', '----')]+[(key,val.verbose_name) for key,val in PREPROCESSING_PIPELINE_FACTORY.items()], label='Pipeline', help_text='Select from the available preprocessing pipelines.')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['pipeline'].widget.attrs.update({
+            'class': 'form-control',
+        })

@@ -33,7 +33,7 @@ from Smartscope.server.lib.worker_jobs import send_to_worker
 
 from Smartscope.core.models.models_actions import targets_methods
 from Smartscope.core.db_manipulations import get_hole_count, viewer_only
-from Smartscope.core.cache import save_multishot_from_cache
+from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.models import *
 
 logger = logging.getLogger(__name__)
@@ -366,8 +366,11 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             form_params = GridCollectionParamsForm(data)
             if form_params.is_valid():
                 multishot_per_hole_id = form_params.cleaned_data.pop('multishot_per_hole_id')
+                preprocessing_pipeline_id = form_params.cleaned_data.pop('preprocessing_pipeline_id')
                 if multishot_per_hole_id != "":
-                    save_multishot_from_cache(multishot_per_hole_id, obj.directory)
+                    save_json_from_cache(multishot_per_hole_id, obj.directory,'multishot')
+                # if preprocessing_pipeline_id != "":
+                #     save_json_from_cache(preprocessing_pipeline_id,obj.directory,'preprocessing')
                 params, created = GridCollectionParams.objects.get_or_create(**form_params.cleaned_data)
                 logger.debug(f'Params newly created: {created}')
                 obj.params_id = params

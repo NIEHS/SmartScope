@@ -25,3 +25,5 @@ PLUGINS_FACTORY['CTF Viewer'] = CTFFitViewer()
 
 ##Register available protocol commands
 PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)
+
+DEFAULT_PREPROCESSING_PIPELINE = [ SMARTSCOPE_CUSTOM_CONFIG / 'default_preprocssing.json', SMARTSCOPE_DEFAULT_CONFIG / 'default_preprocssing.json' ]

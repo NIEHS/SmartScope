@@ -131,7 +131,7 @@ def run_grid(grid, session, processing_queue, scope):
     # ADD the new protocol loader
     protocol = get_or_set_protocol(grid)
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
-    subprocess.Popen(shlex.split(f'smartscope.py highmag_processing smartscopePipeline {grid.grid_id} 1'))
+    subprocess.Popen(shlex.split(f'smartscope.py highmag_processing {grid.grid_id}'))
     is_stop_file(session_id)
     atlas = queue_atlas(grid)
     scope.loadGrid(grid.position)

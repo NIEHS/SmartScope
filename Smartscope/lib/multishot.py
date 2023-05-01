@@ -74,6 +74,7 @@ class MultiShot(BaseModel):
     in_hole: float
     coverage: float
     display: Optional[str]
+    params: Optional[RecordParams]
     cache_id:str = Field(default_factory=generate_unique_id)
 
     class Config:
@@ -93,6 +94,7 @@ class MultiShot(BaseModel):
     def set_display(self,record_params: RecordParams):
         stream = display_multishot_matplotlib(self.shots,record_params.hole_size,record_params.beam_size_um,record_params.detector_size_um)
         self.display=base64.b64encode(stream.getvalue()).decode()
+        self.params = record_params
 
 
 def make_beam_and_fov_masks(shots,beam_size,fov_size,box:MaskBox):
