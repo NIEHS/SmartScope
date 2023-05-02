@@ -16,6 +16,11 @@
                 href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=png">
                 .png
             </a>
+            <a id='opt-png' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
+                title="Download png with overlays"
+                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=svg">
+                .png + overlay
+            </a>
             <a id='opt-raw' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
                 title="Download raw file saved by the scope"
                 href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=raw">

@@ -12,6 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import base64
+import io
 import json
 import os
 import time
@@ -39,6 +40,20 @@ from Smartscope.core.models import *
 logger = logging.getLogger(__name__)
 
 
+def image_as_bytes(image_path):
+    img = Path(image_path)
+    return open(img,'rb'), img.name
+
+def svg_as_png(instance, context):
+    d = instance.svg(display_type=context['display_type'], method=context['method'])
+    scale = min([1000/d.width, 1000/d.height])
+    d.setPixelScale(scale)
+    d.savePng('/tmp/download.png')
+    with  open('/tmp/download.png','rb') as f:
+        img = io.BytesIO(f.read())
+
+    return img, f'{instance.name}.png'
+
 class ExtraActionsMixin:
 
     def load(self, request, **kwargs):
@@ -46,11 +61,9 @@ class ExtraActionsMixin:
         serializer = SvgSerializer(instance=obj, context={'request': request})
         context = serializer.data
         return Response(serializer.data, template_name='mapcard.html')
-
-    def load_card(self, request, **kwargs):
-        reset_queries()
+    
+    def get_card_context(self,instance,request,**kwargs):
         context = dict()
-        obj = self.queryset.filter(pk=kwargs['pk']).first()
         display_type = request.query_params.get('display_type')
         if display_type is not None:
             display_type = isnull_to_none(display_type)
@@ -59,12 +72,18 @@ class ExtraActionsMixin:
         if method is not None:
             method = isnull_to_none(method)
         context['method'] = method
-        context['targets_methods'] = targets_methods(obj)
-        context['instance'] = obj
+        context['targets_methods'] = targets_methods(instance)
+        context['instance'] = instance
         if context['method'] is None:
             methods = context['targets_methods'][context['display_type']]
             if len(methods) > 0:
                 context['method'] = methods[0].name
+        return context
+
+    def load_card(self, request, **kwargs):
+        reset_queries()
+        obj = self.queryset.filter(pk=kwargs['pk']).first()
+        context = self.get_card_context(obj, request)
         serializer = SvgSerializer(instance=obj, display_type=context['display_type'], method=context['method'])
         context = {**context, **serializer.data}
         context['card'] = render_to_string('mapcard.html', context=context, )
@@ -85,14 +104,13 @@ class ExtraActionsMixin:
             extension = 'mrc'
         instance = self.get_object()
         extension_factory = {
-            'mrc': 'mrc',
-            'raw': 'raw_mrc',
-            'png': 'png'
+            'mrc': functools.partial(image_as_bytes,instance.mrc),
+            'raw': functools.partial(image_as_bytes,instance.raw_mrc),
+            'png': functools.partial(image_as_bytes,instance.png),
+            'svg': functools.partial(svg_as_png, instance, self.get_card_context(instance,request))
         }
-        img = Path(getattr(instance, extension_factory[extension]))
-        response = FileResponse(open(img, 'rb'), content_type='image/*')
-        response['Content-Length'] = os.path.getsize(img)
-        response['Content-Disposition'] = f"attachment; filename={img.name}"
+        img,name = extension_factory[extension]()
+        response = FileResponse(img, content_type='image/*', as_attachment=True, filename=name)
         return response
 
 
@@ -496,10 +514,15 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
             queryset = list(HighMagModel.objects.filter(hole_id=kwargs['pk'], status='completed'))
         else:
             queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
-                                                        hole_id__bis_group=obj.bis_group, status='completed').order_by('is_x', 'is_y'))
-        context = dict(holes=queryset)
+                                                        hole_id__bis_group=obj.bis_group, status='completed').order_by('hole_id__number','number'))
+        context = {}
         context['classifier'] = PLUGINS_FACTORY['Micrographs curation']
-        resp = SimpleTemplateResponse(context=context, content_type='text/html', template='holecard.html')
+        response_context= dict(cards=[])
+        for hole in queryset:
+            context['hole']=hole
+            context['svg'] = hole.svg().asSvg()
+            response_context['cards'].append(render_to_string('holecard.html',context))
+        resp = SimpleTemplateResponse(context=response_context, content_type='text/html', template='holecards.html')
         logger.debug(resp)
         return resp
 

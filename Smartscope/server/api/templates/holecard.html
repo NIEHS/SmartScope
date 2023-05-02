@@ -1,5 +1,4 @@
 {% load rest_framework %}
-{% for hole in holes %}
 <div class='col-12 col-lg-6 col-xl-4 p-1'>
     <div id="{{hole.hm_id}}" hole_id="{{hole.hole_id.hole_id}}" class="card holeCard">
         <div class="card-header">
@@ -33,7 +32,7 @@
             <div class="div row mw-100 m-0 p-0 justify-content-center">
                 <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-center">
                     <div class="w-100">
-                        {{hole.SVG | safe }}
+                        {{svg | safe }}
                     </div>
                 </div>
                 <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-center">
@@ -57,4 +56,3 @@
 
     </div>
 </div>
-{% endfor %}
