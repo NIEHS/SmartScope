@@ -10,6 +10,7 @@ from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
+from django.template.response import TemplateResponse
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.utils.timezone import now
@@ -19,8 +20,9 @@ from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.file_manipulations import create_grid_directories
 from Smartscope.lib.multishot import RecordParams,set_shots_per_hole, load_multishot_from_file
-from Smartscope.core.cache import save_multishot_from_cache
+from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.protocols import load_protocol, set_protocol
+from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY, load_preprocessing_pipeline
 
 logger =logging.getLogger(__name__)
 
@@ -59,9 +61,11 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
         if not 'form_general' in kwargs.keys():
             form_general = ScreeningSessionForm()
             form_params = GridCollectionParamsForm()
+            form_preprocess = PreprocessingPipelineIDForm()
         else:
             form_general = kwargs['form_general']
             form_params = kwargs['form_params']
+            form_preprocess = kwargs['form_preprocess']
 
         grids = []
         form = AutoloaderGridForm(prefix=1)
@@ -69,7 +73,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
         grids.append(form)
 
-        context = dict(form_general=form_general, form_params=form_params, grids=grids)
+        context = dict(form_general=form_general, form_params=form_params,form_preprocess=form_preprocess, grids=grids)
         sessions = ScreeningSession.objects.all().order_by('-date')[:10]
         context['sessions'] = sessions
         print(context['grids'])
@@ -79,11 +83,12 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
         is_viewer_only = viewer_only(self.request.user)
         form_general = ScreeningSessionForm(request.POST)
         form_params = GridCollectionParamsForm(request.POST)
+        form_preprocess = PreprocessingPipelineIDForm(request.POST)
         if not is_viewer_only:
 
             num_grids = set([k.split('-')[0] for k in request.POST.keys() if k.split('-')[0].isnumeric()])
 
-            if form_general.is_valid() and form_params.is_valid():
+            if form_general.is_valid() and form_params.is_valid() and form_preprocess.is_valid():
 
                 session, created = ScreeningSession.objects.get_or_create(**form_general.cleaned_data, date=datetime.today().strftime('%Y%m%d'))
                 if created:
@@ -91,6 +96,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
                 # multishot = form_params.cleaned_data.pop('multishot_per_hole')
                 multishot_per_hole_id = form_params.cleaned_data.pop('multishot_per_hole_id')
+                preprocessing_pipeline_id = form_preprocess.cleaned_data.pop('preprocessing_pipeline_id',False)
                 params, created = GridCollectionParams.objects.get_or_create(**form_params.cleaned_data)
                 if created:
                     logger.debug(f'{params} newly created')
@@ -111,7 +117,8 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                             logger.debug(f'Setting protocol {protocol} for {grid}')
                             get_or_set_protocol(grid,protocol)
                             if params.multishot_per_hole:
-                                save_multishot_from_cache(multishot_per_hole_id, grid.directory)
+                                save_json_from_cache(multishot_per_hole_id, grid.directory,'multishot')
+                            save_json_from_cache(preprocessing_pipeline_id, grid.directory,'preprocessing')
 
                 return redirect(f'../session/{session.session_id}')
 
@@ -373,4 +380,79 @@ class MicroscopeStatus(TemplateView):
     
     def get(self,request, *args, **kwargs):
         context = self.get_context_data(*args, **kwargs)
-        return render(request,self.template_name, context)    
+        return render(request,self.template_name, context)
+    
+class PreprocessingPipeline(TemplateView):
+    template_name= "autoscreenViewer/preprocessing_pipeline.html"
+
+    def get(self,request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return render(request,self.template_name, context)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = SelectPeprocessingPipilelineForm()
+        return context
+    
+    def get_grid_context_data(self,grid_id):
+        context = dict()
+        grid = AutoloaderGrid.objects.get(pk=grid_id)
+        pipeline_data = load_preprocessing_pipeline(Path(grid.directory, 'preprocessing.json'))
+        pipeline = PREPROCESSING_PIPELINE_FACTORY[pipeline_data.pipeline]
+        context['grid'] = grid
+        context['form'] = SelectPeprocessingPipilelineForm(data={'pipeline':pipeline_data.pipeline})
+        context['pipeline_form'] = pipeline.form(data=pipeline_data.kwargs)
+        context['pipeline'] = pipeline_data.pipeline
+        context['description'] = pipeline.description
+        context['pipeline_data'] = pipeline_data
+        return context
+
+    def get_grid_pipeline(self, request, *args ,grid_id, **kwargs):
+        context = self.get_grid_context_data(grid_id)
+        return render(request,self.template_name, context)
+
+    
+    def getpipeline(self, request, *args, **kwargs):
+        context = {}
+        form = SelectPeprocessingPipilelineForm(request.POST)
+        if form.is_valid(): 
+            logger.debug(form.cleaned_data)
+            data = form.cleaned_data
+            pipeline = PREPROCESSING_PIPELINE_FACTORY[data['pipeline']]
+            context['pipeline'] = data['pipeline']
+            context['description'] = pipeline.description
+            context['form'] = pipeline.form()
+            return TemplateResponse(request=request,template="autoscreenViewer/preprocessing_pipeline_form.html",context=context)
+    
+    def setpipeline(self, request,pipeline, *args, grid_id=None, **kwargs):
+        try:
+                logger.debug(request.POST)
+                pipeline_obj = PREPROCESSING_PIPELINE_FACTORY[pipeline]
+                form = pipeline_obj.form(request.POST)
+                logger.debug(f'Updating pipeline for {grid_id}')
+                if form.is_valid():
+                    pipeline_data = pipeline_obj.pipeline_data(form.cleaned_data)
+                    if grid_id is None:
+                        cache.set(pipeline_data.cache_id,pipeline_data.json(exclude={'cache_id'}),timeout=30*60)
+                        logger.debug(pipeline_data)
+                        return TemplateResponse(request=request,
+                                                template='forms/formFieldsBase.html',
+                                                context=dict(form=PreprocessingPipelineIDForm(data=dict(preprocessing_pipeline_id=pipeline_data.cache_id)), 
+                                                                                            row=True, 
+                                                                                            id='formPreprocess'))
+                    grid = AutoloaderGrid.objects.get(pk=grid_id)
+                    Path(grid.directory,'preprocessing.json').write_text(pipeline_data.json(exclude={'cache_id'}))
+                    logger.info('Updated pipeline for existing grid')
+                    return HttpResponse('Saved')
+        except Exception as err:
+            logger.exception(err)
+
+    def start(self, request, grid_id, *args, **kwargs):
+        context = self.get_grid_context_data(grid_id)
+        context['pipeline_data'].start(context['grid'])
+        return self.get_grid_pipeline(request,grid_id=grid_id)
+
+    def stop(self, request, grid_id, *args, **kwargs):
+        context = self.get_grid_context_data(grid_id)
+        context['pipeline_data'].stop(context['grid'])
+        return self.get_grid_pipeline(request,grid_id=grid_id)
