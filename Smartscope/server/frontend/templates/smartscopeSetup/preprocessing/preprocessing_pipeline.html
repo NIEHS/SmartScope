@@ -3,12 +3,11 @@
 
 {% block sidebar_content %}
 <div class="col justify-content-center">
-    <form  method="post" 
-            hx-post="{% url 'getPreprocessingPipeline' %}"
+    <form   method="get" 
+            hx-get="{% url 'getPreprocessingPipeline' %}"
             hx-target="#preprocessingPipelineForm"
             hx-indicator="#spinner"
             hx-trigger="change">
-        {% csrf_token %}
         {% include "forms/formFieldsBase.html" with form=form row=false %}
         <div id="spinner" class="my-indicator spinner-border text-primary" role="status">
             <span class="sr-only"></span>
