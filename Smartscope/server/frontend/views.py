@@ -118,7 +118,8 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                             get_or_set_protocol(grid,protocol)
                             if params.multishot_per_hole:
                                 save_json_from_cache(multishot_per_hole_id, grid.directory,'multishot')
-                            save_json_from_cache(preprocessing_pipeline_id, grid.directory,'preprocessing')
+                            if preprocessing_pipeline_id != '':
+                                save_json_from_cache(preprocessing_pipeline_id, grid.directory,'preprocessing')
 
                 return redirect(f'../session/{session.session_id}')
 
@@ -383,7 +384,7 @@ class MicroscopeStatus(TemplateView):
         return render(request,self.template_name, context)
     
 class PreprocessingPipeline(TemplateView):
-    template_name= "autoscreenViewer/preprocessing_pipeline.html"
+    template_name= "smartscopeSetup/preprocessing/preprocessing_pipeline.html"
 
     def get(self,request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
@@ -412,38 +413,47 @@ class PreprocessingPipeline(TemplateView):
         return render(request,self.template_name, context)
 
     
-    def getpipeline(self, request, *args, **kwargs):
-        context = {}
-        form = SelectPeprocessingPipilelineForm(request.POST)
-        if form.is_valid(): 
-            logger.debug(form.cleaned_data)
-            data = form.cleaned_data
-            pipeline = PREPROCESSING_PIPELINE_FACTORY[data['pipeline']]
-            context['pipeline'] = data['pipeline']
-            context['description'] = pipeline.description
-            context['form'] = pipeline.form()
-            return TemplateResponse(request=request,template="autoscreenViewer/preprocessing_pipeline_form.html",context=context)
-    
-    def setpipeline(self, request,pipeline, *args, grid_id=None, **kwargs):
+    def get_pipeline(self, request, *args, **kwargs,):
         try:
-                logger.debug(request.POST)
-                pipeline_obj = PREPROCESSING_PIPELINE_FACTORY[pipeline]
-                form = pipeline_obj.form(request.POST)
-                logger.debug(f'Updating pipeline for {grid_id}')
-                if form.is_valid():
-                    pipeline_data = pipeline_obj.pipeline_data(form.cleaned_data)
-                    if grid_id is None:
-                        cache.set(pipeline_data.cache_id,pipeline_data.json(exclude={'cache_id'}),timeout=30*60)
-                        logger.debug(pipeline_data)
-                        return TemplateResponse(request=request,
-                                                template='forms/formFieldsBase.html',
-                                                context=dict(form=PreprocessingPipelineIDForm(data=dict(preprocessing_pipeline_id=pipeline_data.cache_id)), 
-                                                                                            row=True, 
-                                                                                            id='formPreprocess'))
-                    grid = AutoloaderGrid.objects.get(pk=grid_id)
-                    Path(grid.directory,'preprocessing.json').write_text(pipeline_data.json(exclude={'cache_id'}))
-                    logger.info('Updated pipeline for existing grid')
-                    return HttpResponse('Saved')
+            context = {}
+            pipeline = request.GET.get('pipeline',None)
+            # form = SelectPeprocessingPipilelineForm(request.POST)
+            # is_valid = form.is_valid()
+            # if not is_valid:
+            #     return HttpResponse('Form invalid')
+            # if is_valid: 
+            #     logger.debug(form.cleaned_data)
+            #     data = form.cleaned_data
+            pipeline_obj = PREPROCESSING_PIPELINE_FACTORY[pipeline]
+            logger.debug(pipeline)
+            context['pipeline'] = pipeline
+            context['description'] = pipeline_obj.description
+            context['form'] = pipeline_obj.form()
+            # context['grid_id'] = None
+            return TemplateResponse(request=request,template="smartscopeSetup/preprocessing/preprocessing_pipeline_form.html",context=context)
+        except Exception as err:
+            logger.exception(err)
+    
+    def set_pipeline(self, request,pipeline, *args, grid_id=None, **kwargs):
+        try:
+            logger.debug(request.POST)
+            pipeline_obj = PREPROCESSING_PIPELINE_FACTORY[pipeline]
+            form = pipeline_obj.form(request.POST)
+            logger.debug(f'Updating pipeline for {grid_id}')
+            if form.is_valid():
+                pipeline_data = pipeline_obj.pipeline_data(form.cleaned_data)
+                if grid_id is None or not grid_id:
+                    cache.set(pipeline_data.cache_id,pipeline_data.json(exclude={'cache_id'}),timeout=30*60)
+                    logger.debug(pipeline_data)
+                    return TemplateResponse(request=request,
+                                            template='forms/formFieldsBase.html',
+                                            context=dict(form=PreprocessingPipelineIDForm(data=dict(preprocessing_pipeline_id=pipeline_data.cache_id)), 
+                                                                                        row=True, 
+                                                                                        id='formPreprocess'))
+                grid = AutoloaderGrid.objects.get(pk=grid_id)
+                Path(grid.directory,'preprocessing.json').write_text(pipeline_data.json(exclude={'cache_id'}))
+                logger.info('Updated pipeline for existing grid')
+                return HttpResponse('Saved')
         except Exception as err:
             logger.exception(err)
 

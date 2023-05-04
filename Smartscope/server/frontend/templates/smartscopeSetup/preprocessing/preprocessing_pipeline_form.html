@@ -6,7 +6,9 @@
         
         {% include "forms/formFieldsBase.html" with form=form row=false %}
         <div class="d-flex flex-row align-content-center">
-            <button type="submit" class="btn btn-primary" hx-post="{% url 'setPreprocessingPipeline' pipeline=pipeline grid_id=grid_id %}" hx-indicator="#spinner" hx-target="#preprocessingPipelineForm">
+            <button type="submit" class="btn btn-primary" 
+                hx-post="{% url 'setPreprocessingPipeline' pipeline=pipeline grid_id=grid_id %}" 
+                hx-indicator="#spinner" hx-target="#formPreprocess">
                 Save
             </button>
             <div id="spinner" class="my-indicator spinner-border text-primary" role="status">
