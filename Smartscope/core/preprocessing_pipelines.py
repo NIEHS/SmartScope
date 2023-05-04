@@ -18,6 +18,7 @@ from Smartscope.lib.Datatypes.models import generate_unique_id
 from Smartscope.lib.preprocessing_methods import get_CTFFIN4_data, process_hm_from_average, process_hm_from_frames, processing_worker_wrapper
 from Smartscope.core.models.models_actions import update_fields
 from Smartscope.core.settings.worker import DEFAULT_PREPROCESSING_PIPELINE
+from Smartscope.lib.logger import add_log_handlers
 
 from django.db import transaction
 from django import forms
@@ -102,6 +103,21 @@ class PreprocessingPipelineCmd(BaseModel):
         proc = sub.call(shlex.split(f'/opt/smartscope/Smartscope/bin/smartscope.sh highmag_processing {grid.grid_id}'))
         time.sleep(3)
 
+# class NonBlockingJoinableQueue(multiprocessing.JoinableQueue):
+
+#     def check_join(self, timeout=3):
+#         '''Blocks until all items in the Queue have been gotten and processed.
+
+#         The count of unfinished tasks goes up whenever an item is added to the
+#         queue. The count goes down whenever a consumer thread calls task_done()
+#         to indicate the item was retrieved and all work on it is complete.
+
+#         When the count of unfinished tasks drops to zero, join() unblocks.
+#         '''
+#         with self.all_tasks_done:
+#             while self.unfinished_tasks:
+#                 self.all_tasks_done.wait(timeout=timeout)
+
         
 
 class SmartscopePreprocessingPipeline(PreprocessingPipeline):
@@ -125,6 +141,15 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         self.frames_directory = [Path(self.detector.frames_directory)]
         if self.cmd_data.frames_directory is not None:
             self.frames_directory.append(self.cmd_data.frames_directory)
+
+    def clear_queue(self):
+        while True:
+            try:
+                self.to_process_queue.get_nowait()
+                self.to_process_queue.task_done()
+            except multiprocessing.queues.Empty:
+                break
+        # self.to_process_queue.join()
     
     @classmethod
     def form(cls,data:Union[Mapping,None]=None):
@@ -154,15 +179,20 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         while not self.is_stop_file():
             self.queue_incomplete_processes()
             self.to_process_queue.join()
+            # while not self.to_process_queue.check_join(timeout=3):
+            #     if not self.is_stop_file():
+            #         continue
+            #     self.clear_queue()
             self.check_for_update()
             self.update_processes()
             self.list_incomplete_processes()
             self.grid.refresh_from_db()
             if self.grid.status == 'complete' and len(self.incomplete_processes) == 0:
-                break
+                return
+        
 
     def list_incomplete_processes(self):
-        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time')[:20])
+        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time')[:5*self.cmd_data.n_processes])
 
     def queue_incomplete_processes(self):
         from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,
@@ -230,12 +260,12 @@ class SmartScopePreprocessingPipelineForm(forms.Form):
 PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline)
 
 def load_preprocessing_pipeline(file:Path):
-    if file.exists:
+    if file.exists():
         return PreprocessingPipelineCmd.parse_file(file)
     logger.info(f'Preprocessing file {file} does not exist. Loading default pipeline.')
     for default in DEFAULT_PREPROCESSING_PIPELINE:
         if default.exists():
-            return PreprocessingPipelineCmd.parse_file(file)
+            return PreprocessingPipelineCmd.parse_file(default)
     logger.info(f'Default preprocessing pipeline not found.')
     return None 
     
@@ -243,10 +273,14 @@ def load_preprocessing_pipeline(file:Path):
 def highmag_processing(grid_id: str, *args, **kwargs) -> None:
     try:
         grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+        logging.getLogger('Smartscope').handlers.pop()
+        logger.debug(f'Log handlers:{logger.handlers}')
+        add_log_handlers(directory=grid.session_id.directory, name='proc.out')
+        logger.debug(f'Log handlers:{logger.handlers}')
         preprocess_file = Path(grid.directory,'preprocessing.json')
         cmd_data = load_preprocessing_pipeline(preprocess_file)
         if cmd_data is None:
-            logging.info('Trying to load preprocessing parameters from command line arguments.')
+            logger.info('Trying to load preprocessing parameters from command line arguments.')
             cmd_data = PreprocessingPipelineCmd.parse_obj(**kwargs)
         if cmd_data.is_running():
             logger.info(f'Processings with PID:{cmd_data.process_pid} seem to already be running, please kill the other one before continuing.')

@@ -118,7 +118,8 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                             get_or_set_protocol(grid,protocol)
                             if params.multishot_per_hole:
                                 save_json_from_cache(multishot_per_hole_id, grid.directory,'multishot')
-                            save_json_from_cache(preprocessing_pipeline_id, grid.directory,'preprocessing')
+                            if preprocessing_pipeline_id != '':
+                                save_json_from_cache(preprocessing_pipeline_id, grid.directory,'preprocessing')
 
                 return redirect(f'../session/{session.session_id}')
 

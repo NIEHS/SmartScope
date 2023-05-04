@@ -3,10 +3,17 @@
     <span class="d-flex flex-row"><b>Status: </b>{% if data.is_running %}Running{% else %}Stopped{% endif %}</span>
     <span class="d-flex flex-row"><b>PID: </b>{{data.process_pid}}</span>
     {% if data.is_running %}
-        <button class="btn btn-danger" hx-get="{% url 'stopPreprocessingPipeline' grid_id=grid_id %}" hx-indicator="#spinnerProcess" hx-target="#rightSidebarMenu" hx-swap="outerHTML">Stop</button>
+        <button class="btn btn-danger" hx-get="{% url 'stopPreprocessingPipeline' grid_id=grid_id %}" hx-indicator="#spinnerStopProcess" hx-target="#rightSidebarMenu" hx-swap="outerHTML">Stop</button>
     {% else %}
         <button class="btn btn-primary" hx-get="{% url 'startPreprocessingPipeline' grid_id=grid_id %}" hx-indicator="#spinnerProcess" hx-target="#rightSidebarMenu" hx-swap="outerHTML">Start</button>
     {% endif %}
     <div id="spinnerProcess" class="my-indicator spinner-border text-primary" role="status">
         <span class="sr-only"></span>
+    </div>
+    <div id="spinnerStopProcess" class="my-indicator">
+        It may take a few minutes to complete current actions.
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only"></span>
+        </div>
+    </div>
 </div>
