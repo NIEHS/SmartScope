@@ -453,7 +453,7 @@ class PreprocessingPipeline(TemplateView):
                 grid = AutoloaderGrid.objects.get(pk=grid_id)
                 Path(grid.directory,'preprocessing.json').write_text(pipeline_data.json(exclude={'cache_id'}))
                 logger.info('Updated pipeline for existing grid')
-                return HttpResponse('Saved')
+                return self.get_grid_pipeline(request, grid_id=grid_id)
         except Exception as err:
             logger.exception(err)
 

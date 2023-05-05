@@ -17,7 +17,6 @@ urlpatterns = [
     path('microscopes/status/', views.MicroscopeStatus.as_view(), name='microscopeStatus'),
     path('preprocessing/',views.PreprocessingPipeline.as_view(),name='preprocessingPipeline'),
     path('preprocessing/getpipeline/',views.PreprocessingPipeline().get_pipeline,name='getPreprocessingPipeline'),
-    # path('preprocessing/getpipeline/?pipeline=<pipeline>',views.PreprocessingPipeline().get_pipeline,name='getPreprocessingPipeline'),
     path('preprocessing/<grid_id>',views.PreprocessingPipeline().get_grid_pipeline,name='getGridPreprocessingPipeline'),
     path('preprocessing/setpipeline/<pipeline>/',views.PreprocessingPipeline().set_pipeline,kwargs={'grid_id': ''},name='setPreprocessingPipeline'),
     path('preprocessing/setpipeline/<pipeline>/<grid_id>',views.PreprocessingPipeline().set_pipeline,name='setPreprocessingPipeline'),

@@ -65,7 +65,8 @@ class SmartScopePreprocessingCmdKwargs(BaseModel):
 
     @validator('frames_directory')
     def is_frame_directory_empty(cls,v):
-        if v == '':
+        logger.debug(f'{v}, {type(v)}')
+        if v == '' or v == Path('.'):
             return None
         return v
 
