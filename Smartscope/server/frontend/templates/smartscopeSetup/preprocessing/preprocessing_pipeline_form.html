@@ -8,7 +8,14 @@
         <div class="d-flex flex-row align-content-center">
             <button type="submit" class="btn btn-primary" 
                 hx-post="{% url 'setPreprocessingPipeline' pipeline=pipeline grid_id=grid_id %}" 
-                hx-indicator="#spinner" hx-target="#formPreprocess">
+                hx-indicator="#spinner" 
+                {% if not grid_id %}
+                hx-target="#formPreprocess"
+                {% else %}
+                hx-target="#rightSidebarMenu"
+                hx-swap="outerHTML"
+                {% endif %}
+                >
                 Save
             </button>
             <div id="spinner" class="my-indicator spinner-border text-primary" role="status">

@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import shlex
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, TFSSerialemInterface, JEOLSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel
@@ -24,7 +23,6 @@ from django.db import transaction
 from django.utils import timezone
 import multiprocessing
 import logging
-import subprocess
 import numpy as np
 from pathlib import Path
 
