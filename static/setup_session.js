@@ -36,12 +36,12 @@ function fillFromPrevious(prev_num) {
     const curr_num = prev_num + 1
 
     for (item of ['holeType', 'meshSize', "meshMaterial", 'protocol']) {
-        var prevVal = $(`[name='${prev_num}-${item}'`).val()
+        var prevVal = $(`[name='${prev_num}-${item}']`).val()
 
-        $(`[name='${curr_num}-${item}'`).val(prevVal)
+        $(`[name='${curr_num}-${item}']`).val(prevVal)
     }
-    let prevName = $(`[name='${prev_num}-name'`).val()
-    $(`[name='${curr_num}-position'`).val(parseInt($(`[name='${prev_num}-position'`).val(), 10) + 1)
+    let prevName = $(`[name='${prev_num}-name']`).val()
+    $(`[name='${curr_num}-position']`).val(parseInt($(`[name='${prev_num}-position']`).val(), 10) + 1)
 
     var prevNameSplit = prevName.split('_')
     var popped = prevNameSplit.pop()
@@ -51,7 +51,7 @@ function fillFromPrevious(prev_num) {
         popped = [popped, 1]
     }
     newName = prevNameSplit.concat(popped).join('_')
-    $(`[name='${curr_num}-name'`).val(newName)
+    $(`[name='${curr_num}-name']`).val(newName)
 
 }
 
