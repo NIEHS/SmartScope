@@ -42,6 +42,8 @@ ENV	ALLOWED_HOSTS=localhost \
 	USE_AWS=False \
 	FORCE_CPU=False
 
+ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:/usr/local/IMOD/bin
+
 ADD . /opt/smartscope/
 
 RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate && \
