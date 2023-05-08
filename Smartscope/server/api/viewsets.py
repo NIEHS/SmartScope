@@ -384,7 +384,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
             form_params = GridCollectionParamsForm(data)
             if form_params.is_valid():
                 multishot_per_hole_id = form_params.cleaned_data.pop('multishot_per_hole_id')
-                preprocessing_pipeline_id = form_params.cleaned_data.pop('preprocessing_pipeline_id')
+                # preprocessing_pipeline_id = form_params.cleaned_data.pop('preprocessing_pipeline_id')
                 if multishot_per_hole_id != "":
                     save_json_from_cache(multishot_per_hole_id, obj.directory,'multishot')
                 # if preprocessing_pipeline_id != "":
@@ -398,7 +398,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
                 logger.debug(f'Form invalid , {form_params}.')
                 return Response(dict(success=False))
         except Exception as err:
-            logger.error(f'Error while updating parameters, {err}.')
+            logger.exception(f'Error while updating parameters, {err}.')
             return Response(dict(success=False))
 
     @ action(detail=True, methods=['get'])
