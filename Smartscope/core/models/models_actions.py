@@ -14,9 +14,12 @@ def targets_methods(instance):
     if (output:=cache.get(cache_key)) is not None:
         logger.debug(f'Loading targets_method for {instance} from cache.')
         return output
+    default_output = dict(finders=[], classifiers=[], selectors=[])
+    if not hasattr(instance,'targets'):
+        return default_output
     targets = instance.targets.values_list('pk', flat=True)
     if len(targets) == 0:
-        return dict(finders=[], classifiers=[], selectors=[])
+        return default_output
     contenttype = ContentType.objects.get_for_model(instance.targets.first())
 
     finders = list(Finder.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())

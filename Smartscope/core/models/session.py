@@ -601,7 +601,7 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
         return self.squaremodel_set.all()
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
-    def toSVG(self, display_type, method):
+    def svg(self, display_type, method):
         targets = list(SquareModel.display.filter(atlas_id=self.atlas_id))
         return drawAtlas(self,targets , display_type, method)
 
@@ -782,7 +782,7 @@ class SquareModel(Target, ExtraPropertyMixin):
 
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
-    def toSVG(self, display_type, method):
+    def svg(self, display_type, method):
         holes = list(HoleModel.display.filter(square_id=self.square_id))
         sq = drawSquare(self, holes, display_type, method)
         
@@ -883,7 +883,7 @@ class HoleModel(Target, ExtraPropertyMixin):
         return self.hole_id
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
-    def toSVG(self, display_type, method):
+    def svg(self, display_type, method):
         holes = list(self.targets)
         if self.shape_x is None:  # There was an error in previous version where shape wasn't set.
             set_shape_values(self)
@@ -981,9 +981,8 @@ class HighMagModel(Target, ExtraPropertyMixin):
     def set_parent(self, parent):
         self.hole_id = parent
     # endaliases
-
-    @property
-    def SVG(self):
+    
+    def svg(self, *args, **kwargs):
         return drawHighMag(self)
     
     @property

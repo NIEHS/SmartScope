@@ -84,10 +84,17 @@ class myDrawging(draw.Drawing):
         returnString = outputFile is None
         if returnString:
             outputFile = StringIO()
-        startStr = '''<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-      viewBox="{} {} {} {}"'''.format(
-            *self.viewBox)
+        imgWidth, imgHeight = self.calcRenderSize()
+        if self.pixelScale != 1:
+            startStr = '''<?xml version="1.0" encoding="UTF-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        width="{}" height="{}" viewBox="{} {} {} {}"'''.format(
+                imgWidth, imgHeight, *self.viewBox)
+        else:
+            startStr = '''<?xml version="1.0" encoding="UTF-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        viewBox="{} {} {} {}"'''.format(
+                *self.viewBox)
         endStr = '</svg>'
         outputFile.write(startStr)
         elementsModule.writeXmlNodeArgs(self.svgArgs, outputFile)
@@ -137,7 +144,7 @@ class myDrawging(draw.Drawing):
         if returnString:
             return outputFile.getvalue()
 
-def drawAtlas(atlas, targets, display_type, method):
+def drawAtlas(atlas, targets, display_type, method) -> myDrawging:
     d = myDrawging(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False)
     d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
 
@@ -174,10 +181,10 @@ def drawAtlas(atlas, targets, display_type, method):
     d.append(text)
     d.append(add_scale_bar(atlas.pixel_size, d.width, d.height))
     d.append(add_legend(set(labels_list), d.width, d.height, atlas.pixel_size))
-    return d.asSvg()
+    return d
 
 
-def drawSquare(square, targets, display_type, method):
+def drawSquare(square, targets, display_type, method) -> myDrawging:
     d = myDrawging(square.shape_y, square.shape_x, id='square-svg', displayInline=False)
     d.append(draw.Image(0, 0, d.width, d.height, path=square.png, embed= not square.is_aws))
 
@@ -221,10 +228,10 @@ def drawSquare(square, targets, display_type, method):
     d.append(text)
     d.append(add_scale_bar(square.pixel_size, d.width, d.height, id_type='square'))
     d.append(add_legend(set(labels_list), d.width, d.height, square.pixel_size))
-    return d.asSvg()
+    return d
 
 
-def drawMediumMag(hole, targets, display_type, method, **kwargs):
+def drawMediumMag(hole, targets, display_type, method, **kwargs) -> myDrawging:
     d = myDrawging(hole.shape_y, hole.shape_x, id='hole-svg', displayInline=False)
     d.append(draw.Image(0, 0, d.width, d.height, path=hole.png, embed= not hole.is_aws))
 
@@ -254,13 +261,11 @@ def drawMediumMag(hole, targets, display_type, method, **kwargs):
     d.append(text)
     d.append(add_scale_bar(hole.pixel_size, d.width, d.height, id_type='hole'))
     d.append(add_legend(set(labels_list), d.width, d.height, hole.pixel_size))
-    return d.asSvg()
+    return d
 
 
-def drawHighMag(highmag):
+def drawHighMag(highmag) -> myDrawging:
     d = myDrawging(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False)
     d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png, embed= not highmag.is_aws))
-
     d.append(add_scale_bar(highmag.pixel_size, d.width, d.height, id_type=highmag.name))
-
-    return d.asSvg
+    return d

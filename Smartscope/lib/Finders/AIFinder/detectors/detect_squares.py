@@ -104,7 +104,7 @@ def detect(atlas, device = '0', imgsz = 2048, thresh = 0.2, iou = 0.3, weights =
     cfg.MODEL.WEIGHTS = weights 
     cfg.INPUT.MIN_SIZE_TEST = 2048
     cfg.INPUT.MAX_SIZE_TEST = 2048
-    cfg.TEST.DETECTIONS_PER_IMAGE = 400
+    cfg.TEST.DETECTIONS_PER_IMAGE = 500
     if device == 'cpu':
         cfg.MODEL.DEVICE='cpu'
     

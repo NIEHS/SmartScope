@@ -15,7 +15,13 @@ urlpatterns = [
     path('multishot/<grid_id>', views.MultiShotView.as_view(),name='setMultishot'),
     path('protocol/<grid_id>',views.ProtocolView.as_view(), name='protocol'),
     path('microscopes/status/', views.MicroscopeStatus.as_view(), name='microscopeStatus'),
-
+    path('preprocessing/',views.PreprocessingPipeline.as_view(),name='preprocessingPipeline'),
+    path('preprocessing/getpipeline/',views.PreprocessingPipeline().get_pipeline,name='getPreprocessingPipeline'),
+    path('preprocessing/<grid_id>',views.PreprocessingPipeline().get_grid_pipeline,name='getGridPreprocessingPipeline'),
+    path('preprocessing/setpipeline/<pipeline>/',views.PreprocessingPipeline().set_pipeline,kwargs={'grid_id': ''},name='setPreprocessingPipeline'),
+    path('preprocessing/setpipeline/<pipeline>/<grid_id>',views.PreprocessingPipeline().set_pipeline,name='setPreprocessingPipeline'),
+    path('preprocessing/<grid_id>/start',views.PreprocessingPipeline().start,name='startPreprocessingPipeline'),
+    path('preprocessing/<grid_id>/stop',views.PreprocessingPipeline().stop,name='stopPreprocessingPipeline'),
 ]
 if settings.USE_MICROSCOPE:
     urlpatterns += [path('run/', RedirectView.as_view(url='setup/'), name='run'),

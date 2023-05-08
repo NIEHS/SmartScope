@@ -314,6 +314,27 @@ function hideSVGlabel(el, parentid) {
         element.setAttribute('visibility', final);
     }
 }
+// function downloadPNG(element_id) {
+//     // Get the SVG element
+//     const svg = document.getElementById(element_id);
+
+//     // Create a canvas element with the same dimensions as the SVG
+//     const canvas = document.createElement("canvas");
+//     canvas.width = svg.clientWidth;
+//     canvas.height = svg.clientHeight;
+
+//     // Use canvg to rasterize the SVG onto the canvas
+//     canvg(canvas, svg.outerHTML);
+
+//     // Create a data URL from the canvas
+//     const dataURL = canvas.toDataURL("image/png");
+
+//     // Create a download link with the data URL and click it to start the download
+//     const link = document.createElement("a");
+//     link.download = "image.png";
+//     link.href = dataURL;
+//     link.click();
+//   }
 
 function openMenu(el, menu) {
     menu.classList.remove('show')

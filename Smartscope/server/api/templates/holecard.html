@@ -1,5 +1,4 @@
 {% load rest_framework %}
-{% for hole in holes %}
 <div class='col-12 col-lg-6 col-xl-4 p-1'>
     <div id="{{hole.hm_id}}" hole_id="{{hole.hole_id.hole_id}}" class="card holeCard">
         <div class="card-header">
@@ -20,10 +19,12 @@
                     </ul>
                 </div>
                 <h5 class="col-19 card-title m-0">Hole {{hole.hole_id.number}}-{{hole.number}}</h5>
+                <div class="p-0 justify-content-center d-none d-md-flex">
+                {% include "autoscreenViewer/download_images_dropdown.html" with instance=hole %}
                 <div class="div col-2 p-0 justify-content-center d-none d-md-block">
                     <button id='' class='a btn btn-outline-secondary zoomBtn' type="button" value='1'><i
                             class="bi bi-zoom-in zoomIcon"></i></button>
-
+                </div>
                 </div>
             </div>
         </div>
@@ -31,7 +32,7 @@
             <div class="div row mw-100 m-0 p-0 justify-content-center">
                 <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-center">
                     <div class="w-100">
-                        {{hole.SVG | safe }}
+                        {{svg | safe }}
                     </div>
                 </div>
                 <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-center">
@@ -55,4 +56,3 @@
 
     </div>
 </div>
-{% endfor %}

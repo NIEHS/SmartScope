@@ -10,6 +10,7 @@ import sys
 import logging
 from Smartscope.core.main_commands import main
 
+
 logger = logging.getLogger(__name__)
 
 

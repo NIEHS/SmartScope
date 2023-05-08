@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import shlex
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, TFSSerialemInterface, JEOLSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel
@@ -13,6 +12,7 @@ from Smartscope.core.finders import find_targets
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
+from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
 from Smartscope.lib.transformations import register_to_other_montage, register_targets_by_proximity
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets, group_holes_for_BIS
@@ -23,7 +23,6 @@ from django.db import transaction
 from django.utils import timezone
 import multiprocessing
 import logging
-import subprocess
 import numpy as np
 from pathlib import Path
 
@@ -104,18 +103,20 @@ def run_grid(grid, session, processing_queue, scope):
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
 
-    if grid.status == 'complete':
-        logger.info(f'{grid.name} already complete')
-        return
-    if grid.status == 'aborting':
-        logger.info(f'Aborting {grid.name}')
-        return
+
 
     session_id = session.pk
     microscope = session.microscope_id
 
     # Set the Websocket_update_decorator grid property
     update.grid = grid
+    if grid.status == 'complete':
+        logger.info(f'{grid.name} already complete')
+        return
+    if grid.status == 'aborting':
+        logger.info(f'Aborting {grid.name}')
+        update(grid, status='complete')
+        return
 
     logger.info(f'Starting {grid.name}') 
 
@@ -131,7 +132,8 @@ def run_grid(grid, session, processing_queue, scope):
     # ADD the new protocol loader
     protocol = get_or_set_protocol(grid)
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
-    subprocess.Popen(shlex.split(f'smartscope.py highmag_processing smartscopePipeline {grid.grid_id} 1'))
+    preprocessing = load_preprocessing_pipeline(Path('preprocessing.json'))
+    preprocessing.start(grid)
     is_stop_file(session_id)
     atlas = queue_atlas(grid)
     scope.loadGrid(grid.position)
@@ -141,7 +143,6 @@ def run_grid(grid, session, processing_queue, scope):
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
     if atlas.status == 'queued' or atlas.status == 'started':
-
         atlas = update(atlas, status='started')
         logger.info('Waiting on atlas file')
         runAcquisition(scope,protocol.atlas.acquisition,params,atlas)
@@ -168,6 +169,7 @@ def run_grid(grid, session, processing_queue, scope):
         grid = update(grid, refresh_from_db=True, last_update=None)
         params = grid.params_id
         if grid.status == 'aborting':
+            preprocessing.stop(grid)
             break
         else:
             squares, holes = get_queue(grid)
@@ -370,6 +372,9 @@ def autoscreen(session_id):
     except Exception as e:
         logger.exception(e)
         status = 'error'
+        if grid in locals():
+            update.grid = grid
+            update(grid, status='error')
     except KeyboardInterrupt:
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'

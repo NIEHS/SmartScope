@@ -246,7 +246,7 @@ class SerialemInterface(MicroscopeInterface):
         return sem.ResetImageShift()
 
     def image_shift_by_microns(self,isX,isY,tiltAngle):
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0)
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0, 1)
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))     
@@ -388,6 +388,9 @@ class FakeScopeInterface(MicroscopeInterface):
         generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.microscope.scopePath)
 
     def focusDrift(self, def1, def2, step, drifTarget):
+        pass
+
+    def tiltTo(self,tiltAngle):
         pass
 
     def highmag(self, file='', frames=True, earlyReturn=False):
