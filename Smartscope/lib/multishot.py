@@ -33,14 +33,17 @@ class MaskBox:
         return cv2.circle(mask,self.center,radius,1,cv2.FILLED)
 
  
-class RecordParams:
-    def __init__(self,detector_size_x:int,detector_size_y:int,pixel_size:float,beam_size:int,hole_size:float):
-        self.detector_size = np.array([detector_size_x,detector_size_y])
-        self.pixel_size = pixel_size
-        self.beam_size = beam_size
-        self.hole_size = hole_size
-        # self.to_microns()
-    
+class RecordParams(BaseModel):
+    detector_size_x:int
+    detector_size_y:int
+    pixel_size:float
+    beam_size:int
+    hole_size:float
+
+    @property
+    def detector_size(self):
+        return np.array([self.detector_size_x,self.detector_size_y])
+
     @property
     def pixel_size_um(self):
         return self.pixel_size / 10_000
