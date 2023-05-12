@@ -119,6 +119,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
             item = queue.get()
             logger.info(f'Got item {item} from queue')
             if item == 'exit':
+                queue.task_done()
+                logger.info('Breaking processing worker loop.')
                 break
             if item is not None:
                 logger.debug(f'Running {item[0]} {item[1]} {item[2]} from queue')

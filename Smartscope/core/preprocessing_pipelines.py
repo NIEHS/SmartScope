@@ -150,7 +150,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         self.microscope = self.grid.session_id.microscope_id
         self.detector = self.grid.session_id.detector_id
         self.cmd_data = self.cmdkwargs_handler.parse_obj(cmd_data)
-
+        logger.debug(self.cmd_data)
         self.frames_directory = [Path(self.detector.frames_directory)]
         if self.cmd_data.frames_directory is not None:
             self.frames_directory.append(self.cmd_data.frames_directory)
@@ -162,11 +162,10 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 self.to_process_queue.task_done()
             except multiprocessing.queues.Empty:
                 break
-      
-
 
     def start(self):
         session = self.grid.session_id
+        logger.info(f'Starting the preprocessing with {self.cmd_data.n_processes}')
         for n in range(int(self.cmd_data.n_processes)):
             proc = multiprocessing.Process(target=processing_worker_wrapper, args=(
                 session.directory, self.to_process_queue,), kwargs={'output_queue': self.processed_queue})
@@ -200,6 +199,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     def stop(self):
         for proc in self.child_process:
             self.to_process_queue.put('exit')
+        for proc in self.child_process:
             proc.join()
         logger.debug('Process joined')
 
@@ -257,11 +257,11 @@ def highmag_processing(grid_id: str, *args, **kwargs) -> None:
     try:
         grid = AutoloaderGrid.objects.get(grid_id=grid_id)
         os.chdir(grid.directory)
-        logging.getLogger('Smartscope').handlers.pop()
-        logger.debug(f'Log handlers:{logger.handlers}')
+        # logging.getLogger('Smartscope').handlers.pop()
+        # logger.debug(f'Log handlers:{logger.handlers}')
         add_log_handlers(directory=grid.session_id.directory, name='proc.out')
         logger.debug(f'Log handlers:{logger.handlers}')
-        preprocess_file = Path(grid.directory,'preprocessing.json')
+        preprocess_file = Path('preprocessing.json')
         cmd_data = load_preprocessing_pipeline(preprocess_file)
         if cmd_data is None:
             logger.info('Trying to load preprocessing parameters from command line arguments.')
@@ -271,7 +271,7 @@ def highmag_processing(grid_id: str, *args, **kwargs) -> None:
             return
         cmd_data.process_pid=os.getpid()
         preprocess_file.write_text(cmd_data.json())
-        pipeline = PREPROCESSING_PIPELINE_FACTORY[cmd_data.pipeline](grid, cmd_data)
+        pipeline = PREPROCESSING_PIPELINE_FACTORY[cmd_data.pipeline](grid, cmd_data.kwargs)
         pipeline.start()
 
     except Exception as e:
