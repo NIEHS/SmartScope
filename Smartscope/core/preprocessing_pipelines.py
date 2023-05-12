@@ -183,7 +183,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 return
 
     def list_incomplete_processes(self):
-        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time')[:5*self.cmd_data.n_processes])
+        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status__in=['acquired','skipped']).order_by('status','completion_time')[:5*self.cmd_data.n_processes])
 
     def queue_incomplete_processes(self):
         from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,
@@ -206,21 +206,31 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     def check_for_update(self):
         while self.processed_queue.qsize() > 0:
             movie = self.processed_queue.get()
+            data = dict()
             if not movie.check_metadata():
+                data['status'] = 'skipped'
+                instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
+                if instance.status != 'skipped':
+                    self.to_update.append(update_fields(instance, data))
                 continue
             logger.debug(f'Updating {movie.name}')
             try:
                 data = get_CTFFIN4_data(movie.ctf)
             except Exception as err:
                 logger.exception(err)
-                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again on the next cycle.')
+                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again later.')
+                data['status'] = 'skipped'
+                instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
+                if instance.status != 'skipped':
+                    self.to_update.append(update_fields(instance, data))
                 continue
-            data['status'] = 'completed'
-            movie.read_data()
-            data['shape_x'] = movie.shape_x
-            data['shape_y'] = movie.shape_y
-            data['pixel_size'] = movie.pixel_size
-            logger.debug(f'Updating {movie.name} with Data: {data}')
+            if data['status'] != 'skipped':
+                data['status'] = 'completed'
+                movie.read_data()
+                data['shape_x'] = movie.shape_x
+                data['shape_y'] = movie.shape_y
+                data['pixel_size'] = movie.pixel_size
+                logger.debug(f'Updating {movie.name} with Data: {data}')
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
             self.to_update += [update_fields(instance, data), update_fields(parent, dict(status='completed'))]
