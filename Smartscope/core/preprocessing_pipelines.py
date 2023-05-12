@@ -224,13 +224,12 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 if instance.status != 'skipped':
                     self.to_update.append(update_fields(instance, data))
                 continue
-            if data['status'] != 'skipped':
-                data['status'] = 'completed'
-                movie.read_data()
-                data['shape_x'] = movie.shape_x
-                data['shape_y'] = movie.shape_y
-                data['pixel_size'] = movie.pixel_size
-                logger.debug(f'Updating {movie.name} with Data: {data}')
+            data['status'] = 'completed'
+            movie.read_data()
+            data['shape_x'] = movie.shape_x
+            data['shape_y'] = movie.shape_y
+            data['pixel_size'] = movie.pixel_size
+            logger.debug(f'Updating {movie.name} with Data: {data}')
             instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
             self.to_update += [update_fields(instance, data), update_fields(parent, dict(status='completed'))]
