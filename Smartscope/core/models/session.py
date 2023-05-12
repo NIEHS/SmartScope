@@ -280,6 +280,7 @@ class GridCollectionParams(BaseModel):
     offset_targeting = models.BooleanField(default=True)
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
+    hardwaredark_delay = models.IntegerField(default=-1)
     multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):

@@ -112,8 +112,9 @@ class GridCollectionParamsForm(forms.ModelForm):
             step_defocus='Step to take while cycling defocus values',
             drift_crit='Drift threshold before taking acquision in A/s. Use -1 to disable',
             tilt_angle='Tilt angle. For tilted data collection.',
-            save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked',
+            save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked. The Session needs to be stopped and restarted for this change to take effect',
             zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
+            hardwaredark_delay= 'Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
             offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
             offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable',
             multishot_per_hole='Enable multishot per hole.'
