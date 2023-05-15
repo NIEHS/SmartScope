@@ -300,13 +300,15 @@ def process_hole_image(hole, grid, microscope_id):
         square_montage.load_or_process()
         image_coords = register_to_other_montage(np.array([x.coords for x in hole_group]),hole.coords, montage, square_montage)
         timer.report_timer('Initial registration to the higher mag image')
+        targets = []
+        finder_method = 'Registration'
+        classifier_method=None
         if len(protocol.targets.finders) != 0:
             targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.targets.finders)
             generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it.png'))
-        else:
+            
+        if len(protocol.targets.finders) == 0 or targets == []:
             targets = create_targets_from_center(image_coords, montage)
-            finder_method = 'Registration'
-            classifier_method=None
         timer.report_timer('Identifying and registering targets')
         
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
