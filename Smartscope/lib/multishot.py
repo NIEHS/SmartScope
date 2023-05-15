@@ -100,8 +100,8 @@ class MultiShot(BaseModel):
         self.params = record_params
 
 
-def make_beam_and_fov_masks(shots,beam_size,fov_size,box:MaskBox):
-    radius = int(beam_size/2//box.pix_size)
+def make_beam_and_fov_masks(shots,beam_size,fov_size,box:MaskBox, beam_padding=1.1):
+    radius = int(beam_size*beam_padding/2//box.pix_size)
     half_fov = np.int8(fov_size/box.pix_size//2)
     beam_masks=[]
     fov_masks=[]
@@ -148,7 +148,7 @@ def check_fraction_in_hole(fov_masks,box):
     return sum_in_hole/init_sum, sum_in_hole, init_sum
 
 
-def set_shots_per_hole(number_of_shots:int,hole_size:float,beam_size,image_size:np.ndarray,radius_step:int=0.05,starting_angle:float=0, consider_aspect=True, min_efficiency=0.85):
+def set_shots_per_hole(number_of_shots:int,hole_size:float,beam_size:float,image_size:np.ndarray,radius_step:int=0.02,starting_angle:float=0, consider_aspect=True, min_efficiency=0.85):
     hole_area = np.pi*(hole_size/2)**2
     min_allowed_coverage = np.prod(image_size)/hole_area
     angle_between_shots = 2*np.pi / number_of_shots
@@ -160,7 +160,8 @@ def set_shots_per_hole(number_of_shots:int,hole_size:float,beam_size,image_size:
         aspect_step = 0.1
         steps=20
 
-    start_radius = (hole_size/2 - np.sqrt(np.sum(image_size**2))/2) if number_of_shots != 1 else 0
+    # start_radius = (hole_size/2 - np.sqrt(np.sum(image_size**2))/2) if number_of_shots != 1 else 0
+    start_radius = beam_size/2000 if number_of_shots != 1 else 0
     max_radius = hole_size/2
     box = MaskBox(hole_size=hole_size)
     best_shots = None
