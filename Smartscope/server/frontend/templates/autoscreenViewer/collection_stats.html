@@ -4,20 +4,32 @@
     <hr class="mx-3 my-2">
     <div class="col justify-content-center">
         <div class='row'>
-            <div class='col-auto pr-0'><b>Holes in queue:</b></div>
+            <div class='col-5 pr-0'><b>Holes in queue:</b></div>
             <div id='holeCountQueued' class='col-auto pl-0'>{{queued}}</div>
         </div>
         <div class='row'>
-            <div class='col-auto pr-0'><b>Holes acquired:</b></div>
+            <div class='col-5 pr-0'><b>Total exposures in queue:</b></div>
+            <div id='holeCountQueued' class='col-auto pl-0'>{{queued_exposures}}</div>
+        </div>
+        <div class='row'>
+            <div class='col-5 pr-0'><b>Holes acquired:</b></div>
             <div id='holeCountAcquired' class='col-auto pl-0'>{{completed}}</div>
         </div>
         <div class='row'>
-            <div class='col-auto pr-0'><b>Holes per hour:</b></div>
+            <div class='col-5 pr-0'><b>Holes per hour:</b></div>
             <div id='holeCountPerhour' class='col-auto pl-0'>{{perhour}}</div>
         </div>
         <div class='row'>
-            <div class='col-auto pr-0'><b>Holes in the last hour:</b></div>
+            <div class='col-5 pr-0'><b>Holes in the last hour:</b></div>
             <div id='holeLasthour' class='col-auto pl-0'>{{lasthour}}</div>
+        </div>
+        <div class='row'>
+            <div class='col-5 pr-0'><b>Total time spent:</b></div>
+            <div id='holeLasthour' class='col-auto pl-0'>{{elapsed}}</div>
+        </div>
+        <div class='row'>
+            <div class='col-5 pr-0'><b>Estimated time remaining:</b></div>
+            <div id='holeLasthour' class='col-auto pl-0'>{{remaining}}</div>
         </div>
         {{graph|safe}}
     </div>
