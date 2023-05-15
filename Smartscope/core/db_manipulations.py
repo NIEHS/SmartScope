@@ -161,7 +161,7 @@ def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
     new.save()
 
 
-def get_hole_count(grid, hole_list=None):
+def get_hole_count(grid:AutoloaderGrid, hole_list=None):
     if hole_list is not None:
         queued = len(hole_list)
     else:

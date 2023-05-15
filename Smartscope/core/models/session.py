@@ -503,7 +503,7 @@ class AutoloaderGrid(BaseModel):
     @ property
     def end_time(self):
         try:
-            hole = self.highmagmodel_set.filter(status='completed').order_by('-completion_time').first()
+            hole = self.highmagmodel_set.order_by('-completion_time').first()
 
             if hole is None:
                 raise

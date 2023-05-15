@@ -22,6 +22,7 @@ urlpatterns = [
     path('preprocessing/setpipeline/<pipeline>/<grid_id>',views.PreprocessingPipeline().set_pipeline,name='setPreprocessingPipeline'),
     path('preprocessing/<grid_id>/start',views.PreprocessingPipeline().start,name='startPreprocessingPipeline'),
     path('preprocessing/<grid_id>/stop',views.PreprocessingPipeline().stop,name='stopPreprocessingPipeline'),
+    path('collectionstats/<grid_id>/',views.CollectionStatsView.as_view(),name='collectionStats'),
 ]
 if settings.USE_MICROSCOPE:
     urlpatterns += [path('run/', RedirectView.as_view(url='setup/'), name='run'),
