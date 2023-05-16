@@ -46,7 +46,7 @@ def find_holes(montage:Montage, **kwargs):
     if montage.pixel_size < 100:
         logger.info(f'Resizing image')
         binning = (150/montage.pixel_size)
-        image = fourier_crop(image, height=montage.shape_y/binning)
+        image = fourier_crop(image, height=montage.shape_x/binning)
         pad_x = int((montage.shape_x - image.shape[0]) //2)
         pad_y = int((montage.shape_y - image.shape[1]) //2)
         image = cv2.copyMakeBorder(image,pad_x,pad_x,pad_y,pad_y,cv2.BORDER_CONSTANT,value=0)
