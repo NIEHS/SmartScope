@@ -16,6 +16,8 @@ class MicroscopeState:
     stageY: float = 0
     stageZ: float = 0
     tiltAngle: float = None
+    preAFISimageShiftX: float = 0
+    preAFISimageShiftY: float = 0
 
     def setStage(self,stageX,stageY,stageZ):
         self.stageX = stageX
@@ -105,7 +107,7 @@ class MicroscopeInterface(ABC):
         return 0,0,0
 
     @abstractmethod
-    def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
+    def eucentricHeight(self, tiltTo:int=10, increments:int=-5) -> float:
         pass
 
     @abstractmethod
@@ -174,7 +176,7 @@ class MicroscopeInterface(ABC):
         pass
 
     @abstractmethod
-    def image_shift_by_microns(self,isX,isY,tiltAngle):
+    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
         pass
 
     @abstractmethod
@@ -203,3 +205,11 @@ class MicroscopeInterface(ABC):
 
     def refineZLP(self, zerolossDelay):
         pass
+
+    def collectHardwareDark(self, harwareDarkDelay:int):
+        pass
+    
+    def reset_AFIS_image_shift(self, afis:bool=False):
+        pass
+
+

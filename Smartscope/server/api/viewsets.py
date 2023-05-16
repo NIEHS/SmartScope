@@ -33,7 +33,7 @@ from Smartscope.lib.system_monitor import disk_space
 from Smartscope.server.lib.worker_jobs import send_to_worker
 
 from Smartscope.core.models.models_actions import targets_methods
-from Smartscope.core.db_manipulations import get_hole_count, viewer_only
+from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.models import *
 
@@ -372,7 +372,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         data['atlas'] = list_to_dict(data['atlas'])
         data['squares'] = list_to_dict(data['squares'])
         data['holes'] = []
-        data['counts'] = get_hole_count(obj)
+        # data['counts'] = get_hole_count(obj)
         return Response(data)
 
     @ action(detail=True, methods=['patch'])

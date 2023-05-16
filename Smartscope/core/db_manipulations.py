@@ -1,21 +1,23 @@
 
 from typing import Any, Callable, List, Union
-from Smartscope.core.models import *
-from scipy.spatial.distance import cdist
+from datetime import timedelta
 import numpy as np
 import random
 import logging
+from scipy.spatial.distance import cdist
+
 from django.db.models.query import prefetch_related_objects
 from django.db import transaction
-from datetime import timedelta
-from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 from django.contrib.contenttypes.models import ContentType
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from Smartscope.core.models import *
+from Smartscope.lib.multishot import load_multishot_from_file
+from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
 
 logger = logging.getLogger(__name__)
-
 
 class Websocket_update_decorator:
 
@@ -161,22 +163,34 @@ def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
     new.save()
 
 
-def get_hole_count(grid, hole_list=None):
+def get_hole_count(grid:AutoloaderGrid, hole_list=None):
     if hole_list is not None:
         queued = len(hole_list)
     else:
         queued = HoleModel.display.filter(grid_id=grid.grid_id,status='queued').count()
+        queued_exposures = queued
+    if grid.params_id.multishot_per_hole:
+        mutlishot_file = Path(grid.directory,'multishot.json')
+        multishot = load_multishot_from_file(mutlishot_file)
+        if multishot is not None:
+            queued_exposures = queued*multishot.n_shots
     completed = HighMagModel.objects.filter(grid_id=grid.grid_id)
     num_completed = completed.count()
 
     holes_per_hour = 0
     last_hour = 0
+    elapsed = 0
+    remaining = 0
     if grid.start_time is not None:
-        holes_per_hour = round(num_completed / (grid.time_spent.total_seconds() / 3600), 1)
+        elapsed = grid.time_spent
+        holes_per_hour = round(num_completed / (elapsed.total_seconds() / 3600), 1)
         last_hour_date_time = grid.end_time - timedelta(hours=1)
         last_hour = completed.filter(completion_time__gte=last_hour_date_time).count()
+        remaining = timedelta(hours=queued_exposures/last_hour)
+        
     logger.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
-    return dict(completed=num_completed, queued=queued, perhour=holes_per_hour, lasthour=last_hour)
+
+    return dict(completed=num_completed, queued=queued, queued_exposures=queued_exposures, perhour=holes_per_hour, lasthour=last_hour, elapsed=str(elapsed).split('.', 2)[0], remaining=str(remaining).split('.', 2)[0])
 
 
 def viewer_only(user):
@@ -188,6 +202,8 @@ def viewer_only(user):
 
 
 def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=False, iterations=500, score_weight=2):
+    if len(hole_models) == 0:
+        return
     logger.debug(
         f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes

@@ -107,13 +107,15 @@ class GridCollectionParamsForm(forms.ModelForm):
             holes_per_square='Number of holes per square, Use 0 to select all.',
             bis_max_distance='Max image-shift distance in microns. 0 to disable image-shift.',
             min_bis_group_size='Smaller group size for image-shift. Will be considered is distance is not 0',
+            afis='Use astigmatism and beam-tilt compensation during beam-image shift. **Coma vs Image-shift calibration must be performed to use this option**',
             target_defocus_min='Lower defocus limit (closest to 0), must be negative',
             target_defocus_max='Higher defocus limit (highest defocus), must be negative',
             step_defocus='Step to take while cycling defocus values',
             drift_crit='Drift threshold before taking acquision in A/s. Use -1 to disable',
             tilt_angle='Tilt angle. For tilted data collection.',
-            save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked',
+            save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked. The Session needs to be stopped and restarted for this change to take effect',
             zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
+            hardwaredark_delay= 'Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
             offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
             offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable',
             multishot_per_hole='Enable multishot per hole.'
@@ -159,6 +161,7 @@ class GridCollectionParamsForm(forms.ModelForm):
             "step": 0.05
         })
         self.fields['multishot_per_hole'].widget = MultishotCheckBox(grid_id=grid_id)
+        self.fields['afis'].widget = MyCheckBox()
 
         for visible in self.visible_fields():
             if isinstance(visible.field.widget, forms.CheckboxInput ):

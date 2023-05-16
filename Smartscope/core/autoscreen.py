@@ -4,13 +4,13 @@ import sys
 import time
 from Smartscope.core.microscope_interfaces import FakeScopeInterface, TFSSerialemInterface, JEOLSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
-from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel
+from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, PROTOCOL_COMMANDS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings
+from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings, MicroscopeInterface
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
@@ -95,15 +95,13 @@ def runAcquisition(scope,methods,params,instance):
         output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance)
     return output
 
-def run_grid(grid, session, processing_queue, scope):
+def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:multiprocessing.JoinableQueue, scope:MicroscopeInterface):
     """Main logic for the SmartScope process
 
     Args:
         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
-
-
 
     session_id = session.pk
     microscope = session.microscope_id
@@ -190,7 +188,9 @@ def run_grid(grid, session, processing_queue, scope):
                 if hm.hole_id.bis_type != 'center':
                     update(hm.hole_id, status='acquired', completion_time=timezone.now())
             update(hole, status='completed')
+            scope.reset_AFIS_image_shift(afis=params.afis)
             scope.refineZLP(params.zeroloss_delay)
+            scope.collectHardwareDark(params.hardwaredark_delay)
         elif len(squares) > 0:
             is_done = False
             square = squares[0]
@@ -300,13 +300,15 @@ def process_hole_image(hole, grid, microscope_id):
         square_montage.load_or_process()
         image_coords = register_to_other_montage(np.array([x.coords for x in hole_group]),hole.coords, montage, square_montage)
         timer.report_timer('Initial registration to the higher mag image')
+        targets = []
+        finder_method = 'Registration'
+        classifier_method=None
         if len(protocol.targets.finders) != 0:
             targets, finder_method, classifier_method, additional_outputs = find_targets(montage, protocol.targets.finders)
             generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it.png'))
-        else:
+            
+        if len(protocol.targets.finders) == 0 or targets == []:
             targets = create_targets_from_center(image_coords, montage)
-            finder_method = 'Registration'
-            classifier_method=None
         timer.report_timer('Identifying and registering targets')
         
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])
