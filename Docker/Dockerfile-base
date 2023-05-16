@@ -18,7 +18,7 @@ ADD config/singularity/ctffind /usr/local/
 
 ADD config/docker/requirements.txt .
 
-ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:/opt/miniconda3/bin:$IMOD_DIR/bin
+ENV PATH=$PATH:/opt/miniconda3/bin
 
 RUN conda update -y conda && \
 	yes | conda install python=3.9 cudatoolkit=10.2 cudnn=7.6 git && \
