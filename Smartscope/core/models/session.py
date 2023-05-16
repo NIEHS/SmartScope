@@ -270,6 +270,7 @@ class GridCollectionParams(BaseModel):
     holes_per_square = models.IntegerField(default=3)  # If -1 means all
     bis_max_distance = models.FloatField(default=3)  # 0 means not BIS
     min_bis_group_size = models.IntegerField(default=1)
+    afis = models.BooleanField(default=False, verbose_name='AFIS')
     target_defocus_min = models.FloatField(default=-2)
     target_defocus_max = models.FloatField(default=-2)
     step_defocus = models.FloatField(default=0)  # 0 deactivates step defocus
@@ -280,7 +281,7 @@ class GridCollectionParams(BaseModel):
     offset_targeting = models.BooleanField(default=True)
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
-    hardwaredark_delay = models.IntegerField(default=-1)
+    hardwaredark_delay = models.IntegerField(default=-1,verbose_name='Hardware Dark Delay')
     multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):

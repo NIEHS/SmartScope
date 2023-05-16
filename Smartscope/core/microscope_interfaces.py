@@ -250,13 +250,13 @@ class SerialemInterface(MicroscopeInterface):
     
     def reset_image_shift_values(self):
         self.state.reset_image_shift_values()
-        self.state.preAFISimageShiftX, self.state.preAFISimageShiftY = self.ReportImageShift()[:2]
+        self.state.preAFISimageShiftX, self.state.preAFISimageShiftY = sem.ReportImageShift()[:2]
     
-    def reset_AFIS_image_shift(self):
-        sem.SetImageShift(self.state.preAFISimageShiftX, self.state.preAFISimageShiftY,1,1)
+    def reset_AFIS_image_shift(self, afis:bool=False):
+        sem.SetImageShift(self.state.preAFISimageShiftX, self.state.preAFISimageShiftY, 1, int(afis))
 
-    def image_shift_by_microns(self,isX,isY,tiltAngle):
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, 1)
+    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))     

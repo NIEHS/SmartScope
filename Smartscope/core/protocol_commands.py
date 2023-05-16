@@ -83,7 +83,7 @@ def highMag(scope, params,instance):
         offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
     isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(params.tilt_angle))
     logger.debug(f'The tilt angle is {params.tilt_angle}, Y axis image-shift corrected from {stage_y - finder.stage_y:.2f} to {isY:.2f}')
-    scope.image_shift_by_microns(isX,isY,params.tilt_angle)
+    scope.image_shift_by_microns(isX,isY,params.tilt_angle, afis=params.afis)
     frames = scope.highmag(file=instance.raw, frames=params.save_frames, earlyReturn=any([params.force_process_from_average, params.save_frames is False]))
     instance.is_x=isX
     instance.is_y=isY

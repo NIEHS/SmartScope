@@ -176,7 +176,7 @@ class MicroscopeInterface(ABC):
         pass
 
     @abstractmethod
-    def image_shift_by_microns(self,isX,isY,tiltAngle):
+    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
         pass
 
     @abstractmethod
@@ -209,7 +209,7 @@ class MicroscopeInterface(ABC):
     def collectHardwareDark(self, harwareDarkDelay:int):
         pass
     
-    def reset_AFIS_image_shift(self):
+    def reset_AFIS_image_shift(self, afis:bool=False):
         pass
 
 

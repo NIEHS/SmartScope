@@ -107,6 +107,7 @@ class GridCollectionParamsForm(forms.ModelForm):
             holes_per_square='Number of holes per square, Use 0 to select all.',
             bis_max_distance='Max image-shift distance in microns. 0 to disable image-shift.',
             min_bis_group_size='Smaller group size for image-shift. Will be considered is distance is not 0',
+            afis='Use astigmatism and beam-tilt compensation during beam-image shift. **Coma vs Image-shift calibration must be performed to use this option**',
             target_defocus_min='Lower defocus limit (closest to 0), must be negative',
             target_defocus_max='Higher defocus limit (highest defocus), must be negative',
             step_defocus='Step to take while cycling defocus values',
@@ -160,6 +161,7 @@ class GridCollectionParamsForm(forms.ModelForm):
             "step": 0.05
         })
         self.fields['multishot_per_hole'].widget = MultishotCheckBox(grid_id=grid_id)
+        self.fields['afis'].widget = MyCheckBox()
 
         for visible in self.visible_fields():
             if isinstance(visible.field.widget, forms.CheckboxInput ):
