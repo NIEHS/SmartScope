@@ -188,7 +188,7 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
                 if hm.hole_id.bis_type != 'center':
                     update(hm.hole_id, status='acquired', completion_time=timezone.now())
             update(hole, status='completed')
-            scope.reset_AFIS_image_shift()
+            scope.reset_AFIS_image_shift(afis=params.afis)
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
         elif len(squares) > 0:
