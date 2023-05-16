@@ -75,6 +75,9 @@ def process_hm_from_frames(name, frames_file_name, frames_directories: list, sph
         logger.info(f'Mdoc file not found {mdoc}. Skipping.')
         return movie
     movie.metadata = parse_mdoc(mdocFile=mdoc, movie=True)
+    if movie.metadata is None:
+        logger.info(f'Mdoc file not found {mdoc}. Skipping.')
+        return movie        
     time.sleep(10)
     if not movie.shifts.exists() or not movie.ctf.exists():
         try:
@@ -119,6 +122,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
             item = queue.get()
             logger.info(f'Got item {item} from queue')
             if item == 'exit':
+                queue.task_done()
+                logger.info('Breaking processing worker loop.')
                 break
             if item is not None:
                 logger.debug(f'Running {item[0]} {item[1]} {item[2]} from queue')

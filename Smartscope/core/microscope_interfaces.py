@@ -162,7 +162,6 @@ class SerialemInterface(MicroscopeInterface):
         sem.TiltTo(tiltAngle)
         self.state.tiltAngle = tiltAngle
 
-
     def medium_mag_hole(self, file=''):
         sem.AllowFileOverwrite(1)
         self.acquire_medium_mag()
@@ -202,9 +201,13 @@ class SerialemInterface(MicroscopeInterface):
         sem.KeepCameraSetChanges('P')
         sem.SetLowDoseMode(1)
 
-    def refineZLP(self, zerolossDelay):
+    def refineZLP(self, zerolossDelay:float):
         if self.detector.energyFilter and zerolossDelay > 0:
             sem.RefineZLP(zerolossDelay * 60)
+    
+    def collectHardwareDark(self, harwareDarkDelay:int):
+        if harwareDarkDelay > 0:
+            sem.UpdateHWDarkRef(harwareDarkDelay)
 
     def disconnect(self, close_valves=True):
         
@@ -244,9 +247,16 @@ class SerialemInterface(MicroscopeInterface):
 
     def reset_image_shift(self):
         return sem.ResetImageShift()
+    
+    def reset_image_shift_values(self):
+        self.state.reset_image_shift_values()
+        self.state.preAFISimageShiftX, self.state.preAFISimageShiftY = sem.ReportImageShift()[:2]
+    
+    def reset_AFIS_image_shift(self, afis:bool=False):
+        sem.SetImageShift(self.state.preAFISimageShiftX, self.state.preAFISimageShiftY, 1, int(afis))
 
-    def image_shift_by_microns(self,isX,isY,tiltAngle):
-        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 0, 1)
+    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))     

@@ -652,7 +652,7 @@ async function reportMain() {
     zoomedContentCln = document.getElementById('zoomedContent').cloneNode(true)
     fullmeta = await loadMeta()
     populateReportHead()
-    renderCounts()
+    // renderCounts()
     if (fullmeta.status != null) {
         console.log(fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status)
         if (fullmeta.atlas[Object.keys(fullmeta.atlas)[0]].status == 'completed') {

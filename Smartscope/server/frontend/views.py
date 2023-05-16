@@ -4,6 +4,8 @@ import subprocess as sub
 import psutil
 from datetime import datetime
 import logging
+import plotly.graph_objs as go
+
 
 from django.shortcuts import render
 from django.contrib.auth import logout, authenticate, login
@@ -16,7 +18,7 @@ from django.shortcuts import redirect
 from django.utils.timezone import now
 
 from .forms import *
-from Smartscope.core.db_manipulations import viewer_only
+from Smartscope.core.db_manipulations import viewer_only, get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.file_manipulations import create_grid_directories
 from Smartscope.lib.multishot import RecordParams,set_shots_per_hole, load_multishot_from_file
@@ -466,3 +468,36 @@ class PreprocessingPipeline(TemplateView):
         context = self.get_grid_context_data(grid_id)
         context['pipeline_data'].stop(context['grid'])
         return self.get_grid_pipeline(request,grid_id=grid_id)
+
+class CollectionStatsView(TemplateView):
+    template_name = "autoscreenViewer/collection_stats.html"
+
+    def ctfGraph(self,grid_id):
+        ### NEED TO MOVE THE GRAPHING LOGIC OUTSIDE OF HERE
+        data = list(HighMagModel.objects.filter(status='completed', grid_id=grid_id, ctffit__lte=15).values_list('ctffit', flat=True)) # replace with your own data source
+        hist = go.Histogram(x=data, nbinsx=30)
+        layout = go.Layout(
+                            title='CTF fit distribution',
+                            xaxis=dict(
+                                title='CTF fit resolution (Angstrom)'
+                            ),
+                            yaxis=dict(
+                                title='Number of exposures'
+                            ),
+                            showlegend=False,
+                        )
+        fig = go.Figure(data=[hist],layout=layout,)
+        graph = fig.to_html(full_html=False)
+        return graph
+
+
+    def get_context_data(self, grid_id, **kwargs):
+        context = super().get_context_data(**kwargs)
+        grid= AutoloaderGrid.objects.get(pk=grid_id)
+        context.update(get_hole_count(grid))
+        context['graph'] = self.ctfGraph(grid_id)
+        return context
+    
+    def get(self,request, grid_id, *args, **kwargs):
+        context = self.get_context_data(grid_id, **kwargs)
+        return render(request,self.template_name, context)   

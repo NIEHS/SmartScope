@@ -30,23 +30,40 @@ logger = logging.getLogger(__name__)
 class PreprocessingPipeline(ABC):
 
     name: str
+    verbose_name: str
     description:str
+    cmdkwargs_handler: Any
+    pipeline_form: forms.Form
 
     def __init__(self, grid: AutoloaderGrid):
         self.grid = grid
         self.directory = grid.directory
 
+    @classmethod
+    def form(cls,data:Union[Mapping,None]=None):
+        return cls.pipeline_form(data=data)
+    
+    @classmethod
+    def pipeline_data(cls,data:Dict):
+        return PreprocessingPipelineCmd(pipeline=cls.name,kwargs=cls.cmdkwargs_handler.parse_obj(data)) 
+    
     @abstractmethod
     def start(self):
         pass
 
-    @abstractmethod
     def list_incomplete_processes(self):
-        pass
+        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time'))
 
     @abstractmethod
     def stop(self):
         pass
+
+    def is_stop_file(self):
+        stopfile = Path('preprocessing.stop')
+        if stopfile.is_file():
+            stopfile.unlink()
+            return True
+        return False
 
     def update_processes(self):
         to_update = []
@@ -104,22 +121,16 @@ class PreprocessingPipelineCmd(BaseModel):
         proc = sub.call(shlex.split(f'/opt/smartscope/Smartscope/bin/smartscope.sh highmag_processing {grid.grid_id}'))
         time.sleep(3)
 
-# class NonBlockingJoinableQueue(multiprocessing.JoinableQueue):
 
-#     def check_join(self, timeout=3):
-#         '''Blocks until all items in the Queue have been gotten and processed.
+class SmartScopePreprocessingPipelineForm(forms.Form):
+    n_processes = forms.IntegerField(initial=1, min_value=1, max_value=4, help_text='Number of parallel processes to use for preprocessing.')
+    frames_directory = forms.CharField(help_text='Locations to look for the frames file other. Will look in the default smartscope/movies location by default.')
 
-#         The count of unfinished tasks goes up whenever an item is added to the
-#         queue. The count goes down whenever a consumer thread calls task_done()
-#         to indicate the item was retrieved and all work on it is complete.
-
-#         When the count of unfinished tasks drops to zero, join() unblocks.
-#         '''
-#         with self.all_tasks_done:
-#             while self.unfinished_tasks:
-#                 self.all_tasks_done.wait(timeout=timeout)
-
-        
+    def __init__(self, *args,**kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.required = False
 
 class SmartscopePreprocessingPipeline(PreprocessingPipeline):
 
@@ -132,13 +143,14 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     to_update = []
     incomplete_processes = []
     cmdkwargs_handler = SmartScopePreprocessingCmdKwargs
+    pipeline_form= SmartScopePreprocessingPipelineForm
 
     def __init__(self, grid: AutoloaderGrid, cmd_data:Dict):
         super().__init__(grid=grid)
         self.microscope = self.grid.session_id.microscope_id
         self.detector = self.grid.session_id.detector_id
         self.cmd_data = self.cmdkwargs_handler.parse_obj(cmd_data)
-
+        logger.debug(self.cmd_data)
         self.frames_directory = [Path(self.detector.frames_directory)]
         if self.cmd_data.frames_directory is not None:
             self.frames_directory.append(self.cmd_data.frames_directory)
@@ -150,27 +162,10 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 self.to_process_queue.task_done()
             except multiprocessing.queues.Empty:
                 break
-        # self.to_process_queue.join()
-    
-    @classmethod
-    def form(cls,data:Union[Mapping,None]=None):
-        return SmartScopePreprocessingPipelineForm(data=data)
-    
-    @classmethod
-    def pipeline_data(cls,data:Dict):
-        return PreprocessingPipelineCmd(pipeline=cls.name,kwargs=cls.cmdkwargs_handler.parse_obj(data)) 
-    
-    def is_stop_file(self):
-        stopfile = Path('preprocessing.stop')
-        if stopfile.is_file():
-            stopfile.unlink()
-            return True
-        return False
-
 
     def start(self):
-        os.chdir(self.grid.directory)
         session = self.grid.session_id
+        logger.info(f'Starting the preprocessing with {self.cmd_data.n_processes}')
         for n in range(int(self.cmd_data.n_processes)):
             proc = multiprocessing.Process(target=processing_worker_wrapper, args=(
                 session.directory, self.to_process_queue,), kwargs={'output_queue': self.processed_queue})
@@ -180,20 +175,15 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         while not self.is_stop_file():
             self.queue_incomplete_processes()
             self.to_process_queue.join()
-            # while not self.to_process_queue.check_join(timeout=3):
-            #     if not self.is_stop_file():
-            #         continue
-            #     self.clear_queue()
             self.check_for_update()
             self.update_processes()
             self.list_incomplete_processes()
             self.grid.refresh_from_db()
             if self.grid.status == 'complete' and len(self.incomplete_processes) == 0:
                 return
-        
 
     def list_incomplete_processes(self):
-        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status='acquired').order_by('completion_time')[:5*self.cmd_data.n_processes])
+        self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status__in=['acquired','skipped']).order_by('status','completion_time')[:5*self.cmd_data.n_processes])
 
     def queue_incomplete_processes(self):
         from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,
@@ -209,20 +199,30 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     def stop(self):
         for proc in self.child_process:
             self.to_process_queue.put('exit')
+        for proc in self.child_process:
             proc.join()
         logger.debug('Process joined')
 
     def check_for_update(self):
         while self.processed_queue.qsize() > 0:
             movie = self.processed_queue.get()
+            data = dict()
             if not movie.check_metadata():
+                data['status'] = 'skipped'
+                instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
+                if instance.status != 'skipped':
+                    self.to_update.append(update_fields(instance, data))
                 continue
             logger.debug(f'Updating {movie.name}')
             try:
                 data = get_CTFFIN4_data(movie.ctf)
             except Exception as err:
                 logger.exception(err)
-                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again on the next cycle.')
+                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again later.')
+                data['status'] = 'skipped'
+                instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
+                if instance.status != 'skipped':
+                    self.to_update.append(update_fields(instance, data))
                 continue
             data['status'] = 'completed'
             movie.read_data()
@@ -248,15 +248,6 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         websocket_update(self.to_update, self.grid.grid_id)
         self.to_update = []
 
-class SmartScopePreprocessingPipelineForm(forms.Form):
-    n_processes = forms.IntegerField(initial=1, min_value=1, max_value=4, help_text='Number of parallel processes to use for preprocessing.')
-    frames_directory = forms.CharField(help_text='Locations to look for the frames file other. Will look in the default smartscope/movies location by default.')
-
-    def __init__(self, *args,**kwargs):
-        super().__init__(*args, **kwargs)
-        for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
-            visible.field.required = False
 
 PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline)
 
@@ -274,11 +265,12 @@ def load_preprocessing_pipeline(file:Path):
 def highmag_processing(grid_id: str, *args, **kwargs) -> None:
     try:
         grid = AutoloaderGrid.objects.get(grid_id=grid_id)
-        logging.getLogger('Smartscope').handlers.pop()
-        logger.debug(f'Log handlers:{logger.handlers}')
+        os.chdir(grid.directory)
+        # logging.getLogger('Smartscope').handlers.pop()
+        # logger.debug(f'Log handlers:{logger.handlers}')
         add_log_handlers(directory=grid.session_id.directory, name='proc.out')
         logger.debug(f'Log handlers:{logger.handlers}')
-        preprocess_file = Path(grid.directory,'preprocessing.json')
+        preprocess_file = Path('preprocessing.json')
         cmd_data = load_preprocessing_pipeline(preprocess_file)
         if cmd_data is None:
             logger.info('Trying to load preprocessing parameters from command line arguments.')
@@ -288,7 +280,7 @@ def highmag_processing(grid_id: str, *args, **kwargs) -> None:
             return
         cmd_data.process_pid=os.getpid()
         preprocess_file.write_text(cmd_data.json())
-        pipeline = PREPROCESSING_PIPELINE_FACTORY[cmd_data.pipeline](grid, cmd_data)
+        pipeline = PREPROCESSING_PIPELINE_FACTORY[cmd_data.pipeline](grid, cmd_data.kwargs)
         pipeline.start()
 
     except Exception as e:
