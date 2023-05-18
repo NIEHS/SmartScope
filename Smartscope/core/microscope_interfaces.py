@@ -355,7 +355,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def align():
         pass
 
-    def image_shift_by_microns(self, isX, isY, tiltAngle):
+    def image_shift_by_microns(self, isX, isY, tiltAngle, afis=False):
         return super().image_shift_by_microns(isX, isY, tiltAngle)
 
     def reset_image_shift(self):
