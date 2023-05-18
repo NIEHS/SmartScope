@@ -12,8 +12,6 @@ import torch
 
 from Smartscope.lib.image_manipulations import fourier_crop
 from Smartscope.lib.montage import Montage
-# logger = logging.getLogger('processing')
-# logger = logging.getLogger('autoscreen')
 logger = logging.getLogger(__name__)
 
 WEIGHT_DIR = os.path.join(os.getenv("TEMPLATE_FILES"), 'weights')
