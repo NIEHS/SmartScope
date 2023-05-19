@@ -274,9 +274,9 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         disk_status = disk_space(settings.AUTOSCREENDIR)
         out = self.read_file('run.out')
         proc = self.read_file('proc.out')
-        queue = self.read_file('queue.txt', start_line=0)
+        # queue = self.read_file('queue.txt', start_line=0)
 
-        return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **check_output))
+        return Response(dict(out=out, proc=proc, disk=disk_status, **check_output))
 
     @ action(detail=True, methods=['post'], )
     def force_kill(self, request, **kwargs):

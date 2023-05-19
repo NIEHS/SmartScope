@@ -9,8 +9,8 @@ async function loadlogs() {
     if (data.reload === true) {
         location.reload();
     }
-    queue = document.getElementById('queue')
-    queue.innerHTML = data.queue
+    // queue = document.getElementById('queue')
+    // queue.innerHTML = data.queue
     out = document.getElementById('out')
     out.innerHTML = data.out
     proc = document.getElementById('proc')

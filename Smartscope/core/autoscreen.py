@@ -9,6 +9,7 @@ from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, PROTOCOL_COMMANDS
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
+from Smartscope.core.status import status, grid_status, FileSignals
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings, MicroscopeInterface
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
@@ -31,18 +32,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_queue(grid):
-    """Query database to refresh the queue
-
-    Args:
-        grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
-
-    Returns:
-        (list): [squares,holes]; List of SquareModels that are status='queued' and List of HoleModels that are status='queued'
-    """
-    squares = list(grid.squaremodel_set.filter(selected=True, status__in=['queued', 'started']).order_by('number'))
-    holes = list(grid.holemodel_set.filter(selected=True, square_id__status='completed').exclude(status='completed').order_by('square_id__completion_time', 'number'))
-    logger.debug(f'Pre-queue Holes: {holes}')
-    return squares, holes#[h for h in holes if not h.bisgroup_acquired]
+    square = grid.squaremodel_set.filter(selected=True, status__in=[status.QUEUED, status.STARTED]).order_by('number').first()
+    hole = grid.holemodel_set.filter(selected=True, square_id__status=status.COMPLETED).exclude(status=status.COMPLETED).order_by('square_id__completion_time', 'number').first()
+    return square, hole#[h for h in holes if not h.bisgroup_acquired]
 
 
 def resume_incomplete_processes(queue, grid, microscope_id):
@@ -54,32 +46,32 @@ def resume_incomplete_processes(queue, grid, microscope_id):
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
     squares = grid.squaremodel_set.filter(selected=1).exclude(
-        status__in=['queued', 'started', 'completed']).order_by('number')
+        status__in=[status.QUEUED, status.STARTED, status.COMPLETED]).order_by('number')
     holes = grid.holemodel_set.filter(selected=1).exclude(
-        status__in=['queued', 'started', 'processed', 'completed']).order_by('square_id__number', 'number')
+        status__in=[status.QUEUED, status.STARTED, status.PROCESSED, status.COMPLETED]).order_by('square_id__number', 'number')
     for square in squares:
         logger.info(f'Square {square} was not fully processed')
         transaction.on_commit(lambda: queue.put([process_square_image, [square, grid, microscope_id], {}]))
 
 
-def print_queue(squares, holes, session):
-    """Prints Queue to a file for displaying to the frontend
+# def print_queue(squares, holes, session):
+#     """Prints Queue to a file for displaying to the frontend
 
-    Args:
-        squares (list): list of squares returned from the get_queue method
-        holes (list): list of holes returned from the get_queue method
-        session (ScreeningSession): ScreeningSession object from Smartscope.server.models
-    """
-    string = ['------------------------------------------------------------\nCURRENT QUEUE:\n------------------------------------------------------------\nSquares:\n']
-    for s in squares:
-        string.append(f"\t{s.number} -> {s.name}\n")
-    string.append(f'------------------------------------------------------------\nHoles: (total={len(holes)})\n')
-    for h in holes:
-        string.append(f"\t{h.number} -> {h.name}\n")
-    string.append('------------------------------------------------------------\n')
-    string = ''.join(string)
-    with open(os.path.join(session.directory, 'queue.txt'), 'w') as f:
-        f.write(string)
+#     Args:
+#         squares (list): list of squares returned from the get_queue method
+#         holes (list): list of holes returned from the get_queue method
+#         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
+#     """
+#     string = ['------------------------------------------------------------\nCURRENT QUEUE:\n------------------------------------------------------------\nSquares:\n']
+#     for s in squares:
+#         string.append(f"\t{s.number} -> {s.name}\n")
+#     string.append(f'------------------------------------------------------------\nHoles: (total={len(holes)})\n')
+#     for h in holes:
+#         string.append(f"\t{h.number} -> {h.name}\n")
+#     string.append('------------------------------------------------------------\n')
+#     string = ''.join(string)
+#     with open(os.path.join(session.directory, 'queue.txt'), 'w') as f:
+#         f.write(string)
 
 
 def is_stop_file(sessionid: str) -> bool:
@@ -108,20 +100,20 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
 
     # Set the Websocket_update_decorator grid property
     update.grid = grid
-    if grid.status == 'complete':
+    if grid.status == grid_status.COMPLETED:
         logger.info(f'{grid.name} already complete')
         return
-    if grid.status == 'aborting':
+    if grid.status == grid_status.ABORTING:
         logger.info(f'Aborting {grid.name}')
-        update(grid, status='complete')
+        update(grid, status=grid_status.COMPLETED)
         return
 
     logger.info(f'Starting {grid.name}') 
 
     grid = update(grid, refresh_from_db=True, last_update=None)
 
-    if grid.status is None:
-        grid = update(grid, status='started', start_time=timezone.now())
+    if grid.status is grid_status.NULL:
+        grid = update(grid, status=grid_status.STARTED, start_time=timezone.now())
 
     create_grid_directories(grid.directory)
     os.chdir(grid.directory)
@@ -140,23 +132,23 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
     scope.reset_state()
     grid_type = grid.holeType
     grid_mesh = grid.meshMaterial
-    if atlas.status == 'queued' or atlas.status == 'started':
-        atlas = update(atlas, status='started')
+    if atlas.status == status.QUEUED or atlas.status == status.STARTED:
+        atlas = update(atlas, status=status.STARTED)
         logger.info('Waiting on atlas file')
         runAcquisition(scope,protocol.atlas.acquisition,params,atlas)
-        atlas = update(atlas, status='acquired', completion_time=timezone.now())
-    if atlas.status == 'acquired':
+        atlas = update(atlas, status=status.ACQUIRED, completion_time=timezone.now())
+    if atlas.status == status.ACQUIRED:
         logger.info('Atlas acquired')
         montage = get_file_and_process(raw=atlas.raw, name=atlas.name, directory=microscope.scope_path)
         export_as_png(montage.image, montage.png)
         targets, finder_method, classifier_method, _ = find_targets(montage, protocol.atlas.targets.finders)
         squares = add_targets(grid, atlas, targets, SquareModel, finder_method, classifier_method)
-        atlas = update(atlas, status='processed', pixel_size=montage.pixel_size,
+        atlas = update(atlas, status=status.PROCESSED, pixel_size=montage.pixel_size,
                        shape_x=montage.shape_x, shape_y=montage.shape_y, stage_z=montage.stage_z)
-    if atlas.status == 'processed':
+    if atlas.status == status.PROCESSED:
         selector_wrapper(protocol.atlas.targets.selectors, atlas, n_groups=5)
         select_n_areas(atlas, grid.params_id.squares_num)
-        atlas = update(atlas, status='completed')
+        atlas = update(atlas, status=status.COMPLETED)
 
     logger.info('Atlas analysis is complete')
 
@@ -166,46 +158,43 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
         is_stop_file(session_id)
         grid = update(grid, refresh_from_db=True, last_update=None)
         params = grid.params_id
-        if grid.status == 'aborting':
+        if grid.status == grid_status.ABORTING:
             preprocessing.stop(grid)
             break
         else:
-            squares, holes = get_queue(grid)
-        print_queue(squares, holes, session)
-        if len(holes) > 0 and (len(squares) == 0 or grid.collection_mode == 'screening'):
+            square, hole = get_queue(grid)
+        if hole is not None and (square is None or grid.collection_mode == 'screening'):
             is_done = False
-            hole = holes[0]
-            hole = update(hole, status='started')
+            hole = update(hole, status=status.STARTED)
             runAcquisition(scope,protocol.mediumMag.acquisition,params,hole)
-            hole = update(hole, status='acquired',completion_time=timezone.now())
+            hole = update(hole, status=status.ACQUIRED,completion_time=timezone.now())
             process_hole_image(hole, grid, microscope)
             scope.focusDrift(params.target_defocus_min, params.target_defocus_max, params.step_defocus, params.drift_crit)
             scope.reset_image_shift_values()
-            for hm in hole.targets.exclude(status__in=['acquired','completed']).order_by('hole_id__number'):
-                hm = update(hm, status='started')
+            for hm in hole.targets.exclude(status__in=[status.ACQUIRED,status.COMPLETED]).order_by('hole_id__number'):
+                hm = update(hm, status=status.STARTED)
                 hm = runAcquisition(scope,protocol.highMag.acquisition,params,hm)
-                hm = update(hm, status='acquired', completion_time=timezone.now(), extra_fields=['is_x','is_y','offset','frames'])
+                hm = update(hm, status=status.ACQUIRED, completion_time=timezone.now(), extra_fields=['is_x','is_y','offset','frames'])
                 if hm.hole_id.bis_type != 'center':
-                    update(hm.hole_id, status='acquired', completion_time=timezone.now())
-            update(hole, status='completed')
+                    update(hm.hole_id, status=status.ACQUIRED, completion_time=timezone.now())
+            update(hole, status=status.COMPLETED)
             scope.reset_AFIS_image_shift(afis=params.afis)
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
-        elif len(squares) > 0:
+        elif square is not None:
             is_done = False
-            square = squares[0]
-            if square.status == 'queued' or square.status == 'started':
-                square = update(square, status='started')
+            if square.status == status.QUEUED or square.status == status.STARTED:
+                square = update(square, status=status.STARTED)
                 logger.info('Waiting on square file')
                 runAcquisition(scope,protocol.square.acquisition,params,square)
-                square = update(square, status='acquired', completion_time=timezone.now())
+                square = update(square, status=status.ACQUIRED, completion_time=timezone.now())
                 process_square_image(square, grid, microscope)
         elif is_done:
             microscope_id = session.microscope_id.pk
             if os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'.pause_{microscope_id}')):
                 paused = os.path.join(os.getenv('TEMPDIR'), f'paused_{microscope_id}')
                 open(paused, 'w').close()
-                update(grid, status='paused')
+                update(grid, status=grid_status.PAUSED)
                 logger.info('SerialEM is paused')
                 while os.path.isfile(paused):
                     sys.stdout.flush()
@@ -215,7 +204,7 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
                     os.remove(next_file)
                     running = False
                 else:
-                    update(grid, status='started')
+                    update(grid, status=grid_status.STARTED)
             else:
                 running = False
         else:
@@ -225,7 +214,7 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
             is_done = True
         logger.debug(f'Running: {running}')
     else:
-        update(grid, status='complete')
+        update(grid, status=grid_status.COMPLETED)
         logger.info('Grid finished')
         return 'finished'
 
@@ -246,23 +235,23 @@ def process_square_image(square, grid, microscope_id):
     params = grid.params_id
     is_bis = params.bis_max_distance > 0
     montage = None
-    if square.status == 'acquired':
+    if square.status == status.ACQUIRED:
         montage = get_file_and_process(raw=square.raw, name=square.name, directory=microscope_id.scope_path)
         export_as_png(montage.image, montage.png)
         targets, finder_method, classifier_method, _ = find_targets(montage, protocol.finders)
         holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
 
-        square = update(square, status='processed', shape_x=montage.shape_x,
+        square = update(square, status=status.PROCESSED, shape_x=montage.shape_x,
                         shape_y=montage.shape_y, pixel_size=montage.pixel_size, refresh_from_db=True)
         transaction.on_commit(lambda: logger.debug('targets added'))
-    if square.status == 'processed':
+    if square.status == status.PROCESSED:
         if montage is None:
             montage = Montage(name=square.name)
             montage.load_or_process()
         selector_wrapper(protocol.selectors, square, n_groups=5, montage=montage)
-        square = update(square, status='selected')
+        square = update(square, status=status.TARGETS_SELECTED)
         transaction.on_commit(lambda: logger.debug('Selectors added'))
-    if square.status == 'selected':
+    if square.status == status.TARGETS_SELECTED:
         if is_bis:
             holes = list(HoleModel.display.filter(square_id=square.square_id))
             holes = group_holes_for_BIS([h for h in holes if h.is_good() and not h.is_excluded()[0]],
@@ -271,10 +260,10 @@ def process_square_image(square, grid, microscope_id):
                 hole.save()
         logger.info(f'Picking holes on {square}')
         select_n_areas(square, grid.params_id.holes_per_square, is_bis=is_bis)
-        square = update(square, status='targets_picked')
-    if square.status == 'targets_picked':
-        square = update(square, status='completed', completion_time=timezone.now())
-    if square.status == 'completed':
+        square = update(square, status=status.TARGETS_PICKED)
+    if square.status == status.TARGETS_PICKED:
+        square = update(square, status=status.COMPLETED, completion_time=timezone.now())
+    if square.status == status.COMPLETED:
         logger.info(f'Square {square.name} analysis is complete')
 
 
@@ -321,7 +310,7 @@ def process_hole_image(hole, grid, microscope_id):
             add_targets(grid,h,targets_to_register,HighMagModel,finder_method,classifier=classifier_method)
         timer.report_timer('Final registration and saving to db')
         update(hole, shape_x=montage.shape_x,
-                            shape_y=montage.shape_y, pixel_size=montage.pixel_size, status='processed')
+                            shape_y=montage.shape_y, pixel_size=montage.pixel_size, status=status.PROCESSED)
 
 
 def write_sessionLock(session, lockFile):
@@ -339,7 +328,7 @@ def autoscreen(session_id):
     is_stop_file(session.session_id)
     if microscope.isLocked:
         logger.warning(
-            f'\nThe requested microscope is busy.\n\tLock file {microscope.lockFile} found\n\tSession id: {sessionLock} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
+            f'\nThe requested microscope is busy.\n\tLock file {microscope.lockFile} found\n\tSession id: {session} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
         sys.exit(0)
 
     write_sessionLock(session, microscope.lockFile)
@@ -376,7 +365,7 @@ def autoscreen(session_id):
         status = 'error'
         if grid in locals():
             update.grid = grid
-            update(grid, status='error')
+            update(grid, status=grid_status.ERROR)
     except KeyboardInterrupt:
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'
