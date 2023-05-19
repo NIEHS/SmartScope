@@ -3,7 +3,7 @@ FROM nvidia/cuda:12.1.0-base-ubuntu18.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-	python3-dev default-libmysqlclient-dev build-essential wget libglib2.0-0 ffmpeg libsm6 libxext6 curl mariadb-server && \
+	python3-dev default-libmysqlclient-dev build-essential wget libglib2.0-0 ffmpeg libsm6 libxext6 curl mariadb-server git && \
 	apt-get clean && rm -rf /var/cache/apt/lists
 
 RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
@@ -21,11 +21,12 @@ ADD config/docker/requirements.txt .
 ENV PATH=$PATH:/opt/miniconda3/bin
 
 RUN conda update -y conda && \
-	yes | conda install python=3.9 cudatoolkit=10.2 cudnn=7.6 git && \
-	yes | pip install numpy==1.21.0 && \
-	yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu102 && \
+	yes | conda install python=3.9 && \
+	yes | conda install cudatoolkit=11.1 cudnn -c nvidia
+
+RUN	yes | pip install numpy==1.21.0 && \
+	yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111 && \
 	yes | pip install -r requirements.txt && \
-	yes | pip install ipython && \
 	conda clean --all
 
 # create a non-root user
