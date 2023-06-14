@@ -14,6 +14,7 @@ from django.db.models.signals import post_save, pre_save
 
 from Smartscope.server.lib.worker_jobs import *
 from Smartscope.lib.file_manipulations import create_scope_dirs
+from Smartscope.core.status import status, grid_status
 from .session import *
 from .misc_func import get_fields
 
@@ -55,14 +56,14 @@ def pre_update(sender, instance, **kwargs):
 def grid_modification(sender, instance, **kwargs):
     if instance._state.adding:
         return
-    if instance.status == 'aborting':
-        targets = list(instance.squaremodel_set.filter(status='queued'))
-        targets += list(instance.holemodel_set.filter(status='queued'))
-        targets += list(instance.highmagmodel_set.filter(status='queued'))
+    if instance.status == grid_status.ABORTING:
+        targets = list(instance.squaremodel_set.filter(status=status.QUEUED))
+        targets += list(instance.holemodel_set.filter(status=status.QUEUED))
+        targets += list(instance.highmagmodel_set.filter(status=status.QUEUED))
         with transaction.atomic():
             for target in targets:
                 target.selected = False
-                target.status = None
+                target.status = status.NULL
                 target.save()
         return
     original = sender.objects.get(pk=instance.pk)
@@ -79,16 +80,16 @@ def queue_bis_group(sender,instance,created, **kwargs):
     if not created and instance.bis_type == 'center':
         if instance.selected:
             logger.debug("Updating status bis target to 'queued'")
-            HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')
+            HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status=status.QUEUED)
             return
         logger.debug("Updating status bis target to 'null'")
-        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status='queued').update(status=None)
+        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=status.QUEUED).update(status=status.NULL)
 
 @ receiver(pre_save, sender=HoleModel)
 @ receiver(pre_save, sender=SquareModel)
 def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
-        if instance.status == 'completed' and instance.completion_time is None:
+        if instance.status == grid_status.COMPLETED and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
 
