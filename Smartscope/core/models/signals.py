@@ -128,6 +128,8 @@ def change_group(sender, instance, **kwargs):
             destination = '/'.join(original.directory.replace(original.working_dir, instance.working_dir).split('/'))
             print(f'Changing group.\nMoving the session from:\n\t{original.directory}\nTo:\n\t{destination}')
             shutil.move(original.directory, destination)
+            cache_key = f'{instance.session_id}_directory'
+            cache.delete(cache_key)
     return instance
 
 @receiver(post_save, sender=ScreeningSession)
