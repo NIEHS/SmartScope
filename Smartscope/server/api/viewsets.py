@@ -89,7 +89,7 @@ class ExtraActionsMixin:
         context['card'] = render_to_string('mapcard.html', context=context, )
         logger.debug(f"{context['method']}, {context['display_type']}")
         logger.debug(f'Loading card required {len(connection.queries)} queries')
-        return Response(dict(fullmeta=context['fullmeta'], card=context['card'], displayType=context['display_type'], method=context['method']))
+        return Response(dict(card=context['card'], displayType=context['display_type'], method=context['method'])) #fullmeta=context['fullmeta'],
 
     @ action(detail=True, methods=['get'])
     def file_paths(self, request, *args, **kwargs):
