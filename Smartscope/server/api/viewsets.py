@@ -89,7 +89,7 @@ class ExtraActionsMixin:
         context['card'] = render_to_string('mapcard.html', context=context, )
         logger.debug(f"{context['method']}, {context['display_type']}")
         logger.debug(f'Loading card required {len(connection.queries)} queries')
-        return Response(dict(fullmeta=context['fullmeta'], card=context['card'], displayType=context['display_type'], method=context['method']))
+        return Response(dict(card=context['card'], displayType=context['display_type'], method=context['method'])) #fullmeta=context['fullmeta'],
 
     @ action(detail=True, methods=['get'])
     def file_paths(self, request, *args, **kwargs):
@@ -274,9 +274,9 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         disk_status = disk_space(settings.AUTOSCREENDIR)
         out = self.read_file('run.out')
         proc = self.read_file('proc.out')
-        queue = self.read_file('queue.txt', start_line=0)
+        # queue = self.read_file('queue.txt', start_line=0)
 
-        return Response(dict(out=out, proc=proc, queue=queue, disk=disk_status, **check_output))
+        return Response(dict(out=out, proc=proc, disk=disk_status, **check_output))
 
     @ action(detail=True, methods=['post'], )
     def force_kill(self, request, **kwargs):

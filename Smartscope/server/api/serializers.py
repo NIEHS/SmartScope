@@ -264,7 +264,7 @@ class SvgSerializer(RESTserializers.Serializer):
             'method': self.method,
             'element': models_to_serializers[self.instance.__class__.__name__]['element'],
             'svg': self.instance.svg(display_type=self.display_type, method=self.method,).asSvg(),
-            'fullmeta': self.load_meta()
+            # 'fullmeta': self.load_meta()
         }
 
 

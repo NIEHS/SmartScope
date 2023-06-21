@@ -12,8 +12,6 @@ import torch
 
 from Smartscope.lib.image_manipulations import fourier_crop
 from Smartscope.lib.montage import Montage
-# logger = logging.getLogger('processing')
-# logger = logging.getLogger('autoscreen')
 logger = logging.getLogger(__name__)
 
 WEIGHT_DIR = os.path.join(os.getenv("TEMPLATE_FILES"), 'weights')
@@ -46,7 +44,7 @@ def find_holes(montage:Montage, **kwargs):
     if montage.pixel_size < 100:
         logger.info(f'Resizing image')
         binning = (150/montage.pixel_size)
-        image = fourier_crop(image, height=montage.shape_y/binning)
+        image = fourier_crop(image, height=montage.shape_x/binning)
         pad_x = int((montage.shape_x - image.shape[0]) //2)
         pad_y = int((montage.shape_y - image.shape[1]) //2)
         image = cv2.copyMakeBorder(image,pad_x,pad_x,pad_y,pad_y,cv2.BORDER_CONSTANT,value=0)
