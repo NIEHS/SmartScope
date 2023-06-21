@@ -1,6 +1,7 @@
 boto3==1.26.157
 channels_redis==4.1.0
 django==4.2.2
+django-environ==0.10.0
 django-filter==23.2
 django-channels==0.7.0
 django-storages==1.13.2

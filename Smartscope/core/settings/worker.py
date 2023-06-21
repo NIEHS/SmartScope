@@ -4,15 +4,12 @@ from Smartscope.core.config import register_plugins, register_protocols, \
     register_external_plugins, get_active_plugins_list, get_protocol_commands
 from Smartscope.core.metadata_viewer import CTFFitViewer
 
-SMARTSCOPE_CUSTOM_CONFIG = Path(os.getenv('CONFIG', \
-    '/home/yuant2/nieh/SmartScope/config/smartscope/'))
-SMARTSCOPE_DEFAULT_CONFIG = Path('/home/yuant2/nieh/SmartScope/config/smartscope/')
+SMARTSCOPE_CUSTOM_CONFIG = Path(os.getenv('CONFIG'))
+SMARTSCOPE_DEFAULT_CONFIG = Path('/opt/smartscope/config/smartscope/')
 
 SMARTSCOPE_DEFAULT_PLUGINS = SMARTSCOPE_DEFAULT_CONFIG / 'plugins'
 SMARTSCOPE_CUSTOM_PLUGINS = SMARTSCOPE_CUSTOM_CONFIG / 'plugins'
-EXTERNAL_PLUGINS_DIRECTORY = Path(
-    os.getenv('EXTERNAL_PLUGINS_DIRECTORY', '/opt/smartscope/external_plugins/')
-)
+EXTERNAL_PLUGINS_DIRECTORY = Path(os.getenv('EXTERNAL_PLUGINS_DIRECTORY'))
 EXTERNAL_PLUGINS_LIST:list = get_active_plugins_list(
     EXTERNAL_PLUGINS_DIRECTORY,
     SMARTSCOPE_CUSTOM_CONFIG / 'external_plugins.txt'
@@ -31,4 +28,5 @@ register_external_plugins( EXTERNAL_PLUGINS_LIST, plugins_factory=PLUGINS_FACTOR
 PLUGINS_FACTORY['CTF Viewer'] = CTFFitViewer()
 
 ##Register available protocol commands
-# PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)
+if os.environ.get('mode') != 'dev':
+    PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)

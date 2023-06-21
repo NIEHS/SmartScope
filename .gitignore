@@ -31,4 +31,5 @@ docker-compose.yml.bak
 .config
 .python_history
 MyDocker/*
-
+Smartscope/core/__pycache__
+mydatase

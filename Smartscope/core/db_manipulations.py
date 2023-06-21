@@ -9,7 +9,7 @@ from django.db.models.query import prefetch_related_objects
 from django.db import transaction
 from datetime import timedelta
 from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
-# from channels.layers import get_channel_layer
+from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.contenttypes.models import ContentType
 
@@ -34,8 +34,7 @@ class Websocket_update_decorator:
 
 
 def websocket_update(objs, grid_id):
-    # channel_layer = get_channel_layer()
-    channel_layer = {}    
+    channel_layer = get_channel_layer()
     outputDict = {'type': 'update.metadata',
                   'update': {}}
     logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')

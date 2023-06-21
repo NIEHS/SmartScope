@@ -2,6 +2,7 @@
 dev-install:
 	virtualenv venv
 	. venv/bin/activate && (\
+		export mode=dev \
 		pip3 install -r requirements.txt \
 	)
 

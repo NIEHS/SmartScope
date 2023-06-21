@@ -27,7 +27,7 @@ TEMPDIR = os.getenv('TEMPDIR')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
-DEPLOY = False
+DEPLOY = True
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
