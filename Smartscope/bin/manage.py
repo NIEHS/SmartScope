@@ -5,7 +5,9 @@ import sys
 
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.settings.server')
+    # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.settings.server')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Smartscope.core.settings.server_docker')
+    
     # print(sys.argv)
     try:
         from django.core.management import execute_from_command_line

@@ -48,3 +48,8 @@ if os.getenv('LOGDIR') is not None:
     LOG['loggers'][__name__]['handlers'].append('file')
 
 logging.config.dictConfig(LOG)
+
+
+# by tiezheng
+import pymysql
+pymysql.install_as_MySQLdb()

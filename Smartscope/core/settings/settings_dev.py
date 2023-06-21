@@ -25,21 +25,21 @@ TEMPDIR = os.getenv('TEMPDIR')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
-DEPLOY = False
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev')
+DEBUG = eval(os.getenv('DEBUG', 'True'))
+DEPLOY = eval(os.getenv('DEPLOY', 'False'))
 
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 CSRF_TRUSTED_ORIGINS = [f'https://*.{host}' for host in ALLOWED_HOSTS]
 
-APP = os.getenv('APP')
+APP = os.getenv('APP', '/opt/SmartScope')
 # Application definition
 # Storage locations
-USE_STORAGE = eval(os.getenv('USE_STORAGE'))
-USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
-USE_AWS = eval(os.getenv('USE_AWS'))
-USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
+USE_STORAGE = eval(os.getenv('USE_STORAGE', '{}'))
+USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE', 'False'))
+USE_AWS = eval(os.getenv('USE_AWS', 'False'))
+USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE', 'True'))
 
 # WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
 
@@ -115,8 +115,8 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
-                (os.getenv("REDIS_HOST"), 
-                int(os.getenv("REDIS_PORT")))
+                (os.getenv("REDIS_HOST", 'localhost'), 
+                int(os.getenv("REDIS_PORT", '6379')))
             ],
         },
     },
@@ -130,14 +130,19 @@ CACHES = {
 }
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE'),
-        'USER': os.environ.get("MYSQL_USER"),
-        'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
-        'HOST': os.environ.get("MYSQL_HOST"),
-        'PORT': '3306',
-        'CONN_MAX_AGE': 0,
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': os.getenv('MYSQL_DATABASE', 'smartscope'),
+    #     'USER': os.environ.get("MYSQL_USER", 'dev'),
+    #     'USER_PASSWORD': os.environ.get("MYSQL_USER_PASSWORD", 'dev'),
+    #     'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD', 'pass'),
+    #     'HOST': os.environ.get("MYSQL_HOST", 'localhost'),
+    #     'PORT': '3306',
+    #     'CONN_MAX_AGE': 0,
+    # }
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "mydatabase",
     }
 }
 
@@ -147,9 +152,9 @@ if os.getenv('MYSQL_HOST') == 'localhost':
     }
 else:
     DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
-    DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST')
-    DATABASES['default']['PORT'] = os.getenv('MYSQL_PORT')
+    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD', 'pass')
+    DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST', 'localhost')
+    DATABASES['default']['PORT'] = int(os.getenv('MYSQL_PORT', '3306'))
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
