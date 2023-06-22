@@ -49,7 +49,8 @@ if os.getenv('LOGDIR') is not None:
 
 logging.config.dictConfig(LOG)
 
-
-# by tiezheng
-import pymysql
-pymysql.install_as_MySQLdb()
+# connect db by python, which replace mysqlclient
+if os.environ.get('mode') == 'dev':
+    import pymysql
+    pymysql.version_info = (1, 4, 3, "final", 0)
+    pymysql.install_as_MySQLdb()

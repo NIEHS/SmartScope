@@ -8,7 +8,8 @@ dev-install:
 
 dev-run:
 	. venv/bin/activate && (\
-		python3 bin/manage.py runserver --settings=core.settings.settings_dev \
+		python3 bin/manage.py runserver \
+		#--settings=core.settings.settings_dev \
 	)
 
 clean:
