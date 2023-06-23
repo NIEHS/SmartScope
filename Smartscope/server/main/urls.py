@@ -41,6 +41,7 @@ urlpatterns = [
     # path('log/<file>', views.ChangeLog.as_view(), name='Log'),
     path('', RedirectView.as_view(url="smartscope/browse")),
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEPLOY is False:
     urlpatterns.append(re_path(r'^autoscreening/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENDIR}))
