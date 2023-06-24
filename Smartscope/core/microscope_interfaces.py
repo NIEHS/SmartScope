@@ -179,7 +179,13 @@ class SerialemInterface(MicroscopeInterface):
 
     def connect(self):
         logger.info(
-            f'Initiating connection to SerialEM at: {self.microscope.ip}:{self.microscope.port}\n\t If no more messages show up after this one and the External Control notification is not showing up on the SerialEM interface, there is a problem. \n\t The best way to solve it is generally by closing and restarting SerialEM.')
+            f"""
+            Initiating connection to SerialEM at: {self.microscope.ip}:{self.microscope.port}
+            If no more messages show up after this one and the External Control notification 
+            is not showing up on the SerialEM interface, there is a problem.
+            The best way to solve it is generally by closing and restarting SerialEM.
+            """
+        )
         sem.ConnectToSEM(self.microscope.port, self.microscope.ip)
         sem.SetDirectory(self.microscope.directory)
         sem.ClearPersistentVars()
