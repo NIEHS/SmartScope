@@ -13,7 +13,7 @@ def parse_mdoc(mdocFile: str, movie: bool = False) -> pd.DataFrame:
     Opens an mdoc file and returns a dataframe with the different values from the file and the pixel size
     """
     pattern = re.compile(r'(\w*)\s=\s([\-\w\.\s\\:]+)\n')
-
+    metadata= None
     with open(mdocFile, 'r') as file:
         mdocFile = file.read().split('\n\n')
 

@@ -35,12 +35,14 @@ ENV	ALLOWED_HOSTS=localhost \
 	MYSQL_HOST=db \
 	MYSQL_PORT=3306 \
 	MYSQL_USERNAME=root \
-	MYSQL_ROOT_PASSWORD=pass \ 
+	MYSQL_PASSWORD=pass \ 
 	DB_NAME=smartscope \
 	REDIS_HOST=cache \
 	REDIS_PORT=6379 \
 	USE_AWS=False \
 	FORCE_CPU=False
+
+ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:/usr/local/IMOD/bin
 
 ADD . /opt/smartscope/
 

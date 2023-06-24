@@ -30,3 +30,6 @@ PLUGINS_FACTORY['CTF Viewer'] = CTFFitViewer()
 ##Register available protocol commands
 if os.environ.get('mode') != 'dev':
     PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)
+
+DEFAULT_PREPROCESSING_PIPELINE = [ SMARTSCOPE_CUSTOM_CONFIG / 'default_preprocessing.json', SMARTSCOPE_DEFAULT_CONFIG / 'default_preprocessing.json' ]
+

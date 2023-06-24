@@ -270,6 +270,7 @@ class GridCollectionParams(BaseModel):
     holes_per_square = models.IntegerField(default=3)  # If -1 means all
     bis_max_distance = models.FloatField(default=3)  # 0 means not BIS
     min_bis_group_size = models.IntegerField(default=1)
+    afis = models.BooleanField(default=False, verbose_name='AFIS')
     target_defocus_min = models.FloatField(default=-2)
     target_defocus_max = models.FloatField(default=-2)
     step_defocus = models.FloatField(default=0)  # 0 deactivates step defocus
@@ -280,6 +281,7 @@ class GridCollectionParams(BaseModel):
     offset_targeting = models.BooleanField(default=True)
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
+    hardwaredark_delay = models.IntegerField(default=-1,verbose_name='Hardware Dark Delay')
     multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):
@@ -502,7 +504,7 @@ class AutoloaderGrid(BaseModel):
     @ property
     def end_time(self):
         try:
-            hole = self.highmagmodel_set.filter(status='completed').order_by('-completion_time').first()
+            hole = self.highmagmodel_set.order_by('-completion_time').first()
 
             if hole is None:
                 raise
@@ -601,7 +603,7 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
         return self.squaremodel_set.all()
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
-    def toSVG(self, display_type, method):
+    def svg(self, display_type, method):
         targets = list(SquareModel.display.filter(atlas_id=self.atlas_id))
         return drawAtlas(self,targets , display_type, method)
 
@@ -782,7 +784,7 @@ class SquareModel(Target, ExtraPropertyMixin):
 
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
-    def toSVG(self, display_type, method):
+    def svg(self, display_type, method):
         holes = list(HoleModel.display.filter(square_id=self.square_id))
         sq = drawSquare(self, holes, display_type, method)
         
@@ -883,7 +885,7 @@ class HoleModel(Target, ExtraPropertyMixin):
         return self.hole_id
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
-    def toSVG(self, display_type, method):
+    def svg(self, display_type, method):
         holes = list(self.targets)
         if self.shape_x is None:  # There was an error in previous version where shape wasn't set.
             set_shape_values(self)
@@ -981,9 +983,8 @@ class HighMagModel(Target, ExtraPropertyMixin):
     def set_parent(self, parent):
         self.hole_id = parent
     # endaliases
-
-    @property
-    def SVG(self):
+    
+    def svg(self, *args, **kwargs):
         return drawHighMag(self)
     
     @property

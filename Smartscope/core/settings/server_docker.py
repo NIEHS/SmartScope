@@ -46,14 +46,10 @@ USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
 USE_AWS = eval(os.getenv('USE_AWS'))
 USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
 
-# WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
-
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
-    AUTOSCREENINGSTORAGE_URL = '/autoscreeningstorage/'
 else:
     AUTOSCREENSTORAGE = None
-    AUTOSCREENINGSTORAGE_URL = None
 
 # if DEPLOY is False:
 #     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
@@ -155,6 +151,11 @@ else:
     DATABASES['default']['USER'] = os.getenv('MYSQL_ROOT_USER')
     DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
 
+    ssl = eval(os.getenv('MYSQL_SSL', 'False'))
+    if ssl:
+        DATABASES['default']['OPTIONS'] = {
+            'ssl': ssl,           
+        }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -197,7 +198,7 @@ REST_FRAMEWORK = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'EST'
+TIME_ZONE = os.getenv('TIMEZONE', 'America/New_York')
 
 USE_I18N = True
 

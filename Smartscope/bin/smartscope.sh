@@ -1,0 +1,3 @@
+#!/bin/bash
+
+smartscope.py $@ &
