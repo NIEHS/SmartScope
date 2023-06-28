@@ -65,9 +65,11 @@ class ExtraActionsMixin:
     def get_card_context(self,instance,request,**kwargs):
         context = dict()
         display_type = request.query_params.get('display_type')
+        # display_type='classifiers'
         if display_type is not None:
             display_type = isnull_to_none(display_type)
         context['display_type'] = 'classifiers' if display_type is None else display_type
+        # print("################display_type", display_type, context['display_type'])
         method = request.query_params.get('method')
         if method is not None:
             method = isnull_to_none(method)

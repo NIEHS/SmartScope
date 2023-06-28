@@ -1,5 +1,5 @@
-import drawsvg as draw
-from drawsvg import elements as elementsModule
+import drawSvg as draw
+from drawSvg import elements as elementsModule
 from math import floor, sqrt
 from io import StringIO
 from Smartscope.core.settings.worker import PLUGINS_FACTORY

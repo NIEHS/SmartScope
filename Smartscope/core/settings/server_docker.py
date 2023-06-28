@@ -13,16 +13,23 @@ import environ
 import os
 # from django.core.files.storage import FileSystemStorage
 
-# Initialise environment variables
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
+DJANGO_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
+PROJECT_DIR = os.path.dirname(DJANGO_DIR)
+
+# Initialise environment variables for dev only
 if  os.environ.get('mode') == 'dev':
     env = environ.Env()
     environ.Env.read_env()
+    
+    os.environ['EXTERNAL_PLUGINS_DIRECTORY'] = os.path.join(\
+        PROJECT_DIR, 'external_plugins')
+    AUTOSCREENDIR = os.path.join(PROJECT_DIR, 'data', 'smartscope')
+    AUTOSCREENSTORAGE = os.path.join(PROJECT_DIR, 'data')
+else:
+    AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-print("###", BASE_DIR)
-
-AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 AUTOSCREENING_URL = '/autoscreening/'
 TEMPDIR = os.getenv('TEMPDIR')
 
@@ -89,8 +96,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'server/main/custom_templates'),
-            os.path.join(BASE_DIR, 'server/main/templates')
+            os.path.join(DJANGO_DIR, 'server/main/custom_templates'),
+            os.path.join(DJANGO_DIR, 'server/main/templates')
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -213,11 +220,11 @@ STATIC_URL = '/static/'
 
 if DEBUG is True:
     STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, "../static/"),
+        os.path.join(PROJECT_DIR, "static"),
     ]
 else:
     # only used for prod
-    STATIC_ROOT = os.path.join(BASE_DIR, "../static/")
+    STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 
 LOGIN_REDIRECT_URL = '/smartscope'
 LOGOUT_REDIRECT_URL = '/login'
