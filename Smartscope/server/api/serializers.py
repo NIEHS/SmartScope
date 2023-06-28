@@ -257,14 +257,15 @@ class SvgSerializer(RESTserializers.Serializer):
         return update_to_fullmeta(targets)
 
     def to_representation(self, instance):
-
+        # print(dir(self.instance))
+        # print('############working_dir:', self.instance.working_dir)
         return {
             'type': 'reload',
             'display_type': self.display_type,
             'method': self.method,
             'element': models_to_serializers[self.instance.__class__.__name__]['element'],
-            'svg': self.instance.toSVG(display_type=self.display_type, method=self.method,),
-            'fullmeta': self.load_meta()
+            'svg': self.instance.svg(display_type=self.display_type, method=self.method,).asSvg(),
+            # 'fullmeta': self.load_meta()
         }
 
 

@@ -1,0 +1,31 @@
+{% extends "general/right_sidebar.html" %}
+{% block title %}Preprocessing Pipeline{% endblock %}
+
+{% block sidebar_content %}
+<div class="col justify-content-center">
+    <form   method="get" 
+            hx-get="{% url 'getPreprocessingPipeline' %}"
+            hx-target="#preprocessingPipelineForm"
+            hx-indicator="#spinner"
+            hx-trigger="change">
+        {% include "forms/formFieldsBase.html" with form=form row=false %}
+        <div id="spinner" class="my-indicator spinner-border text-primary" role="status">
+            <span class="sr-only"></span>
+        </div>
+    </form>
+</div>
+
+<div id="preprocessingPipelineForm">
+    {% if grid %}
+    {% include "./preprocessing_pipeline_form.html" with form=pipeline_form description=description pipeline=pipeline grid_id=grid.grid_id %}
+    {% endif %}
+</div>
+
+{% if grid %}
+{% include "./preprocessing_pipeline_process.html" with data=pipeline_data grid_id=grid.grid_id %}
+{% endif %}
+
+<script>
+    $("img[id$='_help']").tooltip();
+</script>
+{% endblock %}

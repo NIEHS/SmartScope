@@ -20,3 +20,5 @@ def find_targets(montage: Montage, methods: list):
             logger.debug(f"{method} was successful: {success}, Is Classifier: {method.target_class is TargetClass.CLASSIFIER}")
 
             return targets, method.name, method.name if method.target_class is TargetClass.CLASSIFIER else None, additional_outputs
+        
+        return [], '', None, dict()

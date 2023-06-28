@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any
 from django import forms
 from Smartscope.core.models import *
 from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, PROTOCOLS_FACTORY 
+from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY
 import yaml
 from django.urls import reverse
 
@@ -106,20 +107,22 @@ class GridCollectionParamsForm(forms.ModelForm):
             holes_per_square='Number of holes per square, Use 0 to select all.',
             bis_max_distance='Max image-shift distance in microns. 0 to disable image-shift.',
             min_bis_group_size='Smaller group size for image-shift. Will be considered is distance is not 0',
+            afis='Use astigmatism and beam-tilt compensation during beam-image shift. **Coma vs Image-shift calibration must be performed to use this option**',
             target_defocus_min='Lower defocus limit (closest to 0), must be negative',
             target_defocus_max='Higher defocus limit (highest defocus), must be negative',
             step_defocus='Step to take while cycling defocus values',
             drift_crit='Drift threshold before taking acquision in A/s. Use -1 to disable',
             tilt_angle='Tilt angle. For tilted data collection.',
-            save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked',
+            save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked. The Session needs to be stopped and restarted for this change to take effect',
             zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
+            hardwaredark_delay= 'Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
             offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
             offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable',
             multishot_per_hole='Enable multishot per hole.'
         )
 
     # multishot_per_hole = forms.BooleanField(label='Multishot per hole', initial=False,help_text='Enable multishot per hole. The mutlishot menu will need to be filled.')
-    multishot_per_hole_id = forms.CharField(label='Multishot per hole ID',required=False)
+    multishot_per_hole_id = forms.CharField(label='Multishot per hole ID', required=False)
 
 
     def __init__(self, *args, grid_id=None, **kwargs):
@@ -158,6 +161,7 @@ class GridCollectionParamsForm(forms.ModelForm):
             "step": 0.05
         })
         self.fields['multishot_per_hole'].widget = MultishotCheckBox(grid_id=grid_id)
+        self.fields['afis'].widget = MyCheckBox()
 
         for visible in self.visible_fields():
             if isinstance(visible.field.widget, forms.CheckboxInput ):
@@ -173,6 +177,10 @@ class GridCollectionParamsForm(forms.ModelForm):
                 continue
             self.fields[field].initial = data.pop('initial')
             self.fields[field].widget.attrs.update(data)
+
+
+class PreprocessingPipelineIDForm(forms.Form):
+    preprocessing_pipeline_id = forms.CharField(label='Preprocessing pipeline ID', required=False)
 
 
 class AssingBisGroupsForm(forms.Form):
@@ -210,7 +218,13 @@ class SelectProtocolForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['protocol'].widget.attrs.update({
             'class': 'form-control'
-            # 'hx-get':reverse('setMultishot'),
-            # 'hx-target':"#main",
-            # 'hx-swap':"beforeend",
-        })            
+        })
+
+class SelectPeprocessingPipilelineForm(forms.Form):
+    pipeline = forms.ChoiceField( choices=[('', '----')]+[(key,val.verbose_name) for key,val in PREPROCESSING_PIPELINE_FACTORY.items()], label='Pipeline', help_text='Select from the available preprocessing pipelines.')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['pipeline'].widget.attrs.update({
+            'class': 'form-control',
+        })

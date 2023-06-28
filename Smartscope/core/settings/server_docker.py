@@ -9,15 +9,27 @@ https://docs.djangoproject.com/en/3.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
-
+import environ
 import os
 # from django.core.files.storage import FileSystemStorage
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
+DJANGO_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
+PROJECT_DIR = os.path.dirname(DJANGO_DIR)
 
-AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
+# Initialise environment variables for dev only
+if  os.environ.get('mode') == 'dev':
+    env = environ.Env()
+    environ.Env.read_env()
+    
+    os.environ['EXTERNAL_PLUGINS_DIRECTORY'] = os.path.join(\
+        PROJECT_DIR, 'external_plugins')
+    AUTOSCREENDIR = os.path.join(PROJECT_DIR, 'data', 'smartscope')
+    AUTOSCREENSTORAGE = os.path.join(PROJECT_DIR, 'data')
+else:
+    AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
+
 AUTOSCREENING_URL = '/autoscreening/'
 TEMPDIR = os.getenv('TEMPDIR')
 
@@ -26,8 +38,8 @@ TEMPDIR = os.getenv('TEMPDIR')
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
-DEPLOY = True
+DEBUG = eval(os.getenv('DEBUG'))
+DEPLOY = eval(os.getenv('DEPLOY'))
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
@@ -41,14 +53,10 @@ USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
 USE_AWS = eval(os.getenv('USE_AWS'))
 USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
 
-# WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
-
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
-    AUTOSCREENINGSTORAGE_URL = '/autoscreeningstorage/'
 else:
     AUTOSCREENSTORAGE = None
-    AUTOSCREENINGSTORAGE_URL = None
 
 # if DEPLOY is False:
 #     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
@@ -87,7 +95,10 @@ ROOT_URLCONF = 'Smartscope.server.main.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, '../server/main/custom_templates'), os.path.join(BASE_DIR, '../server/main/templates')],
+        'DIRS': [
+            os.path.join(DJANGO_DIR, 'server/main/custom_templates'),
+            os.path.join(DJANGO_DIR, 'server/main/templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -111,7 +122,10 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv("REDIS_HOST"), int(os.getenv("REDIS_PORT")))],
+            "hosts": [
+                (os.getenv("REDIS_HOST"), 
+                int(os.getenv("REDIS_PORT")))
+            ],
         },
     },
 }
@@ -123,24 +137,32 @@ CACHES = {
     }
 }
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('MYSQL_DATABASE'),
-        'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
-
+        'HOST': os.environ.get("MYSQL_HOST"),
+        'PORT': os.getenv('MYSQL_PORT'),
         'CONN_MAX_AGE': 0,
     }
 }
+
 if os.getenv('MYSQL_HOST') == 'localhost':
     DATABASES['default']['OPTIONS'] = {
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
-else:
     DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
+    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
+else:
+    DATABASES['default']['USER'] = os.getenv('MYSQL_ROOT_USER')
     DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
-    DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST')
-    DATABASES['default']['PORT'] = os.getenv('MYSQL_PORT')
+
+    ssl = eval(os.getenv('MYSQL_SSL', 'False'))
+    if ssl:
+        DATABASES['default']['OPTIONS'] = {
+            'ssl': ssl,           
+        }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -183,7 +205,7 @@ REST_FRAMEWORK = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'EST'
+TIME_ZONE = os.getenv('TIMEZONE', 'America/New_York')
 
 USE_I18N = True
 
@@ -194,15 +216,15 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
-
 STATIC_URL = '/static/'
 
-
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "../static"),
-)
-
-# STATIC_ROOT = os.path.join(BASE_DIR, "../static/")
+if DEBUG is True:
+    STATICFILES_DIRS = [
+        os.path.join(PROJECT_DIR, "static"),
+    ]
+else:
+    # only used for prod
+    STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 
 LOGIN_REDIRECT_URL = '/smartscope'
 LOGOUT_REDIRECT_URL = '/login'
