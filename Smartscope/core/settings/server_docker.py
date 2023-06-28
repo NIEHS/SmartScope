@@ -22,11 +22,12 @@ PROJECT_DIR = os.path.dirname(DJANGO_DIR)
 if  os.environ.get('mode') == 'dev':
     env = environ.Env()
     environ.Env.read_env()
-    
+    BUILD_DIR = os.path.dirname(PROJECT_DIR)
+    print('#####', BUILD_DIR)
     os.environ['EXTERNAL_PLUGINS_DIRECTORY'] = os.path.join(\
-        PROJECT_DIR, 'external_plugins')
-    AUTOSCREENDIR = os.path.join(PROJECT_DIR, 'data', 'smartscope')
-    AUTOSCREENSTORAGE = os.path.join(PROJECT_DIR, 'data')
+        BUILD_DIR, 'external_plugins')
+    AUTOSCREENDIR = os.path.join(BUILD_DIR, 'data', 'smartscope')
+    AUTOSCREENSTORAGE = os.path.join(BUILD_DIR, 'data')
 else:
     AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 
@@ -217,6 +218,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 STATIC_URL = '/static/'
+
 
 if DEBUG is True:
     STATICFILES_DIRS = [
