@@ -23,7 +23,6 @@ if  os.environ.get('mode') == 'dev':
     env = environ.Env()
     environ.Env.read_env()
     BUILD_DIR = os.path.dirname(PROJECT_DIR)
-    print('#####', BUILD_DIR)
     os.environ['EXTERNAL_PLUGINS_DIRECTORY'] = os.path.join(\
         BUILD_DIR, 'external_plugins')
     AUTOSCREENDIR = os.path.join(BUILD_DIR, 'data', 'smartscope')

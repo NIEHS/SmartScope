@@ -27,7 +27,7 @@ from .export_serializers import *
 from Smartscope.server.api.permissions import HasGroupPermission
 from Smartscope.server.frontend.forms import *
 
-from Smartscope.lib.converters import *
+from Smartscope.lib.converters import list_to_dict, get_request_param
 from Smartscope.lib.image_manipulations import power_spectrum
 from Smartscope.lib.system_monitor import disk_space
 from Smartscope.server.lib.worker_jobs import send_to_worker
@@ -63,21 +63,14 @@ class ExtraActionsMixin:
         return Response(serializer.data, template_name='mapcard.html')
     
     def get_card_context(self,instance,request,**kwargs):
-        context = dict()
-        display_type = request.query_params.get('display_type')
-        display_type='classifiers'
-        if display_type is not None:
-            display_type = isnull_to_none(display_type)
-        context['display_type'] = 'classifiers' if display_type is None else display_type
-        # print("################display_type", display_type, context['display_type'])
-        method = request.query_params.get('method')
-        if method is not None:
-            method = isnull_to_none(method)
-        context['method'] = method
-        context['targets_methods'] = targets_methods(instance)
-        context['instance'] = instance
+        context = {
+            'instance': instance,
+            'targets_methods': targets_methods(instance),
+            'display_type': get_request_param(request, 'display_type', 'classifiers'),
+            'method': get_request_param(request, 'method'),
+        }
         if context['method'] is None:
-            methods = context['targets_methods'][context['display_type']]
+            methods = context['targets_methods'].get(context['display_type'], [])
             if len(methods) > 0:
                 context['method'] = methods[0].name
         return context
