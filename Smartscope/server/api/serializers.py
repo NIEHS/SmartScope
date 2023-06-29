@@ -257,8 +257,6 @@ class SvgSerializer(RESTserializers.Serializer):
         return update_to_fullmeta(targets)
 
     def to_representation(self, instance):
-        # print(dir(self.instance))
-        # print('############working_dir:', self.instance.working_dir)
         return {
             'type': 'reload',
             'display_type': self.display_type,

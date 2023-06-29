@@ -530,8 +530,6 @@ class AutoloaderGrid(BaseModel):
     @ property
     def directory(self):
         self_wd = f'{self.position}_{self.name}'
-        print('###self_wd:', self_wd)
-        print('###self.parent:', self.parent)
         wd = self.parent.directory
         return os.path.join(wd, self_wd)
 
