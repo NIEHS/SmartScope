@@ -15,8 +15,8 @@ import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
-DJANGO_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
-PROJECT_DIR = os.path.dirname(DJANGO_DIR)
+BASE_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 # Initialise environment variables for dev only
 if  os.environ.get('mode') == 'dev':
@@ -96,8 +96,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(DJANGO_DIR, 'server/main/custom_templates'),
-            os.path.join(DJANGO_DIR, 'server/main/templates')
+            os.path.join(BASE_DIR, 'server/main/custom_templates'),
+            os.path.join(BASE_DIR, 'server/main/templates')
         ],
         'APP_DIRS': True,
         'OPTIONS': {
