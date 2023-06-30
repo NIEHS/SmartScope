@@ -18,7 +18,7 @@ from django.shortcuts import redirect
 from django.utils.timezone import now
 
 from .forms import *
-from Smartscope.core.db_manipulations import viewer_only, 
+from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.lib.file_manipulations import create_grid_directories

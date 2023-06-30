@@ -321,11 +321,13 @@ class ScreeningSession(BaseModel):
         if (directory:=cache.get(cache_key)) is not None:
             logger.info(f'Session {self} directory from cache.')
             return directory
+
         if settings.USE_STORAGE:
             cwd = os.path.join(settings.AUTOSCREENDIR, self.working_dir)
             if os.path.isdir(cwd):
                 cache.set(cache_key,cwd,timeout=21600)
                 return cwd
+
         if settings.USE_LONGTERMSTORAGE:
             cwd_storage = os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
             if os.path.isdir(cwd_storage):
