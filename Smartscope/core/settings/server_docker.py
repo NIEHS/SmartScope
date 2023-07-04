@@ -58,11 +58,6 @@ if USE_LONGTERMSTORAGE:
 else:
     AUTOSCREENSTORAGE = None
 
-# if DEPLOY is False:
-#     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
-#     autoscreening_storage = FileSystemStorage(location=AUTOSCREENSTORAGE, base_url=AUTOSCREENINGSTORAGE_URL)
-
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -86,7 +81,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
@@ -155,8 +149,8 @@ if os.getenv('MYSQL_HOST') == 'localhost':
     DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
     DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
 else:
-    DATABASES['default']['USER'] = os.getenv('MYSQL_ROOT_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
+    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
+    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
 
     ssl = eval(os.getenv('MYSQL_SSL', 'False'))
     if ssl:
@@ -230,6 +224,3 @@ else:
 LOGIN_REDIRECT_URL = '/smartscope'
 LOGOUT_REDIRECT_URL = '/login'
 LOGIN_URL = '/login'
-
-# LOGGING_CONFIG = None
-# CORS_ORIGIN_ALLOW_ALL = True
