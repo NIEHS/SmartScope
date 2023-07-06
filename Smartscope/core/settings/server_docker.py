@@ -21,16 +21,13 @@ PROJECT_DIR = os.path.dirname(DJANGO_DIR)
 # Initialise environment variables for dev only
 if  os.environ.get('mode') == 'dev':
     env = environ.Env()
-    environ.Env.read_env()
+    environ.Env.read_env(env_file=os.path.join(DJANGO_DIR,'.local.env'))
     BUILD_DIR = os.path.dirname(PROJECT_DIR)
-    os.environ['EXTERNAL_PLUGINS_DIRECTORY'] = os.path.join(\
-        BUILD_DIR, 'external_plugins')
-    AUTOSCREENDIR = os.path.join(BUILD_DIR, 'data', 'smartscope')
-    AUTOSCREENSTORAGE = os.path.join(BUILD_DIR, 'data')
-else:
-    AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
+    os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
+    os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
+    os.environ.setdefault('USE_LONGTERMSTORAGE', 'False')
 
-AUTOSCREENING_URL = '/autoscreening/'
+AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 TEMPDIR = os.getenv('TEMPDIR')
 
 
