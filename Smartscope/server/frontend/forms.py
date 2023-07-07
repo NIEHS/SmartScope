@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from django import forms
 from Smartscope.core.models import *
-from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, PROTOCOLS_FACTORY 
+from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, SMARTSCOPE_DEFAULT_CONFIG, PROTOCOLS_FACTORY 
 from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY
 import yaml
 from django.urls import reverse
@@ -33,9 +33,12 @@ class ScreeningSessionForm(forms.ModelForm):
             visible.field.widget.attrs['class'] = 'form-control'
 
 
-def read_config():
-    file = SMARTSCOPE_CUSTOM_CONFIG / 'default_collection_params.yaml'
-    return yaml.safe_load(file.read_text())
+def read_config(filename = 'default_collection_params.yaml'):
+    collections_params = yaml.safe_load(Path(SMARTSCOPE_DEFAULT_CONFIG,filename).read_text())
+    custom_collections_params = SMARTSCOPE_CUSTOM_CONFIG / filename
+    if custom_collections_params.exists():
+        collections_params.update(custom_collections_params.read_text())
+    return collections_params
 
 class AutoloaderGridForm(forms.ModelForm):
     protocol = forms.ChoiceField(choices=[('auto','auto')] + [(protocol,protocol) for protocol in PROTOCOLS_FACTORY.keys()])

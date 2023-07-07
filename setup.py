@@ -8,7 +8,7 @@ setup(
     author='Jonathan Bouvette',
     author_email='jonathan.bouvette@nih.gov',
     packages=['Smartscope'],
-    # scripts=['Smartscope/bin/smartscope.py'],  # same as name
-    install_requires=['numpy', 'pandas', 'matplotlib', 'mrcfile', 'scipy', 'libtiff',
-                      'imutils', 'sklearn', 'scikit-image', 'pyampd'],  # external packages as dependencies
+    scripts=['Smartscope/bin/smartscope.py','Smartscope/bin/manage.py','Smartscope/bin/smartscope.sh'],  # same as name
+    install_requires=['numpy', 'pandas', 'matplotlib', 'mrcfile', 'scipy',
+                      'imutils', 'scikit-image', 'pyampd'],  # external packages as dependencies
 )
