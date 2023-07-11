@@ -3,7 +3,7 @@
 # torch==1.8.2
 # torchvision==0.9.2
 # torchaudio==0.8.2
---find-links https://dl.fbaipublicfiles.com/detectron2/wheels/cu102/torch1.8/index.html
+--find-links https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
 cliYAML @ git+https://github.com/JoQCcoz/cliYAML.git@main
 detectron2==0.6
 absl-py==0.13.0
