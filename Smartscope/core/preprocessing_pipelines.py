@@ -90,7 +90,7 @@ class SmartScopePreprocessingCmdKwargs(BaseModel):
 class PreprocessingPipelineCmd(BaseModel):
     pipeline:str
     cache_id:str = Field(default_factory=generate_unique_id)
-    process_pid: Optional[int]
+    process_pid: Optional[int] = None
     kwargs: Any
 
     def is_running(self):
@@ -118,7 +118,7 @@ class PreprocessingPipelineCmd(BaseModel):
         logger.info('Preprocessing has been killed gracefully.')
     
     def start(self, grid:AutoloaderGrid):
-        proc = sub.call(shlex.split(f'/opt/smartscope/Smartscope/bin/smartscope.sh highmag_processing {grid.grid_id}'))
+        proc = sub.call(shlex.split(f'smartscope.sh highmag_processing {grid.grid_id}'))
         time.sleep(3)
 
 

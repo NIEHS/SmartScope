@@ -39,14 +39,14 @@ class AtlasSettings(BaseModel):
     c2:float = Field(alias='c2_perc')
 
     class Config:
-        orm_mode=True
+        from_attributes=True
 
 class Detector(BaseModel):
     energyFilter:bool = Field(alias='energy_filter')
     framesDir:str = Field(alias='frames_windows_directory')
 
     class Config:
-        orm_mode=True
+        from_attributes=True
 
 class Microscope(BaseModel):
     loaderSize:int = Field(alias='loader_size')
@@ -56,7 +56,7 @@ class Microscope(BaseModel):
     scopePath:str = Field(alias='scope_path')
 
     class Config:
-        orm_mode=True
+        from_attributes=True
 
 class CartridgeLoadingError(Exception):
     pass

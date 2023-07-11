@@ -342,7 +342,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
         pass
 
-    def eucentricity():
+    def eucentricity(self):
         pass
 
     def moveStage(self, stage_x, stage_y, stage_z):
