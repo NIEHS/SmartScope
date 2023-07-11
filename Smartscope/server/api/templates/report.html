@@ -51,7 +51,11 @@
 
         </form>
         <div class='d-flex flex-row col-12 col-md-4 align-items-center justify-content-center'>
-            <button id='gridStatsBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
+            <button id='gridPreprocessingBtn' hx-get="{% url 'preprocessingPipeline' %}{{grid.grid_id}}" hx-target="#main" hx-swap="beforeend"
+            data-bs-toggle="tooltip" data-bs-placement="top" title="Show/Edit preprocessingpipeline." class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button">
+                Show preprocessing
+            </button>
+            <button id='gridStatsBtn' hx-get="{% url 'collectionStats' grid_id=grid.grid_id %}" hx-target="#main" hx-swap="beforeend" class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
                 data-bs-toggle="collapse" data-bs-target="#collapseGridStats" aria-expanded="false"
                 aria-controls="collapseExample">
                 Show stats
@@ -76,7 +80,7 @@
     </div>
 </div>
 <hr>
-<div id="collapseGridStats" class="collapse">
+<!-- <div id="collapseGridStats" class="collapse">
     <div class='row align-items-center'>
         <div class='row col-3'>
             <div class='col-auto pr-0'><b>Holes in queue:</b></div>
@@ -96,7 +100,7 @@
         </div>
     </div>
     <hr>
-</div>
+</div> -->
 <div id="collapseGridParams" class="collapse">
     <form id='editGridForm' action='#'>
         {% include 'forms/formFieldsBase.html' with form=gridform row=True includeSubmitButton=True %}

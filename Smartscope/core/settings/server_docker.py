@@ -26,8 +26,8 @@ TEMPDIR = os.getenv('TEMPDIR')
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
-DEPLOY = True
+DEBUG = eval(os.getenv('DEBUG'))
+DEPLOY = os.getenv('DEPLOY', True)
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
@@ -41,14 +41,10 @@ USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
 USE_AWS = eval(os.getenv('USE_AWS'))
 USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
 
-# WORKER_HOSTNAME = os.getenv('WORKER_HOSTNAME')
-
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
-    AUTOSCREENINGSTORAGE_URL = '/autoscreeningstorage/'
 else:
     AUTOSCREENSTORAGE = None
-    AUTOSCREENINGSTORAGE_URL = None
 
 # if DEPLOY is False:
 #     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
@@ -127,7 +123,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('MYSQL_DATABASE'),
-        'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
 
         'CONN_MAX_AGE': 0,
     }
@@ -138,9 +134,15 @@ if os.getenv('MYSQL_HOST') == 'localhost':
     }
 else:
     DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
+    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
     DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST')
     DATABASES['default']['PORT'] = os.getenv('MYSQL_PORT')
+
+    ssl = eval(os.getenv('MYSQL_SSL', 'False'))
+    if ssl:
+        DATABASES['default']['OPTIONS'] = {
+            'ssl': ssl,           
+        }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -183,7 +185,7 @@ REST_FRAMEWORK = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'EST'
+TIME_ZONE = os.getenv('TIMEZONE', 'America/New_York')
 
 USE_I18N = True
 

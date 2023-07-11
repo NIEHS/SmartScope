@@ -11,32 +11,7 @@
                         data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle legend">
                         <i class="bi bi-card-list "></i></button>
                 </div>
-                <div>
-                    <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="downloadDropdown" role="button"
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
-                            class="bi bi-download"></i></a>
-                    <div class="dropdown-menu">
-                        <div class="div" id="quality">
-                            <h6 class="dropdown-header">Download</h6>
-
-                            <a id='opt-mrc' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
-                                title="Download mrc"
-                                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=mrc">
-                                .mrc
-                            </a>
-                            <a id='opt-png' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
-                                title="Download png"
-                                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=png">
-                                .png
-                            </a>
-                            <a id='opt-raw' class="dropdown-item" data-bs-toggle="tooltip" data-bs-placement="left"
-                                title="Download raw file saved by the scope"
-                                href="/api/{{instance.api_viewset_name}}/{{instance.id}}/download/?extension=raw">
-                                raw
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                {% include "autoscreenViewer/download_images_dropdown.html" with instance=instance %}
                 <div>
                     <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false"><i
