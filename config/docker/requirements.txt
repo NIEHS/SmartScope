@@ -97,7 +97,7 @@ parso
 pathspec==0.8.1
 pexpect 
 pickleshare 
-Pillow==8.3.1
+Pillow
 plotly
 portalocker==2.3.0
 prompt-toolkit 
