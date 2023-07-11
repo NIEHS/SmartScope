@@ -348,9 +348,9 @@ def autoscreen(session_id):
             scopeInterface = JEOLSerialemInterface
 
         with scopeInterface(
-                            microscope = Microscope.from_orm(session.microscope_id),
-                            detector= Detector.from_orm(session.detector_id) ,
-                            atlasSettings= AtlasSettings.from_orm(session.detector_id)
+                            microscope = Microscope.model_validate(session.microscope_id),
+                            detector= Detector.model_validate(session.detector_id) ,
+                            atlasSettings= AtlasSettings.model_validate(session.detector_id)
                             ) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
