@@ -37,7 +37,7 @@ def read_config(filename = 'default_collection_params.yaml'):
     collections_params = yaml.safe_load(Path(SMARTSCOPE_DEFAULT_CONFIG,filename).read_text())
     custom_collections_params = SMARTSCOPE_CUSTOM_CONFIG / filename
     if custom_collections_params.exists():
-        collections_params.update(custom_collections_params.read_text())
+        collections_params.update(yaml.safe_load(custom_collections_params.read_text()))
     return collections_params
 
 class AutoloaderGridForm(forms.ModelForm):
