@@ -30,7 +30,7 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
     reference: Optional[str]= ''
     method: Optional[str] = ''
     module: Optional[str] = ''
-    kwargs: Optional[Dict[str, Any]]
+    kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
     importPaths: Union[str,List] = Field(default_factory=list)
 
     @property
@@ -53,7 +53,7 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
 
 
 class Finder(BaseFeatureAnalyzer):
-    target_class = TargetClass.FINDER
+    target_class: str = TargetClass.FINDER
 
     @property
     def is_classifier(self):
@@ -62,7 +62,7 @@ class Finder(BaseFeatureAnalyzer):
 
 class Classifier(BaseFeatureAnalyzer):
     classes: Dict[(str, classLabel)]
-    target_class = TargetClass.CLASSIFIER
+    target_class: str = TargetClass.CLASSIFIER
 
     @property
     def is_classifier(self):
@@ -73,7 +73,7 @@ class Classifier(BaseFeatureAnalyzer):
 
 
 class Finder_Classifier(Classifier):
-    target_class = TargetClass.CLASSIFIER
+    target_class:str = TargetClass.CLASSIFIER
 
 
 class Selector(BaseFeatureAnalyzer):

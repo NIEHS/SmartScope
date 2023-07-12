@@ -5,7 +5,7 @@ from Smartscope.core.config import register_plugins, register_protocols, \
 from Smartscope.core.metadata_viewer import CTFFitViewer
 
 SMARTSCOPE_CUSTOM_CONFIG = Path(os.getenv('CONFIG'))
-SMARTSCOPE_DEFAULT_CONFIG = Path('/opt/smartscope/config/smartscope/')
+SMARTSCOPE_DEFAULT_CONFIG = Path(__file__).parents[3] / 'config' / 'smartscope'
 
 SMARTSCOPE_DEFAULT_PLUGINS = SMARTSCOPE_DEFAULT_CONFIG / 'plugins'
 SMARTSCOPE_CUSTOM_PLUGINS = SMARTSCOPE_CUSTOM_CONFIG / 'plugins'
@@ -30,8 +30,8 @@ PLUGINS_FACTORY['CTF Viewer'] = CTFFitViewer()
 for a, b in PLUGINS_FACTORY.items():
     print(f"####{a}\n\t{b}")
 ##Register available protocol commands
-if os.environ.get('mode') != 'dev':
-    PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)
+# if os.environ.get('mode') != 'dev':
+PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)
 
 DEFAULT_PREPROCESSING_PIPELINE = [ SMARTSCOPE_CUSTOM_CONFIG / 'default_preprocessing.json', SMARTSCOPE_DEFAULT_CONFIG / 'default_preprocessing.json' ]
 

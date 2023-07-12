@@ -21,16 +21,13 @@ PROJECT_DIR = os.path.dirname(BASE_DIR)
 # Initialise environment variables for dev only
 if  os.environ.get('mode') == 'dev':
     env = environ.Env()
-    environ.Env.read_env()
+    environ.Env.read_env(env_file=os.path.join(DJANGO_DIR,'.local.env'))
     BUILD_DIR = os.path.dirname(PROJECT_DIR)
-    os.environ['EXTERNAL_PLUGINS_DIRECTORY'] = os.path.join(\
-        BUILD_DIR, 'external_plugins')
-    AUTOSCREENDIR = os.path.join(BUILD_DIR, 'data', 'smartscope')
-    AUTOSCREENSTORAGE = os.path.join(BUILD_DIR, 'data')
-else:
-    AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
+    os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
+    os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
+    os.environ.setdefault('USE_LONGTERMSTORAGE', 'False')
 
-AUTOSCREENING_URL = '/autoscreening/'
+AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 TEMPDIR = os.getenv('TEMPDIR')
 
 
@@ -39,11 +36,7 @@ TEMPDIR = os.getenv('TEMPDIR')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = eval(os.getenv('DEBUG'))
-<<<<<<< HEAD
-DEPLOY = eval(os.getenv('DEPLOY'))
-=======
 DEPLOY = os.getenv('DEPLOY', True)
->>>>>>> upstream/main
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
@@ -61,11 +54,6 @@ if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
 else:
     AUTOSCREENSTORAGE = None
-
-# if DEPLOY is False:
-#     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
-#     autoscreening_storage = FileSystemStorage(location=AUTOSCREENSTORAGE, base_url=AUTOSCREENINGSTORAGE_URL)
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,7 +78,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
@@ -159,6 +146,12 @@ if os.getenv('MYSQL_HOST') in ('localhost', '127.0.0.1'):
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
 else:
+<<<<<<< HEAD
+=======
+    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
+    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
+
+>>>>>>> dev
     ssl = eval(os.getenv('MYSQL_SSL', 'False'))
     if ssl:
         DATABASES['default']['OPTIONS'] = {
@@ -230,6 +223,3 @@ else:
 LOGIN_REDIRECT_URL = '/smartscope'
 LOGOUT_REDIRECT_URL = '/login'
 LOGIN_URL = '/login'
-
-# LOGGING_CONFIG = None
-# CORS_ORIGIN_ALLOW_ALL = True

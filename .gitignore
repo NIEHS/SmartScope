@@ -32,15 +32,13 @@ docker-compose.yml.bak
 .python_history
 Smartscope/core/__pycache__
 Smartscope/mydatase
-<<<<<<< HEAD
 .ipython
 .mysql_history
 .gitignore
 .ipython/profile_default/history.sqlite
-=======
 Smartscope/server/api/migrations
 mydatabase
 SerialEM-python
 SmartScope-docs
 data
->>>>>>> 8753630 (ignore files)
+Smartscope/.local.env

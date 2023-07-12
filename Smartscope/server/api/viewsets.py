@@ -47,8 +47,8 @@ def image_as_bytes(image_path):
 def svg_as_png(instance, context):
     d = instance.svg(display_type=context['display_type'], method=context['method'])
     scale = min([1000/d.width, 1000/d.height])
-    d.setPixelScale(scale)
-    d.savePng('/tmp/download.png')
+    d.set_pixel_scale(scale)
+    d.save_png('/tmp/download.png')
     with  open('/tmp/download.png','rb') as f:
         img = io.BytesIO(f.read())
 
@@ -530,7 +530,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         response_context= dict(cards=[])
         for hole in queryset:
             context['hole']=hole
-            context['svg'] = hole.svg().asSvg()
+            context['svg'] = hole.svg().as_svg()
             response_context['cards'].append(render_to_string('holecard.html',context))
         resp = SimpleTemplateResponse(context=response_context, content_type='text/html', template='holecards.html')
         logger.debug(resp)

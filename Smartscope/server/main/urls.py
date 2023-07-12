@@ -38,11 +38,11 @@ urlpatterns = [
     path('smartscope/', include('Smartscope.server.frontend.urls')),
     path('login/', views.MyLoginView.as_view(authentication_form=forms.UserLoginForm), name='login'),
     path('logout/', LogoutView.as_view()),
-    # path('log/<file>', views.ChangeLog.as_view(), name='Log'),
     path('', RedirectView.as_view(url="smartscope/browse")),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
+<<<<<<< HEAD
 if settings.DEPLOY is False:
     # urlpatterns.append(re_path(r'^autoscreening/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENDIR}))
     # urlpatterns.append(re_path(r'^autoscreeningstorage/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENSTORAGE}))
@@ -51,9 +51,9 @@ if settings.DEPLOY is False:
 
 
 
+=======
+>>>>>>> dev
 # Api urls
-
-
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns += [
