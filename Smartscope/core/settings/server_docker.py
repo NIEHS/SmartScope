@@ -144,20 +144,17 @@ DATABASES = {
         'NAME': os.getenv('MYSQL_DATABASE'),
         'HOST': os.environ.get("MYSQL_HOST"),
         'PORT': os.getenv('MYSQL_PORT'),
+        'USER': os.getenv('MYSQL_ROOT_USER'),
+        'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
         'CONN_MAX_AGE': 0,
     }
 }
 
-if os.getenv('MYSQL_HOST') == 'localhost':
+if os.getenv('MYSQL_HOST') in ('localhost', '127.0.0.1'):
     DATABASES['default']['OPTIONS'] = {
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
-    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
 else:
-    DATABASES['default']['USER'] = os.getenv('MYSQL_ROOT_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_ROOT_PASSWORD')
-
     ssl = eval(os.getenv('MYSQL_SSL', 'False'))
     if ssl:
         DATABASES['default']['OPTIONS'] = {
@@ -217,7 +214,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 STATIC_URL = '/static/'
-
 
 if DEBUG is True:
     STATICFILES_DIRS = [

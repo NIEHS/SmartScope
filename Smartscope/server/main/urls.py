@@ -44,10 +44,15 @@ urlpatterns = [
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEPLOY is False:
-    urlpatterns.append(re_path(r'^autoscreening/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENDIR}))
-    urlpatterns.append(re_path(r'^autoscreeningstorage/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENSTORAGE}))
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns.append(re_path(r'^docs/(?P<path>.*)$', serve, {'document_root': f'{settings.STATIC_ROOT}/docs-build/html'}))
+    urlpatterns += [
+        re_path(r'^autoscreening/(?P<path>.*)$', serve,
+            {'document_root': settings.AUTOSCREENDIR}),
+        re_path(r'^autoscreeningstorage/(?P<path>.*)$', serve,
+            {'document_root': settings.AUTOSCREENSTORAGE}),
+        static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
+        re_path(r'^docs/(?P<path>.*)$', serve,
+            {'document_root': f'{settings.STATIC_ROOT}/docs-build/html'}),
+    ]
 
 
 # Api urls

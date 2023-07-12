@@ -88,12 +88,14 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
         form_params = GridCollectionParamsForm(request.POST)
         form_preprocess = PreprocessingPipelineIDForm(request.POST)
         if not is_viewer_only:
-
             num_grids = set([k.split('-')[0] for k in request.POST.keys() if k.split('-')[0].isnumeric()])
 
             if form_general.is_valid() and form_params.is_valid() and form_preprocess.is_valid():
 
-                session, created = ScreeningSession.objects.get_or_create(**form_general.cleaned_data, date=datetime.today().strftime('%Y%m%d'))
+                session, created = ScreeningSession.objects.get_or_create(
+                    **form_general.cleaned_data,
+                    date=datetime.today().strftime('%Y%m%d')
+                )
                 if created:
                     logger.debug(f'{session} newly created')
 
@@ -106,11 +108,11 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
                 for i in num_grids:
                     form = AutoloaderGridForm(request.POST, prefix=i)
-
                     if form.is_valid():
                         if form.cleaned_data['name'] != '':
                             protocol = form.cleaned_data.pop('protocol')
-                            grid, created = AutoloaderGrid.objects.get_or_create(**form.cleaned_data, session_id=session, params_id=params)
+                            grid, created = AutoloaderGrid.objects.get_or_create(
+                                **form.cleaned_data, session_id=session, params_id=params)
                             
                             if created:
                                 logger.debug(f'{grid} newly created, creating directories')
@@ -229,10 +231,14 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
             return ''
 
     def start_process(self):
-        logger.debug(' '.join(['nohup', 'python', os.path.join(settings.BASE_DIR,
-                                                        'autoscreen.py'), self.session.session_id]))
-        proc = sub.Popen(['nohup', 'python', os.path.join(settings.BASE_DIR,
-                                                          'autoscreen.py'), self.session.session_id], stdin=None, stdout=None, stderr=None, preexec_fn=os.setpgrp)
+        logger.debug(' '.join(['nohup', 'python',
+            os.path.join(settings.BASE_DIR, 'autoscreen.py'),
+            self.session.session_id])
+        )
+        proc = sub.Popen(['nohup', 'python',
+            os.path.join(settings.BASE_DIR, 'autoscreen.py'),
+            self.session.session_id],
+            stdin=None, stdout=None, stderr=None, preexec_fn=os.setpgrp)
         return proc.pid
 
     def stop_process(self, process):

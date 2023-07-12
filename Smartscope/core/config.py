@@ -60,4 +60,5 @@ def get_protocol_commands(external_plugins_list):
         protocol_commands= getattr(module,'protocolCommandsFactory')
         sys.path.remove(str(path))
         protocolCommandsFactory.update(protocol_commands)
+    print('###protocolCommandsFactory: ', protocolCommandsFactory)
     return protocolCommandsFactory

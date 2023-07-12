@@ -354,7 +354,10 @@ def autoscreen(session_id):
                             ) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
-            child_process = multiprocessing.Process(target=processing_worker_wrapper, args=(session.directory, processing_queue,))
+            child_process = multiprocessing.Process(
+                target=processing_worker_wrapper,
+                args=(session.directory, processing_queue,)
+            )
             child_process.start()
             logger.debug(f'Main Log handlers:{logger.handlers}')
             for grid in grids:
