@@ -1,5 +1,6 @@
 boto3==1.26.157
 channels_redis==4.1.0
+daphne
 django==4.2.2
 django-environ==0.10.0
 django-filter==23.2
