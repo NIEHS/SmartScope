@@ -39,7 +39,11 @@ TEMPDIR = os.getenv('TEMPDIR')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = eval(os.getenv('DEBUG'))
+<<<<<<< HEAD
 DEPLOY = eval(os.getenv('DEPLOY'))
+=======
+DEPLOY = os.getenv('DEPLOY', True)
+>>>>>>> upstream/main
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
