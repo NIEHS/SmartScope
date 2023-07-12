@@ -42,17 +42,6 @@ urlpatterns = [
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-<<<<<<< HEAD
-if settings.DEPLOY is False:
-    # urlpatterns.append(re_path(r'^autoscreening/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENDIR}))
-    # urlpatterns.append(re_path(r'^autoscreeningstorage/(?P<path>.*)$', serve, {'document_root': settings.AUTOSCREENSTORAGE}))
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    # urlpatterns.append(re_path(r'^docs/(?P<path>.*)$', serve, {'document_root': f'{settings.STATIC_ROOT}/docs-build/html'}))
-
-
-
-=======
->>>>>>> dev
 # Api urls
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.

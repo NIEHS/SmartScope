@@ -21,8 +21,9 @@ PROJECT_DIR = os.path.dirname(BASE_DIR)
 # Initialise environment variables for dev only
 if  os.environ.get('mode') == 'dev':
     env = environ.Env()
-    environ.Env.read_env(env_file=os.path.join(DJANGO_DIR,'.local.env'))
+    environ.Env.read_env(env_file=os.path.join(SETTINGS_DIR,'.dev.env'))
     BUILD_DIR = os.path.dirname(PROJECT_DIR)
+    os.environ.setdefault('CONFIG', os.path.join(BUILD_DIR, "config/smartscope/"))
     os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
     os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
     os.environ.setdefault('USE_LONGTERMSTORAGE', 'False')
@@ -36,7 +37,7 @@ TEMPDIR = os.getenv('TEMPDIR')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = eval(os.getenv('DEBUG'))
-DEPLOY = os.getenv('DEPLOY', True)
+DEPLOY = eval(os.getenv('DEPLOY'))
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
@@ -146,12 +147,6 @@ if os.getenv('MYSQL_HOST') in ('localhost', '127.0.0.1'):
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
 else:
-<<<<<<< HEAD
-=======
-    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-
->>>>>>> dev
     ssl = eval(os.getenv('MYSQL_SSL', 'False'))
     if ssl:
         DATABASES['default']['OPTIONS'] = {
