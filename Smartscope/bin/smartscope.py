@@ -2,11 +2,12 @@
 """Main executable for smartscope-related commands"""
 import os
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Smartscope.core.settings.server_docker")
-django.setup()
-os.umask(int(os.getenv('DEFAULT_UMASK')))
 import sys
 import logging
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Smartscope.core.settings.server_docker")
+django.setup()
+os.umask(int(os.getenv('DEFAULT_UMASK', '002')))
+
 from Smartscope.core.main_commands import main
 
 
