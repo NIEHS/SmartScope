@@ -78,72 +78,6 @@ def css_color(obj, display_type, method):
             return 'blue', 'N.D.', ''
         return PLUGINS_FACTORY[method].get_label(labels[0])
 
-
-# class myDrawing(draw.Drawing):
-#     def as_svg(self, outputFile=None):
-#         returnString = outputFile is None
-#         if returnString:
-#             outputFile = StringIO()
-#         imgWidth, imgHeight = self.calc_render_size()
-#         if self.pixel_scale != 1:
-#             startStr = '''<?xml version="1.0" encoding="UTF-8"?>
-#     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-#         width="{}" height="{}" viewBox="{} {} {} {}"'''.format(
-#                 imgWidth, imgHeight, *self.view_box)
-#         else:
-#             startStr = '''<?xml version="1.0" encoding="UTF-8"?>
-#     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-#         viewBox="{} {} {} {}"'''.format(
-#                 *self.view_box)
-#         endStr = '</svg>'
-#         outputFile.write(startStr)
-#         elementsModule.writeXmlNodeArgs(self.svg_args, outputFile)
-#         outputFile.write('>\n<defs>\n')
-#         # Write definition elements
-
-#         def idGen(base=''):
-#             idStr = self.idPrefix + base + str(self.id_index)
-#             self.id_index += 1
-#             return idStr
-#         prevSet = set((id(defn) for defn in self.other_defs))
-
-#         def isDuplicate(obj):
-#             nonlocal prevSet
-#             dup = id(obj) in prevSet
-#             prevSet.add(id(obj))
-#             return dup
-#         for element in self.other_defs:
-#             try:
-#                 element.writeSvgElement(idGen, isDuplicate, outputFile, False)
-#                 outputFile.write('\n')
-#             except AttributeError:
-#                 pass
-#         allElements = self.all_elements()
-#         for element in allElements:
-#             try:
-#                 element.writeSvgDefs(idGen, isDuplicate, outputFile, False)
-#             except AttributeError:
-#                 pass
-#         outputFile.write('</defs>\n')
-#         # Generate ids for normal elements
-#         prevDefSet = set(prevSet)
-#         for element in allElements:
-#             try:
-#                 element.writeSvgElement(idGen, isDuplicate, outputFile, True)
-#             except AttributeError:
-#                 pass
-#         prevSet = prevDefSet
-#         # Write normal elements
-#         for element in allElements:
-#             try:
-#                 element.writeSvgElement(idGen, isDuplicate, outputFile, False)
-#                 outputFile.write('\n')
-#             except AttributeError:
-#                 pass
-#         outputFile.write(endStr)
-#         if returnString:
-#             return outputFile.getvalue()
-
 def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
@@ -164,7 +98,7 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
 
             if i.selected:
                 ft_sz = floor(d.width / 35)
-                t = draw.Text(str(i.number), ft_sz, x=x + sz, y=y + sz, id=f'{i.pk}_text', paint_order='stroke',
+                t = draw.Text(str(i.number), ft_sz, x=x + sz, y=y, id=f'{i.pk}_text', paint_order='stroke',
                               stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')
                 text.append(t)
                 r.args['class'] += f" {i.status}"
@@ -204,7 +138,7 @@ def drawSquare(square, targets, display_type, method) -> draw.Drawing:
 
             if i.selected:
                 ft_sz = floor(d.width / 3000 * 80)
-                t = draw.Text(str(i.number), ft_sz, x=x + i.radius, y=y + i.radius, id=f'{i.pk}_text', paint_order='stroke',
+                t = draw.Text(str(i.number), ft_sz, x=x + i.radius, y=y - i.radius, id=f'{i.pk}_text', paint_order='stroke',
                               stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')  # + qualityClass
                 text.append(t)
             if i.status is not None:
