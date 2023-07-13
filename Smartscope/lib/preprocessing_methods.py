@@ -111,6 +111,7 @@ def process_hm_from_average(raw, name, scope_path_directory, spherical_abberatio
 
 
 def processing_worker_wrapper(logdir, queue, output_queue=None):
+    logger.info(f"processing worker: {logdir}\t{queue}\t{output_queue}")
     logging.getLogger('Smartscope').handlers.pop()
     logger.debug(f'Log handlers:{logger.handlers}')
     add_log_handlers(directory=logdir, name='proc.out')

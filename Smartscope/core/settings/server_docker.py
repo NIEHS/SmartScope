@@ -27,7 +27,7 @@ if  os.environ.get('mode') == 'dev':
     os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
     os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
     os.environ.setdefault('AUTOSCREENSTORAGE',os.path.join(BUILD_DIR, 'data', 'smartscope'))
-
+    os.environ.setdefault('TEMPDIR',os.path.join(BUILD_DIR, 'temp'))
 
 AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 TEMPDIR = os.getenv('TEMPDIR')

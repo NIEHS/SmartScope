@@ -22,6 +22,7 @@ from Smartscope.lib.diagnostics import generate_diagnostic_figure, Timer
 from Smartscope.lib.multishot import split_target_for_multishot, load_multishot_from_file
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 import multiprocessing
 import logging
 import numpy as np
@@ -29,6 +30,73 @@ from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
+
+
+def autoscreen(session_id):
+    session = ScreeningSession.objects.get(session_id=session_id)
+    microscope = session.microscope_id
+    # lockFile, sessionLock = session.isScopeLocked
+    add_log_handlers(directory=session.directory, name='run.out')
+    logger.debug(f'Main Log handlers:{logger.handlers}')
+    process = create_process(session)
+    is_stop_file(session.session_id)
+    if microscope.isLocked:
+        logger.warning(f"""
+            The requested microscope is busy.
+            Lock file {microscope.lockFile} found
+            Session id: {session} is currently running.
+            If you are sure that the microscope is not running, remove the lock file and restart.
+            Exiting.
+        """)
+        sys.exit(0)
+    write_sessionLock(session, microscope.lockFile)
+
+    try:
+        grids = list(session.autoloadergrid_set.all().order_by('position'))
+        logger.info(f'Process: {process}')
+        logger.info(f'Session: {session}')
+        logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
+        scopeInterface = TFSSerialemInterface
+        if microscope.serialem_IP == 'xxx.xxx.xxx.xxx' or settings.DEBUG is True:
+            logger.info('Setting scope into test mode')
+            scopeInterface = FakeScopeInterface
+
+        if session.microscope_id.vendor == 'JEOL':
+            logger.info('Using the JEOL interface')
+            scopeInterface = JEOLSerialemInterface
+
+        with scopeInterface(
+                            microscope = Microscope.model_validate(session.microscope_id),
+                            detector= Detector.model_validate(session.detector_id) ,
+                            atlasSettings= AtlasSettings.model_validate(session.detector_id)
+                            ) as scope:
+            # START image processing processes
+            processing_queue = multiprocessing.JoinableQueue()
+            child_process = multiprocessing.Process(
+                target=processing_worker_wrapper,
+                args=(session.directory, processing_queue,)
+            )
+            child_process.start()
+            logger.debug(f'Main Log handlers:{logger.handlers}')
+            for grid in grids:
+                status = run_grid(grid, session, processing_queue, scope)
+            status = 'complete'
+    except Exception as e:
+        logger.exception(e)
+        status = 'error'
+        if grid in locals():
+            update.grid = grid
+            update(grid, status=grid_status.ERROR)
+    except KeyboardInterrupt:
+        logger.info('Stopping Smartscope.py autoscreen')
+        status = 'killed'
+    finally:
+        os.remove(microscope.lockFile)
+        update(process, status=status)
+        logger.debug('Wrapping up')
+        processing_queue.put('exit')
+        child_process.join()
+        logger.debug('Process joined')
 
 
 def get_queue(grid):
@@ -101,7 +169,7 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:mul
     # Set the Websocket_update_decorator grid property
     update.grid = grid
     if grid.status == grid_status.COMPLETED:
-        logger.info(f'{grid.name} already complete')
+        logger.info(f'Grid {grid.name} already complete. grid ID={grid.grid_id}')
         return
     if grid.status == grid_status.ABORTING:
         logger.info(f'Aborting {grid.name}')
@@ -317,65 +385,3 @@ def write_sessionLock(session, lockFile):
     with open(lockFile, 'w') as f:
         f.write(session.session_id)
 
-
-def autoscreen(session_id):
-    session = ScreeningSession.objects.get(session_id=session_id)
-    microscope = session.microscope_id
-    # lockFile, sessionLock = session.isScopeLocked
-    add_log_handlers(directory=session.directory, name='run.out')
-    logger.debug(f'Main Log handlers:{logger.handlers}')
-    process = create_process(session)
-    is_stop_file(session.session_id)
-    if microscope.isLocked:
-        logger.warning(
-            f'\nThe requested microscope is busy.\n\tLock file {microscope.lockFile} found\n\tSession id: {session} is currently running.\n\tIf you are sure that the microscope is not running, remove the lock file and restart.\nExiting.')
-        sys.exit(0)
-
-    write_sessionLock(session, microscope.lockFile)
-
-    try:
-        grids = list(session.autoloadergrid_set.all().order_by('position'))
-        logger.info(f'Process: {process}')
-        logger.info(f'Session: {session}')
-        logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
-        scopeInterface = TFSSerialemInterface
-        if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
-            logger.info('Setting scope into test mode')
-            scopeInterface = FakeScopeInterface
-
-        if session.microscope_id.vendor == 'JEOL':
-            logger.info('Using the JEOL interface')
-            scopeInterface = JEOLSerialemInterface
-
-        with scopeInterface(
-                            microscope = Microscope.model_validate(session.microscope_id),
-                            detector= Detector.model_validate(session.detector_id) ,
-                            atlasSettings= AtlasSettings.model_validate(session.detector_id)
-                            ) as scope:
-            # START image processing processes
-            processing_queue = multiprocessing.JoinableQueue()
-            child_process = multiprocessing.Process(
-                target=processing_worker_wrapper,
-                args=(session.directory, processing_queue,)
-            )
-            child_process.start()
-            logger.debug(f'Main Log handlers:{logger.handlers}')
-            for grid in grids:
-                status = run_grid(grid, session, processing_queue, scope)
-            status = 'complete'
-    except Exception as e:
-        logger.exception(e)
-        status = 'error'
-        if grid in locals():
-            update.grid = grid
-            update(grid, status=grid_status.ERROR)
-    except KeyboardInterrupt:
-        logger.info('Stopping Smartscope.py autoscreen')
-        status = 'killed'
-    finally:
-        os.remove(microscope.lockFile)
-        update(process, status=status)
-        logger.debug('Wrapping up')
-        processing_queue.put('exit')
-        child_process.join()
-        logger.debug('Process joined')

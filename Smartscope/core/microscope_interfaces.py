@@ -413,7 +413,9 @@ class FakeScopeInterface(MicroscopeInterface):
         if not frames:
             generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
             return
-        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=os.path.join(self.microscope.scopePath, 'movies'))
+        movies = os.path.join(self.microscope.scopePath, 'movies')
+        logger.info(f"High resolution movies are stored at {movies} in fake mode")
+        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=movies)
         return frames.split('\\')[-1]
 
     def connect(self):

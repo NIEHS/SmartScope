@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import json
 from django.db import transaction
 from Smartscope.core.models import *
