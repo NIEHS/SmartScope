@@ -4,9 +4,21 @@ import os
 import django
 import sys
 import logging
+
+if os.environ.get('mode') == 'dev':
+    import environ
+    env = environ.Env()
+    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+    env_file = os.path.join(BASE_DIR, 'core', 'settings', '.dev.env')
+    if os.path.isfile(env_file):
+        environ.Env.read_env(env_file=env_file)
+    else:
+        print("Error: no env_file")
+        sys.exit(1)
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Smartscope.core.settings.server_docker")
 django.setup()
-os.umask(int(os.getenv('DEFAULT_UMASK', '002')))
+os.umask(int(os.getenv('DEFAULT_UMASK')))
 
 from Smartscope.core.main_commands import main
 

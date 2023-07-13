@@ -26,7 +26,8 @@ if  os.environ.get('mode') == 'dev':
     os.environ.setdefault('CONFIG', os.path.join(BUILD_DIR, "config/smartscope/"))
     os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
     os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
-    os.environ.setdefault('USE_LONGTERMSTORAGE', 'False')
+    os.environ.setdefault('AUTOSCREENSTORAGE',os.path.join(BUILD_DIR, 'data', 'smartscope'))
+
 
 AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 TEMPDIR = os.getenv('TEMPDIR')
