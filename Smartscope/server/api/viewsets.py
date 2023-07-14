@@ -268,9 +268,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         if 'continue' in data.keys():
             out, err = send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                       arguments=['continue_run', data['continue'], self.object.microscope_id.pk], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(json.loads(out))
 
     @ action(detail=True, methods=['get'])

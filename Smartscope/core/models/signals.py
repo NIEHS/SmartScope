@@ -44,10 +44,7 @@ def pre_update(sender, instance, **kwargs):
                 change.date = timezone.now()
                 change.new_value = new_val.encode()
                 if created:
-                    # print('New change log entry.')
                     change.initial_value = old_val.encode()
-                # else:
-                    # print('Modifying change log entry.')
                 change.save()
     return instance
 
@@ -68,7 +65,10 @@ def grid_modification(sender, instance, **kwargs):
         return
     original = sender.objects.get(pk=instance.pk)
     if instance.name != original.name:
-        print(f'Changing grid name.\nMoving the grid from:\n\t{original.directory}\nTo:\n\t{instance.directory}')
+        logger.info(f'''
+            Changing grid name. Moving the grid
+            from {original.directory} To {instance.directory}
+        ''')
         os.rename(original.directory, instance.directory)
         return
 
@@ -118,7 +118,7 @@ def create_group_directory(sender, instance, created, *args, **kwargs):
             ltwd = os.path.join(settings.AUTOSCREENSTORAGE, instance.name)
         for d in [wd, ltwd]:
             if d is not None and not os.path.isdir(d):
-                print(f'Creating group dir at: ', d)
+                logger.ifno(f'Creating group dir at: ', d)
                 os.mkdir(d)
 
 @ receiver(pre_save, sender=ScreeningSession)
@@ -127,7 +127,7 @@ def change_group(sender, instance, **kwargs):
         original = sender.objects.get(pk=instance.pk)
         if instance.group != original.group:
             destination = '/'.join(original.directory.replace(original.working_dir, instance.working_dir).split('/'))
-            print(f'Changing group.\nMoving the session from:\n\t{original.directory}\nTo:\n\t{destination}')
+            logger.info(f'Changing group.\nMoving the session from:\n\t{original.directory}\nTo:\n\t{destination}')
             shutil.move(original.directory, destination)
             cache_key = f'{instance.session_id}_directory'
             cache.delete(cache_key)

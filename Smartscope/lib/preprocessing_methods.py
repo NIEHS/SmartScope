@@ -121,7 +121,7 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
         while True:
             logger.info(f'Approximate processing queue size: {queue.qsize()}')
             item = queue.get()
-            logger.info(f'Got item {item} from queue')
+            logger.info(f'Got item={item} from queue')
             if item == 'exit':
                 queue.task_done()
                 logger.info('Breaking processing worker loop.')
@@ -131,7 +131,7 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
                 output = item[0](*item[1], **item[2])
                 queue.task_done()
                 if output_queue is not None and output is not None:
-                    # logger.debug(f'Adding {output} to output queue')
+                    logger.debug(f'Adding {output} to output queue')
                     output_queue.put(output)
             else:
                 logger.debug(f'Sleeping 2 sec')

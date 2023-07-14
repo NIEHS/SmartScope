@@ -155,14 +155,16 @@ def runAcquisition(scope,methods,params,instance):
         output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance)
     return output
 
-def run_grid(grid:AutoloaderGrid, session:ScreeningSession, processing_queue:multiprocessing.JoinableQueue, scope:MicroscopeInterface):
+def run_grid(grid:AutoloaderGrid, session:ScreeningSession, \
+        processing_queue:multiprocessing.JoinableQueue,
+        scope:MicroscopeInterface):
     """Main logic for the SmartScope process
 
     Args:
         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
-
+    logger.info(f'###Check status of grid={grid.grid_id}.')
     session_id = session.pk
     microscope = session.microscope_id
 

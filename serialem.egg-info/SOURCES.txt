@@ -1,0 +1,7 @@
+LICENSE
+README.md
+setup.py
+serialem.egg-info/PKG-INFO
+serialem.egg-info/SOURCES.txt
+serialem.egg-info/dependency_links.txt
+serialem.egg-info/top_level.txt

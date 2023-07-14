@@ -79,7 +79,6 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
         context = dict(form_general=form_general, form_params=form_params,form_preprocess=form_preprocess, grids=grids)
         sessions = ScreeningSession.objects.all().order_by('-date')[:10]
         context['sessions'] = sessions
-        print(context['grids'])
         return context
 
     def post(self, request, **kwargs):
@@ -169,7 +168,6 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
         if 'start' in body:
             logger.debug('starting process')
             pid = self.start_process()
-            print('PID:', pid)
             if proc is None:
                 proc = Process(session_id=context['session'], PID=pid, status='Running')
             else:

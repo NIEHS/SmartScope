@@ -27,8 +27,6 @@ register_protocols([SMARTSCOPE_DEFAULT_PROTOCOLS, SMARTSCOPE_CUSTOM_PROTOCOLS], 
 register_external_plugins( EXTERNAL_PLUGINS_LIST, plugins_factory=PLUGINS_FACTORY, protocols_factory=PROTOCOLS_FACTORY )
 PLUGINS_FACTORY['CTF Viewer'] = CTFFitViewer()
 
-for a, b in PLUGINS_FACTORY.items():
-    print(f"####{a}\n\t{b}")
 ##Register available protocol commands
 # if os.environ.get('mode') != 'dev':
 PROTOCOL_COMMANDS_FACTORY = get_protocol_commands(EXTERNAL_PLUGINS_LIST)

@@ -123,11 +123,9 @@ def export_optics(grid_id, mic_directory, mic_extension, mic_type):
     pixel_size = list(set([entry.pixel_size for entry in hm]))[0]
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     session = grid.session_id
-    print(session)
     scope = session.microscope_id
 
     os.chdir(grid.directory)
-    print(os.getcwd())
     optics = get_optic_groups(holes, hm)
     plot_optics_cluster(optics)
 
