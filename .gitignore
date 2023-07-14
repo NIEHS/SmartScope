@@ -39,6 +39,7 @@ Smartscope/mydatase
 Smartscope/server/api/migrations
 mydatabase
 SerialEM-python
+serialem.egg-info/
 SmartScope-docs
 data
 Smartscope/.local.env
