@@ -95,12 +95,11 @@ class GridCollectionParamsSerializer(RESTserializers.ModelSerializer):
 
 class AtlasSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    # targets_methods = RESTserializers.ReadOnlyField()
 
     class Meta:
         model = AtlasModel
         fields = '__all__'
-        extra_fields = ['id']  # ['svg', 'png', 'raw', 'mrc']
+        extra_fields = ['id',]
 
 
 class FilePathsSerializer(RESTserializers.Serializer):

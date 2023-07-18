@@ -126,7 +126,7 @@ def check_for_beam_fov_overlap(beam_masks,fov_masks,box):
             sum_box += j
         sum_box*=f
         if np.any(sum_box[sum_box>1]):
-            # print('Found beam overlap')
+            logger.info('Found beam overlap')
             return True
 
 def check_fov_overlap(fov_masks,box):

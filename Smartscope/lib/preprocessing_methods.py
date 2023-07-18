@@ -2,15 +2,17 @@ from typing import List, Union
 import pandas as pd
 from pathlib import Path
 import logging
+import os
+import sys
+import time
+import shlex
+import subprocess
+
 from Smartscope.lib.file_manipulations import locate_file_in_directories, get_file_and_process
 from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage, Movie
 from Smartscope.lib.logger import add_log_handlers
 from Smartscope.lib.generic_position import parse_mdoc
-import os
-import time
-import shlex
-import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -111,16 +113,18 @@ def process_hm_from_average(raw, name, scope_path_directory, spherical_abberatio
 
 
 def processing_worker_wrapper(logdir, queue, output_queue=None):
+    logger.info(f"processing worker: {logdir}\t{queue}\t{output_queue}")
     logging.getLogger('Smartscope').handlers.pop()
     logger.debug(f'Log handlers:{logger.handlers}')
     add_log_handlers(directory=logdir, name='proc.out')
     logger.debug(f'Log handlers:{logger.handlers}')
     logger.debug(f'{queue},{output_queue}')
+    sys.exit(1)
     try:
         while True:
             logger.info(f'Approximate processing queue size: {queue.qsize()}')
             item = queue.get()
-            logger.info(f'Got item {item} from queue')
+            logger.info(f'Got item={item} from queue')
             if item == 'exit':
                 queue.task_done()
                 logger.info('Breaking processing worker loop.')
@@ -130,7 +134,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
                 output = item[0](*item[1], **item[2])
                 queue.task_done()
                 if output_queue is not None and output is not None:
-                    # logger.debug(f'Adding {output} to output queue')
+                    logger.debug(f'Adding {output} to output queue')
+                    sys.exit(1)
                     output_queue.put(output)
             else:
                 logger.debug(f'Sleeping 2 sec')

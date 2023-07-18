@@ -199,12 +199,18 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
             process_init = process = self.object.process_set.first()
             if data['start'] is True:
                 logger.info('starting process')
-                send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
-                               arguments=['autoscreen', self.object.session_id],)
+                send_to_worker(
+                    self.object.microscope_id.worker_hostname,
+                    self.object.microscope_id.executable,
+                    arguments=['autoscreen', self.object.session_id],
+                )
             else:
                 logger.info('stopping')
-                send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
-                               arguments=['stop_session', self.object.session_id])
+                send_to_worker(
+                    self.object.microscope_id.worker_hostname,
+                    self.object.microscope_id.executable,
+                    arguments=['stop_session', self.object.session_id]
+                )
 
             rounds = 0
             check = True
@@ -212,7 +218,12 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                 logger.info('Starting checks')
                 rounds += 1
                 if rounds > 15:
-                    return Response({'error': 'Command Timeout reached', 'isRunning': process.status == 'running', 'pid': process.PID, 'status': process.status})
+                    return Response({
+                        'error': 'Command Timeout reached',
+                        'isRunning': process.status == 'running',
+                        'pid': process.PID,
+                        'status': process.status
+                    })
                 time.sleep(1)
                 process = self.object.process_set.first()
                 if process_init is None:
@@ -222,7 +233,11 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                     if process_init.status != process.status:
                         check = False
 
-            return Response({'isRunning': process.status == 'running', 'pid': process.PID, 'status': process.status})
+            return Response({
+                'isRunning': process.status == 'running',
+                'pid': process.PID,
+                'status': process.status
+            })
 
     @ action(detail=True, methods=['get'])
     def check_is_running(self, request, **kwargs):
@@ -253,9 +268,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         if 'continue' in data.keys():
             out, err = send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                       arguments=['continue_run', data['continue'], self.object.microscope_id.pk], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(json.loads(out))
 
     @ action(detail=True, methods=['get'])

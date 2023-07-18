@@ -7,6 +7,7 @@ Author: David Mastronarde
 Author-email: mast@colorado.edu
 Maintainer: David Mastronarde
 Maintainer-email: mast@colorado.edu
+License-File: LICENSE
 
 
 Python module for using Python scripting in SerialEM or external control of SerialEM

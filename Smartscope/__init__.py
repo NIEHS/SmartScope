@@ -47,6 +47,7 @@ if os.getenv('LOGDIR') is not None:
     }
     LOG['loggers'][__name__]['handlers'].append('file')
 
+
 logging.config.dictConfig(LOG)
 
 # connect db by python, which replace mysqlclient

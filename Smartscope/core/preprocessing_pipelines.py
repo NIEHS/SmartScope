@@ -242,7 +242,6 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             return time.sleep(sleep_time)
         with transaction.atomic():
             for obj in self.to_update:
-                print(obj.shape_x)
                 obj.save()
             # [obj.save() for obj in self.to_update]
         websocket_update(self.to_update, self.grid.grid_id)

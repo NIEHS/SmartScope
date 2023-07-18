@@ -15,17 +15,19 @@ import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
-DJANGO_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
-PROJECT_DIR = os.path.dirname(DJANGO_DIR)
+BASE_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 # Initialise environment variables for dev only
 if  os.environ.get('mode') == 'dev':
     env = environ.Env()
-    environ.Env.read_env(env_file=os.path.join(DJANGO_DIR,'.local.env'))
+    environ.Env.read_env(env_file=os.path.join(SETTINGS_DIR,'.dev.env'))
     BUILD_DIR = os.path.dirname(PROJECT_DIR)
+    os.environ.setdefault('CONFIG', os.path.join(BUILD_DIR, "config/smartscope/"))
     os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
     os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
-    os.environ.setdefault('USE_LONGTERMSTORAGE', 'False')
+    os.environ.setdefault('AUTOSCREENSTORAGE',os.path.join(BUILD_DIR, 'data', 'smartscope'))
+    os.environ.setdefault('TEMPDIR',os.path.join(BUILD_DIR, 'temp'))
 
 AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 TEMPDIR = os.getenv('TEMPDIR')
@@ -88,8 +90,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(DJANGO_DIR, 'server/main/custom_templates'),
-            os.path.join(DJANGO_DIR, 'server/main/templates')
+            os.path.join(BASE_DIR, 'server/main/custom_templates'),
+            os.path.join(BASE_DIR, 'server/main/templates')
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -136,20 +138,17 @@ DATABASES = {
         'NAME': os.getenv('MYSQL_DATABASE'),
         'HOST': os.environ.get("MYSQL_HOST"),
         'PORT': os.getenv('MYSQL_PORT'),
+        'USER': os.getenv('MYSQL_ROOT_USER'),
+        'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
         'CONN_MAX_AGE': 0,
     }
 }
 
-if os.getenv('MYSQL_HOST') == 'localhost':
+if os.getenv('MYSQL_HOST') in ('localhost', '127.0.0.1'):
     DATABASES['default']['OPTIONS'] = {
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
-    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
 else:
-    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-
     ssl = eval(os.getenv('MYSQL_SSL', 'False'))
     if ssl:
         DATABASES['default']['OPTIONS'] = {
@@ -209,7 +208,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 STATIC_URL = '/static/'
-
 
 if DEBUG is True:
     STATICFILES_DIRS = [

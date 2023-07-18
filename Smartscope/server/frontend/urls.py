@@ -25,8 +25,9 @@ urlpatterns = [
     path('collectionstats/<grid_id>/',views.CollectionStatsView.as_view(),name='collectionStats'),
 ]
 if settings.USE_MICROSCOPE:
-    urlpatterns += [path('run/', RedirectView.as_view(url='setup/'), name='run'),
-                    path('run/setup/', views.AutoScreenSetup.as_view(), name='setup_autoscreen'),
-                    path('run/session/', views.AutoScreenRun.as_view(), name='run_autoscreen'),
-                    path('run/session/<session_id>/', views.AutoScreenRun.as_view(), name='run_session'),
-                    ]
+    urlpatterns += [
+        path('run/', RedirectView.as_view(url='setup/'), name='run'),
+        path('run/setup/', views.AutoScreenSetup.as_view(), name='setup_autoscreen'),
+        path('run/session/', views.AutoScreenRun.as_view(), name='run_autoscreen'),
+        path('run/session/<session_id>/', views.AutoScreenRun.as_view(), name='run_session'),
+    ]
