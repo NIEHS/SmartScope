@@ -98,73 +98,16 @@ def autoscreen(session_id):
         child_process.join()
         logger.debug('Process joined')
 
-
-def get_queue(grid):
-    square = grid.squaremodel_set.filter(selected=True, status__in=[status.QUEUED, status.STARTED]).order_by('number').first()
-    hole = grid.holemodel_set.filter(selected=True, square_id__status=status.COMPLETED).exclude(status=status.COMPLETED).order_by('square_id__completion_time', 'number').first()
-    return square, hole#[h for h in holes if not h.bisgroup_acquired]
-
-
-def resume_incomplete_processes(queue, grid, microscope_id):
-    """Query database for models with incomplete processes and adds them to the processing queue
-
-    Args:
-        queue (multiprocessing.JoinableQueue): multiprocessing queue of objects for processing by    the processing_worker
-        grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
-        session (ScreeningSession): ScreeningSession object from Smartscope.server.models
-    """
-    squares = grid.squaremodel_set.filter(selected=1).exclude(
-        status__in=[status.QUEUED, status.STARTED, status.COMPLETED]).order_by('number')
-    holes = grid.holemodel_set.filter(selected=1).exclude(
-        status__in=[status.QUEUED, status.STARTED, status.PROCESSED, status.COMPLETED]).order_by('square_id__number', 'number')
-    for square in squares:
-        logger.info(f'Square {square} was not fully processed')
-        transaction.on_commit(lambda: queue.put([process_square_image, [square, grid, microscope_id], {}]))
-
-
-# def print_queue(squares, holes, session):
-#     """Prints Queue to a file for displaying to the frontend
-
-#     Args:
-#         squares (list): list of squares returned from the get_queue method
-#         holes (list): list of holes returned from the get_queue method
-#         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
-#     """
-#     string = ['------------------------------------------------------------\nCURRENT QUEUE:\n------------------------------------------------------------\nSquares:\n']
-#     for s in squares:
-#         string.append(f"\t{s.number} -> {s.name}\n")
-#     string.append(f'------------------------------------------------------------\nHoles: (total={len(holes)})\n')
-#     for h in holes:
-#         string.append(f"\t{h.number} -> {h.name}\n")
-#     string.append('------------------------------------------------------------\n')
-#     string = ''.join(string)
-#     with open(os.path.join(session.directory, 'queue.txt'), 'w') as f:
-#         f.write(string)
-
-
-def is_stop_file(sessionid: str) -> bool:
-    stop_file = os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop')
-    if os.path.isfile(stop_file):
-        logger.debug(f'Stop file {stop_file} found.')
-        os.remove(stop_file)
-        raise KeyboardInterrupt()
-
-
-def runAcquisition(scope,methods,params,instance):
-    for method in methods:
-        output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance)
-    return output
-
-def run_grid(grid:AutoloaderGrid, session:ScreeningSession, \
+def run_grid(grid:AutoloaderGrid,
+        session:ScreeningSession,
         processing_queue:multiprocessing.JoinableQueue,
         scope:MicroscopeInterface):
     """Main logic for the SmartScope process
-
     Args:
         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
-    logger.info(f'###Check status of grid={grid.grid_id}.')
+    logger.info(f'###Check status of grid, grid ID={grid.grid_id}.')
     session_id = session.pk
     microscope = session.microscope_id
 
@@ -178,8 +121,7 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, \
         update(grid, status=grid_status.COMPLETED)
         return
 
-    logger.info(f'Starting {grid.name}') 
-
+    logger.info(f'Starting {grid.name}, status={grid.status}') 
     grid = update(grid, refresh_from_db=True, last_update=None)
 
     if grid.status is grid_status.NULL:
@@ -189,6 +131,7 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, \
     os.chdir(grid.directory)
     processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
+
     # ADD the new protocol loader
     protocol = get_or_set_protocol(grid)
     resume_incomplete_processes(processing_queue, grid, session.microscope_id)
@@ -200,8 +143,9 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, \
     is_stop_file(session_id)
     scope.setup(params.save_frames, framesName=f'{session.date}_{grid.name}')
     scope.reset_state()
-    grid_type = grid.holeType
-    grid_mesh = grid.meshMaterial
+    # grid_type = grid.holeType
+    # grid_mesh = grid.meshMaterial
+    
     if atlas.status == status.QUEUED or atlas.status == status.STARTED:
         atlas = update(atlas, status=status.STARTED)
         logger.info('Waiting on atlas file')
@@ -287,6 +231,46 @@ def run_grid(grid:AutoloaderGrid, session:ScreeningSession, \
         update(grid, status=grid_status.COMPLETED)
         logger.info('Grid finished')
         return 'finished'
+
+def get_queue(grid):
+    square = grid.squaremodel_set.filter(selected=True, status__in=[status.QUEUED, status.STARTED]).\
+        order_by('number').first()
+    hole = grid.holemodel_set.filter(selected=True, square_id__status=status.COMPLETED).\
+        exclude(status=status.COMPLETED).\
+        order_by('square_id__completion_time', 'number').first()
+    return square, hole#[h for h in holes if not h.bisgroup_acquired]
+
+
+def resume_incomplete_processes(queue, grid, microscope_id):
+    """Query database for models with incomplete processes and adds them to the processing queue
+
+    Args:
+        queue (multiprocessing.JoinableQueue): multiprocessing queue of objects for processing by    the processing_worker
+        grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
+        session (ScreeningSession): ScreeningSession object from Smartscope.server.models
+    """
+    squares = grid.squaremodel_set.filter(selected=1).exclude(
+        status__in=[status.QUEUED, status.STARTED, status.COMPLETED]).order_by('number')
+    holes = grid.holemodel_set.filter(selected=1).exclude(
+        status__in=[status.QUEUED, status.STARTED, status.PROCESSED, status.COMPLETED]).order_by('square_id__number', 'number')
+    for square in squares:
+        logger.info(f'Square {square} was not fully processed')
+        transaction.on_commit(lambda: queue.put([process_square_image, [square, grid, microscope_id], {}]))
+
+
+
+def is_stop_file(sessionid: str) -> bool:
+    stop_file = os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop')
+    if os.path.isfile(stop_file):
+        logger.debug(f'Stop file {stop_file} found.')
+        os.remove(stop_file)
+        raise KeyboardInterrupt()
+
+
+def runAcquisition(scope,methods,params,instance):
+    for method in methods:
+        output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance)
+    return output
 
 
 def create_process(session):
@@ -387,3 +371,22 @@ def write_sessionLock(session, lockFile):
     with open(lockFile, 'w') as f:
         f.write(session.session_id)
 
+
+# def print_queue(squares, holes, session):
+#     """Prints Queue to a file for displaying to the frontend
+
+#     Args:
+#         squares (list): list of squares returned from the get_queue method
+#         holes (list): list of holes returned from the get_queue method
+#         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
+#     """
+#     string = ['------------------------------------------------------------\nCURRENT QUEUE:\n------------------------------------------------------------\nSquares:\n']
+#     for s in squares:
+#         string.append(f"\t{s.number} -> {s.name}\n")
+#     string.append(f'------------------------------------------------------------\nHoles: (total={len(holes)})\n')
+#     for h in holes:
+#         string.append(f"\t{h.number} -> {h.name}\n")
+#     string.append('------------------------------------------------------------\n')
+#     string = ''.join(string)
+#     with open(os.path.join(session.directory, 'queue.txt'), 'w') as f:
+#         f.write(string)
