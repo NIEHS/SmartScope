@@ -16,19 +16,20 @@ RUN wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.24_RHEL7-64_CUDA1
 
 ADD config/singularity/ctffind /usr/local/
 
-ADD config/docker/requirements.txt .
-
 ENV PATH=$PATH:/opt/miniconda3/bin
 
 RUN conda update -y conda && \
 	yes | conda install python=3.9 && \
-	yes | conda install cudatoolkit=11.1 cudnn -c nvidia 
-RUN	yes | conda install pytorch torchvision -c pytorch-lts -c nvidia && \
+	yes | conda install cudatoolkit=11.1 cudnn -c nvidia \
+	yes | conda install pytorch torchvision -c pytorch-lts -c nvidia && \
 	conda clean --all
+
+ADD config/docker/requirements.txt .
 
 RUN	yes | pip install numpy==1.21.0 && \
 	# yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111 && \
-	yes | pip install -r requirements.txt
+	yes | pip install -r requirements.txt && \
+	pip cache purge
 	
 
 # create a non-root user

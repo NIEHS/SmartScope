@@ -138,8 +138,8 @@ DATABASES = {
         'NAME': os.getenv('MYSQL_DATABASE'),
         'HOST': os.environ.get("MYSQL_HOST"),
         'PORT': os.getenv('MYSQL_PORT'),
-        'USER': os.getenv('MYSQL_ROOT_USER'),
-        'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
+        'USER': os.getenv('MYSQL_USER'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
         'CONN_MAX_AGE': 0,
     }
 }
