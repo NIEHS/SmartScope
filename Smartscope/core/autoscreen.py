@@ -129,6 +129,7 @@ def run_grid(grid:AutoloaderGrid,
 
     create_grid_directories(grid.directory)
     os.chdir(grid.directory)
+    print('###grid directory:', grid.directory)
     processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
 

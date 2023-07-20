@@ -1,13 +1,14 @@
 import os
+import sys
 from pathlib import Path
 from typing import List, Tuple
 import torch
+import logging
+import time
 from Smartscope.core.microscope_interfaces import TFSSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 from Smartscope.core.finders import find_targets
 from Smartscope.core.models import Microscope
-import logging
-import time
 
 
 logger = logging.getLogger(__name__)
@@ -29,10 +30,16 @@ def test_serialem_connection(ip: str, port: int):
 
 
 def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'testing', 'montage_test'), name='test_frames'):
+    '''
+    test_dir = autoscreen_dir + group + session
+    name = grid_id
+    '''
     os.chdir(test_dir)
     print(os.getcwd())
-    frames_file_name = '20211119_AR2_0723-1_5383.tif'
+    # frames_file_name = '20211119_AR2_0723-1_5383.tif'
+    frames_file_name = '20230321_AB_0317_2_1330_0.0.tif'
     frames_dirs = [Path(os.getenv('AUTOSCREENDIR')), Path(os.getenv('TEST_FILES'), 'highmag_frames')]
+    print('###frames_dirs: ', frames_dirs)
     movie = process_hm_from_frames(name, frames_file_name=frames_file_name, frames_directories=frames_dirs)
     print(f'All movie data: {movie.check_metadata()}')
 
