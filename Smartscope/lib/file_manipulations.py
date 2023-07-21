@@ -156,7 +156,11 @@ def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('
 
 
 def locate_file_in_directories(directory_list: List[str], file_name: str) -> Union[str, None]:
-    """Locate a file from a list of possible locations and return the directory in which it was found or None if it couldn't be found"""
+    """
+    Locate a file from a list of possible locations
+    and return the directory in which it was found
+    or None if it couldn't be found
+    """
     for directory in directory_list:
         path = Path(directory, file_name)
         if path.exists():

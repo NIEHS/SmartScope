@@ -390,6 +390,9 @@ class FakeScopeInterface(MicroscopeInterface):
         self.focus_position_set = True
     
     def buffer_to_numpy(self):
+        '''
+        command: highmag_processing <grid_id>
+        '''
         file = select_random_fake_file('lowmagHole')
         logger.debug(f'Using {file} to generate fake buffer')
         with mrcfile.open(file) as mrc:

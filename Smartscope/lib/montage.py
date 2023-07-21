@@ -25,6 +25,64 @@ mpl.use('Agg')
 
 logger = logging.getLogger(__name__)
 
+from .base_image import BaseImage
+
+
+@dataclass
+class Montage(BaseImage):
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.directory.mkdir(exist_ok=True)
+
+    def load_or_process(self, check_AWS=False, force_process=False):
+        if not force_process and self.check_metadata(check_AWS=check_AWS):
+            return
+        self.metadata = parse_mdoc(self.mdoc, self.is_movie)
+        self.build_montage()
+        self.read_image()
+        self.save_metadata()
+
+    def build_montage(self):
+
+        def piece_pos(piece):
+            piece_coord = np.array(piece.PieceCoordinates[0: -1])
+            piece_coord_end = piece_coord + np.array([self.header.mx, self.header.my])
+            piece_pos = np.array([piece_coord, [piece_coord[0], piece_coord_end[1]], piece_coord_end, [piece_coord_end[0], piece_coord[1]]])
+            return piece_pos
+
+        def piece_center(piece):
+            return np.array([np.sum(piece[:, 0]) / piece.shape[0], np.sum(piece[:, 1]) / piece.shape[0]])
+
+        with mrcfile.open(self.raw) as mrc:
+            self.header = mrc.header
+            img = mrc.data
+        if int(self.header.mz) == 1:
+            self.metadata['PieceCoordinates'] = [[0, 0, 0]]
+            self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
+            self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
+            self._image = img
+            self.make_symlink()
+            return
+
+        self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
+        self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
+        montsize = np.array([0, 0])
+        for _, piece in enumerate(self.metadata.piece_limits):
+            for ind, i in enumerate(piece[2]):
+                if i > montsize[ind]:
+                    montsize[ind] = i
+        montage = np.empty(np.flip(montsize), dtype='int16')
+        for ind, piece in enumerate(self.metadata.piece_limits):
+            montage[piece[0, 1]: piece[-2, 1], piece[0, 0]: piece[-2, 0]] = img[ind, :, :]
+        montage = montage[~np.all(montage == 0, axis=1)]
+        montage = montage[:, ~(montage == 0).all(0)]
+
+        self._image = montage
+
+        save_mrc(self.image_path, self._image, self.pixel_size, [0, 0])
+
+
 
 def quantize(x, mi=-3, ma=3, dtype=np.uint8):
     x = (x - x.mean()) / (x.std())
@@ -37,10 +95,6 @@ def quantize(x, mi=-3, ma=3, dtype=np.uint8):
     x = np.clip(x, 0, 255)
     x = np.round(x).astype(dtype)
     return x
-
-
-
-
 
 def plot_hist(image, size=254, **kwargs):
     mydpi = 300
@@ -111,235 +165,6 @@ def round_up_to_odd(f):
     return odd.astype(int)
 
 
-@dataclass
-class BaseImage(ABC):
-
-    name: str
-    working_dir: str = ''
-    is_movie: bool = False
-    metadata: Union[pd.DataFrame, None] = None
-    _raw = None
-    _mdoc = None
-    _shape_x = None
-    _shape_y = None
-    _image = None
-
-    @property
-    def directory(self):
-        return self._directory
-
-    @directory.setter
-    def directory(self, value):
-        self._directory = value
-
-    @property
-    def image_path(self):
-        return self._image_path
-
-    @image_path.setter
-    def image_path(self, value):
-        self._image_path = value
-
-    @property
-    def metadataFile(self):
-        return self._metadataFile
-
-    @metadataFile.setter
-    def metadataFile(self, value):
-        self._metadataFile = value
-
-    @property
-    def image(self):
-        if self._image is not None:
-            return self._image
-        raise AttributeError('Image is not loaded. Ensure that the image is loaded by using the BaseImage.read_image() or Montage.build_montage() method first')
-
-    @property
-    def png(self):
-        return Path(self.working_dir, 'pngs', f'{self.name}.png')
-
-    @property
-    def raw(self):
-        if self._raw is not None:
-            return self._raw
-        return Path(self.working_dir, 'raw', f'{self.name}.mrc')
-    
-    @raw.setter
-    def raw(self, value):
-        self._raw = value 
-        self._mdoc = Path(str(value) + '.mdoc')
-
-    @property
-    def mdoc(self):
-        if self._mdoc is not None:
-            return self._mdoc
-        return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
-
-    def set_shape_from_image(self):
-        self._shape_x = self.image.shape[0]
-        self._shape_y = self.image.shape[1]
-
-    @property
-    def shape_x(self):
-        if self._shape_x is not None:
-            return self._shape_x
-        return self.image.shape[0]
-
-    @property
-    def shape_y(self):
-        if self._shape_y is not None:
-            return self._shape_y
-        return self.image.shape[1]
-    
-    @property
-    def center(self):
-        return np.array([self.shape_y/2, self.shape_x//2],dtype=int)
-
-    # @property
-    # def image_center(self):
-    #     return np.array([self.shape_x, self.shape_y]) // 2
-
-    @property
-    def rotation_angle(self):
-        return self.metadata.iloc[0].RotationAngle
-
-    def get_tile(self, tileIndex=0):
-        return self.metadata.iloc[tileIndex]
-
-    @property
-    def stage_z(self):
-        return self.metadata.iloc[0].StageZ
-
-    @property
-    def pixel_size(self):
-        return self.metadata.iloc[0].PixelSpacing
-
-    @property
-    def ctf(self):
-        return Path(self.directory, 'ctf.txt')
-
-    def read_image(self, force=False):
-        if self._image is not None:
-            return
-        try:
-            with mrcfile.open(self.image_path) as mrc:
-                self._image = mrc.data
-        except FileNotFoundError:
-            with mrcfile.open(self.raw) as mrc:
-                self._image = mrc.data            
-        return
-
-    def read_data(self):
-        self.read_image()
-        self.read_metadata()
-
-    # def downsample(self, scale=2) -> np.ndarray:
-    #     return imutils.resize(self.image, height=int(self.shape_x // scale))
-
-    def check_metadata(self, check_AWS=False):
-        if self.image_path.exists() and self.metadataFile.exists():
-            logger.info('Found metadata, reading...')
-            self.read_data()
-            return True
-
-        if check_AWS:
-            logger.debug(f'{self.image_path}, {self.metadataFile}')
-            with TemporaryS3File([self.image_path, self.metadataFile]) as temp:
-                self.image_path, self.metadataFile = temp.temporary_files
-                self.read_data()
-
-            return True
-        return False
-
-    def save_metadata(self):
-        self.metadata.to_pickle(self.metadataFile)
-
-    def read_metadata(self):
-        self.metadata = pd.read_pickle(self.metadataFile)
-
-    def make_symlink(self):
-        relative = os.path.relpath(self.raw,self.directory)
-        if self.image_path.exists():
-            return
-        logger.debug(f'Relative path from {self.directory} to raw = {relative}')
-        os.symlink(relative, self.image_path)
-
-    def __post_init__(self):
-        self._directory = Path(self.working_dir, self.name)
-        self._image_path = Path(self._directory, f'{self.name}.mrc')
-        self._metadataFile = Path(self._directory, f'{self.name}_metadata.pkl')
-
-
-@dataclass
-class Montage(BaseImage):
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.directory.mkdir(exist_ok=True)
-
-    def load_or_process(self, check_AWS=False, force_process=False):
-        if not force_process and self.check_metadata(check_AWS=check_AWS):
-            return
-        self.metadata = parse_mdoc(self.mdoc, self.is_movie)
-        self.build_montage()
-        self.read_image()
-        self.save_metadata()
-
-    def build_montage(self):
-
-        def piece_pos(piece):
-            piece_coord = np.array(piece.PieceCoordinates[0: -1])
-            piece_coord_end = piece_coord + np.array([self.header.mx, self.header.my])
-            piece_pos = np.array([piece_coord, [piece_coord[0], piece_coord_end[1]], piece_coord_end, [piece_coord_end[0], piece_coord[1]]])
-            return piece_pos
-
-        def piece_center(piece):
-            return np.array([np.sum(piece[:, 0]) / piece.shape[0], np.sum(piece[:, 1]) / piece.shape[0]])
-
-        with mrcfile.open(self.raw) as mrc:
-            self.header = mrc.header
-            img = mrc.data
-        if int(self.header.mz) == 1:
-            self.metadata['PieceCoordinates'] = [[0, 0, 0]]
-            self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
-            self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-            self._image = img
-            self.make_symlink()
-            return
-
-        self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
-        self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
-        montsize = np.array([0, 0])
-        for _, piece in enumerate(self.metadata.piece_limits):
-            for ind, i in enumerate(piece[2]):
-                if i > montsize[ind]:
-                    montsize[ind] = i
-        montage = np.empty(np.flip(montsize), dtype='int16')
-        for ind, piece in enumerate(self.metadata.piece_limits):
-            montage[piece[0, 1]: piece[-2, 1], piece[0, 0]: piece[-2, 0]] = img[ind, :, :]
-        montage = montage[~np.all(montage == 0, axis=1)]
-        montage = montage[:, ~(montage == 0).all(0)]
-
-        self._image = montage
-
-        save_mrc(self.image_path, self._image, self.pixel_size, [0, 0])
-
-@dataclass
-class Movie(BaseImage):
-
-    is_movie: bool = True
-
-    @property
-    def shifts(self):
-        return Path(self.directory, 'ali.xf')
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.directory.mkdir(exist_ok=True)
-
-    def check_metadata(self):
-        if self.image_path.exists() and self.shifts.exists() and self.ctf.exists():
-            return True
 
 def create_targets_from_box(targets: List, montage: BaseImage, target_type: str = 'square'):
     output_targets = []
