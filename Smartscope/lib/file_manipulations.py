@@ -154,7 +154,7 @@ def generate_fake_file(file, funcname, sleeptime=15, destination_dir=os.getenv('
     time.sleep(sleeptime)
     return Path(output_file).name
 
-
+# TODO: depreciated in the future
 def locate_file_in_directories(directory_list: List[str], file_name: str) -> Union[str, None]:
     """
     Locate a file from a list of possible locations

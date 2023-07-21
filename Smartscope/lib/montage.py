@@ -1,31 +1,20 @@
-#! /usr/bin/env python
-from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Union
-import cv2
 import mrcfile
 import os
 import numpy as np
-import imutils
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-
-import pandas as pd
-from Smartscope.lib.generic_position import parse_mdoc
-from Smartscope.lib.Finders.basic_finders import *
-from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.lib.image_manipulations import fourier_crop, save_mrc
-from Smartscope.lib.transformations import closest_node, pixel_to_stage
-from torch import Tensor
 import logging
 
-mpl.use('Agg')
+from Smartscope.lib.generic_position import parse_mdoc
+from Smartscope.lib.Finders.basic_finders import *
+from Smartscope.lib.image_manipulations import save_mrc
+from .base_image import BaseImage
+from .target import Target
 
 logger = logging.getLogger(__name__)
 
-from .base_image import BaseImage
+
 
 
 @dataclass
@@ -35,6 +24,7 @@ class Montage(BaseImage):
         super().__post_init__()
         self.directory.mkdir(exist_ok=True)
 
+    # TODO deprecated in the future
     def load_or_process(self, check_AWS=False, force_process=False):
         if not force_process and self.check_metadata(check_AWS=check_AWS):
             return
@@ -48,11 +38,17 @@ class Montage(BaseImage):
         def piece_pos(piece):
             piece_coord = np.array(piece.PieceCoordinates[0: -1])
             piece_coord_end = piece_coord + np.array([self.header.mx, self.header.my])
-            piece_pos = np.array([piece_coord, [piece_coord[0], piece_coord_end[1]], piece_coord_end, [piece_coord_end[0], piece_coord[1]]])
+            piece_pos = np.array([
+                piece_coord, [piece_coord[0], piece_coord_end[1]], 
+                piece_coord_end, [piece_coord_end[0], piece_coord[1]]
+            ])
             return piece_pos
 
         def piece_center(piece):
-            return np.array([np.sum(piece[:, 0]) / piece.shape[0], np.sum(piece[:, 1]) / piece.shape[0]])
+            return np.array([
+                np.sum(piece[:, 0]) / piece.shape[0],
+                np.sum(piece[:, 1]) / piece.shape[0],
+            ])
 
         with mrcfile.open(self.raw) as mrc:
             self.header = mrc.header
@@ -81,88 +77,6 @@ class Montage(BaseImage):
         self._image = montage
 
         save_mrc(self.image_path, self._image, self.pixel_size, [0, 0])
-
-
-
-def quantize(x, mi=-3, ma=3, dtype=np.uint8):
-    x = (x - x.mean()) / (x.std())
-    if mi is None:
-        mi = x.min()
-    if ma is None:
-        ma = x.max()
-    r = ma - mi
-    x = 255 * (x - mi) / r
-    x = np.clip(x, 0, 255)
-    x = np.round(x).astype(dtype)
-    return x
-
-def plot_hist(image, size=254, **kwargs):
-    mydpi = 300
-    fig = plt.figure(figsize=(5, 5), dpi=mydpi)
-    ax = fig.add_subplot(111)
-    ax.hist(image.flatten(), bins=200, label='Distribution')
-    colors = ['orange', 'green', 'red', 'black']
-    for ind, (key, val) in enumerate(kwargs.items()):
-        ax.axvline(val, c=colors[ind], label=key)
-    ax.title.set_text('Histogram')
-    ax.set_xlabel('Pixel intensity')
-    ax.set_ylabel('Counts')
-    ax.legend()
-    ax.set_yscale('log')
-    fig.canvas.draw()
-    hist = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-    hist = hist.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    hist = imutils.resize(hist, height=size)
-    plt.close(fig='all')
-    return hist
-
-
-
-
-def plot_thresholds(im, blur, thresh, thresholded, cnts, file, mu=None, sigma=None, a=None, polygon='Circle'):
-    fig = plt.figure(figsize=(20, 20))
-    ax = fig.add_subplot(221)
-    ax.imshow(im, cmap='gray')
-    ax.title.set_text('Original')
-    ax.axis('off')
-    flat = blur.flatten()
-    ax1 = fig.add_subplot(222)
-    ax1.hist(flat, bins=200, label='Distribution')
-    x = np.linspace(0, 255, 100)
-    if all([mu is not None, sigma is not None, a is not None]):
-        ax1.plot(x, gauss(x, mu, sigma, a), color='red', lw=3, label='gaussian')
-    ax1.axvline(mu, c='orange', label='mean')
-    ax1.axvline(thresh, c='green', label='threshold')
-    ax1.title.set_text('Histogram')
-    ax1.set_xlabel('Pixel intensity')
-    ax1.set_ylabel('Counts')
-    ax1.legend()
-
-    ax2 = fig.add_subplot(223)
-    ax2.imshow(thresholded, cmap='gray')
-    ax2.title.set_text('Thresholded')
-    ax2.axis('off')
-
-    ax3 = fig.add_subplot(224)
-    ax3.imshow(blur, cmap='gray')
-    if polygon == 'Circle':
-        for circ in cnts:
-            centroid, radius = cv2.minEnclosingCircle(circ)
-            p = Circle(centroid, radius, edgecolor='green', linewidth=2, fill=False, facecolor=None)
-            ax3.add_patch(p)
-    else:
-        im_cnt = cv2.drawContours(im, cnts, -1, (0, 255, 0), 3)
-        ax3.imshow(im_cnt, cmap='gray')
-    ax3.title.set_text('Holes')
-    ax3.axis('off')
-
-    plt.savefig(file, bbox_inches='tight')
-    plt.close(fig='all')
-
-
-def round_up_to_odd(f):
-    odd = np.ceil(f) // 2 * 2 + 1
-    return odd.astype(int)
 
 
 
@@ -196,81 +110,3 @@ def create_targets_from_center(targets: List, montage: BaseImage):
 
 
 
-class Target:
-
-    _x: Union[int,None] = None
-    _y: Union[int,None] = None
-    shape: Union[list, Tensor]
-    quality: Union[str, None] = None
-    area: Union[float, None] = None
-    radius: Union[float, None] = None
-    stage_x: Union[float, None] = None
-    stage_y: Union[float, None] = None
-    stage_z: Union[float, None] = None
-
-    def __init__(self,shape: Union[list, np.array], quality: Union[str,None]=None, from_center=False) -> None:
-        self.quality = quality
-        if from_center:
-            self.x = shape[0]
-            self.y = shape[1]
-            return
-        self.shape = shape
-        self.x = None
-        self.y = None
-        
-
-
-    @property
-    def x(self):
-        return self._x
-
-    @x.setter
-    def x(self, value = None):
-        if isinstance(value,list):
-            self._x = int(value[0] + (value[2] - value[0]) // 2)
-            return 
-        if value is None:
-            self._x = int(self.shape[0] + (self.shape[2] - self.shape[0]) // 2)
-            return
-        self._x = value    
-
-    @property
-    def y(self):
-        return self._y
-    
-    @property
-    def coords(self):
-        return np.array([self._x,self._y])
-
-    @property
-    def stage_coords(self):
-        return np.array([self.stage_x,self.stage_y])
-
-    @y.setter
-    def y(self, value = None):
-        if isinstance(value,list):
-            self._y = int(value[1] + (value[3] - value[1]) // 2)
-            return
-        if value is None:
-            self._y = int(self.shape[1] + (self.shape[3] - self.shape[1]) // 2) 
-            return
-        self._y = value
-
-    def set_area_radius(self, shape_type):
-
-        len1 = int(self.shape[2] - self.shape[0])
-        len2 = int(self.shape[3] - self.shape[1])
-
-        # if shape_type == 'square':
-        self.area = len1 * len2
-            # return
-
-        # if shape_type == 'hole':
-
-        self.radius = min(len1, len2) / 2
-            # self.area = np.pi * (self.radius ** 2)
-
-    def convert_image_coords_to_stage(self, montage):
-        tile, dist = closest_node(self.coords.reshape(-1,2), montage.metadata.piece_center)
-        self.stage_x, self.stage_y = pixel_to_stage(dist, montage.metadata.iloc[tile], montage.metadata.iloc[tile].TiltAngle)
-        self.stage_z = montage.stage_z

@@ -8,7 +8,8 @@ import time
 import shlex
 import subprocess
 
-from Smartscope.lib.file_manipulations import get_file_and_process
+from Smartscope.lib.generic_position import parse_mdoc
+from Smartscope.lib.file_manipulations import split_path, file_busy, copy_file
 from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage
 from .movie import Movie
@@ -42,6 +43,7 @@ def process_hm_from_frames(
     process high-resolution image from *.tif
     employ third-party software: alignframes and ctffind
     commandS: highmag_processsing <grid_id>
+    used by core.processing_pipelines.queue_incomplete_processes
     '''
     movie = Movie(name=name, working_dir=working_dir)
     movie.validate_working_dir()
@@ -108,12 +110,51 @@ def process_hm_from_frames(
     return movie
 
 
-def process_hm_from_average(raw, name, scope_path_directory, spherical_abberation: float = 2.7):
-    montage = get_file_and_process(raw, name, directory=scope_path_directory)
-    export_as_png(montage.image, montage.png, normalization=auto_contrast_sigma, binning_method=fourier_crop)
+def process_hm_from_average(
+        raw,
+        name,
+        scope_path_directory,
+        spherical_abberation: float = 2.7,
+        force_reprocess=False,
+        remove=True,
+        check_AWS = False,
+        working_dir: str = None
+    ):
+    '''
+    process high-resolution images on average
+    used by core.processing_pipelines.queue_incomplete_processes
+    '''
+    if force_reprocess or not os.path.isfile(raw):
+        raw_file = os.path.join(scope_path_directory, raw)
+        path = split_path(raw_file)
+        file_busy(path.file, path.root)
+        copy_file(path.path, remove=remove)
+
+    # process montage
+    montage = Montage(name=name, working_dir=working_dir)
+    if force_reprocess or not montage.check_metadata(check_AWS=check_AWS):
+        montage.metadata = parse_mdoc(montage.mdoc, montage.is_movie)
+        montage.build_montage()
+        montage.read_image()
+        montage.save_metadata()
+
+    print(f"###montage.image{montage.image}, montage.png={montage.png}, mdoc={montage.raw}")
+    export_as_png(
+        montage.image,
+        montage.png,
+        normalization=auto_contrast_sigma,
+        binning_method=fourier_crop
+    )
+
+    # calculate CTF
     if not montage.ctf.exists():
-        CTFfind(input_mrc=montage.image_path, output_directory=montage.name,
-                voltage=montage.metadata.Voltage.iloc[-1], pixel_size=montage.pixel_size, spherical_abberation=spherical_abberation)
+        CTFfind(
+            input_mrc=montage.image_path,
+            output_directory=montage.name,
+            voltage=montage.metadata.Voltage.iloc[-1],
+            pixel_size=montage.pixel_size,
+            spherical_abberation=spherical_abberation
+        )
     return montage
 
 

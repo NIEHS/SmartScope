@@ -186,15 +186,26 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         self.incomplete_processes = list(self.grid.highmagmodel_set.filter(status__in=['acquired','skipped']).order_by('status','completion_time')[:5*self.cmd_data.n_processes])
 
     def queue_incomplete_processes(self):
-        from_average = partial(process_hm_from_average, scope_path_directory=self.microscope.scope_path,
-                               spherical_abberation=self.microscope.spherical_abberation)
-        from_frames = partial(process_hm_from_frames, frames_directories=self.frames_directory,
-                              spherical_abberation=self.microscope.spherical_abberation)
+        from_average = partial(
+            process_hm_from_average,
+            scope_path_directory=self.microscope.scope_path,
+            spherical_abberation=self.microscope.spherical_abberation
+        )
+        from_frames = partial(
+            process_hm_from_frames,
+            frames_directories=self.frames_directory,
+            spherical_abberation=self.microscope.spherical_abberation
+        )
         for obj in self.incomplete_processes:
-            if obj.frames is None or self.detector.detector_model not in ['K2', 'K3'] or self.grid.params_id.force_process_from_average:
-                self.to_process_queue.put([from_average, [], dict(raw=obj.raw, name=obj.name)])
+            if obj.frames is None or self.detector.detector_model not in ['K2', 'K3'] \
+                or self.grid.params_id.force_process_from_average:
+                self.to_process_queue.put(
+                    [from_average, [], dict(raw=obj.raw, name=obj.name)]
+                )
             else:
-                self.to_process_queue.put([from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)])
+                self.to_process_queue.put(
+                    [from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)]
+                )
 
     def stop(self):
         for proc in self.child_process:

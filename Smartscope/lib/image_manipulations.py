@@ -163,6 +163,12 @@ def power_spectrum(im):
     return io.BytesIO(buffer)
 
 
+def round_up_to_odd(f):
+    odd = np.ceil(f) // 2 * 2 + 1
+    return odd.astype(int)
+
+
+
 def highpass(im, pixel_size, filter_size=4):
     f = np.fft.fft2(im)
     fshift = np.fft.fftshift(f)

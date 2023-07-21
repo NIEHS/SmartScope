@@ -86,9 +86,19 @@ class BaseImage(ABC):
 
     @property
     def mdoc(self):
-        if self._mdoc is not None:
+        '''
+        get path of mdoc
+        '''
+        if self._mdoc is not None and os.path.isfile(self._mdoc):
             return self._mdoc
-        return Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
+        mdoc = Path(self.working_dir, 'raw', f'{self.name}.mrc.mdoc')
+        if os.path.isfile(mdoc):
+            return mdoc
+        mdoc = Path(self.working_dir, f'{self.name}.mrc.mdoc')
+        if os.path.isfile(mdoc):
+            return mdoc
+        return None
+        
 
     def set_shape_from_image(self):
         self._shape_x = self.image.shape[0]

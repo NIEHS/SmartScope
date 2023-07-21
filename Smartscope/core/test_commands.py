@@ -35,11 +35,8 @@ def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'te
     name = grid_id
     '''
     os.chdir(test_dir)
-    print(os.getcwd())
-    # frames_file_name = '20211119_AR2_0723-1_5383.tif'
-    frames_file_name = '20230321_AB_0317_2_1330_0.0.tif'
+    frames_file_name = '20211119_AR2_0723-1_5383.tif'
     frames_dirs = [Path(os.getenv('AUTOSCREENDIR')), Path(os.getenv('TEST_FILES'), 'highmag_frames')]
-    print('###frames_dirs: ', frames_dirs)
     movie = process_hm_from_frames(name, frames_file_name=frames_file_name, frames_directories=frames_dirs)
     print(f'All movie data: {movie.check_metadata()}')
 
