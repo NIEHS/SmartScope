@@ -75,6 +75,9 @@ class BaseImage(ABC):
 
     @property
     def raw(self):
+        '''
+        *.mrc in raw/
+        '''
         if self._raw is not None:
             return self._raw
         return Path(self.working_dir, 'raw', f'{self.name}.mrc')
@@ -87,7 +90,8 @@ class BaseImage(ABC):
     @property
     def mdoc(self):
         '''
-        get path of mdoc
+        get path of *.mdoc one of raw data
+        default: all raw data are stored in raw/
         '''
         if self._mdoc is not None and os.path.isfile(self._mdoc):
             return self._mdoc
@@ -98,7 +102,10 @@ class BaseImage(ABC):
         if os.path.isfile(mdoc):
             return mdoc
         return None
-        
+
+    @property
+    def ctf(self):
+        return Path(self.directory, 'ctf.txt')        
 
     def set_shape_from_image(self):
         self._shape_x = self.image.shape[0]
@@ -120,16 +127,12 @@ class BaseImage(ABC):
     def center(self):
         return np.array([self.shape_y/2, self.shape_x//2],dtype=int)
 
-    # @property
-    # def image_center(self):
-    #     return np.array([self.shape_x, self.shape_y]) // 2
+    def get_tile(self, tileIndex=0):
+        return self.metadata.iloc[tileIndex]
 
     @property
     def rotation_angle(self):
         return self.metadata.iloc[0].RotationAngle
-
-    def get_tile(self, tileIndex=0):
-        return self.metadata.iloc[tileIndex]
 
     @property
     def stage_z(self):
@@ -139,27 +142,15 @@ class BaseImage(ABC):
     def pixel_size(self):
         return self.metadata.iloc[0].PixelSpacing
 
-    @property
-    def ctf(self):
-        return Path(self.directory, 'ctf.txt')
 
-    def read_image(self, force=False):
-        if self._image is not None:
-            return
-        try:
-            with mrcfile.open(self.image_path) as mrc:
-                self._image = mrc.data
-        except FileNotFoundError:
-            with mrcfile.open(self.raw) as mrc:
-                self._image = mrc.data            
-        return
+
 
     def read_data(self):
+        '''
+        load data after initialization
+        '''
         self.read_image()
         self.read_metadata()
-
-    # def downsample(self, scale=2) -> np.ndarray:
-    #     return imutils.resize(self.image, height=int(self.shape_x // scale))
 
     def check_metadata(self, check_AWS=False):
         if self.image_path.exists() and self.metadataFile.exists():
@@ -172,15 +163,31 @@ class BaseImage(ABC):
             with TemporaryS3File([self.image_path, self.metadataFile]) as temp:
                 self.image_path, self.metadataFile = temp.temporary_files
                 self.read_data()
-
             return True
         return False
+    
+    def read_image(self, force=False):
+        '''
+        read *.mrc
+        '''
+        if self._image is not None:
+            return
+        try:
+            with mrcfile.open(self.image_path) as mrc:
+                self._image = mrc.data
+        except FileNotFoundError:
+            with mrcfile.open(self.raw) as mrc:
+                self._image = mrc.data
+        return
+
+    def read_metadata(self):
+        '''
+        read *.pkl
+        '''
+        self.metadata = pd.read_pickle(self.metadataFile)
 
     def save_metadata(self):
         self.metadata.to_pickle(self.metadataFile)
-
-    def read_metadata(self):
-        self.metadata = pd.read_pickle(self.metadataFile)
 
     def make_symlink(self):
         relative = os.path.relpath(self.raw,self.directory)
@@ -188,4 +195,12 @@ class BaseImage(ABC):
             return
         logger.debug(f'Relative path from {self.directory} to raw = {relative}')
         os.symlink(relative, self.image_path)
+
+
+    # def downsample(self, scale=2) -> np.ndarray:
+    #     return imutils.resize(self.image, height=int(self.shape_x // scale))
+
+    # @property
+    # def image_center(self):
+    #     return np.array([self.shape_x, self.shape_y]) // 2
 
