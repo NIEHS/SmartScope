@@ -10,8 +10,8 @@ import subprocess
 
 from Smartscope.lib.generic_position import parse_mdoc
 from Smartscope.lib.file_manipulations import split_path, file_busy, copy_file
-from Smartscope.lib.image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
-from Smartscope.lib.montage import Montage
+from .image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
+from .montage import Montage
 from .movie import Movie
 from .external_process import align_frames, CTFfind
 from Smartscope.lib.logger import add_log_handlers

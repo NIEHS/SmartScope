@@ -48,7 +48,18 @@ def plot_hist(image, size=254, **kwargs):
 
 
 
-def plot_thresholds(im, blur, thresh, thresholded, cnts, file, mu=None, sigma=None, a=None, polygon='Circle'):
+def plot_thresholds(
+        im,
+        blur,
+        thresh,
+        thresholded,
+        cnts,
+        file,
+        mu=None,
+        sigma=None,
+        a=None,
+        polygon='Circle'
+    ):
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(221)
     ax.imshow(im, cmap='gray')

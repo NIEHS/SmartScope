@@ -2,16 +2,20 @@
 import os
 import sys
 import time
-from Smartscope.core.microscope_interfaces import FakeScopeInterface, TFSSerialemInterface, JEOLSerialemInterface
+from .interfaces.microscope import Microscope,Detector,AtlasSettings
+from .interfaces.microscope_interface import MicroscopeInterface
+from .interfaces.fakescope_interface import FakeScopeInterface
+from .interfaces.jeolserialem_interface import JEOLSerialemInterface
+from .interfaces.tfsserialem_interface import TFSSerialemInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, PROTOCOL_COMMANDS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.montage import Montage,create_targets_from_center
 from Smartscope.core.finders import find_targets
-from Smartscope.core.status import status, grid_status, FileSignals
+from Smartscope.core.status import status, grid_status
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.lib.Datatypes.microscope import Microscope,Detector,AtlasSettings, MicroscopeInterface
+
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
 from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
@@ -45,7 +49,8 @@ def autoscreen(session_id):
             The requested microscope is busy.
             Lock file {microscope.lockFile} found
             Session id: {session} is currently running.
-            If you are sure that the microscope is not running, remove the lock file and restart.
+            If you are sure that the microscope is not running,
+            remove the lock file and restart.
             Exiting.
         """)
         sys.exit(0)
@@ -66,10 +71,10 @@ def autoscreen(session_id):
             scopeInterface = JEOLSerialemInterface
 
         with scopeInterface(
-                            microscope = Microscope.model_validate(session.microscope_id),
-                            detector= Detector.model_validate(session.detector_id) ,
-                            atlasSettings= AtlasSettings.model_validate(session.detector_id)
-                            ) as scope:
+                microscope = Microscope.model_validate(session.microscope_id),
+                detector= Detector.model_validate(session.detector_id) ,
+                atlasSettings= AtlasSettings.model_validate(session.detector_id)
+            ) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()
             child_process = multiprocessing.Process(
@@ -98,10 +103,12 @@ def autoscreen(session_id):
         child_process.join()
         logger.debug('Process joined')
 
-def run_grid(grid:AutoloaderGrid,
+def run_grid(
+        grid:AutoloaderGrid,
         session:ScreeningSession,
         processing_queue:multiprocessing.JoinableQueue,
-        scope:MicroscopeInterface):
+        scope:MicroscopeInterface
+    ):
     """Main logic for the SmartScope process
     Args:
         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models

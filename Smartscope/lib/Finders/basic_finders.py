@@ -6,12 +6,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from math import floor, degrees, atan, cos, sin, radians
-from .calc_angle_spacing import calc_angle_spacing
-from Smartscope.lib.image_manipulations import convert_centers_to_boxes, save_image, to_8bits, auto_contrast
 import logging
 mpl.use('Agg')
-
 logger = logging.getLogger(__name__)
+
+
+from .calc_angle_spacing import calc_angle_spacing
+from Smartscope.lib.image_manipulations import convert_centers_to_boxes, save_image, to_8bits, auto_contrast
+
 
 
 def find_contours(im, thresh):
@@ -105,7 +107,11 @@ def find_square(image):
 
 
 def find_targets_binary(montage, threshold=30, save=False):
-    """ Finds holes by applying a binary threshold on the image. The threshold is automatically evaluated based on the gaussian curve fitting on the pixel intensity histogram. """
+    """
+    Finds holes by applying a binary threshold on the image.
+    The threshold is automatically evaluated based on the gaussian curve
+    fitting on the pixel intensity histogram.
+    """
     _, centroid, _ = find_square(montage)
     blurred = cv2.GaussianBlur(montage.montage, (5, 5), 0)
     result = cv2.cvtColor(montage.montage.copy(), cv2.COLOR_GRAY2RGB)
@@ -187,9 +193,15 @@ def fft_method(montage, diameter_in_um=1.2):
         center, radius = cv2.minEnclosingCircle(cnt)
         if radius_in_pix * 0.7 < radius < radius_in_pix * 1.5:
             logger.debug(f'{center}, {radius}')
-            outputs.append(convert_centers_to_boxes(center, montage.pixel_size,
-                                                    montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
-            cv2.circle(bit8_color, np.array(center).astype(int), int(radius), (0, 255, 0), cv2.FILLED)
+            outputs.append(convert_centers_to_boxes(
+                center,
+                montage.pixel_size,
+                montage.shape_x,
+                montage.shape_y,
+                diameter_in_um=diameter_in_um
+            ))
+            cv2.circle(bit8_color, np.array(center).astype(int), \
+                int(radius), (0, 255, 0), cv2.FILLED)
     save_image(bit8_color, 'fft_method', destination=montage.directory, resize_to=512)
     return outputs, True, dict()
 
@@ -210,12 +222,18 @@ def regular_pattern(montage, spacing_in_um=3, diameter_in_um=1.2):
         y = radius_in_pix
         while y <= montage.shape_x:
             if mask[y,x] == 255:
-                output.append(convert_centers_to_boxes(np.array([x, y]), montage.pixel_size,
-                            montage.shape_x, montage.shape_y, diameter_in_um=diameter_in_um))
+                output.append(convert_centers_to_boxes(
+                    np.array([x, y]),
+                    montage.pixel_size,
+                    montage.shape_x,
+                    montage.shape_y,
+                    diameter_in_um=diameter_in_um
+                ))
             y+= pixel_spacing
             total_positions+=1
         x+= pixel_spacing
-    logger.info(f'Filtered a total of {len(output)} targets from {total_positions} positions within the square')
+    logger.info(f'Filtered a total of {len(output)} targets' + \
+        f'from {total_positions} positions within the square')
     return output, True, dict()
 
 

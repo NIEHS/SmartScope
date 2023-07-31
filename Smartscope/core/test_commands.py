@@ -5,7 +5,7 @@ from typing import List, Tuple
 import torch
 import logging
 import time
-from Smartscope.core.microscope_interfaces import TFSSerialemInterface
+from .interfaces.tfsserialem_interface import TFSSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 from Smartscope.core.finders import find_targets
 from Smartscope.core.models import Microscope
@@ -131,7 +131,7 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=
 
 def test_protocol_command(microscope_id,detector_id,command, instance=None, instance_type=None, params=None):
     from Smartscope.core.models import Microscope, Detector, SquareModel
-    import Smartscope.lib.Datatypes.microscope as micModels
+    import build_smartscope.SmartScope.Smartscope.core.interfaces.microscope as micModels
     from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
     if instance_type=='square':
         logger.info(f'Selected square {instance}')

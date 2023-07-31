@@ -14,8 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 
-def align_frames(frames: str, output_file: Path, output_shifts: Path, \
-        gain: Union[str, None], mdoc: str, voltage: int):
+def align_frames(
+        frames: str,
+        output_file: Path,
+        output_shifts: Path,
+        gain: Union[str, None],
+        mdoc: str,
+        voltage: int
+    ):
     '''
     software: alignframes in IMOD
     used by process_hm_from_frames()
@@ -34,9 +40,13 @@ def align_frames(frames: str, output_file: Path, output_shifts: Path, \
     logger.debug(f"the output alignframes={output_file} or {output_shifts} doesn't exist.")
     return False
 
-def CTFfind(input_mrc: str, output_directory: str, \
-        pixel_size: float, voltage: int = 200, \
-        spherical_abberation: float = 2.7):
+def CTFfind(
+        input_mrc: str,
+        output_directory: str,
+        pixel_size: float,
+        voltage: int = 200,
+        spherical_abberation: float = 2.7
+    ):
     '''
     software ctffind create CTF
     paramters:
