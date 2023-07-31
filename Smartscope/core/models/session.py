@@ -11,7 +11,7 @@ from django.conf import settings
 from django.apps import apps
 from datetime import datetime
 from Smartscope import __version__ as SmartscopeVersion
-from Smartscope.lib.s3functions import *
+from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
 from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image_manipulations import embed_image

@@ -1,25 +1,14 @@
-from abc import ABC
-from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Union
 import cv2
-import mrcfile
-import os
 import numpy as np
 import imutils
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
-from torch import Tensor
 import logging
-import pandas as pd
 
-from Smartscope.lib.generic_position import parse_mdoc
-from Smartscope.lib.Finders.basic_finders import *
-from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.lib.image_manipulations import fourier_crop, save_mrc
-from Smartscope.lib.transformations import closest_node, pixel_to_stage
-from .base_image import BaseImage
+from Smartscope.lib.Finders.basic_finders import gauss
+
+
 
 mpl.use('Agg')
 logger = logging.getLogger(__name__)

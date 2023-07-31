@@ -1,15 +1,13 @@
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 import mrcfile
 import os
-import sys
 import numpy as np
-import imutils
 import pandas as pd
-from Smartscope.lib.Finders.basic_finders import *
-from Smartscope.lib.s3functions import TemporaryS3File
+
+from Smartscope.lib.storage.temporary_s3_file import TemporaryS3File
 
 import logging
 logger = logging.getLogger(__name__)
@@ -143,8 +141,6 @@ class BaseImage(ABC):
         return self.metadata.iloc[0].PixelSpacing
 
 
-
-
     def read_data(self):
         '''
         load data after initialization
@@ -197,6 +193,7 @@ class BaseImage(ABC):
         os.symlink(relative, self.image_path)
 
 
+    # import imutils
     # def downsample(self, scale=2) -> np.ndarray:
     #     return imutils.resize(self.image, height=int(self.shape_x // scale))
 

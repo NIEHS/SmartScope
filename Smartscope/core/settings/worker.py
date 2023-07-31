@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from Smartscope.core.config import register_plugins, register_protocols, \
     register_external_plugins, get_active_plugins_list, get_protocol_commands
-from Smartscope.core.metadata_viewer import CTFFitViewer
+from Smartscope.core.ctf.ctf_fit_viewer import CTFFitViewer
 
 SMARTSCOPE_CUSTOM_CONFIG = Path(os.getenv('CONFIG'))
 SMARTSCOPE_DEFAULT_CONFIG = Path(__file__).parents[3] / 'config' / 'smartscope'

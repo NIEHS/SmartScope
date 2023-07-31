@@ -1,13 +1,10 @@
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Union
+from typing import List
 import mrcfile
-import os
 import numpy as np
 import logging
 
 from Smartscope.lib.generic_position import parse_mdoc
-from Smartscope.lib.Finders.basic_finders import *
 from Smartscope.lib.image_manipulations import save_mrc
 from .base_image import BaseImage
 from .target import Target
@@ -80,7 +77,11 @@ class Montage(BaseImage):
 
 
 
-def create_targets_from_box(targets: List, montage: BaseImage, target_type: str = 'square'):
+def create_targets_from_box(
+        targets: List,
+        montage: BaseImage,
+        target_type: str = 'square'
+    ):
     output_targets = []
     if isinstance(targets, tuple):
         targets, labels = targets
