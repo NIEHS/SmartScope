@@ -8,7 +8,7 @@ import time
 import shlex
 import subprocess
 
-from Smartscope.lib.generic_position import parse_mdoc
+from .image.mdoc import parse_mdoc
 from Smartscope.lib.file_manipulations import split_path, file_busy, copy_file
 from .image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
 from .montage import Montage

@@ -1,6 +1,5 @@
-#!/usr/env/bin python
-
-
+'''
+'''
 import re
 import pandas as pd
 import logging

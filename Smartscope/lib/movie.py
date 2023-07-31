@@ -4,8 +4,8 @@ import os
 import sys
 from typing import List, Union
 
-from .base_image import BaseImage
-from .generic_position import parse_mdoc
+from .image.base_image import BaseImage
+from .image.mdoc import parse_mdoc
 
 import logging
 logger = logging.getLogger(__name__)

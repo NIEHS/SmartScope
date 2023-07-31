@@ -4,9 +4,9 @@ import mrcfile
 import numpy as np
 import logging
 
-from Smartscope.lib.generic_position import parse_mdoc
+from .image.mdoc import parse_mdoc
 from Smartscope.lib.image_manipulations import save_mrc
-from .base_image import BaseImage
+from .image.base_image import BaseImage
 from .target import Target
 
 logger = logging.getLogger(__name__)
