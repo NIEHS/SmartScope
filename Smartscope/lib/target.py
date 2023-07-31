@@ -1,17 +1,13 @@
-from abc import ABC
-from dataclasses import dataclass
+'''
+used by class Montage
+'''
 from pathlib import Path
 from typing import List, Union
-import cv2
-import mrcfile
-import os
 import numpy as np
-import imutils
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
 from torch import Tensor
 import logging
-import pandas as pd
+
+from .transformations import closest_node, pixel_to_stage
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +24,11 @@ class Target:
     stage_y: Union[float, None] = None
     stage_z: Union[float, None] = None
 
-    def __init__(self,shape: Union[list, np.array], quality: Union[str,None]=None, from_center=False) -> None:
+    def __init__(self,
+        shape: Union[list, np.array],
+        quality: Union[str,None]=None,
+        from_center=False
+    ) -> None:
         self.quality = quality
         if from_center:
             self.x = shape[0]
@@ -37,8 +37,6 @@ class Target:
         self.shape = shape
         self.x = None
         self.y = None
-        
-
 
     @property
     def x(self):
@@ -91,6 +89,13 @@ class Target:
             # self.area = np.pi * (self.radius ** 2)
 
     def convert_image_coords_to_stage(self, montage):
-        tile, dist = closest_node(self.coords.reshape(-1,2), montage.metadata.piece_center)
-        self.stage_x, self.stage_y = pixel_to_stage(dist, montage.metadata.iloc[tile], montage.metadata.iloc[tile].TiltAngle)
+        tile, dist = closest_node(
+            self.coords.reshape(-1,2),
+            montage.metadata.piece_center
+        )
+        self.stage_x, self.stage_y = pixel_to_stage(
+            dist,
+            montage.metadata.iloc[tile],
+            montage.metadata.iloc[tile].TiltAngle
+        )
         self.stage_z = montage.stage_z
