@@ -121,7 +121,7 @@ class TestBaseImage(TestCase):
     def test_metadata(self, name, metadata_file, file_exists, \
             roation_angle, stage_z, pixel_size):
         c = BaseImage(name)
-        assert c.metadataFile.name == metadata_file
+        assert c.metadataFile.name == metadata_file 
 
         res = c.check_metadata()
         assert res == file_exists
