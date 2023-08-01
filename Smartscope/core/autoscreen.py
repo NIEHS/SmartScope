@@ -11,7 +11,8 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, HoleModel, SquareModel, Process, HighMagModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, PROTOCOL_COMMANDS_FACTORY
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
-from Smartscope.lib.montage import Montage,create_targets_from_center
+from Smartscope.lib.image.montage import Montage
+from Smartscope.lib.image.targets import Targets
 from Smartscope.core.finders import find_targets
 from Smartscope.core.status import status, grid_status
 from Smartscope.core.protocols import get_or_set_protocol
@@ -359,7 +360,7 @@ def process_hole_image(hole, grid, microscope_id):
             generate_diagnostic_figure(montage.image,[([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],Path(montage.directory / f'hole_recenter_it.png'))
             
         if len(protocol.targets.finders) == 0 or targets == []:
-            targets = create_targets_from_center(image_coords, montage)
+            targets = Targets.create_targets_from_center(image_coords, montage)
         timer.report_timer('Identifying and registering targets')
         
         register = register_targets_by_proximity(image_coords,[target.coords for target in targets])

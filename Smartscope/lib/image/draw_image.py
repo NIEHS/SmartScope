@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import logging
 
-from Smartscope.lib.Finders.basic_finders import gauss
+
 
 
 
@@ -14,6 +14,11 @@ mpl.use('Agg')
 logger = logging.getLogger(__name__)
 
 
+'''
+from Smartscope.lib.Finders.basic_finders import gauss
+'''
+def gauss(x, mu, sigma, A):
+    return A * np.exp(- ((x - mu) ** 2) / (2 * sigma ** 2))
 
 def plot_hist(image, size=254, **kwargs):
     mydpi = 300

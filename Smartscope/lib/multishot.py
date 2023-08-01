@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle
 
 from Smartscope.lib.Datatypes.models import generate_unique_id
-from Smartscope.lib.montage import Montage, Target, create_targets_from_center
+from .image.montage import Montage
+from .image.target import Target
+from .image.targets import Targets
 from .mask_box import MaskBox
 from .record_params import RecordParams
 
@@ -207,4 +209,4 @@ def split_target_for_multishot(
         montage: Montage
     ) -> List[Target]:
     shots_in_pixels = shots.convert_shots_to_pixel(montage.pixel_size / 10_000) + target_coords
-    return create_targets_from_center(shots_in_pixels,montage)
+    return Targets.create_targets_from_center(shots_in_pixels,montage)

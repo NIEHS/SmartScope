@@ -1,15 +1,11 @@
 '''
 used by class Montage
 '''
-from pathlib import Path
 from typing import List, Union
 import numpy as np
 from torch import Tensor
-import logging
 
-from .transformations import closest_node, pixel_to_stage
-
-logger = logging.getLogger(__name__)
+from .process_image import ProcessImage
 
 
 class Target:
@@ -89,11 +85,11 @@ class Target:
             # self.area = np.pi * (self.radius ** 2)
 
     def convert_image_coords_to_stage(self, montage):
-        tile, dist = closest_node(
+        tile, dist = ProcessImage.closest_node(
             self.coords.reshape(-1,2),
             montage.metadata.piece_center
         )
-        self.stage_x, self.stage_y = pixel_to_stage(
+        self.stage_x, self.stage_y = ProcessImage.pixel_to_stage(
             dist,
             montage.metadata.iloc[tile],
             montage.metadata.iloc[tile].TiltAngle

@@ -1,7 +1,7 @@
 import logging
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.Datatypes.base_plugin import TargetClass
-from Smartscope.lib.montage import Montage
+from Smartscope.lib.image.montage import Montage
 
 logger = logging.getLogger(__name__)
 

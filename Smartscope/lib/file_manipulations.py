@@ -7,7 +7,7 @@ import shutil
 import sys
 import random
 from typing import List, Union
-from .montage import Montage
+from .image.montage import Montage
 from collections import namedtuple
 from datetime import datetime
 import glob

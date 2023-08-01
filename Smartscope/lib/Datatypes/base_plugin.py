@@ -3,7 +3,8 @@ import importlib
 from abc import ABC, abstractclassmethod
 from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
-from Smartscope.lib.montage import create_targets_from_box, Montage
+from Smartscope.lib.image.montage import Montage
+from Smartscope.lib.image.targets import Targets
 import sys
 
 class TargetClass(Enum):
@@ -42,7 +43,10 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
         [sys.path.insert(0, path) for path in self.importPaths]
 
 
-    def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
+    def run(self,
+            montage:Montage,
+            create_targets_method:Callable=Targets.create_targets_from_box,
+            *args, **kwargs):
         """Where the main logic for the algorithm is"""
         module = importlib.import_module(self.module)
         function = getattr(module, self.method)

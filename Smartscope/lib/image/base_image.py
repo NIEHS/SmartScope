@@ -7,7 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from Smartscope.lib.storage.temporary_s3_file import TemporaryS3File
+from .temporary_s3_file import TemporaryS3File
 
 import logging
 logger = logging.getLogger(__name__)

@@ -3,29 +3,9 @@ import logging
 from math import radians, cos
 from scipy.spatial.distance import cdist
 from random import random
+from .image.process_image import ProcessImage
 
 logger = logging.getLogger(__name__)
-
-def closest_node(node, nodes, num=1):
-    nodes = np.stack((nodes))
-    cd = cdist(node, nodes)
-    index = cd.argmin()
-    dist = nodes[index] - node
-    return index, dist
-
-def rotate_axis(coord, angle):
-    theta = np.radians(angle)
-    c, s = np.cos(theta), np.sin(theta)
-    R = np.array(((c, -s), (s, c)))
-    rotated = np.sum(R * np.reshape(coord, (-1, 1)), axis=0)
-    return rotated
-
-def pixel_to_stage(dist, tile, tiltAngle=0):
-    apix = tile.PixelSpacing / 10_000
-    dist *= apix
-    specimen_dist = rotate_axis(dist,tile.RotationAngle)
-    coords = tile.StagePosition + specimen_dist / np.array([1, cos(radians(round(tiltAngle, 1)))])
-    return np.around(coords, decimals=3)
 
 def register_to_other_montage(coords, center_coords, montage, parent_montage, extra_angle=0):
     centered_coords =  coords - center_coords
@@ -33,7 +13,7 @@ def register_to_other_montage(coords, center_coords, montage, parent_montage, ex
     scaled_coords = centered_coords * scale 
     delta_rotation = parent_montage.rotation_angle - montage.rotation_angle + extra_angle
     logger.debug(f'Image Rotation = {montage.rotation_angle}\nParent Rotation = {parent_montage.rotation_angle}\nDelta = {parent_montage.rotation_angle - montage.rotation_angle}\nCurrently testing = {delta_rotation}')
-    pixel_coords = np.apply_along_axis(rotate_axis, 1, scaled_coords, angle=delta_rotation)
+    pixel_coords = np.apply_along_axis(ProcessImage.rotate_axis, 1, scaled_coords, angle=delta_rotation)
     centered_pixel_coords = pixel_coords + montage.center
     return centered_pixel_coords
 
@@ -50,7 +30,7 @@ def register_stage_to_montage(targets_stage_coords:np.ndarray,center_stage_coord
     """
     centered_stage_coords = targets_stage_coords - center_stage_coords
     stage_pixel_coords = np.array(centered_stage_coords) / (apix/10_000)
-    pixel_coords = np.apply_along_axis(rotate_axis, 1, stage_pixel_coords, angle=rotation_angle)
+    pixel_coords = np.apply_along_axis(ProcessImage.rotate_axis, 1, stage_pixel_coords, angle=rotation_angle)
     centered_pixel_coords = pixel_coords + center_pixel_coords
     return centered_pixel_coords
 

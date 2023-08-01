@@ -38,17 +38,6 @@ def extract_from_image(image, center: np.array, apix: float, box_size: float = 2
     return image[topleft[1]:botright[1], topleft[0]:botright[0]], apix, box_size, topleft, overLimits
 
 
-def save_mrc(file, image, apix, start_values, overwrite=True):
-    with mrcfile.new(file, overwrite=overwrite) as mrc:
-        mrc.set_data(image)
-        header = mrc.header
-        header.nxstart = start_values[1]
-        header.nystart = start_values[0]
-        header.cella = (apix * header.nx, apix * header.ny, apix * header.nz)
-        header.mx = header.nx
-        header.my = header.ny
-
-
 def to_8bits(image):
     img = image.astype('float64')
     img -= img.min()

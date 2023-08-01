@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
-from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
+from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
 from Smartscope.server.frontend.forms import *
 from django.db import transaction
 from Smartscope.server.lib.worker_jobs import send_to_worker
