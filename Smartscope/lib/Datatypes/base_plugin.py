@@ -1,4 +1,4 @@
-from enum import Enum
+
 import importlib
 from abc import ABC, abstractclassmethod
 from typing import Any, Optional, Protocol, List, Dict, Union, Callable
@@ -7,11 +7,7 @@ from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
 import sys
 
-class TargetClass(Enum):
-    FINDER = 'Finder'
-    CLASSIFIER = 'Classifier'
-    SELECTOR = 'Selector'
-    METADATA = 'Metadata'
+
 
 
 class classLabel(BaseModel):

@@ -2,8 +2,7 @@ import cv2
 import numpy as np
 from numpy.typing import ArrayLike
 import logging
-from pathlib import Path
-from typing import List, Callable, Optional, Union
+from typing import List, Optional
 from pydantic import BaseModel, Field
 import io
 import base64
@@ -11,9 +10,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle
 
 from Smartscope.lib.Datatypes.models import generate_unique_id
-from .image.montage import Montage
-from .image.target import Target
-from .image.targets import Targets
 from .mask_box import MaskBox
 from .record_params import RecordParams
 
@@ -198,15 +194,4 @@ def set_shots_per_hole(
             logger.info(f'Shots: {number_of_shots}; No pattern statisfying the {min_efficiency*100:.1f} % minimum effeciency found')
             return
 
-def load_multishot_from_file(file:Union[str,Path]) -> Union[MultiShot,None]:
-    if Path(file).exists():
-        return MultiShot.parse_file(file)
-    
 
-def split_target_for_multishot(
-        shots:MultiShot,
-        target_coords:ArrayLike,
-        montage: Montage
-    ) -> List[Target]:
-    shots_in_pixels = shots.convert_shots_to_pixel(montage.pixel_size / 10_000) + target_coords
-    return Targets.create_targets_from_center(shots_in_pixels,montage)

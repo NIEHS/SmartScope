@@ -1,23 +1,39 @@
 import numpy as np
 import logging
-from math import radians, cos
 from scipy.spatial.distance import cdist
-from random import random
-from .image.process_image import ProcessImage
+
 
 logger = logging.getLogger(__name__)
 
-def register_to_other_montage(coords, center_coords, montage, parent_montage, extra_angle=0):
+def register_to_other_montage(
+        coords,
+        center_coords,
+        montage,
+        parent_montage,
+        extra_angle=0
+    ):
     centered_coords =  coords - center_coords
     scale = parent_montage.pixel_size / montage.pixel_size
     scaled_coords = centered_coords * scale 
     delta_rotation = parent_montage.rotation_angle - montage.rotation_angle + extra_angle
-    logger.debug(f'Image Rotation = {montage.rotation_angle}\nParent Rotation = {parent_montage.rotation_angle}\nDelta = {parent_montage.rotation_angle - montage.rotation_angle}\nCurrently testing = {delta_rotation}')
-    pixel_coords = np.apply_along_axis(ProcessImage.rotate_axis, 1, scaled_coords, angle=delta_rotation)
+    logger.debug(f'''
+        Image Rotation = {montage.rotation_angle}
+        Parent Rotation = {parent_montage.rotation_angle}
+        Delta = {parent_montage.rotation_angle - montage.rotation_angle}
+        Currently testing = {delta_rotation}
+    ''')
+    pixel_coords = np.apply_along_axis(rotate_axis, 1,
+        scaled_coords, angle=delta_rotation)
     centered_pixel_coords = pixel_coords + montage.center
     return centered_pixel_coords
 
-def register_stage_to_montage(targets_stage_coords:np.ndarray,center_stage_coords:np.ndarray,center_pixel_coords:np.ndarray,apix:float,rotation_angle:float):
+def register_stage_to_montage(
+        targets_stage_coords:np.ndarray,
+        center_stage_coords:np.ndarray,
+        center_pixel_coords:np.ndarray,
+        apix:float,
+        rotation_angle:float
+    ):
     """Converts stage coordinates calculated at a given magnification to another magnification image. 
     i.e. Draw holes found at low SA on the Atlas or vice-versa
 
@@ -30,22 +46,24 @@ def register_stage_to_montage(targets_stage_coords:np.ndarray,center_stage_coord
     """
     centered_stage_coords = targets_stage_coords - center_stage_coords
     stage_pixel_coords = np.array(centered_stage_coords) / (apix/10_000)
-    pixel_coords = np.apply_along_axis(ProcessImage.rotate_axis, 1, stage_pixel_coords, angle=rotation_angle)
+    pixel_coords = np.apply_along_axis(rotate_axis, 1,
+        stage_pixel_coords, angle=rotation_angle)
     centered_pixel_coords = pixel_coords + center_pixel_coords
     return centered_pixel_coords
 
-def register_targets_by_proximity(targets:np.array, new_targets:np.array):
+
+def rotate_axis(coord, angle):
+    theta = np.radians(angle)
+    c, s = np.cos(theta), np.sin(theta)
+    R = np.array(((c, -s), (s, c)))
+    rotated = np.sum(R * np.reshape(coord, (-1, 1)), axis=0)
+    return rotated
+    
+def register_targets_by_proximity(
+        targets:np.array,
+        new_targets:np.array
+    ):
     distance_matrix = cdist(targets,new_targets)
     closest_index = np.argmin(distance_matrix,1)
     return closest_index
 
-def add_IS_offset(hole_size_in_um: float, mesh_type: str, offset_in_um: float = -1) -> float:
-    if offset_in_um != -1:
-        return offset_in_um
-    hole_radius = hole_size_in_um / 2
-    max_offset_factor = 0.5
-    if mesh_type == 'Carbon':
-        max_offset_factor = 0.8
-    offset_in_um = round(random() * hole_radius * max_offset_factor, 1)
-    logger.info(f'Adding a {offset_in_um} \u03BCm offset to sample ice gradient along the hole.')
-    return offset_in_um

@@ -22,10 +22,4 @@ class ProcessImage:
             np.array([1, cos(radians(round(tiltAngle, 1)))])
         return np.around(coords, decimals=3)
 
-    @staticmethod
-    def rotate_axis(coord, angle):
-        theta = np.radians(angle)
-        c, s = np.cos(theta), np.sin(theta)
-        R = np.array(((c, -s), (s, c)))
-        rotated = np.sum(R * np.reshape(coord, (-1, 1)), axis=0)
-        return rotated
+
