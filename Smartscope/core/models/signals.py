@@ -13,7 +13,8 @@ from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 
 from Smartscope.server.lib.worker_jobs import *
-from Smartscope.core.status import status, grid_status
+from Smartscope.core.status import status
+from .grid.grid_status import GridStatus
 from .session import *
 from .misc_func import get_fields
 
@@ -52,7 +53,7 @@ def pre_update(sender, instance, **kwargs):
 def grid_modification(sender, instance, **kwargs):
     if instance._state.adding:
         return
-    if instance.status == grid_status.ABORTING:
+    if instance.status == GridStatus.ABORTING:
         targets = list(instance.squaremodel_set.filter(status=status.QUEUED))
         targets += list(instance.holemodel_set.filter(status=status.QUEUED))
         targets += list(instance.highmagmodel_set.filter(status=status.QUEUED))
@@ -88,7 +89,7 @@ def queue_bis_group(sender,instance,created, **kwargs):
 @ receiver(pre_save, sender=SquareModel)
 def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
-        if instance.status == grid_status.COMPLETED and instance.completion_time is None:
+        if instance.status == GridStatus.COMPLETED and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
 

@@ -50,11 +50,6 @@ def copy_file(file, remove=True):
     return split_path(new_file)
 
 
-def get_file(file, remove=True):
-    path = split_path(file)
-    file_busy(path.file, path.root)
-    return copy_file(path.path, remove=remove)
-
 
 def file_busy(file, directory, timeout=1):
     count = 0

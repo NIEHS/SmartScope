@@ -17,19 +17,12 @@ from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMe
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image_manipulations import embed_image
 from Smartscope.lib.Datatypes.models import generate_unique_id
-from .misc_func import Cached_model_property, set_shape_values, cached_model_property
+from .misc_func import set_shape_values
 
+from .base_model import BaseModel
 
 logger = logging.getLogger(__name__)
 
-
-class BaseModel(models.Model):
-    """
-    For future abstraction.
-    """
-    class Meta:
-        abstract = True
-        app_label = 'API'
 
 
 class MicroscopeManager(models.Manager):

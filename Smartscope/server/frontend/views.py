@@ -21,7 +21,7 @@ from .forms import *
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.lib.file_manipulations.grid_io import GridIO
+from Smartscope.core.grid.grid_io import GridIO
 from Smartscope.lib.record_params import RecordParams
 from Smartscope.lib.multishot import set_shots_per_hole, load_multishot_from_file
 from Smartscope.core.cache import save_json_from_cache

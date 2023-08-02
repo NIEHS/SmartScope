@@ -7,7 +7,7 @@ import logging
 import time
 from .interfaces.tfsserialem_interface import TFSSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
-from Smartscope.core.finders import find_targets
+from .grid.finders import find_targets
 from Smartscope.core.models import Microscope
 
 

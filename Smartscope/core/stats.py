@@ -1,6 +1,6 @@
 from Smartscope.core.models import AutoloaderGrid,HoleModel, HighMagModel
 from Smartscope.lib.multishot import load_multishot_from_file
-from Smartscope.core.status import grid_status
+from .grid.grid_status import GridStatus
 from pydantic import BaseModel
 from datetime import timedelta
 from pathlib import Path
@@ -48,7 +48,7 @@ def get_hole_count(grid:AutoloaderGrid, hole_list=None):
 
 
 def dashboard_stats():
-    grids = AutoloaderGrid.objects.filter(status__in=[grid_status.ABORTING,grid_status.COMPLETED])
+    grids = AutoloaderGrid.objects.filter(status__in=[GridStatus.ABORTING,GridStatus.COMPLETED])
     num_grids=grids.count()
     age = time.time() - grids.order_by('start_time').first()
     
