@@ -29,7 +29,7 @@ from Smartscope.server.frontend.forms import *
 
 from Smartscope.lib.converters import list_to_dict, get_request_param
 from Smartscope.lib.image_manipulations import power_spectrum
-from Smartscope.lib.system_monitor import disk_space
+from Smartscope.utils.system_monitor import disk_space
 from Smartscope.server.lib.worker_jobs import send_to_worker
 
 from Smartscope.core.models.models_actions import targets_methods

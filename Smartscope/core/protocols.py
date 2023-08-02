@@ -1,8 +1,6 @@
 import logging
 from pathlib import Path
 import yaml
-import os
-from Smartscope.lib.s3functions import TemporaryS3File
 from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, SMARTSCOPE_CUSTOM_CONFIG, SMARTSCOPE_DEFAULT_CONFIG
 from Smartscope.lib.Datatypes.base_protocol import BaseProtocol
 from Smartscope.lib.converters import rgetattr
@@ -14,6 +12,7 @@ def load_protocol(file:Path):
         with open(file) as f:
             return BaseProtocol.model_validate(yaml.safe_load(f))
 
+    # from Smartscope.lib.storage.temporary_s3_file import TemporaryS3File
     # if eval(os.getenv('USE_AWS')):
     #     with TemporaryS3File([file]) as temp:
     #         with open(temp.temporary_files[0]) as f:

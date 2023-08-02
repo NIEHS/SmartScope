@@ -1,5 +1,5 @@
-from Smartscope.lib.transformations import add_IS_offset
 from math import cos, radians
+from random import random
 import numpy as np
 import logging
 
@@ -90,6 +90,23 @@ def highMag(scope, params,instance):
     instance.offset=offset
     instance.frames=frames
     return instance
+
+def add_IS_offset(
+        hole_size_in_um: float,
+        mesh_type: str,
+        offset_in_um: float = -1
+    ) -> float:
+    if offset_in_um != -1:
+        return offset_in_um
+    hole_radius = hole_size_in_um / 2
+    max_offset_factor = 0.5
+    if mesh_type == 'Carbon':
+        max_offset_factor = 0.8
+    offset_in_um = round(random() * hole_radius * max_offset_factor, 1)
+    logger.info(f'Adding a {offset_in_um} \u03BCm offset ' + 
+        'to sample ice gradient along the hole.')
+    return offset_in_um
+
 
 def setFocusPosition(scope,params,instance):
     """Caculates the rotation and shift of the focus position

@@ -1,10 +1,15 @@
+from enum import Enum
 import logging
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
-from Smartscope.lib.Datatypes.base_plugin import TargetClass
-from Smartscope.lib.montage import Montage
+from Smartscope.lib.image.montage import Montage
 
 logger = logging.getLogger(__name__)
 
+class TargetClass(Enum):
+    FINDER = 'Finder'
+    CLASSIFIER = 'Classifier'
+    SELECTOR = 'Selector'
+    METADATA = 'Metadata'
 
 def find_targets(montage: Montage, methods: list):
     logger.debug(f'Using method: {methods}')
@@ -17,8 +22,10 @@ def find_targets(montage: Montage, methods: list):
             logger.exception(err)
             continue
         if success:
-            logger.debug(f"{method} was successful: {success}, Is Classifier: {method.target_class is TargetClass.CLASSIFIER}")
-
-            return targets, method.name, method.name if method.target_class is TargetClass.CLASSIFIER else None, additional_outputs
-        
+            logger.debug(f"{method} was successful: {success}, '+ \
+                'Is Classifier: {method.target_class is TargetClass.CLASSIFIER}")
+            if method.target_class is TargetClass.CLASSIFIER:
+                return targets, method.name, method.name 
+            else:
+                return None, additional_outputs
         return [], '', None, dict()

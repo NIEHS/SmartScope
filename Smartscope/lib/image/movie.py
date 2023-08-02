@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
-import sys
-from typing import List, Union
+from typing import List
 
 from .base_image import BaseImage
-from .generic_position import parse_mdoc
+from .image_file import parse_mdoc
 
 import logging
 logger = logging.getLogger(__name__)

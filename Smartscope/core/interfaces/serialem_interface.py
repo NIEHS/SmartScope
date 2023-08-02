@@ -1,18 +1,16 @@
 from pathlib import PureWindowsPath
 from typing import Callable, Tuple
 import serialem as sem
-import mrcfile
 import time
 import logging
 import math
-import os
 import numpy as np
-from Smartscope.lib.Datatypes.microscope import MicroscopeInterface, CartridgeLoadingError
+from .microscope import CartridgeLoadingError
+from .microscope_interface import MicroscopeInterface
 from Smartscope.lib.Finders.basic_finders import find_square
-from Smartscope.lib.file_manipulations import generate_fake_file, select_random_fake_file
-from Smartscope.lib.image_manipulations import export_as_png
 
 logger = logging.getLogger(__name__)
+
 
 class SerialemInterface(MicroscopeInterface):
 
@@ -229,7 +227,8 @@ class SerialemInterface(MicroscopeInterface):
         if self.microscope.loaderSize > 1:
             slot_status = sem.ReportSlotStatus(position)
 
-            #This was added to support the new 4.1 2023-02-27 version that reports the name of the grid along with the position
+            #This was added to support the new 4.1 2023-02-27 version 
+            # that reports the name of the grid along with the position
             if isinstance(slot_status,tuple):
                 slot_status = slot_status[0]
             
@@ -244,7 +243,8 @@ class SerialemInterface(MicroscopeInterface):
             logger.info(f'Grid {position} is loaded')
             sem.Delay(5)
             slot_status = sem.ReportSlotStatus(position)
-            #This was added to support the new 4.1 2023-02-27 version that reports the name of the grid along with the position
+            #This was added to support the new 4.1 2023-02-27 version 
+            # that reports the name of the grid along with the position
             if isinstance(slot_status,tuple):
                 slot_status = slot_status[0]
             if  slot_status != 0:
@@ -280,155 +280,9 @@ class SerialemInterface(MicroscopeInterface):
 
         if frames:
             frames = sem.ReportLastFrameFile()
-            if isinstance(frames, tuple):  # Workaround since the output of the ReportFrame command changed in 4.0, need to test ans simplify
+            if isinstance(frames, tuple):  
+                # Workaround since the output of the ReportFrame 
+                # command changed in 4.0, need to test ans simplify
                 frames = frames[0]
             logger.debug(f"Frames: {frames},")
             return frames.split('\\')[-1]
-
-
-class TFSSerialemInterface(SerialemInterface):
-
-    def checkDewars(self, wait=30):
-        while True:
-            if sem.AreDewarsFilling() == 0:
-                return
-            logger.info(f'LN2 is refilling, waiting {wait}s')
-            time.sleep(wait)
-
-    def checkPump(self, wait=30):
-        while True:
-            if sem.IsPVPRunning() == 0:
-                return
-            logger.info(f'Pump is Running, waiting {wait}s')
-            time.sleep(wait)
-
-
-def remove_condenser_aperture(function: Callable, *args, **kwargs):
-    def wrapper(*args, **kwargs):
-        sem.RemoveAperture(0)
-        function(*args, **kwargs)
-        sem.ReInsertAperture(0)
-    return wrapper
-
-
-class JEOLSerialemInterface(SerialemInterface):
-
-    def checkPump(self, wait=30):
-        pass
-
-    def checkDewars(self, wait=30):
-        while True:
-            if sem.AreDewarsFilling() == 0:
-                return
-            logger.info(f'LN2 is refilling, waiting {wait}s')
-            time.sleep(wait)
-
-    @remove_condenser_aperture
-    def atlas(self, *args, **kwargs):
-        super().atlas(*args,**kwargs)
-
-
-class FakeScopeInterface(MicroscopeInterface):
-
-    def set_atlas_optics(self):
-        pass
-
-    def checkDewars(self, wait=30) -> None:
-        pass
-
-    def checkPump(self, wait=30):
-        pass
-
-    def eucentricHeight(self, tiltTo=10, increments=-5) -> float:
-        pass
-
-    def eucentricity(self):
-        pass
-
-    def moveStage(self, stage_x, stage_y, stage_z):
-        pass
-
-    def realign_to_square(self):
-        return super().realign_to_square()
-
-    def atlas(self, size, file=''):
-        generate_fake_file(file, 'atlas', destination_dir=self.microscope.scopePath)
-
-    def square(self, file=''):
-        generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.microscope.scopePath)
-        return 0, 0, 0
-
-    def align():
-        pass
-
-    def image_shift_by_microns(self, isX, isY, tiltAngle, afis=False):
-        return super().image_shift_by_microns(isX, isY, tiltAngle)
-
-    def reset_image_shift(self):
-        return super().reset_image_shift()
-
-    def align_to_hole_ref(self):
-        return super().align_to_hole_ref()
-
-    def acquire_medium_mag(self,):
-        return super().acquire_medium_mag()
-
-    def align_to_coord(self, coord):
-        return super().align_to_coord(coord)
-    
-    def get_image_settings(self, *args, **kwargs):
-        return super().get_image_settings(*args, **kwargs)
-    
-    def load_hole_ref(self):
-        return super().load_hole_ref()
-    
-    def report_stage(self):
-        return super().report_stage()
-    
-    def setFocusPosition(self, distance, angle):
-        # sem.SetAxisPosition('F', distance, angle)
-        self.focus_position_set = True
-    
-    def buffer_to_numpy(self):
-        '''
-        command: highmag_processing <grid_id>
-        '''
-        file = select_random_fake_file('lowmagHole')
-        logger.debug(f'Using {file} to generate fake buffer')
-        with mrcfile.open(file) as mrc:
-            header = mrc.header
-            img = mrc.data
-        return img, header.nx, header.ny, 1, 1, header.cella.x/header.nx/10
-    
-    def numpy_to_buffer(sekf,image):
-        export_as_png(image, output=os.path.join(os.getenv('TEMPDIR'),'mockNumpyToBuffer.png'),height=max([image.shape[0],1024]))
-
-    def medium_mag_hole(self, file=''):
-        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.microscope.scopePath)
-
-    def focusDrift(self, def1, def2, step, drifTarget):
-        pass
-
-    def tiltTo(self,tiltAngle):
-        pass
-
-    def highmag(self, file='', frames=True, earlyReturn=False):
-        if not frames:
-            generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
-            return
-        movies = os.path.join(self.microscope.scopePath, 'movies')
-        logger.info(f"High resolution movies are stored at {movies} in fake mode")
-        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=movies)
-        return frames.split('\\')[-1]
-
-    def connect(self):
-        logger.info('Connecting to fake scope.')
-
-    def setup(self, saveframes, framesName=None):
-        pass
-
-    def disconnect(self, close_valves=True):
-        logger.info('Disconnecting from fake scope.')
-
-    def loadGrid(self, position):
-        pass

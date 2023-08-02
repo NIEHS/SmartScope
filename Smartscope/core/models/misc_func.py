@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Callable, Union, List
 from django.core.cache import cache
 from django.db import models, connection, reset_queries
-from Smartscope.lib.montage import Montage
+from Smartscope.lib.image.montage import Montage
 
 import logging
 
