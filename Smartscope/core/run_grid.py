@@ -31,7 +31,8 @@ from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop
 from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
 from Smartscope.lib.image.target import Target
-from Smartscope.lib.file_manipulations import get_file_and_process, create_grid_directories
+from Smartscope.lib.file_manipulations.grid_io import GridIO
+
 
 
 # for arguments
@@ -69,7 +70,7 @@ def run_grid(
     if grid.status is grid_status.NULL:
         grid = update(grid, status=grid_status.STARTED, start_time=timezone.now())
 
-    create_grid_directories(grid.directory)
+    GridIO.create_grid_directories(grid.directory)
     os.chdir(grid.directory)
     # print('###grid directory:', grid.directory)
     processing_queue.put([os.chdir, [grid.directory], {}])
@@ -391,6 +392,15 @@ def split_target_for_multishot(
     ) -> List[Target]:
     shots_in_pixels = shots.convert_shots_to_pixel(montage.pixel_size / 10_000) + target_coords
     return Targets.create_targets_from_center(shots_in_pixels,montage)
+
+
+def get_file_and_process(raw, name, directory='', force_reprocess=False):
+    if force_reprocess or not os.path.isfile(raw):
+        path = os.path.join(directory, raw)
+        get_file(path, remove=True)
+    montage = Montage(name)
+    montage.load_or_process(force_process=force_reprocess)
+    return montage
 
 
 

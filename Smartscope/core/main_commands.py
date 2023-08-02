@@ -5,17 +5,10 @@ import json
 from django.db import transaction
 from Smartscope.core.models import *
 from Smartscope.core.test_commands import *
-from Smartscope.lib.file_manipulations import clean_source_dir
 from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
 from Smartscope.lib.image_manipulations import convert_centers_to_boxes
-from Smartscope.lib.Finders.basic_finders import find_square_center
-from Smartscope.core.export_optics import export_optics
 from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
-from Smartscope.core.autoscreen import autoscreen
-from Smartscope.core.utils.training_data import add_to_training_set
-from Smartscope.core.preprocessing_pipelines import highmag_processing
-from Smartscope.core.utils.export_import import export_grid, import_grid
 
 import numpy as np
 

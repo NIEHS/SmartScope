@@ -21,7 +21,7 @@ from .forms import *
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.lib.file_manipulations import create_grid_directories
+from Smartscope.lib.file_manipulations.grid_io import GridIO
 from Smartscope.lib.record_params import RecordParams
 from Smartscope.lib.multishot import set_shots_per_hole, load_multishot_from_file
 from Smartscope.core.cache import save_json_from_cache
@@ -116,7 +116,7 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
                             
                             if created:
                                 logger.debug(f'{grid} newly created, creating directories')
-                                create_grid_directories(grid.directory)
+                                GridIO.create_grid_directories(grid.directory)
                             else:
                                 logger.debug(f'{grid} exists')
                             logger.debug(f'Setting protocol {protocol} for {grid}')

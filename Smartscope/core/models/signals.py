@@ -13,7 +13,6 @@ from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 
 from Smartscope.server.lib.worker_jobs import *
-from Smartscope.lib.file_manipulations import create_scope_dirs
 from Smartscope.core.status import status, grid_status
 from .session import *
 from .misc_func import get_fields
@@ -144,3 +143,18 @@ def create_session_scope_directory(sender, instance, created, *args, **kwargs):
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.scope_path)
+
+
+
+
+def create_scope_dirs(scope_path):
+    source = scope_path
+    scope_dirs = [
+        source,
+        os.path.join(source, 'raw'),
+        os.path.join(source, 'reference'),
+        os.path.join(source, 'movies')
+    ]
+    for d in scope_dirs:
+        if not os.path.isdir(d):
+            os.mkdir(d)
