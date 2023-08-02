@@ -1,14 +1,36 @@
-from django.db import models
-from .base_model import BaseModel
+from .base_model import *
+from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
+from Smartscope import __version__ as SmartscopeVersion
+
+from .microscope import Microscope
+from .detector import Detector
+
+class ScreeningSessionManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('microscope_id').prefetch_related('detector_id')
 
 
 class ScreeningSession(BaseModel):
     session = models.CharField(max_length=30)
-    group = models.ForeignKey(Group, null=True, on_delete=models.SET_NULL, to_field='name')
+    group = models.ForeignKey(
+        Group,
+        null=True,
+        on_delete=models.SET_NULL,
+        to_field='name'
+    )
     date = models.CharField(max_length=8)
     version = models.CharField(max_length=20, editable=False)
-    microscope_id = models.ForeignKey(Microscope, null=True, on_delete=models.SET_NULL, to_field='microscope_id')
-    detector_id = models.ForeignKey(Detector, null=True, on_delete=models.SET_NULL)
+    microscope_id = models.ForeignKey(
+        Microscope,
+        null=True,
+        on_delete=models.SET_NULL,
+        to_field='microscope_id'
+    )
+    detector_id = models.ForeignKey(
+        Detector,
+        null=True,
+        on_delete=models.SET_NULL
+    )
     working_dir = models.CharField(max_length=300, editable=False)
     session_id = models.CharField(max_length=30, primary_key=True, editable=False)
 

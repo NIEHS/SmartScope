@@ -1,12 +1,24 @@
-from django.db import models
-from .base_model import BaseModel
+from pathlib import Path
+from django.utils import timezone
+from .base_model import *
+from .screening_session import ScreeningSession
+from .grid_collection_params import GridCollectionParams
+
+
+class GridManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('session_id')
 
 
 class AutoloaderGrid(BaseModel):
     position = models.IntegerField()
     name = models.CharField(max_length=100)
     grid_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    session_id = models.ForeignKey(ScreeningSession, on_delete=models.CASCADE, to_field='session_id')
+    session_id = models.ForeignKey(
+        ScreeningSession,
+        on_delete=models.CASCADE,
+        to_field='session_id'
+    )
     holeType = models.ForeignKey(HoleType, null=True, on_delete=models.SET_NULL, to_field='name', default=None)
     meshSize = models.ForeignKey(MeshSize, null=True, on_delete=models.SET_NULL, to_field='name', default=None)
     meshMaterial = models.ForeignKey(MeshMaterial, null=True, on_delete=models.SET_NULL, to_field='name', default=None)

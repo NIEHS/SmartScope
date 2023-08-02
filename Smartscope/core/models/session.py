@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import numpy as np
-import logging
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -21,6 +20,7 @@ from .misc_func import set_shape_values
 
 from .base_model import BaseModel
 
+import logging
 logger = logging.getLogger(__name__)
 
 

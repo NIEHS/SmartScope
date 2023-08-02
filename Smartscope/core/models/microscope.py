@@ -1,15 +1,16 @@
-from django.db import models
-from django.conf import settings
 from pathlib import Path
-from .base_model import BaseModel
+from .base_model import *
 from .screening_session import ScreeningSession
 
-from Smartscope.lib.Datatypes.models import generate_unique_id
+VENDOR_CHOICES = (
+    ('TFS', 'TFS / FEI'),
+    ('JEOL', 'JEOL')
+)
 
 class MicroscopeManager(models.Manager):
     def get_by_natural_key(self, location, name):
         return self.get(location=location, name=name)
-    
+
 class Microscope(BaseModel):
     name = models.CharField(max_length=100,
         help_text='Name of your microscope')
@@ -18,10 +19,6 @@ class Microscope(BaseModel):
     voltage = models.IntegerField(default=200)
     spherical_abberation = models.FloatField(default=2.7)
     microscope_id = models.CharField(max_length=30, primary_key=True, editable=False)
-    VENDOR_CHOICES = (
-        ('TFS', 'TFS / FEI'),
-        ('JEOL', 'JEOL')
-    )
     vendor = models.CharField(max_length=30, default='TFS', choices=VENDOR_CHOICES)
     loader_size = models.IntegerField(default=12)
     # Worker location
@@ -40,7 +37,7 @@ class Microscope(BaseModel):
 
     @property
     def lockFile(self):
-        return Path(settings.TEMPDIR,f'{self.microscope_id}.lock')
+        return Path(settings.TEMPDIR, f'{self.microscope_id}.lock')
     
     @property
     def isLocked(self):
