@@ -2,11 +2,10 @@
 from pathlib import Path
 import shutil
 import os
-import subprocess as sub
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db import transaction
@@ -14,7 +13,7 @@ from django.db.models.signals import post_save, pre_save
 
 from Smartscope.server.lib.worker_jobs import *
 from Smartscope.core.status import status
-from .grid.grid_status import GridStatus
+from Smartscope.core.grid.grid_status import GridStatus
 from .session import *
 from .misc_func import get_fields
 
@@ -144,9 +143,6 @@ def create_session_scope_directory(sender, instance, created, *args, **kwargs):
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.scope_path)
-
-
-
 
 def create_scope_dirs(scope_path):
     source = scope_path

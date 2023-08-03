@@ -68,11 +68,11 @@ class ScreeningSession(BaseModel):
             cache.set(cache_key,cwd,timeout=21600)
             return cwd
 
-    @ property
+    @property
     def stop_file(self):
         return os.path.join(os.getenv('TEMPDIR'), f'{self.session_id}.stop')
     
-    @ property
+    @property
     def progress(self):
         statuses= self.autoloadergrid_set.all().values_list('status', flat=True)
         completed = list(filter(lambda x: x == 'complete',statuses))
@@ -82,7 +82,7 @@ class ScreeningSession(BaseModel):
     def currentGrid(self):
         return self.autoloadergrid_set.all().order_by('position').exclude(status='complete').first()
 
-    @ property
+    @property
     def storage(self):
         return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
 

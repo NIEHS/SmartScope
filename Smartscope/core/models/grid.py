@@ -3,7 +3,8 @@ from django.utils import timezone
 from .base_model import *
 from .screening_session import ScreeningSession
 from .grid_collection_params import GridCollectionParams
-
+from .hole import HoleType
+from .mesh import MeshMaterial, MeshSize
 
 class GridManager(models.Manager):
     def get_queryset(self):
