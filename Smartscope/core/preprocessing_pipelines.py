@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, validator
 
 
 from Smartscope.core.db_manipulations import websocket_update
-from Smartscope.core.models import AutoloaderGrid
+from Smartscope.core.models.grid import AutoloaderGrid
 from Smartscope.lib.Datatypes.models import generate_unique_id
 from Smartscope.lib.preprocessing_methods import get_CTFFIN4_data, process_hm_from_average, process_hm_from_frames, processing_worker_wrapper
 from Smartscope.core.models.models_actions import update_fields

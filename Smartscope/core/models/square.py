@@ -1,63 +1,40 @@
 from .base_model import *
-from .target import Target
-from .extra_property_mixin import ExtraPropertyMixin
-from .atlas import AtlasModel
-from .hole import HoleModel
-from .grid import AutoloaderGrid
 
-from django.apps import apps
-from Smartscope.core.svg_plots import drawSquare
-
-
-class ChangeLog(BaseModel):
-    table_name = models.CharField(max_length=60)
-    grid_id = models.ForeignKey(
-        AutoloaderGrid,
-        on_delete=models.CASCADE,
-        to_field='grid_id'
-    )
-    line_id = models.CharField(max_length=30)
-    column_name = models.CharField(max_length=20)
-    initial_value = models.BinaryField()
-    new_value = models.BinaryField()
-    date = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(
-        User,
-        to_field='username',
-        on_delete=models.SET_NULL,
-        null=True,
-        default=None
-    )
-
-    class Meta(BaseModel.Meta):
-        db_table = 'changelog'
-
-    @ property
-    def table_model(self):
-        for model in apps.get_models():
-            if model._meta.db_table == self.table_name:
-                return model
-            
+         
 class ImageManager(models.Manager):
     use_for_related_fields = True
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('grid_id__session_id')
+        return super().get_queryset()\
+            .prefetch_related('grid_id__session_id')
 
 class SquareDisplayManager(models.Manager):
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('finders')\
-            .prefetch_related('classifiers').prefetch_related('selectors')\
+        return super().get_queryset().\
+            prefetch_related('finders')\
+            .prefetch_related('classifiers')\
+            .prefetch_related('selectors')\
             .prefetch_related('holemodel_set')
 
 class SquareImageManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('grid_id__session_id')\
+        return super().get_queryset()\
+            .prefetch_related('grid_id__session_id')\
             .prefetch_related('holemodel_set')
 
+
+
+from .target import Target
+from .extra_property_mixin import ExtraPropertyMixin
 class SquareModel(Target, ExtraPropertyMixin):
-    square_id = models.CharField(max_length=30, primary_key=True, editable=False)
+    from .atlas import AtlasModel
+
+    square_id = models.CharField(
+        max_length=30,
+        primary_key=True,
+        editable=False
+    )
     area = models.FloatField(null=True)
     atlas_id = models.ForeignKey(
         AtlasModel,
@@ -71,11 +48,11 @@ class SquareModel(Target, ExtraPropertyMixin):
     display = SquareDisplayManager()
     # aliases
 
-    @ property
+    @property
     def alias_name(self):
         return f'Area {self.number}'
 
-    @ property
+    @property
     def api_viewset_name(self):
         return 'squares'
 
@@ -83,28 +60,28 @@ class SquareModel(Target, ExtraPropertyMixin):
     def prefix(self):
         return 'Square'
 
-    @ property
+    @property
     def targets_prefix(self):
         return 'hole'
 
-    @ property
+    @property
     def id(self):
         return self.square_id
 
-    @ property
+    @property
     def parent(self):
         return self.atlas_id
 
-    @ parent.setter
+    @parent.setter
     def set_parent(self, parent):
         self.atlas_id = parent
     # endaliases
 
-    @ property
+    @property
     def parent_stage_z(self):
         return self.parent.stage_z
 
-    @ property
+    @property
     def targets(self):
         return self.holemodel_set.all()
 
@@ -112,43 +89,48 @@ class SquareModel(Target, ExtraPropertyMixin):
     # @cached_model_property(key_prefix='svg', 
     # extra_suffix_from_function=['method'], timeout=3600)
     def svg(self, display_type, method):
+        from .hole import HoleModel
+        from Smartscope.core.svg_plots import drawSquare
+
         holes = list(HoleModel.display.filter(square_id=self.square_id))
         sq = drawSquare(self, holes, display_type, method)
         
         return sq
 
-    @ property
+    @property
     def has_queued(self):
          return self.holemodel_set(manager='just_holes').\
             filter(status='queued').exists()
 
-    @ property
+    @property
     def has_completed(self):
         return self.holemodel_set(manager='just_holes').\
             filter(status='completed').exists()
 
-    @ property
+    @property
     def has_active(self):
         return self.holemodel_set(manager='just_holes').\
             filter(status__in=['acquired', 'processed', 'targets_picked', 'started']).\
             exists()
 
 
-    @ property
+    @property
     def initial_quality(self):
         try:
+            from .change_log import ChangeLog
             return ChangeLog.objects\
                 .get(grid_id=self.grid_id, line_id=self.hole_id, column_name='quality')\
                 .initial_value
         except:
             return self.quality
 
-    @ property
+    @property
     def extracted_file(self):
         logger.debug('Getting extracted file')
 
     class Meta(BaseModel.Meta):
-        unique_together = ('name', 'atlas_id')
+        # TODO
+        # unique_together = ('name', 'atlas_id')
         db_table = 'squaremodel'
 
     def __init__(self, *args, **kwargs):

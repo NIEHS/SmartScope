@@ -1,6 +1,5 @@
 
 from .base_model import *
-from .microscope import Microscope
 
 DETECTOR_CHOICES = (
     ('K2', 'Gatan K2'),
@@ -16,13 +15,18 @@ class DetectorManager(models.Manager):
 
 
 class Detector(BaseModel):
+    from .microscope import Microscope
+
     name = models.CharField(max_length=100)
     microscope_id = models.ForeignKey(
         Microscope,
         on_delete=models.CASCADE,
         to_field='microscope_id'
     )
-    detector_model = models.CharField(max_length=30, choices=DETECTOR_CHOICES)
+    detector_model = models.CharField(
+        max_length=30,
+        choices=DETECTOR_CHOICES
+    )
     atlas_mag = models.IntegerField(default=210)
     atlas_max_tiles_X = models.IntegerField(default=6)
     atlas_max_tiles_Y = models.IntegerField(default=6)

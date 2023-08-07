@@ -14,7 +14,8 @@ from .transformations import register_to_other_montage, register_targets_by_prox
 from .diagnostics import generate_diagnostic_figure, Timer
 
 
-from Smartscope.core.models import HoleModel, HighMagModel
+from Smartscope.core.models.hole import HoleModel
+from Smartscope.core.models.high_mag import HighMagModel
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.db_manipulations import update, add_targets

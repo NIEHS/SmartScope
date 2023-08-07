@@ -1,7 +1,7 @@
 from .base_model import *
 from .extra_property_mixin import ExtraPropertyMixin
 from .grid import AutoloaderGrid
-from .square import SquareModel
+
 
 from Smartscope.core.svg_plots import drawAtlas
 
@@ -57,6 +57,8 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     # @cached_model_property(key_prefix='svg', extra_suffix_from_function=['method'], timeout=3600)
     def svg(self, display_type, method):
+        from .square import SquareModel
+        
         targets = list(SquareModel.display.filter(atlas_id=self.atlas_id))
         return drawAtlas(self,targets , display_type, method)
 

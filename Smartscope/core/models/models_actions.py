@@ -1,6 +1,6 @@
 from typing import Dict
 from django.core.cache import cache
-from .session import Finder, Classifier, Selector
+from .target_label import Finder, Classifier, Selector
 from django.contrib.contenttypes.models import ContentType
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.ctf.ctf_fit_viewer import CTFFitViewer

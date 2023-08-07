@@ -1,8 +1,6 @@
 from .base_model import *
-from .target import Target
-from .extra_property_mixin import ExtraPropertyMixin
-from .square import SquareModel
-from .high_mag import HighMagModel
+
+
 from .misc_func import set_shape_values
 from Smartscope.core.svg_plots import drawMediumMag
 
@@ -23,12 +21,19 @@ class HoleDisplayManager(models.Manager):
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors').prefetch_related('highmagmodel_set')
 
 
+from .target import Target
+from .extra_property_mixin import ExtraPropertyMixin
 class HoleModel(Target, ExtraPropertyMixin):
+    from .square import SquareModel
 
     hole_id = models.CharField(max_length=30, primary_key=True, editable=False)
     radius = models.IntegerField()  # Can be removed and area can be put in the target class
     area = models.FloatField()
-    square_id = models.ForeignKey(SquareModel, on_delete=models.CASCADE, to_field='square_id')
+    square_id = models.ForeignKey(
+        SquareModel,
+        on_delete=models.CASCADE,
+        to_field='square_id'
+    )
 
     bis_group = models.CharField(max_length=30, null=True)
     bis_type = models.CharField(max_length=30, null=True)
@@ -53,6 +58,7 @@ class HoleModel(Target, ExtraPropertyMixin):
 
     @ property
     def targets(self):
+        from .high_mag import HighMagModel
         if self.bis_group is None:
             return HighMagModel.objects.filter(hole_id=self.hole_id)
 
@@ -117,7 +123,8 @@ class HoleModel(Target, ExtraPropertyMixin):
         return self.highmagmodel_set.first()
 
     class Meta(BaseModel.Meta):
-        unique_together = ('name', 'square_id')
+        # TODO
+        # unique_together = ('name', 'square_id')
         db_table = 'holemodel'
 
     def __init__(self, *args, **kwargs):
@@ -135,17 +142,4 @@ class HoleModel(Target, ExtraPropertyMixin):
     def __str__(self):
         return self.name
 
-class HoleType(BaseModel):
-    name = models.CharField(max_length=100, primary_key=True)
-    hole_size = models.FloatField(null=True, blank=True, default=None)
-    hole_spacing = models.FloatField(null=True, blank=True, default=None)
 
-    @property
-    def pitch(self):
-        return self.hole_size + self.hole_spacing
-
-    class Meta(BaseModel.Meta):
-        db_table = 'holetype'
-
-    def __str__(self):
-        return self.name

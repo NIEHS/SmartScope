@@ -11,7 +11,7 @@ import subprocess
 from .image.image_file import parse_mdoc
 from .image.movie import Movie
 from .image.montage import Montage
-from .file_manipulations import split_path, file_busy, copy_file
+from .file_manipulations.file_manipulations import split_path, file_busy, copy_file
 from .image_manipulations import mrc_to_png, auto_contrast_sigma, fourier_crop, export_as_png
 
 

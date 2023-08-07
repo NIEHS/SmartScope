@@ -2,15 +2,19 @@ from .base_model import *
 from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
 from Smartscope import __version__ as SmartscopeVersion
 
-from .microscope import Microscope
-from .detector import Detector
+# from .microscope import Microscope
+# from .detector import Detector
 
 class ScreeningSessionManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('microscope_id').prefetch_related('detector_id')
+        return super().get_queryset().prefetch_related('microscope_id')\
+            .prefetch_related('detector_id')
 
 
 class ScreeningSession(BaseModel):
+    from .microscope import Microscope
+    from .detector import Detector
+    
     session = models.CharField(max_length=30)
     group = models.ForeignKey(
         Group,
@@ -80,7 +84,8 @@ class ScreeningSession(BaseModel):
 
     @property
     def currentGrid(self):
-        return self.autoloadergrid_set.all().order_by('position').exclude(status='complete').first()
+        return self.autoloadergrid_set.all().order_by('position')\
+            .exclude(status='complete').first()
 
     @property
     def storage(self):

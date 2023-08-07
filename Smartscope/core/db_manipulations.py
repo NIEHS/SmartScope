@@ -17,9 +17,16 @@ from Smartscope.server.api.serializers import update_to_fullmeta
 
 logger = logging.getLogger(__name__)
 
+from django.db import models
+from .models.grid import AutoloaderGrid
+
 class Websocket_update_decorator:
 
-    def __init__(self, f: Callable[[Any], List[Any]] = None, grid: Union[AutoloaderGrid, None] = None):
+    def __init__(self,
+            f: Callable[[Any],
+            List[Any]] = None,
+            grid: Union[AutoloaderGrid, None] = None
+        ):
         self.f = f
         self.grid = grid
 
@@ -43,6 +50,8 @@ def websocket_update(objs, grid_id):
 
 
 def update_target_selection(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
+    from .models.hole import HoleModel
+
     status = None
     value = True if value == '1' else False
     if value:
@@ -60,6 +69,8 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
             obj.save()  
 
 def update_target_label(model:models.Model,objects_ids:List[str],value:str,method:str, *args, **kwargs):
+    from .models.target import Classifier
+
     content_type = ContentType.objects.get_for_model(model)
     logger.debug('Updating Classifier objects')
     objs = Classifier.objects.filter(object_id__in=objects_ids, method_name=method)
@@ -74,6 +85,8 @@ def update_target_label(model:models.Model,objects_ids:List[str],value:str,metho
 
 
 def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
+    from .models.target import Finder
+
     refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
     if refined:
         refined.update(stage_x=stage_x,
@@ -180,6 +193,8 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
 
 
 def queue_atlas(grid):
+    from .models.atlas import AtlasModel
+
     atlas, created = AtlasModel.objects.get_or_create(
         name=f'{grid.name}_atlas',
         grid_id=grid)
@@ -202,6 +217,10 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
 
 
 def add_targets(grid, parent, targets, model, finder, classifier=None, start_number=0, **extra_fields):
+    from .models.square import SquareModel
+    from .models.hole import HoleModel
+    from .models.high_mag import HighMagModel
+    from .models.target import Finder
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
     if model is SquareModel:
@@ -240,6 +259,8 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
 
 
 def add_high_mag(grid, parent):
+    from .models.high_mag import HighMagModel
+    
     hm, created = HighMagModel.objects.get_or_create(
         number=parent.number,
         hole_id=parent,

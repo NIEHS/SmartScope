@@ -1,10 +1,6 @@
 from pathlib import Path
 from django.utils import timezone
 from .base_model import *
-from .screening_session import ScreeningSession
-from .grid_collection_params import GridCollectionParams
-from .hole import HoleType
-from .mesh import MeshMaterial, MeshSize
 
 class GridManager(models.Manager):
     def get_queryset(self):
@@ -12,6 +8,11 @@ class GridManager(models.Manager):
 
 
 class AutoloaderGrid(BaseModel):
+    from .screening_session import ScreeningSession
+    from .grid_collection_params import GridCollectionParams
+    from .hole_type import HoleType
+    from .mesh import MeshMaterial, MeshSize
+
     position = models.IntegerField()
     name = models.CharField(max_length=100)
     grid_id = models.CharField(max_length=30, primary_key=True, editable=False)
@@ -20,9 +21,27 @@ class AutoloaderGrid(BaseModel):
         on_delete=models.CASCADE,
         to_field='session_id'
     )
-    holeType = models.ForeignKey(HoleType, null=True, on_delete=models.SET_NULL, to_field='name', default=None)
-    meshSize = models.ForeignKey(MeshSize, null=True, on_delete=models.SET_NULL, to_field='name', default=None)
-    meshMaterial = models.ForeignKey(MeshMaterial, null=True, on_delete=models.SET_NULL, to_field='name', default=None)
+    holeType = models.ForeignKey(
+        HoleType,
+        null=True,
+        on_delete=models.SET_NULL,
+        to_field='name',
+        default=None
+    )
+    meshSize = models.ForeignKey(
+        MeshSize,
+        null=True,
+        on_delete=models.SET_NULL,
+        to_field='name',
+        default=None
+    )
+    meshMaterial = models.ForeignKey(
+        MeshMaterial,
+        null=True,
+        on_delete=models.SET_NULL,
+        to_field='name',
+        default=None
+    )
     hole_angle = models.FloatField(null=True)
     mesh_angle = models.FloatField(null=True)
     quality = models.CharField(max_length=10, null=True, default=None)
@@ -30,16 +49,21 @@ class AutoloaderGrid(BaseModel):
     status = models.CharField(max_length=10, null=True, default=None)
     start_time = models.DateTimeField(default=None, null=True)
     last_update = models.DateTimeField(default=None, null=True)
-    params_id = models.ForeignKey(GridCollectionParams, null=True, on_delete=models.SET_NULL, to_field='params_id',)
+    params_id = models.ForeignKey(
+        GridCollectionParams,
+        null=True,
+        on_delete=models.SET_NULL,
+        to_field='params_id'
+    )
 
     objects = GridManager()
     # aliases
 
-    @ property
+    @property
     def id(self):
         return self.grid_id
 
-    @ property
+    @property
     def parent(self):
         return self.session_id
 
@@ -47,43 +71,43 @@ class AutoloaderGrid(BaseModel):
     def group(self):
         return self.session_id.group
 
-    @ parent.setter
+    @parent.setter
     def set_parent(self, parent):
         self.session_id = parent
     # endaliases
 
-    @ property
+    @property
     def collection_mode(self):
         if self.params_id.holes_per_square <= 0:
             return 'collection'
         return 'screening'
 
-    @ property
+    @property
     def atlas(self):
         query = self.atlasmodel_set.all()
         return query
 
-    @ property
+    @property
     def squares(self):
         return self.squaremodel_set.all()
 
-    @ property
+    @property
     def count_acquired_squares(self):
         return self.squaremodel_set.filter(status='completed').count()
 
-    @ property
+    @property
     def holes(self):
         return self.holemodel_set.all()
 
-    @ property
+    @property
     def count_acquired_holes(self):
         return self.holemodel_set.filter(status='completed').count()
 
-    @ property
+    @property
     def high_mag(self):
         return self.highmagmodel_set.all()
 
-    @ property
+    @property
     def end_time(self):
         try:
             hole = self.highmagmodel_set.order_by('-completion_time').first()
@@ -95,19 +119,19 @@ class AutoloaderGrid(BaseModel):
         except:
             return self.last_update
 
-    @ property
+    @property
     def time_spent(self):
         timeSpent = self.end_time - self.start_time
         logger.debug(f'Time spent: {self.grid_id}, {timeSpent}')
         return timeSpent
 
     
-    @ property
+    @property
     def protocol(self):
         return Path(self.directory , 'protocol.yaml')
 
 
-    @ property
+    @property
     def directory(self):
         self_wd = f'{self.position}_{self.name}'
         wd = self.parent.directory

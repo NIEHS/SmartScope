@@ -23,10 +23,16 @@ from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.grid.grid_io import GridIO
 from Smartscope.lib.record_params import RecordParams
-from Smartscope.lib.multishot import set_shots_per_hole, load_multishot_from_file
+from Smartscope.lib.multishot import set_shots_per_hole
+from Smartscope.core.grid.run_hole import RunHole
 from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.protocols import load_protocol, set_protocol
 from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY, load_preprocessing_pipeline
+
+from Smartscope.core.models.grid import AutoloaderGrid
+from Smartscope.core.models.grid_collection_params import GridCollectionParams
+from Smartscope.core.models.screening_session import ScreeningSession
+
 
 logger =logging.getLogger(__name__)
 
@@ -303,7 +309,7 @@ class MultiShotView(TemplateView):
         if grid_id is not None:
             grid = AutoloaderGrid.objects.get(grid_id=grid_id)
             mutlishot_file = Path(grid.directory,'multishot.json')
-            multishot = load_multishot_from_file(mutlishot_file)
+            multishot = RunHole.load_multishot_from_file(mutlishot_file)
             context['current'] = multishot
             logger.debug(f'MultiShotViewGrid with {grid_id}')
         return context

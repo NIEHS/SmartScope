@@ -4,61 +4,36 @@ from django.contrib.contenttypes.models import ContentType
 import numpy as np
 
 from .base_model import *
-from .grid import AutoloaderGrid
-
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 
 class DisplayManager(models.Manager):
-
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
-
-class TargetLabel(BaseModel):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.CharField(max_length=30)
-    content_object = GenericForeignKey('content_type', 'object_id')
-    method_name = models.CharField(max_length=50, null=True)
-
-    class Meta:
-        abstract = True
-        app_label = 'API'
-
-
-class Finder(TargetLabel):
-    x = models.IntegerField()
-    y = models.IntegerField()
-    stage_x = models.FloatField()
-    stage_y = models.FloatField()
-    stage_z = models.FloatField(null=True)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'finder'
-
-
-class Classifier(TargetLabel):
-    label = models.CharField(max_length=30, null=True)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'classifier'
-
-
-class Selector(TargetLabel):
-    label = models.CharField(max_length=30, null=True)
-    value = models.FloatField(null=True)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'selector'
+        return super().get_queryset()\
+            .prefetch_related('finders')\
+            .prefetch_related('classifiers')\
+            .prefetch_related('selectors')
 
 class Target(BaseModel):
+    from .grid import AutoloaderGrid
+    from .target_label import Finder, Classifier, Selector
+    
     name = models.CharField(max_length=100, null=False)
     number = models.IntegerField()
     pixel_size = models.FloatField(null=True)
     shape_x = models.IntegerField(null=True)
     shape_y = models.IntegerField(null=True)
     selected = models.BooleanField(default=False)
-    status = models.CharField(max_length=20, null=True, default=None)
-    grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
+    status = models.CharField(
+        max_length=20,
+        null=True,
+        default=None
+    )
+    grid_id = models.ForeignKey(
+        AutoloaderGrid,
+        on_delete=models.CASCADE,
+        to_field='grid_id'
+    )
     completion_time = models.DateTimeField(null=True)
     # Generic Relations, not fields
     finders = GenericRelation(Finder, related_query_name='target')
@@ -86,19 +61,19 @@ class Target(BaseModel):
 
     def is_excluded(self):
         for selector in self.selectors.all():
-
             plugin = PLUGINS_FACTORY[selector.method_name]
             if selector.label in plugin.exclude:
                 return True, selector.label
-
         return False, ''
 
     def is_good(self):
-        """Looks at the classification labels and return if all the classifiers returned the square to be good for selection
+        """
+        Looks at the classification labels and 
+        return if all the classifiers returned 
+        the square to be good for selection
 
         Args:
             plugins (dict): Dictionnary or sub-section from the loaded pluging.yaml.
-
         Returns:
             boolean: Whether the target is good for selection or not.
         """

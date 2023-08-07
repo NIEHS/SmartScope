@@ -1,5 +1,5 @@
-from .commons import *
-from lib.base_image import BaseImage
+from commons import *
+from Smartscope.lib.image.base_image import BaseImage
 
 os.chdir(TESTS_DATA_DIR)
 CURR_DIR = os.getcwd()
