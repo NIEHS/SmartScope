@@ -29,7 +29,7 @@ class BaseImage(ABC):
         '''
         auto called after initialization
         '''
-        self._directory = Path(self.working_dir, self.name)
+        self._directory = Path(self.working_dir, self.name) if self.working_dir else Path(self.name)
         self._image_path = Path(self._directory, f'{self.name}.mrc')
         self._metadataFile = Path(self._directory, f'{self.name}_metadata.pkl')
 

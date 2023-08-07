@@ -74,9 +74,11 @@ def autoscreen(session_id:str):
             child_process.start()
             logger.debug(f'Main Log handlers:{logger.handlers}')
 
-            # Run grids
+            # RUN grid
             for grid in grids:
+                grid.status='STARTED'
                 status = run_grid(grid, session, processing_queue, scope)
+                break
             status = 'complete'
     except Exception as e:
         logger.exception(e)

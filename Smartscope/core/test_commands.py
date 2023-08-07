@@ -5,6 +5,8 @@ from typing import List, Tuple
 import torch
 import logging
 import time
+from django.conf import settings
+
 from .interfaces.tfsserialem_interface import TFSSerialemInterface
 from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 from .grid.finders import find_targets
@@ -12,7 +14,8 @@ from Smartscope.core.models import Microscope
 
 
 logger = logging.getLogger(__name__)
-
+logger.info(settings)
+logger.info(settings.AUTOSCREENDIR)
 
 def is_gpu_enabled():
     print('GPU enabled:', torch.cuda.is_available())
@@ -29,7 +32,10 @@ def test_serialem_connection(ip: str, port: int):
     print('Finished, please look at the serialEM log for the message.')
 
 
-def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'testing', 'montage_test'), name='test_frames'):
+def test_high_mag_frame_processing(
+        test_dir=Path(settings.AUTOSCREENDIR, 'testing', 'montage_test'),
+        name='test_frames'
+    ):
     '''
     test_dir = autoscreen_dir + group + session
     name = grid_id

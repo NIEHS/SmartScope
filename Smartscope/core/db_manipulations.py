@@ -42,8 +42,10 @@ class Websocket_update_decorator:
 
 def websocket_update(objs, grid_id):
     channel_layer = get_channel_layer()
-    outputDict = {'type': 'update.metadata',
-                  'update': {}}
+    outputDict = {
+        'type': 'update.metadata',
+        'update': {}
+    }
     logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')
     outputDict['update'] = update_to_fullmeta(objs)
     async_to_sync(channel_layer.group_send)(grid_id, outputDict)

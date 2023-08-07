@@ -1,11 +1,12 @@
 import os
 import sys
 import time
-from django.db import transaction
-from django.utils import timezone
 import multiprocessing
 import logging
 from pathlib import Path
+from django.db import transaction
+from django.utils import timezone
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -205,15 +206,16 @@ def run_grid(
                 RunSquare.process_square_image(square, grid, microscope)
         elif is_done:
             microscope_id = session.microscope_id.pk
-            if os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'.pause_{microscope_id}')):
-                paused = os.path.join(os.getenv('TEMPDIR'), f'paused_{microscope_id}')
+            tmp_file = os.path.join(settings.TEMPDIR, f'.pause_{microscope_id}')
+            if os.path.isfile(tmp_file):
+                paused = os.path.join(settings.TEMPDIR, f'paused_{microscope_id}')
                 open(paused, 'w').close()
                 update(grid, status=GridStatus.PAUSED)
                 logger.info('SerialEM is paused')
                 while os.path.isfile(paused):
                     sys.stdout.flush()
                     time.sleep(3)
-                next_file = os.path.join(os.getenv('TEMPDIR'), f'next_{microscope_id}')
+                next_file = os.path.join(settings.TEMPDIR, f'next_{microscope_id}')
                 if os.path.isfile(next_file):
                     os.remove(next_file)
                     running = False
@@ -269,7 +271,7 @@ def resume_incomplete_processes(queue, grid, microscope_id):
 
 
 def is_stop_file(sessionid: str) -> bool:
-    stop_file = os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop')
+    stop_file = os.path.join(settings.TEMPDIR, f'{sessionid}.stop')
     if os.path.isfile(stop_file):
         logger.debug(f'Stop file {stop_file} found.')
         os.remove(stop_file)
