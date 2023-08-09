@@ -2,6 +2,7 @@
 Initialise environment variables for local only
 """
 import os
+import environ
 # from django.core.files.storage import FileSystemStorage
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -9,6 +10,8 @@ SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
 
+env = environ.Env()
+environ.Env.read_env(env_file=os.path.join(SETTINGS_DIR,'.dev.env'))
 BUILD_DIR = os.path.dirname(PROJECT_DIR)
 os.environ.setdefault('DEFAULT_UMASK', '002')
 os.environ.setdefault('FORCE_CPU', 'True')

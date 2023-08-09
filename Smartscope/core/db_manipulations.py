@@ -13,7 +13,8 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from Smartscope.core.models import *
-from Smartscope.server.api.serializers import update_to_fullmeta
+# from Smartscope.core.run_grid import load_multishot_from_file
+from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
 
 logger = logging.getLogger(__name__)
 

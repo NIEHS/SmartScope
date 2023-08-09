@@ -1,14 +1,7 @@
-from enum import Enum
 import logging
 from Smartscope.lib.image.montage import Montage
 
 logger = logging.getLogger(__name__)
-
-class TargetClass(Enum):
-    FINDER = 'Finder'
-    CLASSIFIER = 'Classifier'
-    SELECTOR = 'Selector'
-    METADATA = 'Metadata'
 
 def find_targets(montage: Montage, methods: list):
     logger.debug(f'Using method: {methods}')

@@ -16,7 +16,7 @@ import torch
 import logging
 import time
 # from SmartScope.Smartscope.core.microscope_interfaces import TFSSerialemInterface
-from SmartScope.Smartscope.lib.preprocessing_methods import process_hm_from_frames
+from Smartscope.lib.preprocessing_methods import process_hm_from_frames
 # from SmartScope.Smartscope.core.finders import find_targets
 # from SmartScope.Smartscope.core.models import Microscope
 

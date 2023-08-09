@@ -1,5 +1,6 @@
 
 import importlib
+from enum import Enum
 from abc import ABC, abstractclassmethod
 from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
@@ -7,7 +8,11 @@ from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
 import sys
 
-from Smartscope.core.grid.finders import TargetClass
+class TargetClass(Enum):
+    FINDER = 'Finder'
+    CLASSIFIER = 'Classifier'
+    SELECTOR = 'Selector'
+    METADATA = 'Metadata'
 
 
 class classLabel(BaseModel):

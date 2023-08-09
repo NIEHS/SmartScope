@@ -36,7 +36,6 @@ Smartscope/mydatase
 .mysql_history
 .gitignore
 .ipython/profile_default/history.sqlite
-Smartscope/server/api/migrations
 mydatabase
 SerialEM-python
 serialem.egg-info/
