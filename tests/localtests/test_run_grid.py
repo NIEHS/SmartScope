@@ -1,30 +1,78 @@
+from django.test import TestCase
 import os
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Smartscope.core.settings.server_docker")
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Smartscope.core.settings.local")
 build_dir = os.path.dirname(os.path.dirname(__file__))
 project_dir = os.path.join(build_dir, 'SmartScope')
 
 import environ
-env = environ.Env()
-env_file = os.path.join(project_dir, 'S', 'core', 'settings', '.dev.env')
-environ.Env.read_env(env_file=env_file)
+# env = environ.Env()
+# env_file = os.path.join(project_dir, 'S', 'core', 'settings', '.dev.env')
+# environ.Env.read_env(env_file=env_file)
+
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Smartscope.core.settings.local")
 
 import sys
 sys.path.extend([build_dir, project_dir,])
 import datetime
 import multiprocessing
 
-from Smartscope.core.autoscreen import run_grid
+from Smartscope.core.run_grid import run_grid
 
-class Session:
+from Smartscope.core.models import ScreeningSession
+from Smartscope.core.interfaces.microscope import Microscope, Detector, AtlasSettings
+
+from Smartscope.core.interfaces.fakescope_interface import FakeScopeInterface
+
+
+
+
+
+class TestRunGrid(TestCase):
+        session_id='20230208HQF-JAL-IKYA3A3u8hc0yJ'
+        session = ScreeningSession.objects.get(session_id=session_id)
+        print('###session_id', session_id)
+        scope = FakeScopeInterface(
+            microscope = Microscope.model_validate(session.microscope_id),
+            detector= Detector.model_validate(session.detector_id) ,
+            atlasSettings= AtlasSettings.model_validate(session.detector_id)
+        )
+        processing_queue = multiprocessing.JoinableQueue()
+        grids = list(session.autoloadergrid_set.all().order_by('position'))
+        # print(grids)
+        grid = grids[0]
+        grid.status='STARTED'
+        print('###grid_id=', grid)
+        run_grid(grid, session, processing_queue, scope)
+
+
+
+'''
+class ScreeningSession:
     session='HQFJALIKY'
     date='20230208'
     version='0.8rc1'
     working_dir='BaiY/20230208_HQFJALIKY'
     session_id='20230208HQFJALIKYA3A3u8hc0yJ'
+    pk= '20230208HQFJALIKYA3A3u8hc0yJ'
     detector_id_id='2'
     group_id='BaiY'
-    microscope_id_id='VsHqmNJnbxSIE91Y1S8bPSeWToXUEP'
+    microscope_id='VsHqmNJnbxSIE91Y1S8bPSeWToXUEP'
 
+class Microscope:
+    loaderSize = 12
+    ip = '192.168.0.31'
+    port = 40888
+    directory = 'X:\\\\smartscope\\'
+    scopePath = '/mnt/krios/'
+
+
+
+class Detector:
+    energyFilter = True
+    framesDir = 'X:\\\\smartscope\\movies'
+
+    
 class MicroscopeModel:
     name='Krios'
     location='NIEHS'
@@ -40,12 +88,7 @@ class MicroscopeModel:
     scope_path='/mnt/krios/'
     vendor='TFS'
 
-class Microscope:
-    loaderSize = 12
-    ip = '192.168.0.31'
-    port = 40888
-    directory = 'X:\\\\smartscope\\'
-    scopePath = '/mnt/krios/'
+
 
 
 
@@ -72,12 +115,6 @@ class AtlasSettings:
     maxY = 8
     spotSize = 5
     c2 = 520.0
-
-
-class Detector:
-    energyFilter = True
-    framesDir = 'X:\\\\smartscope\\movies'
-
 
 class Grid:
     position = 1
@@ -111,17 +148,4 @@ class MicroscopeState:
     has_hole_ref= False
     hole_crop_size = 0
 
-class Scope:
-    microscope = Microscope()
-    detector = Detector()
-    atlassettings = AtlasSettings()
-    state = MicroscopeState()
-
-
-
-if __name__ == "__main__":
-    session = Session()
-    grid = Grid()
-    scope = Scope()
-    processing_queue = multiprocessing.JoinableQueue()
-    run_grid(grid, session, processing_queue, scope)
+'''

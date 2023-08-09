@@ -18,7 +18,7 @@ import time
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    from Smartscope.lib.movie import Movie
+    from build_smartscope.SmartScope.Smartscope.lib.image.movie import Movie
     from Smartscope.lib.preprocessing_methods import get_CTFFIN4_data
     
     name = 'HQFA_1_square155_hole36_0_hm'

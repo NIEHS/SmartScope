@@ -1,52 +1,127 @@
-import os
-from pathlib import Path
-import numpy as np
-import logging
-from django.db import models
-from django.contrib.auth.models import User, Group
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
-from django.utils import timezone
-from django.conf import settings
-from django.apps import apps
-from datetime import datetime
-from Smartscope import __version__ as SmartscopeVersion
-from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
-from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
-from Smartscope.core.settings.worker import PLUGINS_FACTORY
-from Smartscope.lib.image_manipulations import embed_image
-from Smartscope.lib.Datatypes.models import generate_unique_id
-from .misc_func import Cached_model_property, set_shape_values, cached_model_property
+# import os
+# from pathlib import Path
+# import numpy as np
+# from django.db import models
+# from django.contrib.auth.models import User, Group
+# from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+# from django.contrib.contenttypes.models import ContentType
+# from django.core.cache import cache
+# from django.utils import timezone
+# from django.conf import settings
+# from django.apps import apps
+# from datetime import datetime
+# from Smartscope import __version__ as SmartscopeVersion
+# from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
+# from Smartscope.core.svg_plots import drawAtlas, drawSquare, drawHighMag, drawMediumMag
+# from Smartscope.core.settings.worker import PLUGINS_FACTORY
+# from Smartscope.lib.image_manipulations import embed_image
+# from Smartscope.lib.Datatypes.models import generate_unique_id
+# from .misc_func import set_shape_values
+# import logging
+# logger = logging.getLogger(__name__)
 
 
-logger = logging.getLogger(__name__)
+from .base_model import *
+from .grid import *
+from .grid_collection_params import *
+from .atlas import *
+from .detector import *
+from .extra_property_mixin import *
+from .high_mag import *
+from .hole import *
+from .mesh import *
+from .microscope import *
+from .screening_session import *
+from .square import *
+from .target import *
 
 
-class BaseModel(models.Model):
-    """
-    For future abstraction.
-    """
+'''
+class DisplayManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
+
+        
+class TargetLabel(BaseModel):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=30)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    method_name = models.CharField(max_length=50, null=True)
+
     class Meta:
         abstract = True
         app_label = 'API'
 
 
+class Finder(TargetLabel):
+    x = models.IntegerField()
+    y = models.IntegerField()
+    stage_x = models.FloatField()
+    stage_y = models.FloatField()
+    stage_z = models.FloatField(null=True)
+
+    class Meta(BaseModel.Meta):
+        db_table = 'finder'
+
+
+class Classifier(TargetLabel):
+    label = models.CharField(max_length=30, null=True)
+
+    class Meta(BaseModel.Meta):
+        db_table = 'classifier'
+
+
+class Selector(TargetLabel):
+    label = models.CharField(max_length=30, null=True)
+    value = models.FloatField(null=True)
+
+    class Meta(BaseModel.Meta):
+        db_table = 'selector'
+'''
+        
+
+'''
+class ChangeLog(BaseModel):
+    table_name = models.CharField(max_length=60)
+    grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
+    line_id = models.CharField(max_length=30)
+    column_name = models.CharField(max_length=20)
+    initial_value = models.BinaryField()
+    new_value = models.BinaryField()
+    date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, to_field='username', on_delete=models.SET_NULL, null=True, default=None)
+
+    class Meta(BaseModel.Meta):
+        db_table = 'changelog'
+
+    @ property
+    def table_model(self):
+        for model in apps.get_models():
+            if model._meta.db_table == self.table_name:
+                return model
+'''
+
+'''
 class MicroscopeManager(models.Manager):
     def get_by_natural_key(self, location, name):
         return self.get(location=location, name=name)
+'''
 
-
+'''
 class DetectorManager(models.Manager):
     def get_by_natural_key(self, microscope_id, name):
         return self.get(microscope_id=microscope_id, name=name)
+'''
 
 
+'''
 class GridManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('session_id')
+'''
 
-
+'''
 class ImageManager(models.Manager):
     use_for_related_fields = True
 
@@ -64,17 +139,15 @@ class HoleImageManager(models.Manager):
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('highmagmodel_set')
 
 
-class DisplayManager(models.Manager):
-
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
-
-
 class HoleDisplayManager(models.Manager):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors').prefetch_related('highmagmodel_set')
+        
+'''
 
+
+'''
 class SquareDisplayManager(models.Manager):
 
     def get_queryset(self):
@@ -83,23 +156,34 @@ class SquareDisplayManager(models.Manager):
 class SquareImageManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('grid_id__session_id').prefetch_related('holemodel_set')
+'''
 
-
+'''
 class HighMagImageManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('grid_id__session_id')
 
+class DisplayManager(models.Manager):
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
+
+        
+'''
+
+'''
 class ScreeningSessionManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('microscope_id').prefetch_related('detector_id')
+'''
 
-
+'''
 class GridCollectionParamsManager(models.Manager):
     def get_by_natural_key(self, microscope_id, name):
         return self.get(microscope_id=microscope_id, name=name)
+'''
 
-
+'''
 class ExtraPropertyMixin:
     def get_full_path(self, data):
         if self.is_aws:
@@ -148,8 +232,10 @@ class ExtraPropertyMixin:
     @ property
     def ctf_img(self):
         return self.get_full_path(os.path.join(self.working_dir, self.name, 'ctf.png'))
+'''
 
 
+'''
 class Microscope(BaseModel):
     name = models.CharField(max_length=100, help_text='Name of your microscope')
     location = models.CharField(max_length=30, help_text='Name of the institute, departement or room for the microscope.')
@@ -210,8 +296,10 @@ class Microscope(BaseModel):
 
     def natural_key(self):
         return (self.location, self.name)
+'''
 
 
+'''
 class Detector(BaseModel):
     name = models.CharField(max_length=100)
     microscope_id = models.ForeignKey(Microscope, on_delete=models.CASCADE, to_field='microscope_id')
@@ -259,8 +347,9 @@ class Detector(BaseModel):
 
     def natural_key(self):
         return (self.microscope_id, self.name)
+'''
 
-
+'''
 class GridCollectionParams(BaseModel):
     params_id = models.CharField(max_length=30, primary_key=True, editable=False)
     atlas_x = models.IntegerField(default=3)
@@ -299,8 +388,10 @@ class GridCollectionParams(BaseModel):
 
     def __str__(self):
         return f'Atlas:{self.atlas_x}X{self.atlas_y} Sq:{self.squares_num} H:{self.holes_per_square} BIS:{self.bis_max_distance} Def:{self.target_defocus_min},{self.target_defocus_max},{self.step_defocus}'
+'''
+        
 
-
+'''
 class ScreeningSession(BaseModel):
     session = models.CharField(max_length=30)
     group = models.ForeignKey(Group, null=True, on_delete=models.SET_NULL, to_field='name')
@@ -380,8 +471,10 @@ class ScreeningSession(BaseModel):
 
     def __str__(self):
         return f'{self.date}_{self.session}'
+'''
 
 
+'''
 class Process(BaseModel):
     session_id = models.ForeignKey(ScreeningSession, on_delete=models.CASCADE, to_field='session_id')
     PID = models.IntegerField()
@@ -395,8 +488,10 @@ class Process(BaseModel):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         return self
+'''
 
 
+'''
 class HoleType(BaseModel):
     name = models.CharField(max_length=100, primary_key=True)
     hole_size = models.FloatField(null=True, blank=True, default=None)
@@ -411,8 +506,10 @@ class HoleType(BaseModel):
 
     def __str__(self):
         return self.name
+'''
 
 
+'''
 class MeshSize(BaseModel):
     name = models.CharField(max_length=100, primary_key=True)
     square_size = models.IntegerField()
@@ -425,7 +522,6 @@ class MeshSize(BaseModel):
     def __str__(self):
         return self.name
 
-
 class MeshMaterial(BaseModel):
     name = models.CharField(max_length=100, primary_key=True)
 
@@ -434,8 +530,11 @@ class MeshMaterial(BaseModel):
 
     def __str__(self):
         return self.name
+'''
 
 
+
+'''
 class AutoloaderGrid(BaseModel):
     position = models.IntegerField()
     name = models.CharField(max_length=100)
@@ -553,8 +652,9 @@ class AutoloaderGrid(BaseModel):
 
     def __str__(self):
         return f'{self.position}_{self.name}'
+'''
 
-
+'''
 class AtlasModel(BaseModel, ExtraPropertyMixin):
     atlas_id = models.CharField(max_length=30, primary_key=True, editable=False)
     name = models.CharField(max_length=100, null=False)
@@ -627,45 +727,9 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
 
     def __str__(self):
         return self.name
+'''
 
-
-class TargetLabel(BaseModel):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.CharField(max_length=30)
-    content_object = GenericForeignKey('content_type', 'object_id')
-    method_name = models.CharField(max_length=50, null=True)
-
-    class Meta:
-        abstract = True
-        app_label = 'API'
-
-
-class Finder(TargetLabel):
-    x = models.IntegerField()
-    y = models.IntegerField()
-    stage_x = models.FloatField()
-    stage_y = models.FloatField()
-    stage_z = models.FloatField(null=True)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'finder'
-
-
-class Classifier(TargetLabel):
-    label = models.CharField(max_length=30, null=True)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'classifier'
-
-
-class Selector(TargetLabel):
-    label = models.CharField(max_length=30, null=True)
-    value = models.FloatField(null=True)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'selector'
-
-
+'''
 class Target(BaseModel):
     name = models.CharField(max_length=100, null=False)
     number = models.IntegerField()
@@ -735,8 +799,10 @@ class Target(BaseModel):
     #     if len(label) == 0:
     #         return 'blue', 'target', ''
     #     return PLUGINS_FACTORY[method].get_label(label[0].label)
+'''
 
 
+'''
 class SquareModel(Target, ExtraPropertyMixin):
     square_id = models.CharField(max_length=30, primary_key=True, editable=False)
     area = models.FloatField(null=True)
@@ -837,8 +903,10 @@ class SquareModel(Target, ExtraPropertyMixin):
 
     def __str__(self):
         return self.name
+'''
 
 
+'''
 class HoleModel(Target, ExtraPropertyMixin):
 
     hole_id = models.CharField(max_length=30, primary_key=True, editable=False)
@@ -950,8 +1018,9 @@ class HoleModel(Target, ExtraPropertyMixin):
 
     def __str__(self):
         return self.name
+'''
 
-
+'''
 class HighMagModel(Target, ExtraPropertyMixin):
     hm_id = models.CharField(max_length=30, primary_key=True, editable=False)
     hole_id = models.ForeignKey(HoleModel, on_delete=models.CASCADE, to_field='hole_id')
@@ -1013,23 +1082,5 @@ class HighMagModel(Target, ExtraPropertyMixin):
 
     def __str__(self):
         return self.name
+'''
 
-
-class ChangeLog(BaseModel):
-    table_name = models.CharField(max_length=60)
-    grid_id = models.ForeignKey(AutoloaderGrid, on_delete=models.CASCADE, to_field='grid_id')
-    line_id = models.CharField(max_length=30)
-    column_name = models.CharField(max_length=20)
-    initial_value = models.BinaryField()
-    new_value = models.BinaryField()
-    date = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(User, to_field='username', on_delete=models.SET_NULL, null=True, default=None)
-
-    class Meta(BaseModel.Meta):
-        db_table = 'changelog'
-
-    @ property
-    def table_model(self):
-        for model in apps.get_models():
-            if model._meta.db_table == self.table_name:
-                return model

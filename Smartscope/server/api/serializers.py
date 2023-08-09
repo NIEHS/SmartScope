@@ -1,6 +1,17 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers as RESTserializers
-from Smartscope.core.models import *
+# from Smartscope.core.model import *
+from Smartscope.core.models.microscope import Microscope
+from Smartscope.core.models.detector import Detector
+from Smartscope.core.models.screening_session import ScreeningSession
+from Smartscope.core.models.grid import AutoloaderGrid
+from Smartscope.core.models.hole_type import HoleType
+from Smartscope.core.models.hole import HoleModel
+from Smartscope.core.models.grid_collection_params import GridCollectionParams
+from Smartscope.core.models.mesh import MeshMaterial, MeshSize
+from Smartscope.core.models.atlas import AtlasModel
+from Smartscope.core.models.square import SquareModel
+from Smartscope.core.models.high_mag import HighMagModel
 # from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
 from Smartscope.lib.converters import *
 import logging
@@ -21,6 +32,7 @@ class GroupSerializer(RESTserializers.ModelSerializer):
 
 
 class MicroscopeSerializer(RESTserializers.ModelSerializer):
+    # 
     class Meta:
         model = Microscope
         fields = '__all__'

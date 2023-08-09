@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/3.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
-import environ
 import os
 # from django.core.files.storage import FileSystemStorage
 
@@ -17,17 +16,6 @@ import os
 SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
-
-# Initialise environment variables for dev only
-if  os.environ.get('mode') == 'dev':
-    env = environ.Env()
-    environ.Env.read_env(env_file=os.path.join(SETTINGS_DIR,'.dev.env'))
-    BUILD_DIR = os.path.dirname(PROJECT_DIR)
-    os.environ.setdefault('CONFIG', os.path.join(BUILD_DIR, "config/smartscope/"))
-    os.environ.setdefault('EXTERNAL_PLUGINS_DIRECTORY',os.path.join(BUILD_DIR, 'external_plugins'))
-    os.environ.setdefault('AUTOSCREENDIR',os.path.join(BUILD_DIR, 'data', 'smartscope'))
-    os.environ.setdefault('AUTOSCREENSTORAGE',os.path.join(BUILD_DIR, 'data', 'smartscope'))
-    os.environ.setdefault('TEMPDIR',os.path.join(BUILD_DIR, 'temp'))
 
 AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
 TEMPDIR = os.getenv('TEMPDIR')
@@ -209,13 +197,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 STATIC_URL = '/static/'
 
-if DEBUG is True:
-    STATICFILES_DIRS = [
-        os.path.join(PROJECT_DIR, "static"),
-    ]
-else:
-    # only used for prod
-    STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
+STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 
 LOGIN_REDIRECT_URL = '/smartscope'
 LOGOUT_REDIRECT_URL = '/login'

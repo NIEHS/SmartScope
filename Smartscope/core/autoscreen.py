@@ -8,12 +8,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from .interfaces.microscope import Microscope,Detector,AtlasSettings
+from .interfaces.microscope import Microscope, Detector, AtlasSettings
 from .interfaces.fakescope_interface import FakeScopeInterface
 from .interfaces.jeolserialem_interface import JEOLSerialemInterface
 from .interfaces.tfsserialem_interface import TFSSerialemInterface
 from Smartscope.core.models import ScreeningSession, Process
-from Smartscope.core.status import status, grid_status
+from Smartscope.core.status import status
+from .grid.grid_status import GridStatus
 from Smartscope.core.db_manipulations import update
 
 from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
@@ -72,6 +73,8 @@ def autoscreen(session_id:str):
             )
             child_process.start()
             logger.debug(f'Main Log handlers:{logger.handlers}')
+
+            # RUN grid
             for grid in grids:
                 status = run_grid(grid, session, processing_queue, scope)
             status = 'complete'
@@ -80,7 +83,7 @@ def autoscreen(session_id:str):
         status = 'error'
         if grid in locals():
             update.grid = grid
-            update(grid, status=grid_status.ERROR)
+            update(grid, status=GridStatus.ERROR)
     except KeyboardInterrupt:
         logger.info('Stopping Smartscope.py autoscreen')
         status = 'killed'

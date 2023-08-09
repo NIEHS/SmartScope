@@ -3,7 +3,7 @@ import time
 import logging
 import os
 from .microscope_interface import MicroscopeInterface
-from Smartscope.lib.file_manipulations import generate_fake_file, select_random_fake_file
+from Smartscope.lib.file_manipulations.fake import Fake
 from Smartscope.lib.image_manipulations import export_as_png
 
 
@@ -33,10 +33,19 @@ class FakeScopeInterface(MicroscopeInterface):
         return super().realign_to_square()
 
     def atlas(self, size, file=''):
-        generate_fake_file(file, 'atlas', destination_dir=self.microscope.scopePath)
+        Fake.generate_fake_file(
+            file,
+            'atlas',
+            destination_dir=self.microscope.scopePath
+        )
 
     def square(self, file=''):
-        generate_fake_file(file, 'square', sleeptime=15, destination_dir=self.microscope.scopePath)
+        Fake.generate_fake_file(
+            file,
+            'square',
+            sleeptime=15,
+            destination_dir=self.microscope.scopePath
+        )
         return 0, 0, 0
 
     def align():
@@ -74,7 +83,7 @@ class FakeScopeInterface(MicroscopeInterface):
         '''
         command: highmag_processing <grid_id>
         '''
-        file = select_random_fake_file('lowmagHole')
+        file = Fake.select_random_fake_file('lowmagHole')
         logger.debug(f'Using {file} to generate fake buffer')
         with mrcfile.open(file) as mrc:
             header = mrc.header
@@ -85,7 +94,12 @@ class FakeScopeInterface(MicroscopeInterface):
         export_as_png(image, output=os.path.join(os.getenv('TEMPDIR'),'mockNumpyToBuffer.png'),height=max([image.shape[0],1024]))
 
     def medium_mag_hole(self, file=''):
-        generate_fake_file(file, 'lowmagHole', sleeptime=10, destination_dir=self.microscope.scopePath)
+        Fake.generate_fake_file(
+            file,
+            'lowmagHole',
+            sleeptime=10,
+            destination_dir=self.microscope.scopePath
+        )
 
     def focusDrift(self, def1, def2, step, drifTarget):
         pass
@@ -95,11 +109,21 @@ class FakeScopeInterface(MicroscopeInterface):
 
     def highmag(self, file='', frames=True, earlyReturn=False):
         if not frames:
-            generate_fake_file(file, 'highmag', sleeptime=7, destination_dir=self.microscope.scopePath)
+            Fake.generate_fake_file(
+                file,
+                'highmag',
+                sleeptime=7,
+                destination_dir=self.microscope.scopePath
+            )
             return
         movies = os.path.join(self.microscope.scopePath, 'movies')
         logger.info(f"High resolution movies are stored at {movies} in fake mode")
-        frames = generate_fake_file(file, 'highmagframes', sleeptime=7, destination_dir=movies)
+        frames = Fake.generate_fake_file(
+            file,
+            'highmagframes',
+            sleeptime=7,
+            destination_dir=movies
+        )
         return frames.split('\\')[-1]
 
     def connect(self):

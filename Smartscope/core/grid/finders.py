@@ -1,6 +1,5 @@
 from enum import Enum
 import logging
-from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image.montage import Montage
 
 logger = logging.getLogger(__name__)
@@ -13,6 +12,7 @@ class TargetClass(Enum):
 
 def find_targets(montage: Montage, methods: list):
     logger.debug(f'Using method: {methods}')
+    from Smartscope.core.settings.worker import PLUGINS_FACTORY
     for method in methods:
         method = PLUGINS_FACTORY[method]
 

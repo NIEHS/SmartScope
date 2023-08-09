@@ -7,7 +7,7 @@ from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
 import sys
 
-
+from Smartscope.core.grid.finders import TargetClass
 
 
 class classLabel(BaseModel):

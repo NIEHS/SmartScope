@@ -3,24 +3,49 @@ import os
 import sys
 import json
 from django.db import transaction
+from django.conf import settings
+
 from Smartscope.core.models import *
 from Smartscope.core.test_commands import *
-from Smartscope.lib.file_manipulations import clean_source_dir
 from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
 from Smartscope.lib.image_manipulations import convert_centers_to_boxes
-from Smartscope.lib.Finders.basic_finders import find_square_center
-from Smartscope.core.export_optics import export_optics
 from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
-from Smartscope.core.autoscreen import autoscreen
-from Smartscope.core.utils.training_data import add_to_training_set
-from Smartscope.core.preprocessing_pipelines import highmag_processing
-from Smartscope.core.utils.export_import import export_grid, import_grid
+from .autoscreen import autoscreen
+from .run_grid import run_grid
+from .preprocessing_pipelines import highmag_processing
 
 import numpy as np
 
 
 logger = logging.getLogger(__name__)
+
+def main(args):
+    """Main function for running the main SmartScope commands
+
+    Args:
+        args (list): list of command line argurments. First argument is the subcommand/program that should run followed by its specific arguments
+
+    Example:
+        Will launch the main Smarscope process
+
+            $ python smartscope autoscreen grid_id: Will launch the main Smarscope process
+
+    Todo:
+        * Add a real parser
+
+    """
+    command = args.pop(0)
+    try:
+        run(command, *args)
+    except Exception as e:
+        logger.exception(e)
+    except KeyboardInterrupt:
+        logger.info('Stopping Smartscope')
+
+def run(command, *args):
+    logger.debug(f"Running command={command} {' '.join(args)}")
+    globals()[command](*args)
 
 
 def add_holes(id, targets):
@@ -29,12 +54,25 @@ def add_holes(id, targets):
     montage.load_or_process()
     targets = np.array(targets) + np.array([0, instance.shape_x])
     hole_size = holeSize if (holeSize := instance.grid_id.holeType.hole_size) is not None else 1.2
-    targets = list(map(lambda t: convert_centers_to_boxes(t, montage.pixel_size, montage.shape_x, montage.shape_y, hole_size), targets))
+    targets = list(map(lambda t: convert_centers_to_boxes(
+        t, montage.pixel_size, montage.shape_x, montage.shape_y, hole_size), targets))
     logger.debug(targets)
     finder = 'Manual finder'
-    targets = Targets.create_targets_from_box(targets=targets, montage=montage, target_type='hole')
-    start_number = instance.holemodel_set.order_by('-number').values_list('number', flat=True).first() + 1
-    holes = add_targets(grid=instance.grid_id, parent=instance, targets=targets, model=HoleModel, finder=finder, start_number=start_number)
+    targets = Targets.create_targets_from_box(
+        targets=targets,
+        montage=montage,
+        target_type='hole'
+    )
+    start_number = instance.holemodel_set.order_by('-number')\
+        .values_list('number', flat=True).first() + 1
+    holes = add_targets(
+        grid=instance.grid_id,
+        parent=instance,
+        targets=targets,
+        model=HoleModel,
+        finder=finder,
+        start_number=start_number
+    )
     return holes
 
 
@@ -76,8 +114,10 @@ def regroup_bis(grid_id, square_id):
     logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
     logger.debug(f"Removing all holes from queue")
-    HoleModel.objects.filter(square_id=square,status__isnull=True).update(selected=False,status=None,bis_group=None,bis_type=None)
-    HoleModel.objects.filter(square_id=square,status='queued',).update(selected=False,status=None,bis_group=None,bis_type=None)
+    HoleModel.objects.filter(square_id=square,status__isnull=True)\
+        .update(selected=False,status=None,bis_group=None,bis_type=None)
+    HoleModel.objects.filter(square_id=square,status='queued',)\
+        .update(selected=False,status=None,bis_group=None,bis_type=None)
     filtered_holes = HoleModel.display.filter(square_id=square,status__isnull=True)
     holes_for_grouping = []
     other_holes = []
@@ -92,8 +132,12 @@ def regroup_bis(grid_id, square_id):
 
     logger.info(f'Filtered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 
-    holes = group_holes_for_BIS(holes_for_grouping, max_radius=collection_params.bis_max_distance,
-                                min_group_size=collection_params.min_bis_group_size, queue_all=collection_params.holes_per_square == 0)
+    holes = group_holes_for_BIS(
+        holes_for_grouping,
+        max_radius=collection_params.bis_max_distance,
+        min_group_size=collection_params.min_bis_group_size,
+        queue_all=collection_params.holes_per_square == 0
+    )
 
     with transaction.atomic():
         for hole in sorted(holes, key=lambda x: x.selected):
@@ -113,30 +157,5 @@ def continue_run(next_or_continue, microscope_id):
 def stop_session(sessionid):
     open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'), 'w').close()
 
-def run(command, *args):
-    logger.debug(f"Running: {command} {' '.join(args)}")
-    globals()[command](*args)
 
 
-def main(args):
-    """Main function for running the main SmartScope commands
-
-    Args:
-        args (list): list of command line argurments. First argument is the subcommand/program that should run followed by its specific arguments
-
-    Example:
-        Will launch the main Smarscope process
-
-            $ python smartscope autoscreen grid_id: Will launch the main Smarscope process
-
-    Todo:
-        * Add a real parser
-
-    """
-    command = args.pop(0)
-    try:
-        run(command, *args)
-    except Exception as e:
-        logger.exception(e)
-    except KeyboardInterrupt:
-        logger.info('Stopping Smartscope')
