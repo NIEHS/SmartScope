@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from .interfaces.microscope import Microscope,Detector,AtlasSettings
+from .interfaces.microscope import Microscope, Detector, AtlasSettings
 from .interfaces.fakescope_interface import FakeScopeInterface
 from .interfaces.jeolserialem_interface import JEOLSerialemInterface
 from .interfaces.tfsserialem_interface import TFSSerialemInterface
@@ -76,9 +76,7 @@ def autoscreen(session_id:str):
 
             # RUN grid
             for grid in grids:
-                grid.status='STARTED'
                 status = run_grid(grid, session, processing_queue, scope)
-                break
             status = 'complete'
     except Exception as e:
         logger.exception(e)

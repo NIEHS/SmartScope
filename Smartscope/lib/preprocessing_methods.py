@@ -22,11 +22,9 @@ from Smartscope.lib.logger import add_log_handlers
 logger = logging.getLogger(__name__)
 
 
+'''
+TODO: deprecated in the future
 def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
-    '''
-    get results from ctf_*.txt determined by ctffinder
-    args: 
-    '''
     with open(ctf_text, 'r') as f:
         lines = [[float(j) for j in i.split(' ')] \
             for i in f.readlines() if '#' not in i]
@@ -40,7 +38,30 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
         'angast': ctf.angast,
         'ctffit': ctf.ctffit,
     }
+'''
 
+
+def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
+    '''
+    get results from ctf_*.txt determined by ctffinder
+    args: 
+    '''
+    logger.info(f"Try to read CTF file {ctf_text}")
+    ctf={}
+    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit']
+    with open(ctf_text, 'r') as f:
+        for line in f:
+            if not line.startswith('#'):
+                values = line.rstrip().split()
+                for k,v in zip(columns, values):
+                    ctf[k] = float(v)
+                break
+    return {
+        'defocus': (ctf['df1'] + ctf['df2']) / 2,
+        'astig': ctf['df1'] - ctf['df2'],
+        'angast': ctf['angast'],
+        'ctffit': ctf['ctffit'],
+    }
 
 def process_hm_from_frames(
         name: str,

@@ -9,8 +9,7 @@ from Smartscope.lib.logger import add_log_handlers
 
 logger = logging.getLogger(__name__)
 
-from .pipelines.preprocessing_pipeline_cmd import PreprocessingPipelineCmd
-from .pipelines.smartscope_preprocessing_pipeline import SmartscopePreprocessingPipeline
+from .pipelines import PreprocessingPipelineCmd, SmartscopePreprocessingPipeline
 
 
 PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline)

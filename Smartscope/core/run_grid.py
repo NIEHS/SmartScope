@@ -62,6 +62,7 @@ def run_grid(
 
     # add task into queue
     GridIO.create_grid_directories(grid.directory)
+    logger.info(f"create and the enter into Grid directory={grid.directory}")
     os.chdir(grid.directory)
     processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
@@ -81,7 +82,7 @@ def run_grid(
     scope.reset_state()
     # grid_type = grid.holeType
     # grid_mesh = grid.meshMaterial
-    
+
     # run acquisition
     if atlas.status == status.QUEUED or atlas.status == status.STARTED:
         atlas = update(atlas, status=status.STARTED)
@@ -145,6 +146,7 @@ def run_grid(
             break
         else:
             square, hole = get_queue(grid)
+
         if hole is not None and (square is None or grid.collection_mode == 'screening'):
             is_done = False
 
@@ -224,8 +226,7 @@ def run_grid(
             else:
                 running = False
         else:
-            logger.debug(f'Waiting for incomplete processes, ' + \
-                    f'queue size: {processing_queue.qsize()}')
+            logger.debug(f'Waiting for incomplete processes, {processing_queue.get()}, queue size={processing_queue.qsize()}')
             processing_queue.join()
             logger.debug('All processes complete')
             is_done = True

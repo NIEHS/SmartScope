@@ -35,11 +35,13 @@ class Detector(BaseModel):
     atlas_to_search_offset_x = models.FloatField(
         default=0,
         help_text='X stage offset between the atlas and ' + \
-            'Search mag. Similar to the Shift to Marker offset')
+            'Search mag. Similar to the Shift to Marker offset'
+    )
     atlas_to_search_offset_y = models.FloatField(
         default=0,
         help_text='Y stage offset between the atlas and ' + \
-            'Search mag. Similar to the Shift to Marker offset')
+            'Search mag. Similar to the Shift to Marker offset'
+    )
     frame_align_cmd = models.CharField(max_length=30, default='alignframes')
     gain_rot = models.IntegerField(default=0, null=True)
     gain_flip = models.BooleanField(default=True)
@@ -48,12 +50,17 @@ class Detector(BaseModel):
         max_length=200,
         default='movies',
         help_text='Location of the frames from the perspective of SerialEM. ' + \
-            'This values will use the SetDirectory command.')
+            'This values will use the SetDirectory command.'
+    )
+    # frame_directory is path used in container
+    # that should be mapped to real dir at server
+    # for example: /mnt/krios_Raid_X/smartscope
     frames_directory = models.CharField(
         max_length=200,
         default='/mnt/scope/movies/',
         help_text='Location of the frames directory from SmartScope that point ' + \
-            'to the same location as frames_windows_directory.')
+            'to the same location as frames_windows_directory.'
+    )
 
     objects = DetectorManager()
 
