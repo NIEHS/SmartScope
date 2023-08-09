@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 class MicroscopeInterface(ABC):
     microscope: Microscope
     detector: Detector
-    atlasSettings:AtlasSettings
+    atlas_settings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
     has_hole_ref: bool = False
     hole_crop_size: int = 0
-    focus_position_set = False
+    focus_position_set: bool = False
 
     def __enter__(self):
         self.connect()
@@ -34,6 +34,9 @@ class MicroscopeInterface(ABC):
 
     @abstractmethod
     def checkPump(self, wait=30):
+        pass
+
+    def flash_cold_FEG(self, ffDelay:int):
         pass
 
     def rollDefocus(self, def1, def2, step):

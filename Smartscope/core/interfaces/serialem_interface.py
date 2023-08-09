@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class SerialemInterface(MicroscopeInterface):
 
-    def eucentricHeight(self, tiltTo=10, increments=-5):
+    def eucentricHeight(self, tiltTo:int=10, increments:int=-5):
         logger.info(f'Doing eucentric height')
         offsetZ = 51
         iteration = 0
@@ -60,9 +60,10 @@ class SerialemInterface(MicroscopeInterface):
     def set_atlas_optics(self):
         logger.info('Setting atlas optics')
         sem.SetLowDoseMode(0)
-        sem.SetMag(self.atlasSettings.mag)
-        sem.SetPercentC2(self.atlasSettings.c2)
-        sem.SetSpotSize(self.atlasSettings.spotSize)
+        sem.SetMag(self.atlas_settings.mag)
+        sem.SetPercentC2(self.atlas_settings.c2)
+        sem.SetSpotSize(self.atlas_settings.spotSize)
+
 
     def atlas(self, size, file=''):
         sem.TiltTo(0)

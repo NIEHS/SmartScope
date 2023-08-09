@@ -27,6 +27,25 @@ class JEOLSerialemInterface(SerialemInterface):
             logger.info(f'LN2 is refilling, waiting {wait}s')
             time.sleep(wait)
 
-    @remove_condenser_aperture
     def atlas(self, *args, **kwargs):
-        super().atlas(*args,**kwargs)
+        if not self.microscope.apertureControl:
+            return super().atlas(*args,**kwargs)
+        remove_condenser_aperture(
+            super().atlas(*args,**kwargs)
+        )
+
+    def loadGrid(self, position):
+        if self.microscope.loaderSize > 1:
+            sem.Delay(5)
+            sem.SetColumnOrGunValve(0)
+            sem.Delay(5)
+            ## HARCODED FOR NOW SINCE THE EXECUTABLE SHOULD BE THERE IN ALL SCOPES
+            sem.RunInShell('C:\Program Data\SerialEM_SPA\PyTool\Transfer_Cartridge.bat', position)
+            sem.Delay(5)
+        sem.SetColumnOrGunValve(1)
+
+    def flash_cold_FEG(self, ffDelay:int):
+        if not self.microscope.coldFEG or ffDelay > 0:
+            return
+        logger.info('Flashing the cold FEG.')
+        sem.LongOperation('FF', ffDelay)
