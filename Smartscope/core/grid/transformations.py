@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 from scipy.spatial.distance import cdist
+from Smartscope.lib.image.process_image import ProcessImage
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def register_to_other_montage(
         Delta = {parent_montage.rotation_angle - montage.rotation_angle}
         Currently testing = {delta_rotation}
     ''')
-    pixel_coords = np.apply_along_axis(rotate_axis, 1,
+    pixel_coords = np.apply_along_axis(ProcessImage.rotate_axis, 1,
         scaled_coords, angle=delta_rotation)
     centered_pixel_coords = pixel_coords + montage.center
     return centered_pixel_coords
@@ -46,18 +47,18 @@ def register_stage_to_montage(
     """
     centered_stage_coords = targets_stage_coords - center_stage_coords
     stage_pixel_coords = np.array(centered_stage_coords) / (apix/10_000)
-    pixel_coords = np.apply_along_axis(rotate_axis, 1,
+    pixel_coords = np.apply_along_axis(ProcessImage.rotate_axis, 1,
         stage_pixel_coords, angle=rotation_angle)
     centered_pixel_coords = pixel_coords + center_pixel_coords
     return centered_pixel_coords
 
 
-def rotate_axis(coord, angle):
-    theta = np.radians(angle)
-    c, s = np.cos(theta), np.sin(theta)
-    R = np.array(((c, -s), (s, c)))
-    rotated = np.sum(R * np.reshape(coord, (-1, 1)), axis=0)
-    return rotated
+# def rotate_axis(coord, angle):
+#     theta = np.radians(angle)
+#     c, s = np.cos(theta), np.sin(theta)
+#     R = np.array(((c, -s), (s, c)))
+#     rotated = np.sum(R * np.reshape(coord, (-1, 1)), axis=0)
+#     return rotated
     
 def register_targets_by_proximity(
         targets:np.array,

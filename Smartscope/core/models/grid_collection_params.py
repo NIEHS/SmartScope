@@ -28,6 +28,7 @@ class GridCollectionParams(BaseModel):
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
     hardwaredark_delay = models.IntegerField(default=-1,verbose_name='Hardware Dark Delay')
+    coldfegflash_delay= models.IntegerField(default=-1,verbose_name='ColdFEG Flash Delay', help_text='Number of hours between cold FEG flashes. Will only work if the microscope has a cold FEG. Values smaller than 0 will disable the procedure.')
     multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):

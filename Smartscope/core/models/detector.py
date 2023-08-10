@@ -32,15 +32,16 @@ class Detector(BaseModel):
     atlas_max_tiles_Y = models.IntegerField(default=6)
     spot_size = models.IntegerField(default=None, null=True)
     c2_perc = models.FloatField(default=100)
+    atlas_c2_aperture = models.IntegerField(default=70, help_text='Size of the aperture in microns to use during the atlas procedure. Only works on TFS scopes')
     atlas_to_search_offset_x = models.FloatField(
         default=0,
         help_text='X stage offset between the atlas and ' + \
-            'Search mag. Similar to the Shift to Marker offset'
+            'Search mag. Similar to the Shift to Marker offset. Does not do anything at this time.'
     )
     atlas_to_search_offset_y = models.FloatField(
         default=0,
         help_text='Y stage offset between the atlas and ' + \
-            'Search mag. Similar to the Shift to Marker offset'
+            'Search mag. Similar to the Shift to Marker offset. Does not do anything at this time.'
     )
     frame_align_cmd = models.CharField(max_length=30, default='alignframes')
     gain_rot = models.IntegerField(default=0, null=True)

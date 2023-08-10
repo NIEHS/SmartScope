@@ -23,11 +23,13 @@ class Microscope(BaseModel):
     )
     voltage = models.IntegerField(default=200)
     spherical_abberation = models.FloatField(default=2.7)
+    cold_FEG = models.BooleanField(default=False,help_text='Check if the microscope has a cold FEG to enable the flashing operations. Only works on CRYOARM at the moment.')
     microscope_id = models.CharField(
         max_length=30,
         primary_key=True,
         editable=False
     )
+    aperture_control = models.BooleanField(default=False,help_text='Check box if serialEM is able to control the aperture selection. Check only if you have JEOL CRYOARM, or a TFS autoloader system.')
     vendor = models.CharField(
         max_length=30,
         default='TFS',

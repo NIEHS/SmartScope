@@ -1,6 +1,6 @@
 '''
 '''
-import os
+
 from numpy.typing import ArrayLike
 from typing import List, Union
 import logging
@@ -24,11 +24,13 @@ from Smartscope.core.db_manipulations import update, add_targets
 from Smartscope.lib.image_manipulations import auto_contrast_sigma, fourier_crop, export_as_png
 from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.image.targets import Targets
-from Smartscope.lib.file_manipulations.file_manipulations import split_path, file_busy, copy_file
+
 
 # for arguments
 from Smartscope.lib.multishot import MultiShot
 from Smartscope.lib.image.target import Target
+
+from .run_io import get_file_and_process
 
 class RunHole:
     
@@ -43,7 +45,7 @@ class RunHole:
             if multishot is not None:
                 logger.info(f'Multishot enabled: {params.multishot_per_hole}, ' + \
                     'Shots: {multishot.shots}, File: {mutlishot_file}')
-            montage = RunHole.get_file_and_process(
+            montage = get_file_and_process(
                 hole.raw,
                 hole.name,
                 directory=microscope_id.scope_path,
@@ -131,18 +133,3 @@ class RunHole:
         ) -> List[Target]:
         shots_in_pixels = shots.convert_shots_to_pixel(montage.pixel_size / 10_000) + target_coords
         return Targets.create_targets_from_center(shots_in_pixels,montage)
-
-    @staticmethod
-    def get_file(file, remove=True):
-        path = split_path(file)
-        file_busy(path.file, path.root)
-        return copy_file(path.path, remove=remove)
-
-    @staticmethod
-    def get_file_and_process(raw, name, directory='', force_reprocess=False):
-        if force_reprocess or not os.path.isfile(raw):
-            path = os.path.join(directory, raw)
-            RunHole.get_file(path, remove=True)
-        montage = Montage(name)
-        montage.load_or_process(force_process=force_reprocess)
-        return montage

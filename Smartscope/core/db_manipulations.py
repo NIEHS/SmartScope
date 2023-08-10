@@ -88,7 +88,7 @@ def update_target_label(model:models.Model,objects_ids:List[str],value:str,metho
 
 
 def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
-    from .models.target import Finder
+    from .models.target_label import Finder
 
     refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
     if refined:
@@ -223,7 +223,7 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
     from .models.square import SquareModel
     from .models.hole import HoleModel
     from .models.high_mag import HighMagModel
-    from .models.target import Finder
+    from .models.target_label import Finder
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
     if model is SquareModel:

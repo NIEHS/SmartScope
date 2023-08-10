@@ -7,12 +7,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .finders import find_targets
+from .run_io import get_file_and_process
+
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import HoleModel
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.db_manipulations import update, select_n_areas, add_targets, group_holes_for_BIS
-
 from Smartscope.lib.image_manipulations import export_as_png
 from Smartscope.lib.image.montage import Montage
 
@@ -25,7 +26,7 @@ class RunSquare:
         is_bis = params.bis_max_distance > 0
         montage = None
         if square.status == status.ACQUIRED:
-            montage = RunSquare.get_file_and_process(
+            montage = get_file_and_process(
                 raw=square.raw,
                 name=square.name,
                 directory=microscope_id.scope_path
