@@ -191,6 +191,7 @@ def run_grid(
             scope.reset_AFIS_image_shift(afis=params.afis)
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
+            scope.flash_cold_FEG(params.coldfegflash_delay)
         elif square is not None:
             is_done = False
 

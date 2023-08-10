@@ -241,6 +241,7 @@ class Microscope(BaseModel):
     location = models.CharField(max_length=30, help_text='Name of the institute, departement or room for the microscope.')
     voltage = models.IntegerField(default=200)
     spherical_abberation = models.FloatField(default=2.7)
+    cold_FEG = models.BooleanField(default=False,help_text='Check if the microscope has a cold FEG to enable the flashing operations. Only works on CRYOARM at the moment.')
     microscope_id = models.CharField(max_length=30, primary_key=True, editable=False)
     VENDOR_CHOICES = (
         ('TFS', 'TFS / FEI'),
@@ -249,9 +250,10 @@ class Microscope(BaseModel):
     vendor = models.CharField(max_length=30, default='TFS', choices=VENDOR_CHOICES)
     loader_size = models.IntegerField(default=12)
     # Worker location
-    worker_hostname = models.CharField(max_length=30, default='localhost')
-    executable = models.CharField(max_length=30, default='smartscope.py')
+    worker_hostname = models.CharField(max_length=30, default='localhost', help_text='Should not be changed at this time',)
+    executable = models.CharField(max_length=30, default='smartscope.py', help_text='Should not be changed at this time')
     # SerialEM connection
+    aperture_control = models.BooleanField(default=False,help_text='Check box if serialEM is able to control the aperture selection. Check only if you have JEOL CRYOARM, or a TFS autoloader system.')
     serialem_IP = models.CharField(max_length=30, default='xxx.xxx.xxx.xxx')
     serialem_PORT = models.IntegerField(default=48888)
     windows_path = models.CharField(max_length=200, default='X:\\\\auto_screening\\')
@@ -316,10 +318,11 @@ class Detector(BaseModel):
     atlas_max_tiles_Y = models.IntegerField(default=6)
     spot_size = models.IntegerField(default=None, null=True)
     c2_perc = models.FloatField(default=100)
+    atlas_c2_aperture = models.IntegerField(default=70, help_text='Size of the aperture in microns to use during the atlas procedure. Only works on TFS scopes')
     atlas_to_search_offset_x = models.FloatField(
-        default=0, help_text='X stage offset between the atlas and Search mag. Similar to the Shift to Marker offset')
+        default=0, help_text='X stage offset between the atlas and Search mag. Similar to the Shift to Marker offset. Does not do anything at this time.')
     atlas_to_search_offset_y = models.FloatField(
-        default=0, help_text='Y stage offset between the atlas and Search mag. Similar to the Shift to Marker offset')
+        default=0, help_text='Y stage offset between the atlas and Search mag. Similar to the Shift to Marker offset. Does not do anything at this time.')
     frame_align_cmd = models.CharField(max_length=30, default='alignframes')
     gain_rot = models.IntegerField(default=0, null=True)
     gain_flip = models.BooleanField(default=True)
@@ -372,6 +375,7 @@ class GridCollectionParams(BaseModel):
     offset_distance = models.FloatField(default=-1)
     zeroloss_delay = models.IntegerField(default=-1)
     hardwaredark_delay = models.IntegerField(default=-1,verbose_name='Hardware Dark Delay')
+    coldfegflash_delay= models.IntegerField(default=-1,verbose_name='Cold Feg Flash Delay', help_text='Number of hours between cold FEG flashes. Will only work if the microscope has a cold FEG. Values smaller than 0 will disable the procedure.')
     multishot_per_hole = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):

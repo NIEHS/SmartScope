@@ -63,7 +63,7 @@ def autoscreen(session_id:str):
         with scopeInterface(
                 microscope = Microscope.model_validate(session.microscope_id),
                 detector= Detector.model_validate(session.detector_id) ,
-                atlasSettings= AtlasSettings.model_validate(session.detector_id)
+                atlas_settings= AtlasSettings.model_validate(session.detector_id)
             ) as scope:
             # START image processing processes
             processing_queue = multiprocessing.JoinableQueue()

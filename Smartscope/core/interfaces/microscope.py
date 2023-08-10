@@ -1,3 +1,4 @@
+from typing import Optional
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
@@ -33,6 +34,7 @@ class AtlasSettings(BaseModel):
     maxY:int = Field(alias='atlas_max_tiles_Y')
     spotSize:int = Field(alias='spot_size')
     c2:float = Field(alias='c2_perc')
+    atlas_c2_aperture: Optional[int] = None
 
     class Config:
         from_attributes=True
@@ -50,6 +52,8 @@ class Microscope(BaseModel):
     port:int = Field(alias='serialem_PORT')
     directory:str= Field(alias='windows_path')
     scopePath:str = Field(alias='scope_path')
+    apertureControl:bool = Field(alias='aperture_control')
+    coldFEG:bool = Field(alias='cold_FEG')
 
     class Config:
         from_attributes=True
