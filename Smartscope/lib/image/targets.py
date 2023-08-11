@@ -1,10 +1,7 @@
-from dataclasses import dataclass
+
 from typing import List
-import mrcfile
-import numpy as np
 import logging
 
-from .image_file import parse_mdoc, save_mrc
 from .base_image import BaseImage
 from .target import Target
 
