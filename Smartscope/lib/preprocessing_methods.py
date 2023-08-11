@@ -149,7 +149,7 @@ def process_hm_from_average(
         force_reprocess=False,
         remove=True,
         check_AWS = False,
-        working_dir: str = None
+        working_dir: str = ''
     ):
     '''
     process high-resolution images on average

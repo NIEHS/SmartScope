@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 from .grid.grid_status import GridStatus
 from .grid.finders import find_targets
 from .grid.grid_io import GridIO
+from .grid.run_io import get_file_and_process
 from .grid.run_square import RunSquare
 from .grid.run_hole import RunHole
 
@@ -101,7 +102,7 @@ def run_grid(
     # find targets
     if atlas.status == status.ACQUIRED:
         logger.info('Atlas acquired')
-        montage = RunSquare.get_file_and_process(
+        montage = get_file_and_process(
             raw=atlas.raw,
             name=atlas.name,
             directory=microscope.scope_path
