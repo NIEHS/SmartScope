@@ -378,7 +378,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         serializer = self.get_serializer(obj, many=False)
         data = serializer.data
         data['atlas'] = list_to_dict(data['atlas'])
-        data['squares'] = list_to_dict(data['squares'])
+        data['squares'] = [] #list_to_dict(data['squares'])
         data['holes'] = []
         # data['counts'] = get_hole_count(obj)
         return Response(data)

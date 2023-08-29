@@ -1,4 +1,4 @@
-FROM smartscope-base
+FROM smartscope-base-test
 
 ARG VERSION='0.8-rc.2'
 ARG BRANCH='stable'
@@ -11,7 +11,7 @@ LABEL org.opencontainers.image.licenses=BSD-3-Clause
 #General environment variables
 ENV VERSION=$VERSION \
 	IMOD_DIR=/usr/local/IMOD \	
-	CTFFIND=/usr/local/ctffind \
+	CTFFIND=/opt/ctffind \
 	APP=/opt/smartscope/ \
 	AUTOSCREENDIR=/mnt/data/ \
 	TEMPDIR=/tmp/ \
@@ -22,7 +22,7 @@ ENV VERSION=$VERSION \
 ENV	ALLOWED_HOSTS=localhost \
 	CONFIG=/opt/config/ \
 	USE_SSL=false \
-	EXTERNAL_PLUGINS_DIRECTORY=/opt/smartscope/external_plugins/ \
+	EXTERNAL_PLUGINS_DIRECTORY=/opt/external_plugins/ \
 	AUTO_MIGRATION=true \
 	DJANGO_SETTINGS_MODULE=Smartscope.core.settings.server_docker \
 	USE_STORAGE=True \
@@ -31,6 +31,7 @@ ENV	ALLOWED_HOSTS=localhost \
 	DEFAULT_UMASK=002 \
 	LOGLEVEL=INFO \
 	DEBUG=False \
+	DEPLOY=True \
 	TEST_FILES=/mnt/testfiles/ \
 	MYSQL_HOST=db \
 	MYSQL_PORT=3306 \
@@ -44,15 +45,19 @@ ENV	ALLOWED_HOSTS=localhost \
 
 ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:/usr/local/IMOD/bin
 
-ADD . /opt/smartscope/
+ADD Template_files/ /opt/Template_files/
+ADD external_plugins/ /opt/external_plugins/
+ADD miniconda3/ /opt/miniconda3/
+ADD smartscope/ /opt/smartsope/
+ADD ctffind /opt/
 
-RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate && \
-	tar -xvf Smartscope0.6.tar.gz -C /opt/ && \
-	rm Smartscope0.6.tar.gz
+# RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate && \
+# 	tar -xvf Smartscope0.6.tar.gz -C /opt/ && \
+# 	rm Smartscope0.6.tar.gz
 
 RUN	mkdir /opt/logs/ /mnt/fake_scope/ /mnt/fake_scope/raw/ /opt/shared/ /opt/config/ /mnt/testfiles
-RUN pip install -e /opt/smartscope/ --no-dependencies && \
-	pip install -e /opt/smartscope/SerialEM-python --no-dependencies
+# RUN pip install -e /opt/smartscope/ --no-dependencies && \
+# 	pip install -e /opt/smartscope/SerialEM-python --no-dependencies
 
 RUN chmod 777 -R /mnt/ && \
 	chmod 777 -R /opt/logs/ && \

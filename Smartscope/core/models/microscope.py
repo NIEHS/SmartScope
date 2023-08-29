@@ -80,12 +80,12 @@ class Microscope(BaseModel):
         return Path(settings.TEMPDIR, f'paused_{self.microscope_id}').exists()
 
     # TODO fix: circular import
-    # @property
-    # def currentSession(self):
-    #     from .screening_session import ScreeningSession
-    #     if self.isLocked:
-    #         return ScreeningSession.objects.get(pk=self.lockFile.read_text())
-    #     return None
+    @property
+    def currentSession(self):
+        from .screening_session import ScreeningSession
+        if self.isLocked:
+            return ScreeningSession.objects.get(pk=self.lockFile.read_text().strip())
+        return None
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
