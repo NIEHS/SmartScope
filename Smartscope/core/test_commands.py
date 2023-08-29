@@ -1,17 +1,21 @@
 import os
+import sys
 from pathlib import Path
 from typing import List, Tuple
 import torch
-from Smartscope.core.microscope_interfaces import TFSSerialemInterface
-from Smartscope.lib.preprocessing_methods import process_hm_from_frames
-from Smartscope.core.finders import find_targets
-from Smartscope.core.models import Microscope
 import logging
 import time
+from django.conf import settings
+
+from .interfaces.tfsserialem_interface import TFSSerialemInterface
+from Smartscope.lib.preprocessing_methods import process_hm_from_frames
+from .grid.finders import find_targets
+from Smartscope.core.models import Microscope
 
 
 logger = logging.getLogger(__name__)
-
+logger.info(settings)
+logger.info(settings.AUTOSCREENDIR)
 
 def is_gpu_enabled():
     print('GPU enabled:', torch.cuda.is_available())
@@ -28,9 +32,15 @@ def test_serialem_connection(ip: str, port: int):
     print('Finished, please look at the serialEM log for the message.')
 
 
-def test_high_mag_frame_processing(test_dir=Path(os.getenv('AUTOSCREENDIR'), 'testing', 'montage_test'), name='test_frames'):
+def test_high_mag_frame_processing(
+        test_dir=Path(settings.AUTOSCREENDIR, 'testing', 'montage_test'),
+        name='test_frames'
+    ):
+    '''
+    test_dir = autoscreen_dir + group + session
+    name = grid_id
+    '''
     os.chdir(test_dir)
-    print(os.getcwd())
     frames_file_name = '20211119_AR2_0723-1_5383.tif'
     frames_dirs = [Path(os.getenv('AUTOSCREENDIR')), Path(os.getenv('TEST_FILES'), 'highmag_frames')]
     movie = process_hm_from_frames(name, frames_file_name=frames_file_name, frames_directories=frames_dirs)
@@ -89,7 +99,7 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
 
 
 def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=1):  # output_dir='/mnt/data/testing/'
-    from Smartscope.lib.montage import Montage
+    from build_smartscope.SmartScope.Smartscope.lib.image.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
     import cv2
     import math
@@ -127,7 +137,7 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=
 
 def test_protocol_command(microscope_id,detector_id,command, instance=None, instance_type=None, params=None):
     from Smartscope.core.models import Microscope, Detector, SquareModel
-    import Smartscope.lib.Datatypes.microscope as micModels
+    import build_smartscope.SmartScope.Smartscope.core.interfaces.microscope as micModels
     from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
     if instance_type=='square':
         logger.info(f'Selected square {instance}')

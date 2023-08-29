@@ -30,8 +30,15 @@ docker-compose.yml.bak
 .nv
 .config
 .python_history
-MyDocker/*
+Smartscope/core/__pycache__
+Smartscope/mydatase
 .ipython
 .mysql_history
 .gitignore
 .ipython/profile_default/history.sqlite
+mydatabase
+SerialEM-python
+serialem.egg-info/
+SmartScope-docs
+data
+Smartscope/.local.env

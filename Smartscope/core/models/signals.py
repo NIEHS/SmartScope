@@ -2,18 +2,18 @@
 from pathlib import Path
 import shutil
 import os
-import subprocess as sub
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 
 from Smartscope.server.lib.worker_jobs import *
-from Smartscope.lib.file_manipulations import create_scope_dirs
+from Smartscope.core.status import status
+from Smartscope.core.grid.grid_status import GridStatus
 from .session import *
 from .misc_func import get_fields
 
@@ -43,10 +43,7 @@ def pre_update(sender, instance, **kwargs):
                 change.date = timezone.now()
                 change.new_value = new_val.encode()
                 if created:
-                    # print('New change log entry.')
                     change.initial_value = old_val.encode()
-                # else:
-                    # print('Modifying change log entry.')
                 change.save()
     return instance
 
@@ -55,19 +52,22 @@ def pre_update(sender, instance, **kwargs):
 def grid_modification(sender, instance, **kwargs):
     if instance._state.adding:
         return
-    if instance.status == 'aborting':
-        targets = list(instance.squaremodel_set.filter(status='queued'))
-        targets += list(instance.holemodel_set.filter(status='queued'))
-        targets += list(instance.highmagmodel_set.filter(status='queued'))
+    if instance.status == GridStatus.ABORTING:
+        targets = list(instance.squaremodel_set.filter(status=status.QUEUED))
+        targets += list(instance.holemodel_set.filter(status=status.QUEUED))
+        targets += list(instance.highmagmodel_set.filter(status=status.QUEUED))
         with transaction.atomic():
             for target in targets:
                 target.selected = False
-                target.status = None
+                target.status = status.NULL
                 target.save()
         return
     original = sender.objects.get(pk=instance.pk)
     if instance.name != original.name:
-        print(f'Changing grid name.\nMoving the grid from:\n\t{original.directory}\nTo:\n\t{instance.directory}')
+        logger.info(f'''
+            Changing grid name. Moving the grid
+            from {original.directory} To {instance.directory}
+        ''')
         os.rename(original.directory, instance.directory)
         return
 
@@ -79,16 +79,16 @@ def queue_bis_group(sender,instance,created, **kwargs):
     if not created and instance.bis_type == 'center':
         if instance.selected:
             logger.debug("Updating status bis target to 'queued'")
-            HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status='queued')
+            HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status=status.QUEUED)
             return
         logger.debug("Updating status bis target to 'null'")
-        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status='queued').update(status=None)
+        HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=status.QUEUED).update(status=status.NULL)
 
 @ receiver(pre_save, sender=HoleModel)
 @ receiver(pre_save, sender=SquareModel)
 def grid_modification(sender, instance, **kwargs):
     if not instance._state.adding:
-        if instance.status == 'completed' and instance.completion_time is None:
+        if instance.status == GridStatus.COMPLETED and instance.completion_time is None:
             instance.completion_time = timezone.now()
 
 
@@ -117,7 +117,7 @@ def create_group_directory(sender, instance, created, *args, **kwargs):
             ltwd = os.path.join(settings.AUTOSCREENSTORAGE, instance.name)
         for d in [wd, ltwd]:
             if d is not None and not os.path.isdir(d):
-                print(f'Creating group dir at: ', d)
+                logger.ifno(f'Creating group dir at: ', d)
                 os.mkdir(d)
 
 @ receiver(pre_save, sender=ScreeningSession)
@@ -126,8 +126,10 @@ def change_group(sender, instance, **kwargs):
         original = sender.objects.get(pk=instance.pk)
         if instance.group != original.group:
             destination = '/'.join(original.directory.replace(original.working_dir, instance.working_dir).split('/'))
-            print(f'Changing group.\nMoving the session from:\n\t{original.directory}\nTo:\n\t{destination}')
+            logger.info(f'Changing group.\nMoving the session from:\n\t{original.directory}\nTo:\n\t{destination}')
             shutil.move(original.directory, destination)
+            cache_key = f'{instance.session_id}_directory'
+            cache.delete(cache_key)
     return instance
 
 @receiver(post_save, sender=ScreeningSession)
@@ -141,3 +143,15 @@ def create_session_scope_directory(sender, instance, created, *args, **kwargs):
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
         create_scope_dirs(instance.scope_path)
+
+def create_scope_dirs(scope_path):
+    source = scope_path
+    scope_dirs = [
+        source,
+        os.path.join(source, 'raw'),
+        os.path.join(source, 'reference'),
+        os.path.join(source, 'movies')
+    ]
+    for d in scope_dirs:
+        if not os.path.isdir(d):
+            os.mkdir(d)

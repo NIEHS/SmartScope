@@ -1,7 +1,18 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers as RESTserializers
-from Smartscope.core.models import *
-from Smartscope.lib.s3functions import *
+# from Smartscope.core.model import *
+from Smartscope.core.models.microscope import Microscope
+from Smartscope.core.models.detector import Detector
+from Smartscope.core.models.screening_session import ScreeningSession
+from Smartscope.core.models.grid import AutoloaderGrid
+from Smartscope.core.models.hole_type import HoleType
+from Smartscope.core.models.hole import HoleModel
+from Smartscope.core.models.grid_collection_params import GridCollectionParams
+from Smartscope.core.models.mesh import MeshMaterial, MeshSize
+from Smartscope.core.models.atlas import AtlasModel
+from Smartscope.core.models.square import SquareModel
+from Smartscope.core.models.high_mag import HighMagModel
+# from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
 from Smartscope.lib.converters import *
 import logging
 
@@ -21,6 +32,7 @@ class GroupSerializer(RESTserializers.ModelSerializer):
 
 
 class MicroscopeSerializer(RESTserializers.ModelSerializer):
+    # 
     class Meta:
         model = Microscope
         fields = '__all__'
@@ -95,12 +107,11 @@ class GridCollectionParamsSerializer(RESTserializers.ModelSerializer):
 
 class AtlasSerializer(RESTserializers.ModelSerializer):
     id = RESTserializers.ReadOnlyField()
-    # targets_methods = RESTserializers.ReadOnlyField()
 
     class Meta:
         model = AtlasModel
         fields = '__all__'
-        extra_fields = ['id']  # ['svg', 'png', 'raw', 'mrc']
+        extra_fields = ['id',]
 
 
 class FilePathsSerializer(RESTserializers.Serializer):
@@ -257,14 +268,13 @@ class SvgSerializer(RESTserializers.Serializer):
         return update_to_fullmeta(targets)
 
     def to_representation(self, instance):
-
         return {
             'type': 'reload',
             'display_type': self.display_type,
             'method': self.method,
             'element': models_to_serializers[self.instance.__class__.__name__]['element'],
-            'svg': self.instance.svg(display_type=self.display_type, method=self.method,).asSvg(),
-            'fullmeta': self.load_meta()
+            'svg': self.instance.svg(display_type=self.display_type, method=self.method,).as_svg(),
+            # 'fullmeta': self.load_meta()
         }
 
 

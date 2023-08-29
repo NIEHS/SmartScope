@@ -55,6 +55,8 @@ if [ $? -ne 0 ] ; then echo "Error building for 3.6" ; exit 1 ; fi
 if [ $? -ne 0 ] ; then echo "Error building for 3.8" ; exit 1 ; fi
 "C:/Program Files/Python39/python" setup.py build
 if [ $? -ne 0 ] ; then echo "Error building for 3.9" ; exit 1 ; fi
+"C:/Program Files/Python311/python" setup.py build
+if [ $? -ne 0 ] ; then echo "Error building for 3.11" ; exit 1 ; fi
 
 cp build/lib*/*cp*pyd PythonModules
 cp build/lib.win32-2.7/serialem.pyd PythonModules/2.7
@@ -66,10 +68,7 @@ chmod u+w PythonModules/msvcp140.dll
 
 if [ -n "$SIGNWRAPPER" ] ; then
     files=`ls PythonModules/*.pyd PythonModules/*/*.pyd PythonModules/*.dll`
-    for i in $files
-    do
-        "$SIGNWRAPPER" $i
-    done
+    "$SIGNWRAPPER" $files
 fi
 C:/Program\ Files/WinRAR/WinRAR a -r -z./path.txt PythonModules.rar PythonModules
 C:/Program\ Files/WinRAR/WinRAR s -y PythonModules.rar

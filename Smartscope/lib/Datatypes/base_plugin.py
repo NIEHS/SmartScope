@@ -1,9 +1,11 @@
-from enum import Enum
+
 import importlib
+from enum import Enum
 from abc import ABC, abstractclassmethod
 from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
-from Smartscope.lib.montage import create_targets_from_box, Montage
+from Smartscope.lib.image.montage import Montage
+from Smartscope.lib.image.targets import Targets
 import sys
 
 class TargetClass(Enum):
@@ -30,7 +32,7 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
     reference: Optional[str]= ''
     method: Optional[str] = ''
     module: Optional[str] = ''
-    kwargs: Optional[Dict[str, Any]]
+    kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
     importPaths: Union[str,List] = Field(default_factory=list)
 
     @property
@@ -42,7 +44,10 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
         [sys.path.insert(0, path) for path in self.importPaths]
 
 
-    def run(self,montage:Montage, create_targets_method:Callable=create_targets_from_box, *args, **kwargs):
+    def run(self,
+            montage:Montage,
+            create_targets_method:Callable=Targets.create_targets_from_box,
+            *args, **kwargs):
         """Where the main logic for the algorithm is"""
         module = importlib.import_module(self.module)
         function = getattr(module, self.method)
@@ -53,7 +58,7 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
 
 
 class Finder(BaseFeatureAnalyzer):
-    target_class = TargetClass.FINDER
+    target_class: str = TargetClass.FINDER
 
     @property
     def is_classifier(self):
@@ -62,7 +67,7 @@ class Finder(BaseFeatureAnalyzer):
 
 class Classifier(BaseFeatureAnalyzer):
     classes: Dict[(str, classLabel)]
-    target_class = TargetClass.CLASSIFIER
+    target_class: str = TargetClass.CLASSIFIER
 
     @property
     def is_classifier(self):
@@ -73,7 +78,7 @@ class Classifier(BaseFeatureAnalyzer):
 
 
 class Finder_Classifier(Classifier):
-    target_class = TargetClass.CLASSIFIER
+    target_class:str = TargetClass.CLASSIFIER
 
 
 class Selector(BaseFeatureAnalyzer):

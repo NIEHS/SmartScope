@@ -18,13 +18,21 @@ from django.shortcuts import redirect
 from django.utils.timezone import now
 
 from .forms import *
-from Smartscope.core.db_manipulations import viewer_only, get_hole_count
+from Smartscope.core.db_manipulations import viewer_only
+from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.lib.file_manipulations import create_grid_directories
-from Smartscope.lib.multishot import RecordParams,set_shots_per_hole, load_multishot_from_file
+from Smartscope.core.grid.grid_io import GridIO
+from Smartscope.lib.record_params import RecordParams
+from Smartscope.lib.multishot import set_shots_per_hole
+from Smartscope.core.grid.run_hole import RunHole
 from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.protocols import load_protocol, set_protocol
 from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY, load_preprocessing_pipeline
+
+from Smartscope.core.models.grid import AutoloaderGrid
+from Smartscope.core.models.grid_collection_params import GridCollectionParams
+from Smartscope.core.models.screening_session import ScreeningSession
+
 
 logger =logging.getLogger(__name__)
 
@@ -78,7 +86,6 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
         context = dict(form_general=form_general, form_params=form_params,form_preprocess=form_preprocess, grids=grids)
         sessions = ScreeningSession.objects.all().order_by('-date')[:10]
         context['sessions'] = sessions
-        print(context['grids'])
         return context
 
     def post(self, request, **kwargs):
@@ -87,12 +94,14 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
         form_params = GridCollectionParamsForm(request.POST)
         form_preprocess = PreprocessingPipelineIDForm(request.POST)
         if not is_viewer_only:
-
             num_grids = set([k.split('-')[0] for k in request.POST.keys() if k.split('-')[0].isnumeric()])
 
             if form_general.is_valid() and form_params.is_valid() and form_preprocess.is_valid():
 
-                session, created = ScreeningSession.objects.get_or_create(**form_general.cleaned_data, date=datetime.today().strftime('%Y%m%d'))
+                session, created = ScreeningSession.objects.get_or_create(
+                    **form_general.cleaned_data,
+                    date=datetime.today().strftime('%Y%m%d')
+                )
                 if created:
                     logger.debug(f'{session} newly created')
 
@@ -105,15 +114,15 @@ class AutoScreenSetup(LoginRequiredMixin, TemplateView):
 
                 for i in num_grids:
                     form = AutoloaderGridForm(request.POST, prefix=i)
-
                     if form.is_valid():
                         if form.cleaned_data['name'] != '':
                             protocol = form.cleaned_data.pop('protocol')
-                            grid, created = AutoloaderGrid.objects.get_or_create(**form.cleaned_data, session_id=session, params_id=params)
+                            grid, created = AutoloaderGrid.objects.get_or_create(
+                                **form.cleaned_data, session_id=session, params_id=params)
                             
                             if created:
                                 logger.debug(f'{grid} newly created, creating directories')
-                                create_grid_directories(grid.directory)
+                                GridIO.create_grid_directories(grid.directory)
                             else:
                                 logger.debug(f'{grid} exists')
                             logger.debug(f'Setting protocol {protocol} for {grid}')
@@ -166,7 +175,6 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
         if 'start' in body:
             logger.debug('starting process')
             pid = self.start_process()
-            print('PID:', pid)
             if proc is None:
                 proc = Process(session_id=context['session'], PID=pid, status='Running')
             else:
@@ -228,10 +236,14 @@ class AutoScreenRun(LoginRequiredMixin, TemplateView):
             return ''
 
     def start_process(self):
-        logger.debug(' '.join(['nohup', 'python', os.path.join(settings.BASE_DIR,
-                                                        'autoscreen.py'), self.session.session_id]))
-        proc = sub.Popen(['nohup', 'python', os.path.join(settings.BASE_DIR,
-                                                          'autoscreen.py'), self.session.session_id], stdin=None, stdout=None, stderr=None, preexec_fn=os.setpgrp)
+        logger.debug(' '.join(['nohup', 'python',
+            os.path.join(settings.BASE_DIR, 'autoscreen.py'),
+            self.session.session_id])
+        )
+        proc = sub.Popen(['nohup', 'python',
+            os.path.join(settings.BASE_DIR, 'autoscreen.py'),
+            self.session.session_id],
+            stdin=None, stdout=None, stderr=None, preexec_fn=os.setpgrp)
         return proc.pid
 
     def stop_process(self, process):
@@ -297,7 +309,7 @@ class MultiShotView(TemplateView):
         if grid_id is not None:
             grid = AutoloaderGrid.objects.get(grid_id=grid_id)
             mutlishot_file = Path(grid.directory,'multishot.json')
-            multishot = load_multishot_from_file(mutlishot_file)
+            multishot = RunHole.load_multishot_from_file(mutlishot_file)
             context['current'] = multishot
             logger.debug(f'MultiShotViewGrid with {grid_id}')
         return context
