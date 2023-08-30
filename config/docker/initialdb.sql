@@ -1,8 +1,8 @@
--- MySQL dump 10.16  Distrib 10.1.48-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.19  Distrib 10.3.38-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: db    Database: smartscope
 -- ------------------------------------------------------
--- Server version	10.5.18-MariaDB-1:10.5.18+maria~ubu2004
+-- Server version	10.5.22-MariaDB-1:10.5.22+maria~ubu2004
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -159,7 +159,7 @@ CREATE TABLE `auth_user` (
 
 LOCK TABLES `auth_user` WRITE;
 /*!40000 ALTER TABLE `auth_user` DISABLE KEYS */;
-INSERT INTO `auth_user` VALUES (56,'pbkdf2_sha256$320000$QgE4VdjFNhpVdEJSNd3heF$gQjO88hB6TkSGvBpuzMWsEpGUP30ID52CESg7SvRGVs=','2022-07-21 15:14:08.963283',1,'admin','','','',1,1,'2022-05-27 13:07:14.000000');
+INSERT INTO `auth_user` VALUES (56,'pbkdf2_sha256$600000$P9VVxQ49PnoOWIrgHy7Pa9$uwKZYfgrnTLO/EEd42eR89xfRbxuVhTRyvk+rS0pHLQ=','2023-08-30 15:42:57.715206',1,'admin','','','',1,1,'2022-05-27 13:07:14.000000');
 /*!40000 ALTER TABLE `auth_user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -380,6 +380,7 @@ CREATE TABLE `detector` (
   `frames_windows_directory` varchar(200) NOT NULL,
   `atlas_to_search_offset_x` double NOT NULL,
   `atlas_to_search_offset_y` double NOT NULL,
+  `atlas_c2_aperture` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `detector_microscope_id_id_c62bb405_fk_microscope_microscope_id` (`microscope_id_id`),
   CONSTRAINT `detector_microscope_id_id_c62bb405_fk_microscope_microscope_id` FOREIGN KEY (`microscope_id_id`) REFERENCES `microscope` (`microscope_id`)
@@ -392,7 +393,7 @@ CREATE TABLE `detector` (
 
 LOCK TABLES `detector` WRITE;
 /*!40000 ALTER TABLE `detector` DISABLE KEYS */;
-INSERT INTO `detector` VALUES (3,'test_K2','K2',62,6,6,5,'alignframes',3,1,0,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',100,'/mnt/scope/movies/','movies',0,0);
+INSERT INTO `detector` VALUES (3,'test_K2','K2',62,6,6,5,'alignframes',3,1,0,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',100,'/mnt/fake_scope/movies/','movies',0,0,70);
 /*!40000 ALTER TABLE `detector` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -417,7 +418,7 @@ CREATE TABLE `django_admin_log` (
   KEY `django_admin_log_user_id_c564eba6_fk_auth_user_id` (`user_id`),
   CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`),
   CONSTRAINT `django_admin_log_user_id_c564eba6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=276 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=277 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -426,6 +427,7 @@ CREATE TABLE `django_admin_log` (
 
 LOCK TABLES `django_admin_log` WRITE;
 /*!40000 ALTER TABLE `django_admin_log` DISABLE KEYS */;
+INSERT INTO `django_admin_log` VALUES (276,'2023-08-30 15:45:37.073664','3','test - fake_scope - test_K2',2,'[{\"changed\": {\"fields\": [\"Frames directory\"]}}]',10,56);
 /*!40000 ALTER TABLE `django_admin_log` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -468,7 +470,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -477,7 +479,7 @@ CREATE TABLE `django_migrations` (
 
 LOCK TABLES `django_migrations` WRITE;
 /*!40000 ALTER TABLE `django_migrations` DISABLE KEYS */;
-INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192'),(27,'API','0004_v07','2022-07-21 15:57:10.854652'),(28,'API','0005_v07_2','2022-07-21 15:57:10.980773'),(29,'API','0006_detector_frames_directory_and_more','2023-02-06 19:00:42.786828'),(30,'API','0007_detector_atlas_to_search_offset_x_and_more','2023-02-06 19:00:42.834656'),(31,'API','0008_highmagmodel_selected_alter_microscope_location_and_more','2023-02-06 19:00:42.874391'),(32,'API','0009_selector_value','2023-02-06 19:00:42.887843');
+INSERT INTO `django_migrations` VALUES (1,'contenttypes','0001_initial','2022-03-28 19:45:39.604977'),(2,'contenttypes','0002_remove_content_type_name','2022-03-28 19:45:39.871200'),(3,'auth','0001_initial','2022-03-28 19:45:40.690613'),(4,'auth','0002_alter_permission_name_max_length','2022-03-28 19:45:44.021735'),(5,'auth','0003_alter_user_email_max_length','2022-03-28 19:45:44.071631'),(6,'auth','0004_alter_user_username_opts','2022-03-28 19:45:44.090858'),(7,'auth','0005_alter_user_last_login_null','2022-03-28 19:45:44.313585'),(8,'auth','0006_require_contenttypes_0002','2022-03-28 19:45:44.343315'),(9,'auth','0007_alter_validators_add_error_messages','2022-03-28 19:45:44.376690'),(10,'auth','0008_alter_user_username_max_length','2022-03-28 19:45:44.438401'),(11,'auth','0009_alter_user_last_name_max_length','2022-03-28 19:45:44.521934'),(12,'auth','0010_alter_group_name_max_length','2022-03-28 19:45:44.580201'),(13,'auth','0011_update_proxy_permissions','2022-03-28 19:45:44.598903'),(14,'auth','0012_alter_user_first_name_max_length','2022-03-28 19:45:44.671816'),(15,'API','0001_initial','2022-03-28 19:45:49.766699'),(16,'admin','0001_initial','2022-03-28 19:45:55.635521'),(17,'admin','0002_logentry_remove_auto_add','2022-03-28 19:45:56.199706'),(18,'admin','0003_logentry_add_action_flag_choices','2022-03-28 19:45:56.234886'),(19,'authtoken','0001_initial','2022-03-28 19:45:56.442933'),(20,'authtoken','0002_auto_20160226_1747','2022-03-28 19:45:57.490956'),(21,'authtoken','0003_tokenproxy','2022-03-28 19:45:57.512029'),(22,'sessions','0001_initial','2022-03-28 19:45:57.662359'),(23,'API','0002_microscope_scope_path','2022-03-30 14:50:35.954750'),(24,'API','0003_detector_c2_perc','2022-03-30 15:45:54.807446'),(25,'API','0002_auto_20220608_1836','2022-07-02 11:03:11.526775'),(26,'API','0003_remove_holemodel_dist_from_center_and_more','2022-07-02 11:03:11.571192'),(27,'API','0004_v07','2022-07-21 15:57:10.854652'),(28,'API','0005_v07_2','2022-07-21 15:57:10.980773'),(29,'API','0006_detector_frames_directory_and_more','2023-02-06 19:00:42.786828'),(30,'API','0007_detector_atlas_to_search_offset_x_and_more','2023-02-06 19:00:42.834656'),(31,'API','0008_highmagmodel_selected_alter_microscope_location_and_more','2023-02-06 19:00:42.874391'),(32,'API','0009_selector_value','2023-02-06 19:00:42.887843'),(33,'API','0010_gridcollectionparams_multishot_per_hole_and_more','2023-08-30 15:42:47.337920'),(34,'API','0011_alter_screeningsession_version','2023-08-30 15:42:47.353948'),(35,'API','0012_gridcollectionparams_hardwaredark_delay_and_more','2023-08-30 15:42:47.375054'),(36,'API','0013_gridcollectionparams_afis','2023-08-30 15:42:47.387238'),(37,'API','0014_alter_holemodel_unique_together_and_more','2023-08-30 15:42:47.461040'),(38,'API','0015_detector_atlas_c2_aperture_and_more','2023-08-30 15:42:47.514252');
 /*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -503,6 +505,7 @@ CREATE TABLE `django_session` (
 
 LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
+INSERT INTO `django_session` VALUES ('jj7gcq0w6hzuc2kv176lu2c57kv2rpal','.eJxVjEEOgjAQRe_StWlomU5bl-45QzOdoYIaSCisjHcXEha6fe_9_1aJtnVIW-2XNIq6Kofq8gsz8bOfDiMPmu6z5nlalzHrI9GnrbqbpX_dzvbvYKA67OviIGQroaAUCySO0ZsWoVjCwLxDEh8acNDECJxDMYARneeWjZBXny8XEDgh:1qbNLN:lUFZ_20Eb7vTr2-lh5_29NHEZnW2_hVKYZFq12o_2dU','2023-09-13 15:42:57.765024');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -566,6 +569,10 @@ CREATE TABLE `gridcollectionparams` (
   `offset_distance` double NOT NULL,
   `offset_targeting` tinyint(1) NOT NULL,
   `force_process_from_average` tinyint(1) NOT NULL,
+  `multishot_per_hole` tinyint(1) NOT NULL,
+  `hardwaredark_delay` int(11) NOT NULL,
+  `afis` tinyint(1) NOT NULL,
+  `coldfegflash_delay` int(11) NOT NULL,
   PRIMARY KEY (`params_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -647,7 +654,6 @@ CREATE TABLE `holemodel` (
   `grid_id_id` varchar(30) NOT NULL,
   `square_id_id` varchar(30) NOT NULL,
   PRIMARY KEY (`hole_id`),
-  UNIQUE KEY `holemodel_name_square_id_id_3d66de91_uniq` (`name`,`square_id_id`),
   KEY `holemodel_grid_id_id_e0af6c4d_fk_autoloadergrid_grid_id` (`grid_id_id`),
   KEY `holemodel_square_id_id_b73a5e24_fk_squaremodel_square_id` (`square_id_id`),
   CONSTRAINT `holemodel_grid_id_id_e0af6c4d_fk_autoloadergrid_grid_id` FOREIGN KEY (`grid_id_id`) REFERENCES `autoloadergrid` (`grid_id`),
@@ -759,6 +765,8 @@ CREATE TABLE `microscope` (
   `windows_path` varchar(200) NOT NULL,
   `scope_path` varchar(200) NOT NULL,
   `vendor` varchar(30) NOT NULL,
+  `aperture_control` tinyint(1) NOT NULL,
+  `cold_FEG` tinyint(1) NOT NULL,
   PRIMARY KEY (`microscope_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -769,7 +777,7 @@ CREATE TABLE `microscope` (
 
 LOCK TABLES `microscope` WRITE;
 /*!40000 ALTER TABLE `microscope` DISABLE KEYS */;
-INSERT INTO `microscope` VALUES ('fake_scope','test',200,2.7,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',12,'localhost','smartscope.py','xxx.xxx.xxx.xxx',48888,'X:\\\\auto_screening\\','/mnt/fake_scope','TFS');
+INSERT INTO `microscope` VALUES ('fake_scope','test',200,2.7,'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n',12,'localhost','smartscope.py','xxx.xxx.xxx.xxx',48888,'X:\\\\auto_screening\\','/mnt/fake_scope','TFS',0,0);
 /*!40000 ALTER TABLE `microscope` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -812,7 +820,7 @@ DROP TABLE IF EXISTS `screeningsession`;
 CREATE TABLE `screeningsession` (
   `session` varchar(30) NOT NULL,
   `date` varchar(8) NOT NULL,
-  `version` varchar(8) NOT NULL,
+  `version` varchar(20) NOT NULL,
   `working_dir` varchar(300) NOT NULL,
   `session_id` varchar(30) NOT NULL,
   `detector_id_id` int(11) DEFAULT NULL,
@@ -888,7 +896,6 @@ CREATE TABLE `squaremodel` (
   `atlas_id_id` varchar(30) NOT NULL,
   `grid_id_id` varchar(30) NOT NULL,
   PRIMARY KEY (`square_id`),
-  UNIQUE KEY `squaremodel_name_atlas_id_id_cdc2974a_uniq` (`name`,`atlas_id_id`),
   KEY `squaremodel_atlas_id_id_89647666_fk_atlasmodel_atlas_id` (`atlas_id_id`),
   KEY `squaremodel_grid_id_id_775a3fee_fk_autoloadergrid_grid_id` (`grid_id_id`),
   CONSTRAINT `squaremodel_atlas_id_id_89647666_fk_atlasmodel_atlas_id` FOREIGN KEY (`atlas_id_id`) REFERENCES `atlasmodel` (`atlas_id`),
@@ -914,4 +921,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-02-06 19:04:07
+-- Dump completed on 2023-08-30 15:47:17
