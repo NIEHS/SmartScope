@@ -9,6 +9,7 @@ Subcommand              DESCRIPTION
 start                   Start SmartScope
 stop                    Stop smartscope
 run \e[3mcommand\e[0m             Run a smartscope command in the smartscope container
+exec \e[3mcommand\e[0m            Run any shell command in the smartscope container
 python                  Runs an interactive ipython shell inside the smartscope container
 "
     echo -e "$OPTIONS"
@@ -39,8 +40,12 @@ case $argument in
     python)
         echo "Running a python shell inside the smartscope container"
         docker exec -it smartscope manage.py shell -i ipython ;;
+    exec)
+        echo "Executing shell command inside the smartscope container:"
+        docker exec -it smartscope ${@:2};;
     *)
         echo Unkown command error: $argument
         helpText
         exit 1;;
 esac
+
