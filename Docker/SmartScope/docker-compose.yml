@@ -5,7 +5,7 @@
 version: "3"
 services:
   smartscope:
-    image: ghcr.io/niehs/smartscope:0.8
+    image: ghcr.io/niehs/smartscope:0.9.1
     container_name: smartscope
     restart: always
     volumes:
@@ -20,6 +20,8 @@ services:
       - ./shared/nginx/:/opt/shared/:rw
       - ./shared/smartscope/:/opt/config/:rw
       - ./testfiles/:/mnt/testfiles/:rw
+      - ./logs/:/opt/logs/
+      - ./backups/:/mnt/backups/
     env_file:
       - smartscope.conf
       - database.conf
@@ -36,6 +38,7 @@ services:
       - database.conf
     volumes:
       - ./db/:/var/lib/mysql/
+      - ./backups/:/mnt/backups/
       # - ./shared/initialdb.sql:/docker-entrypoint-initdb.d/initialdb.sql
     networks:
       - smartscopenet
