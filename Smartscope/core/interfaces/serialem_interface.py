@@ -61,8 +61,8 @@ class SerialemInterface(MicroscopeInterface):
         logger.info('Setting atlas optics')
         sem.SetLowDoseMode(0)
         sem.SetMag(self.atlas_settings.mag)
-        sem.SetPercentC2(self.atlas_settings.c2)
         sem.SetSpotSize(self.atlas_settings.spotSize)
+        sem.SetPercentC2(self.atlas_settings.c2)
 
 
     def atlas(self, size, file=''):
