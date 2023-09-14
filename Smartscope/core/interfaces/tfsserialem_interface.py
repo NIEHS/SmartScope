@@ -15,7 +15,7 @@ class Aperture:
 
 def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int]):
     def wrapper(*args, **kwargs):
-        inital_aperture_size = sem.ReportApertureSize(aperture)
+        inital_aperture_size = int(sem.ReportApertureSize(aperture))
         if inital_aperture_size == aperture_size or aperture_size is None:
             return function(*args, **kwargs) 
         sem.SetApertureSize(aperture,aperture_size)
