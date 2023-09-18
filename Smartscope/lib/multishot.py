@@ -22,8 +22,8 @@ class MultiShot(BaseModel):
     shots: List
     in_hole: float
     coverage: float
-    display: Optional[str]
-    params: Optional[RecordParams]
+    display: Optional[str] = None
+    params: Optional[RecordParams] = None
     cache_id:str = Field(default_factory=generate_unique_id)
 
     class Config:
@@ -88,7 +88,7 @@ def check_for_beam_fov_overlap(beam_masks,fov_masks,box):
             sum_box += j
         sum_box*=f
         if np.any(sum_box[sum_box>1]):
-            logger.info('Found beam overlap')
+            # logger.info('Found beam overlap')
             return True
 
 def check_fov_overlap(fov_masks,box):
