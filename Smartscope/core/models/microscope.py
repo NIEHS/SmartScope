@@ -84,7 +84,12 @@ class Microscope(BaseModel):
     def currentSession(self):
         from .screening_session import ScreeningSession
         if self.isLocked:
-            return ScreeningSession.objects.get(pk=self.lockFile.read_text().strip())
+            session = ScreeningSession.objects.filter(pk=self.lockFile.read_text().strip()).first()
+            logger.debug(f'Current session = {session}')
+            if session is not None:
+                return session
+            logger.warning('Session from the lock file not found, perhaps it was deleted? Removing lock file to avoid other errors.')
+            return self.lockFile.unlink()
         return None
 
     def save(self, *args, **kwargs):

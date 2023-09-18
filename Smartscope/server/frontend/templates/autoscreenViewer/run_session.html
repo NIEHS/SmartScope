@@ -9,7 +9,7 @@
         browser</a>
     <p id="disk" class="col-auto align-middle"> Loading...</p>
 </div>
-{% if session.microscope_id.isLocked %}
+{% if session.microscope_id.isLocked and session.microscope_id.currentSession is not None %}
 <div class="d-flex align-items-center justify-content-center">
     {% if session.microscope_id.currentSession.pk != session.session_id%}
     <div class='alert alert-warning p-2 m-2' role="alert">Microscope {{session.microscope_id}} is currently busy: <a
