@@ -113,7 +113,9 @@ class TargetRouteMixin:
 
     detailed_serializer = None
 
-    def get_detailed_serializer(self):
+    def get_detailed_serializer(self, serializer):
+        if serializer is not None:
+            return serializer
         if self.detailed_serializer is None:
             raise ValueError(f'detailed_serializer attribute is not set on {self.__class__.__name__}.')
         return self.detailed_serializer
@@ -126,8 +128,8 @@ class TargetRouteMixin:
         return Response(data=serializer.data)
 
     @ action(detail=False, methods=['get'], url_path='detailed')
-    def detailedMany(self, request, *args, **kwargs):
-        self.serializer_class = self.get_detailed_serializer()
+    def detailedMany(self, request, *args, serializer=None, **kwargs):
+        self.serializer_class = self.get_detailed_serializer(serializer)
         page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
@@ -142,7 +144,10 @@ class TargetRouteMixin:
             self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
+    
+    @ action(detail=False, methods=['get'], url_path='scipion_plugin')
+    def scipion_plugin(self, request, *args, **kwargs):
+        return self.detailedMany(request=request,*args,serializer=ScipionPluginHoleSerializer ,*kwargs)
 
 class UserViewSet(viewsets.ModelViewSet):
     """

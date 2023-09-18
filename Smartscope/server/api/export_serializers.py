@@ -71,6 +71,11 @@ class DetailedHoleSerializer(TargetSerializer):
         model = models.HoleModel
         exclude = ['hole_id','square_id','grid_id']
 
+class ScipionPluginHoleSerializer(DetailedHoleSerializer):
+    class Meta(DetailedHoleSerializer.Meta):
+        exclude = []
+
+
 class DetailedSquareSerializer(TargetSerializer):
     targets = DetailedHoleSerializer(many=True)
 
