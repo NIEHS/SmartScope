@@ -52,7 +52,7 @@ def autoscreen(session_id:str):
         logger.info(f'Session: {session}')
         logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
         scopeInterface = TFSSerialemInterface
-        if microscope.serialem_IP == 'xxx.xxx.xxx.xxx' or settings.DEBUG is True:
+        if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
             logger.info('Setting scope into test mode')
             scopeInterface = FakeScopeInterface
 
