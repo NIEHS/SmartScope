@@ -2,7 +2,7 @@
 import os
 import sys
 from django.conf import settings
-import multiprocessing
+# import multiprocessing
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,17 +66,17 @@ def autoscreen(session_id:str):
                 atlas_settings= AtlasSettings.model_validate(session.detector_id)
             ) as scope:
             # START image processing processes
-            processing_queue = multiprocessing.JoinableQueue()
-            child_process = multiprocessing.Process(
-                target=processing_worker_wrapper,
-                args=(session.directory, processing_queue,)
-            )
-            child_process.start()
+            # processing_queue = multiprocessing.JoinableQueue()
+            # child_process = multiprocessing.Process(
+            #     target=processing_worker_wrapper,
+            #     args=(session.directory, processing_queue,)
+            # )
+            # child_process.start()
             logger.debug(f'Main Log handlers:{logger.handlers}')
 
             # RUN grid
             for grid in grids:
-                status = run_grid(grid, session, processing_queue, scope)
+                status = run_grid(grid, session,  scope) #processing_queue,
             status = 'complete'
     except Exception as e:
         logger.exception(e)
@@ -91,9 +91,9 @@ def autoscreen(session_id:str):
         os.remove(microscope.lockFile)
         update(process, status=status)
         logger.debug('Wrapping up')
-        processing_queue.put('exit')
-        child_process.join()
-        logger.debug('Process joined')
+        # processing_queue.put('exit')
+        # child_process.join()
+        # logger.debug('Process joined')
 
 
 
