@@ -5,7 +5,7 @@ Untitled.ipynb
 cryolo_models/
 Tomo.egg-info
 .DS_Store
-Smartscope.egg-info/
+# Smartscope.egg-info/
 .vscode/
 conf.env
 Smartscope/Finders/AIFinder/detectors/weights/
