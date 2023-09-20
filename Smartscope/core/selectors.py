@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def generate_equal_clusters(parent, targets, n_groups, extra_fields):
+def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
     output = list()
     if len(targets) > 0:
         split_targets = np.array_split(targets, n_groups)
