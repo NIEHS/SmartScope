@@ -565,6 +565,49 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
 
     detailed_serializer = DetailedHighMagSerializer
 
+    @ action(detail=True, methods=['patch'])
+    def upload_images(self,request, *args, **kwargs):
+        
+            allowed_keys = ['mrc','png','ctf_img']
+            obj = self.get_object()
+            data = request.data
+            has_errors = False
+            has_success = False
+            return_data = dict()
+            logger.debug(data.keys())
+            for key,image in data.items():
+                if key not in allowed_keys:
+                    message = f"Key: {key} is not valid, choose from {', '.join(allowed_keys)}"
+                    return_data[key] = message
+                    has_errors = True
+                    logger.warning(message)
+                    continue
+                try:
+                    file = io.BytesIO(base64.b64decode(image))
+                    #Validate image while in memory
+                    filepath = getattr(obj,key)
+                    logger.info(f'Saving {obj.name} -> {key} image to {filepath}')
+                    with open(filepath, "wb") as f:
+                        f.write(file.getbuffer())
+                    message = f'Key: {key}, successfully uploaded and saved.'
+                    return_data[key] = message
+                    logger.info(message)
+                    has_success = True
+                except Exception as err:
+                    has_errors = True
+                    message = f'Key: {key}, an error occured: {err}. Check smartscope.log for more details'
+                    logger.info(message)
+                    return_data[key] = message
+                    logger.exception(err)
+            logger.info('Done uploading images.')
+            if not has_errors and has_success:
+                return Response(status=200, data=return_data)
+            if has_errors and has_success:
+                return Response(status=207, data=return_data)
+            if has_errors and not has_success:
+                return Response(status=200, data=return_data)
+
+
     @ action(detail=True, methods=['get'])
     def fft(self, request, *args, **kwargs):
         obj = self.get_object()
