@@ -9,6 +9,7 @@ import os
 import sys
 import shlex
 import subprocess
+from Smartscope.lib.image_manipulations import mrc_to_png
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ def CTFfind(
     logger.debug(p.stdout)
     logger.debug(p.stderr)
     if os.path.isfile(output_file):
+        mrc_to_png(output_file)
         return output_file
     logger.debug(f"the output file CTF={output_file} doesn't exist.")
     return None

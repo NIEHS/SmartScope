@@ -113,7 +113,9 @@ class TargetRouteMixin:
 
     detailed_serializer = None
 
-    def get_detailed_serializer(self):
+    def get_detailed_serializer(self, serializer):
+        if serializer is not None:
+            return serializer
         if self.detailed_serializer is None:
             raise ValueError(f'detailed_serializer attribute is not set on {self.__class__.__name__}.')
         return self.detailed_serializer
@@ -126,8 +128,8 @@ class TargetRouteMixin:
         return Response(data=serializer.data)
 
     @ action(detail=False, methods=['get'], url_path='detailed')
-    def detailedMany(self, request, *args, **kwargs):
-        self.serializer_class = self.get_detailed_serializer()
+    def detailedMany(self, request, *args, serializer=None, **kwargs):
+        self.serializer_class = self.get_detailed_serializer(serializer)
         page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
@@ -142,7 +144,10 @@ class TargetRouteMixin:
             self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
+    
+    @ action(detail=False, methods=['get'], url_path='scipion_plugin')
+    def scipion_plugin(self, request, *args, **kwargs):
+        return self.detailedMany(request=request,*args,serializer=ScipionPluginHoleSerializer ,*kwargs)
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -378,7 +383,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         serializer = self.get_serializer(obj, many=False)
         data = serializer.data
         data['atlas'] = list_to_dict(data['atlas'])
-        data['squares'] = list_to_dict(data['squares'])
+        data['squares'] = [] #list_to_dict(data['squares'])
         data['holes'] = []
         # data['counts'] = get_hole_count(obj)
         return Response(data)
@@ -559,6 +564,49 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
                         'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status','name','frames']
 
     detailed_serializer = DetailedHighMagSerializer
+
+    @ action(detail=True, methods=['patch'])
+    def upload_images(self,request, *args, **kwargs):
+        
+            allowed_keys = ['mrc','png','ctf_img']
+            obj = self.get_object()
+            data = request.data
+            has_errors = False
+            has_success = False
+            return_data = dict()
+            logger.debug(data.keys())
+            for key,image in data.items():
+                if key not in allowed_keys:
+                    message = f"Key: {key} is not valid, choose from {', '.join(allowed_keys)}"
+                    return_data[key] = message
+                    has_errors = True
+                    logger.warning(message)
+                    continue
+                try:
+                    file = io.BytesIO(base64.b64decode(image))
+                    #Validate image while in memory
+                    filepath = getattr(obj,key)
+                    logger.info(f'Saving {obj.name} -> {key} image to {filepath}')
+                    with open(filepath, "wb") as f:
+                        f.write(file.getbuffer())
+                    message = f'Key: {key}, successfully uploaded and saved.'
+                    return_data[key] = message
+                    logger.info(message)
+                    has_success = True
+                except Exception as err:
+                    has_errors = True
+                    message = f'Key: {key}, an error occured: {err}. Check smartscope.log for more details'
+                    logger.info(message)
+                    return_data[key] = message
+                    logger.exception(err)
+            logger.info('Done uploading images.')
+            if not has_errors and has_success:
+                return Response(status=200, data=return_data)
+            if has_errors and has_success:
+                return Response(status=207, data=return_data)
+            if has_errors and not has_success:
+                return Response(status=200, data=return_data)
+
 
     @ action(detail=True, methods=['get'])
     def fft(self, request, *args, **kwargs):

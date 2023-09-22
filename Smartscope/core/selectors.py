@@ -14,15 +14,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def generate_equal_clusters(parent, targets, n_groups):
+def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
     output = list()
     if len(targets) > 0:
         split_targets = np.array_split(targets, n_groups)
         for ind, bucket in enumerate(split_targets):
             for target in bucket:
+                extra_updates = dict()
+                for field, attribute in extra_fields.items():
+                    extra_updates[field] = getattr(target,attribute)
                 output.append(dict(content_type=ContentType.objects.get_for_model(target),
                                    object_id=target.pk,
-                                   label=ind))
+                                   label=ind,
+                                   **extra_updates))
     return output
 
 
@@ -52,7 +56,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         save_image(img, 'gray_level_selector', extension='png', destination=parent.directory, resize_to=1024)
 
     targets.sort(key=lambda x: x.median)
-    return generate_equal_clusters(parent, targets, n_groups)
+    return generate_equal_clusters(parent, targets, n_groups, extra_fields=dict(value='median'))
 
 
 def selector_wrapper(selectors, selection, *args, **kwargs):

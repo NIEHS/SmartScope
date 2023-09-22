@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-import multiprocessing
+# import multiprocessing
 import logging
 from pathlib import Path
 from django.db import transaction
@@ -33,9 +33,9 @@ from Smartscope.lib.image_manipulations import export_as_png
 def run_grid(
         grid:AutoloaderGrid,
         session:ScreeningSession,
-        processing_queue:multiprocessing.JoinableQueue,
+        
         scope:MicroscopeInterface
-    ):
+    ): #processing_queue:multiprocessing.JoinableQueue,
     """Main logic for the SmartScope process
     Args:
         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
@@ -65,12 +65,12 @@ def run_grid(
     GridIO.create_grid_directories(grid.directory)
     logger.info(f"create and the enter into Grid directory={grid.directory}")
     os.chdir(grid.directory)
-    processing_queue.put([os.chdir, [grid.directory], {}])
+    # processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
 
     # ADD the new protocol loader
     protocol = get_or_set_protocol(grid)
-    resume_incomplete_processes(processing_queue, grid, session.microscope_id)
+    # resume_incomplete_processes(processing_queue, grid, session.microscope_id)
     preprocessing = load_preprocessing_pipeline(Path('preprocessing.json'))
     preprocessing.start(grid)
     is_stop_file(session_id)
@@ -148,9 +148,11 @@ def run_grid(
         else:
             square, hole = get_queue(grid)
 
+        logger.info(f'Queued => Square: {square}, Hole: {hole}')
+        logger.info(f'Targets done: {is_done}')
         if hole is not None and (square is None or grid.collection_mode == 'screening'):
             is_done = False
-
+            logger.info(f'Running Hole {hole}')
             # process medium image
             hole = update(hole, status=status.STARTED)
             runAcquisition(
@@ -195,7 +197,7 @@ def run_grid(
             scope.flash_cold_FEG(params.coldfegflash_delay)
         elif square is not None:
             is_done = False
-
+            logger.info(f'Running Square {square}')
             # process square
             if square.status == status.QUEUED or square.status == status.STARTED:
                 square = update(square, status=status.STARTED)
@@ -207,7 +209,7 @@ def run_grid(
                     square
                 )
                 square = update(square, status=status.ACQUIRED, completion_time=timezone.now())
-                RunSquare.process_square_image(square, grid, microscope)
+            RunSquare.process_square_image(square, grid, microscope)
         elif is_done:
             microscope_id = session.microscope_id.pk
             tmp_file = os.path.join(settings.TEMPDIR, f'.pause_{microscope_id}')
@@ -228,8 +230,10 @@ def run_grid(
             else:
                 running = False
         else:
-            logger.debug(f'Waiting for incomplete processes, {processing_queue.get()}, queue size={processing_queue.qsize()}')
-            processing_queue.join()
+            # logger.debug(f'Waiting for incomplete processes, {processing_queue.get()}, queue size={processing_queue.qsize()}')
+            
+            # processing_queue.join()
+
             logger.debug('All processes complete')
             is_done = True
         logger.debug(f'Running: {running}')
@@ -251,25 +255,25 @@ def get_queue(grid):
 
 
 
-def resume_incomplete_processes(queue, grid, microscope_id):
-    """Query database for models with incomplete processes
-     and adds them to the processing queue
+# def resume_incomplete_processes(queue, grid, microscope_id):
+#     """Query database for models with incomplete processes
+#      and adds them to the processing queue
 
-    Args:
-        queue (multiprocessing.JoinableQueue): multiprocessing queue of objects
-          for processing by    the processing_worker
-        grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
-        session (ScreeningSession): ScreeningSession object from Smartscope.server.models
-    """
-    squares = grid.squaremodel_set.filter(selected=1).exclude(
-        status__in=[status.QUEUED, status.STARTED, status.COMPLETED]).order_by('number')
-    holes = grid.holemodel_set.filter(selected=1).exclude(status__in=[status.QUEUED, \
-        status.STARTED, status.PROCESSED, status.COMPLETED]).\
-        order_by('square_id__number', 'number')
-    for square in squares:
-        logger.info(f'Square {square} was not fully processed')
-        renew_queue = [RunSquare.process_square_image, [square, grid, microscope_id], {}]
-        transaction.on_commit(lambda: queue.put(renew_queue))
+#     Args:
+#         queue (multiprocessing.JoinableQueue): multiprocessing queue of objects
+#           for processing by    the processing_worker
+#         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
+#         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
+#     """
+#     squares = grid.squaremodel_set.filter(selected=1).exclude(
+#         status__in=[status.QUEUED, status.STARTED, status.COMPLETED]).order_by('number')
+#     holes = grid.holemodel_set.filter(selected=1).exclude(status__in=[status.QUEUED, \
+#         status.STARTED, status.PROCESSED, status.COMPLETED]).\
+#         order_by('square_id__number', 'number')
+#     for square in squares:
+#         logger.info(f'Square {square} was not fully processed')
+#         renew_queue = [RunSquare.process_square_image, [square, grid, microscope_id], {}]
+#         transaction.on_commit(lambda: queue.put(renew_queue))
 
 
 

@@ -40,7 +40,7 @@ class JEOLSerialemInterface(SerialemInterface):
             sem.SetColumnOrGunValve(0)
             sem.Delay(5)
             ## HARCODED FOR NOW SINCE THE EXECUTABLE SHOULD BE THERE IN ALL SCOPES
-            sem.RunInShell('C:\Program Data\SerialEM_SPA\PyTool\Transfer_Cartridge.bat', position)
+            sem.RunInShell(f'C:\Program Data\SerialEM_SPA\PyTool\Transfer_Cartridge.bat {position}')
             sem.Delay(5)
         sem.SetColumnOrGunValve(1)
 

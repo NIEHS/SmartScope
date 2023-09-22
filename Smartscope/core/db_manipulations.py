@@ -72,7 +72,7 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
             obj.save()  
 
 def update_target_label(model:models.Model,objects_ids:List[str],value:str,method:str, *args, **kwargs):
-    from .models.target import Classifier
+    from .models.target_label import Classifier
 
     content_type = ContentType.objects.get_for_model(model)
     logger.debug('Updating Classifier objects')

@@ -94,7 +94,7 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
             x = finder.x - sz // 2
             y = (finder.y - sz // 2)
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
-                               class_=f'target', onclick="clickSquare(this)")
+                               class_=f'target', status=i.status, onclick="clickSquare(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 35)
@@ -134,7 +134,7 @@ def drawSquare(square, targets, display_type, method) -> draw.Drawing:
             x = finder.x
             y = finder.y
             c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,
-                            class_=f'target', number=i.number, onclick="clickHole(this)")
+                            class_=f'target',status=i.status, number=i.number, onclick="clickHole(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 3000 * 80)

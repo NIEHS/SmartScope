@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 class Aperture:
     CONDENSER_1:int=0
     CONDENSER_2:int=1
-    CONDENSER_3:int=2
-    OBJECTIVE:int = 3
+    CONDENSER_3:int=3
+    OBJECTIVE:int = 2
 
-def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int], *args, **kwargs):
+def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int]):
     def wrapper(*args, **kwargs):
-        inital_aperture_size = sem.ReportApertureSize(aperture)
+        inital_aperture_size = int(sem.ReportApertureSize(aperture))
         if inital_aperture_size == aperture_size or aperture_size is None:
             return function(*args, **kwargs) 
         sem.SetApertureSize(aperture,aperture_size)
@@ -23,11 +23,11 @@ def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_
         sem.SetApertureSize(aperture,inital_aperture_size)
     return wrapper    
 
-def remove_objective_aperture(function: Callable, *args, **kwargs):
+def remove_objective_aperture(function: Callable):
     def wrapper(*args, **kwargs):
-        sem.RemoveAperture(2)
+        sem.RemoveAperture(Aperture.OBJECTIVE)
         function(*args, **kwargs)
-        sem.ReInsertAperture(2)
+        sem.ReInsertAperture(Aperture.OBJECTIVE)
     return wrapper
 
 class TFSSerialemInterface(SerialemInterface):
@@ -48,11 +48,10 @@ class TFSSerialemInterface(SerialemInterface):
 
     def atlas(self, size, file=''):
         if self.microscope.apertureControl:
+
             return change_aperture_temporarily(
-                function=remove_objective_aperture(
-                    super().atlas(size,file)
-                    ), 
+                function=remove_objective_aperture(super().atlas), 
                 aperture=Aperture.CONDENSER_2,
                 aperture_size=self.atlas_settings.atlas_c2_aperture
-            )
+            )(size,file)
         return super().atlas(size, file)
