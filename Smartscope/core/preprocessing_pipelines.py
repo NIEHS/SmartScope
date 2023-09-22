@@ -9,10 +9,10 @@ from Smartscope.lib.logger import add_log_handlers
 
 logger = logging.getLogger(__name__)
 
-from .pipelines import PreprocessingPipelineCmd, SmartscopePreprocessingPipeline
+from .pipelines import PreprocessingPipelineCmd, SmartscopePreprocessingPipeline, CryoSPARC
 
 
-PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline)
+PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline, cryoSPARC=CryoSPARC)
 
 def load_preprocessing_pipeline(file:Path):
     if file.exists():
