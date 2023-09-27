@@ -117,7 +117,7 @@ def create_group_directory(sender, instance, created, *args, **kwargs):
             ltwd = os.path.join(settings.AUTOSCREENSTORAGE, instance.name)
         for d in [wd, ltwd]:
             if d is not None and not os.path.isdir(d):
-                logger.ifno(f'Creating group dir at: ', d)
+                logger.info(f'Creating group dir at: ', d)
                 os.mkdir(d)
 
 @ receiver(pre_save, sender=ScreeningSession)

@@ -55,7 +55,7 @@ ADD ctffind /opt/
 # 	tar -xvf Smartscope0.6.tar.gz -C /opt/ && \
 # 	rm Smartscope0.6.tar.gz
 
-RUN	mkdir /opt/logs/ /mnt/fake_scope/ /mnt/fake_scope/raw/ /opt/shared/ /opt/config/ /mnt/testfiles
+RUN	mkdir /opt/logs/ /mnt/fake_scope/ /mnt/fake_scope/raw/ /mnt/fake_scope/movies/ /opt/shared/ /opt/config/ /mnt/testfiles
 # RUN pip install -e /opt/smartscope/ --no-dependencies && \
 # 	pip install -e /opt/smartscope/SerialEM-python --no-dependencies
 
@@ -63,7 +63,7 @@ RUN chmod 777 -R /mnt/ && \
 	chmod 777 -R /opt/logs/ && \
 	chmod 777 /opt/shared/ && \
 	chmod 777 /opt/config/ && \
-	chmod 777 /mnt/testfiles/
+	# chmod 777 /mnt/testfiles/
 
 USER smartscope_user
 

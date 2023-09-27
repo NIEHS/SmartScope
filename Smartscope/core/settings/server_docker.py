@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django_filters',
     'storages',
     'channels',
+    'corsheaders',
     'Smartscope.core.settings.apps.Frontend',
     'Smartscope.core.settings.apps.API',
 ]
@@ -70,9 +71,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'Smartscope.server.main.urls'
+
+CORS_ORIGIN_ALLOW_ALL = eval(os.getenv('CORS_ORIGIN_ALLOW_ALL', False))
 
 TEMPLATES = [
     {
