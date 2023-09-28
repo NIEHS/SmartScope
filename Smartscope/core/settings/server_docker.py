@@ -25,8 +25,8 @@ TEMPDIR = os.getenv('TEMPDIR')
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = eval(os.getenv('DEBUG'))
-DEPLOY = eval(os.getenv('DEPLOY'))
+DEBUG = eval(os.getenv('DEBUG', 'False'))
+DEPLOY = eval(os.getenv('DEPLOY', 'True'))
 
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
@@ -35,10 +35,10 @@ CSRF_TRUSTED_ORIGINS = [f'https://*.{host}' for host in ALLOWED_HOSTS]
 APP = os.getenv('APP')
 # Application definition
 # Storage locations
-USE_STORAGE = eval(os.getenv('USE_STORAGE'))
-USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
-USE_AWS = eval(os.getenv('USE_AWS'))
-USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
+USE_STORAGE = eval(os.getenv('USE_STORAGE', 'True'))
+USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE', 'False'))
+USE_AWS = eval(os.getenv('USE_AWS',  'False'))
+USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE', 'True'))
 
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
@@ -76,7 +76,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'Smartscope.server.main.urls'
 
-CORS_ORIGIN_ALLOW_ALL = eval(os.getenv('CORS_ORIGIN_ALLOW_ALL', False))
+CORS_ORIGIN_ALLOW_ALL = eval(os.getenv('CORS_ORIGIN_ALLOW_ALL', 'False'))
 
 TEMPLATES = [
     {

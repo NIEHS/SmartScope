@@ -31,7 +31,7 @@ case $argument in
         echo "Stopping smartscope"
         docker compose down ;;
     run)
-        cmd="docker exec smartscope smartscope.py ${@:2}"
+        cmd="docker compose exec smartscope smartscope.py ${@:2}"
         echo -e "Executing command inside the smartscope container:
     \e[3m$cmd\e[0m"
         exec $cmd;;
@@ -39,10 +39,10 @@ case $argument in
         helpText;;
     python)
         echo "Running a python shell inside the smartscope container"
-        docker exec -it smartscope manage.py shell -i ipython ;;
+        docker compose exec -it smartscope manage.py shell -i ipython ;;
     exec)
         echo "Executing shell command inside the smartscope container:"
-        docker exec -it smartscope ${@:2};;
+        docker compose exec -it smartscope ${@:2};;
     *)
         echo Unkown command error: $argument
         helpText
