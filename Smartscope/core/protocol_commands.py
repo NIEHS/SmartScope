@@ -9,6 +9,14 @@ def setAtlasOptics(scope,params,instance) -> None:
     """Set the microscope mag, spot size and C2 current for the atlas based on the chosen detector."""
     scope.set_atlas_optics()
 
+def setAtlasOpticsDelay(scope,params,instance) -> None:
+    """Same as setAtlasOptics with delays between each commands."""
+    scope.set_atlas_optics_delay(delay=1)
+
+def setAtlasOpticsImagingState(scope,params,instance):
+    """Sets the atlas optics from an Imaging State named "Atlas"."""
+    scope.set_atlas_optics_imaging_state(state_name='Atlas')
+
 def atlas(scope,params,instance) -> None:
     """Collects and atlas of X by Y tiles from the collection parameters using the Montage command"""
     scope.atlas(size=[params.atlas_x,params.atlas_y],file=instance.raw)
@@ -138,6 +146,8 @@ def setFocusPosition(scope,params,instance):
 
 protocolCommandsFactory = dict(
     setAtlasOptics=setAtlasOptics,
+    setAtlasOpticsDelay=setAtlasOpticsDelay,
+    setAtlasOpticsImagingState=setAtlasOpticsImagingState,
     atlas=atlas,
     realignToSquare=realignToSquare,
     square=square,

@@ -59,11 +59,36 @@ class SerialemInterface(MicroscopeInterface):
     
     def set_atlas_optics(self):
         logger.info('Setting atlas optics')
+        logger.debug('Deactivating low dose mode')
         sem.SetLowDoseMode(0)
+        logger.debug('Setting atlas mag')
         sem.SetMag(self.atlas_settings.mag)
+        logger.debug('Setting spot size')
         sem.SetSpotSize(self.atlas_settings.spotSize)
+        logger.debug('Setting C2 percent')
         sem.SetPercentC2(self.atlas_settings.c2)
+        logger.info('Done setting atlas optics')
+    
+    def set_atlas_optics_delay(self, delay:int=1):
+        logger.info(f'Setting atlas optics with a {delay} sec delay between each command.')
+        logger.debug('Deactivating low dose mode')
+        sem.SetLowDoseMode(0)
+        time.sleep(delay)
+        logger.debug('Setting atlas mag')
+        sem.SetMag(self.atlas_settings.mag)
+        time.sleep(delay)
+        logger.debug('Setting spot size')
+        sem.SetSpotSize(self.atlas_settings.spotSize)
+        time.sleep(delay)
+        logger.debug('Setting C2 percent')
+        sem.SetPercentC2(self.atlas_settings.c2)
+        time.sleep(delay)
+        logger.info('Done setting atlas optics')
 
+    def set_atlas_optics_imaging_state(self, state_name:str='Atlas'):
+        logger.info(f'Setting atlas optics from the {state_name} imaging state')
+        sem.GoToImagingState(state_name)
+        logger.info('Done setting atlas optics')
 
     def atlas(self, size, file=''):
         sem.TiltTo(0)

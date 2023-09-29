@@ -137,16 +137,18 @@ def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=
 
 def test_protocol_command(microscope_id,detector_id,command, instance=None, instance_type=None, params=None):
     from Smartscope.core.models import Microscope, Detector, SquareModel
-    import build_smartscope.SmartScope.Smartscope.core.interfaces.microscope as micModels
+    from Smartscope.core.interfaces.microscope_methods import select_microscope_interface
+    import Smartscope.core.interfaces.microscope as micModels
     from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
     if instance_type=='square':
         logger.info(f'Selected square {instance}')
         instance = SquareModel.objects.get(pk=instance)
     microscope = Microscope.objects.get(pk=microscope_id)
     detector = Detector.objects.get(pk=detector_id)
-    with TFSSerialemInterface(microscope = micModels.Microscope.from_orm(microscope),
-                              detector= micModels.Detector.from_orm(detector),
-                              atlasSettings= micModels.AtlasSettings.from_orm(detector)) as scope:
+    scopeInterface = select_microscope_interface(microscope)
+    with scopeInterface(microscope = micModels.Microscope.model_validate(microscope),
+                              detector= micModels.Detector.model_validate(detector),
+                              atlas_settings= micModels.AtlasSettings.model_validate(detector)) as scope:
         PROTOCOL_COMMANDS_FACTORY[command](scope,params,instance)
 
 
