@@ -9,9 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 from .interfaces.microscope import Microscope, Detector, AtlasSettings
-from .interfaces.fakescope_interface import FakeScopeInterface
-from .interfaces.jeolserialem_interface import JEOLSerialemInterface
-from .interfaces.tfsserialem_interface import TFSSerialemInterface
+from .interfaces.microscope_methods import select_microscope_interface
 from Smartscope.core.models import ScreeningSession, Process
 from Smartscope.core.status import status
 from .grid.grid_status import GridStatus
@@ -51,14 +49,7 @@ def autoscreen(session_id:str):
         logger.info(f'Process: {process}')
         logger.info(f'Session: {session}')
         logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
-        scopeInterface = TFSSerialemInterface
-        if microscope.serialem_IP == 'xxx.xxx.xxx.xxx':
-            logger.info('Setting scope into test mode')
-            scopeInterface = FakeScopeInterface
-
-        if session.microscope_id.vendor == 'JEOL':
-            logger.info('Using the JEOL interface')
-            scopeInterface = JEOLSerialemInterface
+        scopeInterface = select_microscope_interface(microscope)
 
         with scopeInterface(
                 microscope = Microscope.model_validate(session.microscope_id),

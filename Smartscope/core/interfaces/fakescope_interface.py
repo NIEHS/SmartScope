@@ -12,7 +12,16 @@ logger = logging.getLogger(__name__)
 class FakeScopeInterface(MicroscopeInterface):
 
     def set_atlas_optics(self):
-        pass
+        logger.info(f'Setting atlas optics')
+        logger.info('Done setting atlas optics')
+
+    def set_atlas_optics_delay(self, delay:int=1):
+        logger.info(f'Setting atlas optics with a {delay} sec delay between each command.')
+        logger.info('Done setting atlas optics')
+
+    def set_atlas_optics_imaging_state(self, state_name:str='Atlas'):
+        logger.info(f'Setting atlas optics from the {state_name} imaging state')
+        logger.info('Done setting atlas optics')
 
     def checkDewars(self, wait=30) -> None:
         pass

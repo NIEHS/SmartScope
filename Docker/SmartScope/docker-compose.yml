@@ -6,7 +6,6 @@ version: "3"
 services:
   smartscope:
     image: ghcr.io/niehs/smartscope:0.9.1
-    container_name: smartscope
     restart: always
     volumes:
       ######## FILL THIS ##########
@@ -32,7 +31,6 @@ services:
       - smartscopenet
   db:
     image: mariadb:10.5
-    container_name: smartscope-db
     restart: always
     env_file:
       - database.conf
@@ -51,8 +49,6 @@ services:
   nginx:
     image: nginx
     restart: always
-    ports:
-      - 48000:80
     volumes:
       - ./shared/nginx/:/opt/shared/:ro #Doesn't need to be changed
     networks:
