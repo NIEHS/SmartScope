@@ -161,6 +161,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def moveStage(self,stage_x,stage_y,stage_z):
         sem.SetImageShift(0, 0)
+        sem.Echo(f'Moving stage to {stage_x},{stage_y},{stage_z}.')
         sem.MoveStageTo(stage_x,stage_y,stage_z)
         self.state.setStage(stage_x,stage_y,stage_z)
     

@@ -158,4 +158,40 @@ def stop_session(sessionid):
     open(os.path.join(os.getenv('TEMPDIR'), f'{sessionid}.stop'), 'w').close()
 
 
+def download_testfiles(overwrite=False):
+    import subprocess as sub
+    import shlex
+    # archive_name = 'smartscope_testfiles.tar.gz'
+    archive_name = 'SmartScopeInstallation.tar.gz'
+    target_directory = '/mnt/testfiles/'
+    archive_download_location = Path(target_directory,archive_name)
+    print(archive_download_location)
+    if overwrite == 'overwrite':
+        print('Overwrite selected')
+        command = f"rm -rf {' '.join(map(lambda x: str(x), list(Path(target_directory).iterdir())))}"
+        print(command)
+        p = sub.Popen(command)
+        p.wait()
+    
+    is_directory_empty = any(Path(target_directory).iterdir())
+    if is_directory_empty:
+        print('It seems like the test files may already exist, use `download_testfiles overwrite` to force a full restart. Trying to see if process is complete')
+    commands = [ f'wget https://docs.smartscope.org/downloads/{archive_name} -P {target_directory}',
+                 f'tar -xvf {archive_download_location} --strip-components=1 -C {target_directory}', 
+                 f'rm {archive_download_location}']
+    if not archive_download_location.exists() and not is_directory_empty:
+        print('Downloading the archive.')
+        p = sub.Popen(shlex.split(commands[0]))
+        p.wait()
+    print(list(Path(target_directory).iterdir()))    
+    if archive_download_location in list(Path(target_directory).iterdir()):
+        print('Unpaking.')
+        p = sub.Popen(shlex.split(commands[1]))
+        p.wait()
+    if archive_download_location.exists():
+        print('Cleaning up.')
+        p = sub.Popen(shlex.split(commands[2]))
+        p.wait()
+    print('Done.')
+
 
