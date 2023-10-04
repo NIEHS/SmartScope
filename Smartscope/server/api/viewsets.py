@@ -113,7 +113,7 @@ class TargetRouteMixin:
 
     detailed_serializer = None
 
-    def get_detailed_serializer(self, serializer):
+    def get_detailed_serializer(self, serializer=None):
         if serializer is not None:
             return serializer
         if self.detailed_serializer is None:

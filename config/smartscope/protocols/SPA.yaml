@@ -10,7 +10,7 @@ atlas:
       - Size selector
 square:
   acquisition:
-    - moveStage
+    - moveStageWithAtlasToSearchOffset
     - realignToSquare
     - eucentricSearch
     - square
