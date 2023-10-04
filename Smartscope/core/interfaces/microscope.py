@@ -34,6 +34,8 @@ class AtlasSettings(BaseModel):
     maxY:int = Field(alias='atlas_max_tiles_Y')
     spotSize:int = Field(alias='spot_size')
     c2:float = Field(alias='c2_perc')
+    atlas_to_search_offset_x:float
+    atlas_to_search_offset_y:float
     atlas_c2_aperture: Optional[int] = None
 
     class Config:

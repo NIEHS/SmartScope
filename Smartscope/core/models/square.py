@@ -17,6 +17,14 @@ class SquareDisplayManager(models.Manager):
             .prefetch_related('selectors')\
             .prefetch_related('holemodel_set')
 
+class SquareLabelManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().\
+            prefetch_related('finders')\
+            .prefetch_related('classifiers')\
+            .prefetch_related('selectors')
+
 class SquareImageManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset()\
@@ -46,6 +54,7 @@ class SquareModel(Target, ExtraPropertyMixin):
     withholes = SquareImageManager()
     objects = ImageManager()
     display = SquareDisplayManager()
+    just_labels = SquareLabelManager()
     # aliases
 
     @property
