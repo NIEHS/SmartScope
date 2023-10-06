@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.conf import settings
 from rest_framework import response
-from Smartscope.core.db_manipulations import update, update_target_selection, update_target_label
+from Smartscope.core.db_manipulations import update, update_target_selection, update_target_label, update_target_status
 from Smartscope.core.models import *
 from .serializers import *
 from rest_framework import generics
@@ -73,6 +73,7 @@ class UpdateTargetsView(APIView):
                'squares': SquareModel}
     
     _KEYS = {'selected': update_target_selection,
+             'status': update_target_status,
                 'label': update_target_label}
 
     response = dict(success=False, error=None)

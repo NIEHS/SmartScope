@@ -1,0 +1,35 @@
+<div>
+    <a class="a btn btn-outline-secondary dropdown-toggle" href="#" id="displayDropdown" role="button"
+        data-bs-toggle="dropdown" aria-expanded="false"><i
+            class="bi bi-display"></i></a>
+
+    <div class="dropdown-menu">
+        <div class="div" id="quality">
+            <h6 class="dropdown-header">Classifiers</h6>
+
+            {% for classifier in targets_methods.classifiers %}
+            <button id='opt-classifiers'
+                class="dropdown-item {% if classifier.name == method %}active{% endif %}"
+                data-bs-toggle="tooltip" data-bs-placement="left" title="{{classifier.description}}"
+                onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %} false,'classifiers','{{classifier.name}}')">{{classifier.name}}</button>
+            {% endfor %}
+
+            <h6 class="dropdown-header">Selectors</h6>
+            {% for selector in targets_methods.selectors %}
+            <button id='opt-classifiers' data-bs-toggle="tooltip" data-bs-placement="left"
+                title="{{selector.description}}"
+                class="dropdown-item {% if selector.name == method %}active{% endif %}"
+                onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'selectors','{{selector.name}}')">{{selector.name}}</button>
+            {% endfor %}
+            {% if instance.targets_prefix == 'hole' %}
+            <h6 class="dropdown-header">Metadata</h6>
+            {% for metadata in targets_methods.metadata %}
+            <button id='opt-classifiers' data-bs-toggle="tooltip" data-bs-placement="left"
+                title="{{metadata.description}}"
+                class="dropdown-item {% if selector.name == method %}active{% endif %}"
+                onclick="{% if instance.targets_prefix == 'square' %}loadAtlas({% else %}loadSquare('{{instance.id}}',{% endif %}false,'metadata','{{metadata.name}}')">{{metadata.name}}</button>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>

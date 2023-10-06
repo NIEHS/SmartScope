@@ -23,28 +23,36 @@ logger = logging.getLogger(__name__)
 @receiver(pre_save, sender=SquareModel)
 @receiver(pre_save, sender=HoleModel)
 def pre_update(sender, instance, **kwargs):
-    if not instance._state.adding:
-        original = sender.objects.get(pk=instance.pk)
-        for new, old in zip(get_fields(instance), get_fields(original)):
-            if new == old:
-                return instance
-            col, new_val = new
-            old_val = old[1]
-            if col == 'selected':
-                change = ChangeLog(date=timezone.now(), table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
-                                    column_name=col, initial_value=old_val.encode(), new_value=new_val.encode())
-                change.save()
-            elif col == 'quality':
-                items = ChangeLog.objects.filter(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
-                                                    column_name=col)
-                logger.debug([item.__dict__ for item in items])
-                change, created = ChangeLog.objects.get_or_create(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
-                                                                    column_name=col)
-                change.date = timezone.now()
-                change.new_value = new_val.encode()
-                if created:
-                    change.initial_value = old_val.encode()
-                change.save()
+    if instance._state.adding:
+        return instance
+    original = sender.objects.get(pk=instance.pk)
+    for new, old in zip(get_fields(instance), get_fields(original)):
+        if new == old:
+            continue
+        col, new_val = new
+        old_val = old[1]
+        if col == 'selected':
+            change = ChangeLog(date=timezone.now(), table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
+                                column_name=col, initial_value=old_val.encode(), new_value=new_val.encode())
+            change.save()
+            continue
+        if col == 'quality':
+            items = ChangeLog.objects.filter(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
+                                                column_name=col)
+            logger.debug([item.__dict__ for item in items])
+            change, created = ChangeLog.objects.get_or_create(table_name=instance._meta.db_table, grid_id=instance.grid_id, line_id=instance.pk,
+                                                                column_name=col)
+            change.date = timezone.now()
+            change.new_value = new_val.encode()
+            if created:
+                change.initial_value = old_val.encode()
+            change.save()
+            continue
+        if col == 'status':
+            if old_val == status.SKIPPED and new_val != status.QUEUED:
+                instance.status = status.SKIPPED
+                logger.debug(f'Changing status of {instance} from to {status.SKIPPED}')   
+            continue
     return instance
 
 

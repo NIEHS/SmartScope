@@ -1,0 +1,31 @@
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle disabled" href="#" id="{{instance.targets_prefix}}SeleMenuBtn"
+        role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+        onclick="optionMenu({{instance.targets_prefix}}Selection, '{{instance.targets_prefix}}s')">
+        Actions</a>
+    <div class="dropdown-menu">
+        {% if display_type == 'classifiers' %}
+        <div class="div" id="quality">
+            <h6 class="dropdown-header">Edit quality</h6>
+            {% for methods in targets_methods.classifiers %}
+            {% if methods.name == method %}
+            {% for key,class in methods.classes.items %}
+            <button id='' class="dropdown-item"
+                onclick="updateTargets('{{instance.targets_prefix}}s', false, '{{method}}', 'label', '{{key}}')">{{class.name}}</button>
+            {% endfor %}
+            {% endif %}
+            {% endfor %}
+        </div>
+        <div class="dropdown-divider"></div>
+        {% endif %}
+        <div class="div" id="{{instance.targets_prefix}}Queue">
+
+            <h6 class="dropdown-header">Change Status</h6>
+            <button id='opt-queued-{{instance.targets_prefix}}' class="dropdown-item" value=1
+                onclick="updateTargets('{{instance.targets_prefix}}s', false, false, 'selected', this.value)">Queue</button>
+            <button id='opt-skip-{{instance.targets_prefix}}' class="dropdown-item" value=skipped
+                onclick="updateTargets('{{instance.targets_prefix}}s', false, false, 'status', this.value)">Skip</button>
+        </div>
+
+    </div>
+</li>
