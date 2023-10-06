@@ -86,6 +86,13 @@ def update_target_label(model:models.Model,objects_ids:List[str],value:str,metho
         for obj in new_objs:
             Classifier(object_id=obj, method_name=method,content_type=content_type, label=value).save()
 
+def update_target_status(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
+    objs = list(model.objects.filter(pk__in=objects_ids))
+    with transaction.atomic():
+        for obj in objs:
+            obj.status = value
+            obj.save()
+
 
 def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
     from .models.target_label import Finder

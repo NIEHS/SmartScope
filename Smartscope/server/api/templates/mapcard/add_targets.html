@@ -1,0 +1,27 @@
+{% if instance.targets_prefix == 'hole' %}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-bs-toggle="dropdown"
+        aria-haspopup="true" aria-expanded="false">All Holes</a>
+    <div id='' class="dropdown-menu">
+        <button class="dropdown-item" onclick='queueSquareTargets(this)' value='addall'>Queue
+            all holes</button>
+        <button class="dropdown-item" onclick='queueSquareTargets(this)' value='cancelall'>Cancel all
+            holes</button>
+        <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS('{{instance.pk}}')"
+            value=''>Regroup
+            BIS</button>
+    </div>
+</li>
+<li class="nav-item dropdown" data-bs-toggle="tooltip" title="Hold Shift+click to start adding new targets on the image">
+    <a class="nav-link dropdown-toggle disabled" href="#" id="addTargetsBtn" role="button"
+        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">New targets</a>
+    <div class="dropdown-menu">
+        <button id='addTargets' class="dropdown-item" onclick="addTargets(this, targetsSelection)"
+            value='addTargets'>Add
+            Targets</button>
+        <button id='clearTargets' class="dropdown-item"
+            onclick="clearSelection(targetsSelection,'targets')" value='addTargets'>Clear
+            Targets</button>
+    </div>
+</li>
+{% endif %}

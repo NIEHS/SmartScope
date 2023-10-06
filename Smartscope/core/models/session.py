@@ -34,6 +34,7 @@ from .microscope import *
 from .screening_session import *
 from .square import *
 from .target import *
+from .change_log import *
 
 
 '''
