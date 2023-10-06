@@ -118,6 +118,9 @@ $('#main').on('click', '.showLegend', function () {
 
 
 function selectElement(elem, selection) {
+    if (elem.getAttribute('label') == 'Out of range') {
+        return
+    }
     if (selection.includes(elem.id)) {
         console.log('Unselecting')
         elem.classList.remove('clicked')

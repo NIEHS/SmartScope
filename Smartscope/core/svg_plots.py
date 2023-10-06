@@ -91,6 +91,9 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
         if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
+            if not finder.is_position_within_stage_limits():
+                color = '#505050'
+                label = 'Out of range'
             x = finder.x - sz // 2
             y = (finder.y - sz // 2)
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
@@ -131,6 +134,9 @@ def drawSquare(square, targets, display_type, method) -> draw.Drawing:
         color, label, prefix = css_color(i, display_type, method)
         if color is not None:
             finder = list(i.finders.all())[0]
+            if not finder.is_position_within_stage_limits():
+                color = '#505050'
+                label = 'Out of range'
             x = finder.x
             y = finder.y
             c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,

@@ -54,7 +54,7 @@ class RunSquare:
             if is_bis:
                 holes = list(HoleModel.display.filter(square_id=square.square_id))
                 holes = group_holes_for_BIS(
-                    [h for h in holes if h.is_good() and not h.is_excluded()[0]],
+                    [h for h in holes if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range()],
                     max_radius=grid.params_id.bis_max_distance,
                     min_group_size=grid.params_id.min_bis_group_size
                 )
