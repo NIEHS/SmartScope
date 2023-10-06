@@ -131,7 +131,8 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
         f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes
     prefetch_related_objects(hole_models, 'finders')
-    coords = np.array([[list(h.finders.all())[0].stage_x, list(h.finders.all())[0].stage_y] for h in hole_models])
+    coords = []
+    coords = np.array([h.stage_coords for h in hole_models])
     input_number = len(hole_models)
     # Generate distance matrix
     cd = cdist(coords, coords)
@@ -282,7 +283,7 @@ def add_high_mag(grid, parent):
 
 def select_n_squares(parent, n):
     squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
-    squares = [s for s in squares if s.is_good()]
+    squares = [s for s in squares if s.is_good() and not s.is_out_of_range()]
     if len(squares) == 0:
         return
     split_squares = np.array_split(squares, n)
@@ -302,7 +303,7 @@ def select_n_holes(parent, n, is_bis=False):
     holes = list(parent.holemodel_set.filter(
         **filter_fields).order_by('dist_from_center'))
 
-    holes = [h for h in holes if h.is_good()]
+    holes = [h for h in holes if h.is_good() and not h.is_out_of_range()]
 
     if n <= 0:
         with transaction.atomic():
@@ -340,13 +341,13 @@ def select_n_areas(parent, n, is_bis=False):
     if n <= 0:
         with transaction.atomic():
             for t in targets:
-                if t.is_good() and not t.is_excluded()[0]:
+                if t.is_good() and not t.is_excluded()[0] and not t.is_out_of_range():
                     update(t, selected=True, status='queued')
         return
 
     clusters = dict()
     for t in targets:
-        if not t.is_good():
+        if not t.is_good() or t.is_out_of_range():
             continue
         excluded, label = t.is_excluded()
         if excluded:

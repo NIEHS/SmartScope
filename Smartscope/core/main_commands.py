@@ -122,13 +122,8 @@ def regroup_bis(grid_id, square_id):
     holes_for_grouping = []
     other_holes = []
     for h in filtered_holes:
-
-        # h.bis_group = None
-        # h.bis_type = None
-        if h.is_good() and not h.is_excluded()[0]:
+        if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
             holes_for_grouping.append(h)
-        # else:
-        #     other_holes.append(h)
 
     logger.info(f'Filtered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 

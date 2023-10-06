@@ -82,6 +82,8 @@ class Target(BaseModel):
                 return False
         return True
 
+    def is_out_of_range(self) -> bool:
+        return not self.finders.first().is_position_within_stage_limits()
     # def css_color(self, display_type, method):
 
     #     if method is None:
