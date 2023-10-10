@@ -23,9 +23,17 @@
             <div class="p-0">
                 <span class=''><b> Status:</b> <span id="gridStatus">loading...</span>
                     <button id="stop-button" class="btn btn-xs btn-outline-danger" type="button" value="aborting"
-                        onclick="changeGridStatus(this.value)">Stop</button>
-                    {% if request.user.is_staff %}<button id="restart-button" class="btn btn-xs btn-outline-primary"
-                        type="button" value="started" onclick="changeGridStatus(this.value)">Restart</button>{% endif %}
+                        onclick="changeGridStatus(this.value)" 
+                        data-bs-toggle="tooltip" data-bs-placement="bottom" title="Abort current grid. This will skip all remaining targets and move to the next sample.">
+                        Abort
+                    </button>
+                    {% if request.user.is_staff %}
+                    <button id="restart-button" class="btn btn-xs btn-outline-primary"
+                        type="button" value="started" onclick="changeGridStatus(this.value)" 
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Sets the status from 'completed' back to 'started'. Useful to resume a finished grid and add new targets to the queue.">
+                        Restart
+                    </button>
+                    {% endif %}
                 </span>
             </div>
         </div>
