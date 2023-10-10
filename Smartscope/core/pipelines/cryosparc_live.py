@@ -18,7 +18,10 @@ from django.db import transaction
 from .preprocessing_pipeline import PreprocessingPipeline
 from .smartscope_preprocessing_pipeline_form import SmartScopePreprocessingPipelineForm
 from .smartscope_preprocessing_cmd_kwargs import SmartScopePreprocessingCmdKwargs
-from pydantic import BaseModel
+
+from typing import Union
+from pathlib import Path
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
