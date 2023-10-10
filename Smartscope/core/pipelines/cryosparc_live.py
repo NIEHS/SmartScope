@@ -29,7 +29,7 @@ from django import forms
 from cryosparc.tools import CryoSPARC
 
 class CryoSPARCPipelineForm(forms.Form):
-    cs_address = forms.URLField(label='CryoSPARC URL:',help_text='Web address of CryoSPARC installation (must be accessible from the SmartScope computer).')
+    cs_address = forms.CharField(label='CryoSPARC URL:',help_text='Web address of CryoSPARC installation (must be accessible from the SmartScope computer).')
     cs_port = forms.IntegerField(label='CryoSPARC Port:',help_text='Port of CryoSPARC installation. Defaults to 39000 if not set')
     cs_license = forms.CharField(label='CryoSPARC License Key',help_text='CryoSPARC License Key')
     cs_email = forms.CharField(label='CryoSPARC User Email',help_text='CryoSPARC User Email Address')
