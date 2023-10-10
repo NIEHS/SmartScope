@@ -28,6 +28,8 @@ class CryoSPARCPipelineForm(forms.Form):
     cs_address = forms.URLField(label='CryoSPARC URL:',help_text='Web address of CryoSPARC installation (must be accessible from the SmartScope computer).')
     cs_port = forms.IntegerField(label='CryoSPARC Port:',help_text='Port of CryoSPARC installation. Defaults to 39000 if not set')
     cs_license = forms.CharField(label='CryoSPARC License Key',help_text='CryoSPARC License Key')
+    cs_email = forms.CharField(label='CryoSPARC User Email',help_text='CryoSPARC User Email Address')
+    cs_password = forms.CharField(label='CryoSPARC User Password',help_text='CryoSPARC User Password')
     cs_project = forms.IntegerField(label='CryoSPARC Project # P',
         help_text='Enter the project number of the CryoSPARC project you would like to spawn the Live sessions in. Omit the P at the beginning'
         ) 
@@ -47,6 +49,8 @@ class CryoSPARCCmdKwargs(BaseModel):
     cs_address:str = ""
     cs_port:int = 39000
     cs_license:str = ""
+    cs_email:str = ""
+    cs_password:str = ""
     cs_project:int = 9999
     cs_worker_processes:int = 1
     cs_preprocessing_lane:str = ""
@@ -84,6 +88,8 @@ class CryoSPARC(PreprocessingPipeline):
 
     def start(self): #Abstract Class Function - Required
         session = self.grid.session_id
+        cs_instance = CryoSPARC(license=cs_license, host=cs_address, base_port=cs_port, email=cs_email, password=cs_password)
+        assert cs.test_connection()
 
     def stop(self):  #Abstract Class Function - Required
         pass
