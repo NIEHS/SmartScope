@@ -96,8 +96,9 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.password = self.cmd_data.cs_password
 
     def start(self): #Abstract Class Function - Required
-        logger.debug(f'{self.license}')
-        cs_instance = CryoSPARC(license=self.license)
+        cs_instance = CryoSPARC(license=self.license,host=self.host,base_port=self.base_port,email=self.email,password=self.password)
+        csparc_debug = str(cs_instance.test_connection())
+        logger.debug(f'{csparc_debug}')
 
     def stop(self):  #Abstract Class Function - Required
         pass
