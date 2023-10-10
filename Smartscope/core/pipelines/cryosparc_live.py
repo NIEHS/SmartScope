@@ -42,6 +42,23 @@ class CryoSPARCPipelineForm(forms.Form):
             visible.field.required = False
 
 
+#class CryoSPARCCmdKwargs(BaseModel):
+#    cs_address:str = ""
+#    cs_port:int = 39000
+#    cs_license:str = ""
+#    cs_project:int = 9999
+#    cs_worker_processes:int = 1
+#    cs_preprocessing_lane:str = ""
+#    frames_directory:Union[Path,None] = None
+
+    @validator('frames_directory')
+    def is_frame_directory_empty(cls,v):
+        logger.debug(f'{v}, {type(v)}')
+        if v == '' or v == Path('.'):
+            return None
+        return v
+
+
 class CryoSPARC(PreprocessingPipeline):
     verbose_name = 'CryoSPARC Live Pre-Processing Pipeline'
     name = 'cryoSPARC'
@@ -65,7 +82,7 @@ class CryoSPARC(PreprocessingPipeline):
             self.frames_directory.append(self.cmd_data.frames_directory)
 
     def start(self): #Abstract Class Function - Required
-        pass
+        session = self.grid.session_id
 
     def stop(self):  #Abstract Class Function - Required
         pass
