@@ -96,13 +96,19 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.password = self.cmd_data.cs_password
 
     def start(self): #Abstract Class Function - Required
+        #Setup connection to CryoSPARC Instance
         cs_instance = CryoSPARC(license=self.license,host=self.host,base_port=self.base_port,email=self.email,password=self.password)
+
         csparc_debug = str(cs_instance.test_connection())
-        logger.debug(f'{csparc_debug}')
+        logger.debug(f'CryoSPARC Connection Test: {csparc_debug}')
+
+        # Here should go some logic to see if a session exists in the given project for this grid, and if not, initialize the session and workers. If it does exist, just restart the workers I guess?
 
     def stop(self):  #Abstract Class Function - Required
+        #Turn off live session
         pass
 
     def check_for_update(self, instance):  #Abstract Class Function - Required
+        #Here should probably go some logic that will get the hole and image, check CryoSPARC for existing thumbnail and data, and update the object
         pass
 
