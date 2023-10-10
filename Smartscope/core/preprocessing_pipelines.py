@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 from .pipelines import PreprocessingPipelineCmd, SmartscopePreprocessingPipeline, CryoSPARC
 
 
-PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline, cryoSPARC=CryoSPARC)
+PREPROCESSING_PIPELINE_FACTORY = dict(smartscopePipeline=SmartscopePreprocessingPipeline, cryoSPARC=CryoSPARCPipeline)
 
 def load_preprocessing_pipeline(file:Path):
     if file.exists():

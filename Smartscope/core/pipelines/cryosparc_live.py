@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field, validator
 logger = logging.getLogger(__name__)
 
 from django import forms
+from cryosparc.tools import CryoSPARC
 
 class CryoSPARCPipelineForm(forms.Form):
     cs_address = forms.URLField(label='CryoSPARC URL:',help_text='Web address of CryoSPARC installation (must be accessible from the SmartScope computer).')
@@ -67,7 +68,7 @@ class CryoSPARCCmdKwargs(BaseModel):
         return v
 
 
-class CryoSPARC(PreprocessingPipeline):
+class CryoSPARCPipeline(PreprocessingPipeline):
     verbose_name = 'CryoSPARC Live Pre-Processing Pipeline'
     name = 'cryoSPARC'
     description = 'Spawn CryoSPARC Live sessions at each grid. Requires a functional CryoSPARC installation.'
@@ -96,6 +97,8 @@ class CryoSPARC(PreprocessingPipeline):
 
     def start(self): #Abstract Class Function - Required
         logger.debug(f'{self.license}')
+        cs_instance = CryoSPARC(license=self.license)
+
     def stop(self):  #Abstract Class Function - Required
         pass
 
