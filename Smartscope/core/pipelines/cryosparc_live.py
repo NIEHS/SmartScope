@@ -95,7 +95,7 @@ class CryoSPARC(PreprocessingPipeline):
         self.password = self.cmd_data.cs_password
 
     def start(self): #Abstract Class Function - Required
-        print(self.license)
+        logger.debug(f'{self.license}')
     def stop(self):  #Abstract Class Function - Required
         pass
 
