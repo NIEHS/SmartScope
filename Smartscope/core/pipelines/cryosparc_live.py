@@ -91,8 +91,8 @@ class CryoSPARC(PreprocessingPipeline):
 
     def start(self): #Abstract Class Function - Required
         session = self.grid.session_id
-        cs_instance = CryoSPARC(license=cs_license, host=cs_address, base_port=cs_port, email=cs_email, password=cs_password)
-        assert cs.test_connection()
+        cs_instance = CryoSPARC(license=self.cmd_data.cs_license, host=self.cmd_data.cs_address, base_port=self.cmd_data.cs_port, email=self.cmd_data.cs_email, password=self.cmd_data.cs_password)
+        assert cs_instance.test_connection()
 
     def stop(self):  #Abstract Class Function - Required
         pass
