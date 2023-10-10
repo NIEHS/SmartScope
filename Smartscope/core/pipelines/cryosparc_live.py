@@ -88,11 +88,11 @@ class CryoSPARC(PreprocessingPipeline):
         self.frames_directory = [Path(self.detector.frames_directory)]
         if self.cmd_data.frames_directory is not None:
             self.frames_directory.append(self.cmd_data.frames_directory)
-        self.cs_license = self.cmd_data.cs_license
-        self.cs_address = self.cmd_data.cs_address
-        self.cs_port = self.cmd_data.cs_port
-        self.cs_email = self.cmd_data.cs_email
-        self.cs_password = self.cmd_data.cs_password
+        self.license = self.cmd_data.cs_license
+        self.host = self.cmd_data.cs_address
+        self.base_port = self.cmd_data.cs_port
+        self.email = self.cmd_data.cs_email
+        self.password = self.cmd_data.cs_password
 
     def start(self): #Abstract Class Function - Required
 
