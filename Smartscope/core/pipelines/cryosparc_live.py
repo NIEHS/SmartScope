@@ -18,6 +18,7 @@ from django.db import transaction
 from .preprocessing_pipeline import PreprocessingPipeline
 from .smartscope_preprocessing_pipeline_form import SmartScopePreprocessingPipelineForm
 from .smartscope_preprocessing_cmd_kwargs import SmartScopePreprocessingCmdKwargs
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,14 @@ class CryoSPARCPipelineForm(forms.Form):
             visible.field.required = False
 
 
-#class CryoSPARCCmdKwargs(BaseModel):
-#    cs_address:str = ""
-#    cs_port:int = 39000
-#    cs_license:str = ""
-#    cs_project:int = 9999
-#    cs_worker_processes:int = 1
-#    cs_preprocessing_lane:str = ""
-#    frames_directory:Union[Path,None] = None
+class CryoSPARCCmdKwargs(BaseModel):
+    cs_address:str = ""
+    cs_port:int = 39000
+    cs_license:str = ""
+    cs_project:int = 9999
+    cs_worker_processes:int = 1
+    cs_preprocessing_lane:str = ""
+    frames_directory:Union[Path,None] = None
 
     @validator('frames_directory')
     def is_frame_directory_empty(cls,v):
@@ -68,7 +69,7 @@ class CryoSPARC(PreprocessingPipeline):
     child_process = []
     to_update = []
     incomplete_processes = []
-    cmdkwargs_handler = SmartScopePreprocessingCmdKwargs
+    cmdkwargs_handler = CryoSPARCCmdKwargs
     pipeline_form= CryoSPARCPipelineForm
 
     def __init__(self, grid: AutoloaderGrid, cmd_data:Dict):
