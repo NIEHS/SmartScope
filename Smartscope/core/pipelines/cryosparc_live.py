@@ -34,13 +34,13 @@ class CryoSPARCPipelineForm(forms.Form):
     cs_license = forms.CharField(label='CryoSPARC License Key',help_text='CryoSPARC License Key')
     cs_email = forms.CharField(label='CryoSPARC User Email',help_text='CryoSPARC User Email Address')
     cs_password = forms.CharField(label='CryoSPARC User Password',help_text='CryoSPARC User Password')
-    cs_project = forms.IntegerField(label='CryoSPARC Project # P',
-        help_text='Enter the project number of the CryoSPARC project you would like to spawn the Live sessions in. Omit the P at the beginning'
-        ) 
+    cs_project = forms.IntegerField(label='CryoSPARC Project # P',help_text='Enter the project number of the CryoSPARC project you would like to spawn the Live sessions in. Omit the P at the beginning')
     cs_worker_processes=forms.IntegerField(label='# of pre-processing workers:',help_text='Number of worker processes to spawn')
     cs_preprocessing_lane = forms.CharField(label='Name of pre-processing lane:',help_text='Name of lane to use for CryoSPARC Live preprocessing lane')
-    frames_directory = forms.CharField(help_text='Locations to look for the frames file other. '+ \
-        'Will look in the default smartscope/movies location by default.')
+    frames_directory = forms.CharField(help_text='Absolute path for frame directory relative to CryoSPARC Master instance')
+    cs_dose=forms.FloatField(label='Dose',help_text='Total dose in e/A2')
+    cs_apix=forms.FloatField(label='Pixel Size',help_text='Angstroms per pixel')
+
 
     def __init__(self, *args,**kwargs):
         super().__init__(*args, **kwargs)
@@ -58,14 +58,9 @@ class CryoSPARCCmdKwargs(BaseModel):
     cs_project:int = 9999
     cs_worker_processes:int = 1
     cs_preprocessing_lane:str = ""
-    frames_directory:Union[Path,None] = None
-
-    @validator('frames_directory')
-    def is_frame_directory_empty(cls,v):
-        logger.debug(f'{v}, {type(v)}')
-        if v == '' or v == Path('.'):
-            return None
-        return v
+    frames_directory:str = ""
+    cs_dose:float = 50.0
+    cs_apix:float = 1.0
 
 
 class CryoSPARCPipeline(PreprocessingPipeline):
@@ -86,28 +81,50 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.detector = self.grid.session_id.detector_id
         self.cmd_data = self.cmdkwargs_handler.parse_obj(cmd_data)
         logger.debug(self.cmd_data)
-        self.frames_directory = [Path(self.detector.frames_directory)]
-        if self.cmd_data.frames_directory is not None:
-            self.frames_directory.append(self.cmd_data.frames_directory)
+
         self.license = self.cmd_data.cs_license
         self.host = self.cmd_data.cs_address
         self.base_port = self.cmd_data.cs_port
         self.email = self.cmd_data.cs_email
         self.password = self.cmd_data.cs_password
         self.project = 'P' + str(self.cmd_data.cs_project)
+        self.frames_directory = self.cmd_data.frames_directory
+        self.dose = self.cmd_data.cs_dose
+        self.apix = self.cmd_data.cs_apix
 
     def start(self): #Abstract Class Function - Required
+
         #Setup connection to CryoSPARC Instance
         cs_instance = CryoSPARC(license=self.license,host=self.host,base_port=self.base_port,email=self.email,password=self.password)
-
         csparc_debug = str(cs_instance.test_connection())
         logger.debug(f'CryoSPARC Connection Test: {csparc_debug}')
 
-        # Here should go some logic to see if a session exists in the given project for this grid, and if not, initialize the session and workers. If it does exist, just restart the workers I guess?
-        session = self.grid.session_id
+        #Need to check here if session already exists. If so, skip creation, if not, create.
 
-        cs_uid = cs_instance.cli.get_id_by_email(self.email)
-        cs_instance.rtp.create_new_live_workspace(project_uid=str(self.project), created_by_user_id=cs_uid, title="test")
+        #Create new CryoSPARC Live session
+        cs_session = cs_instance.rtp.create_new_live_workspace(project_uid=str(self.project), created_by_user_id=str(cs_instance.cli.get_id_by_email(self.email)), title=str(self.grid.session_id))
+
+        #Setup exposure group
+        cs_instance.rtp.exposure_group_update_value(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1, name='file_engine_watch_path_abs', value=str(self.frames_directory)
+        cs_instance.rtp.exposure_group_update_value(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1, name='file_engine_filter', value=".tif")
+        cs_instance.rtp.exposure_group_finalize_and_enable(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1)
+
+        #Motion Correction Settings
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='mscope_params', param_name='accel_kv', value=float(self.microscope.voltage))
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='mscope_params', param_name='cs_mm', value=float(self.microscope.spherical_abberation))
+
+        ##Need to check for if files have been written here, and get values from .mdoc file.
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='mscope_params', param_name='total_dose_e_per_A2', value=float(self.dose))
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='mscope_params', param_name='psize_A', value=float(self.apix))
+        ##Also need gain controls here (Flip/rotate)
+
+        #Extraction Settings
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='blob_pick', param_name='diameter', value=100)
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='blob_pick', param_name='diameter_max', value=200)
+        cs_instance.rtp.set_param(project_uid=str(self.project), session_uid=cs_session, param_sec='extraction', param_name='box_size_pix', value=440)
+
+        #Start the session
+        cs_instance.rtp.start_session(project_uid=str(self.project), session_uid=cs_session, user_id=cs_instance.cli.get_id_by_email(self.email))
 
     def stop(self):  #Abstract Class Function - Required
         #Turn off live session
@@ -116,4 +133,3 @@ class CryoSPARCPipeline(PreprocessingPipeline):
     def check_for_update(self, instance):  #Abstract Class Function - Required
         #Here should probably go some logic that will get the hole and image, check CryoSPARC for existing thumbnail and data, and update the object
         pass
-
