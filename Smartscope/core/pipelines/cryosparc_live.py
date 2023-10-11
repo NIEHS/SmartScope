@@ -93,7 +93,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.apix = self.cmd_data.cs_apix
         self.lane = self.cmd_data.cs_lanes
 
-        cs_session = ""
+        self.cs_session = ""
 
     def start(self): #Abstract Class Function - Required
 
