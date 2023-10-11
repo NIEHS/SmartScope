@@ -29,6 +29,8 @@ from django import forms
 from cryosparc.tools import CryoSPARC
 
 class CryoSPARCPipelineForm(forms.Form):
+    cmdkwargs_handler = CryoSPARCCmdKwargs
+
     cs_address = forms.CharField(label='CryoSPARC URL:',help_text='Web address of CryoSPARC installation (must be accessible from the SmartScope computer).')
     cs_port = forms.IntegerField(label='CryoSPARC Port:',help_text='Port of CryoSPARC installation. Defaults to 39000 if not set')
     cs_license = forms.CharField(label='CryoSPARC License Key',help_text='CryoSPARC License Key')
@@ -40,14 +42,13 @@ class CryoSPARCPipelineForm(forms.Form):
     frames_directory = forms.CharField(help_text='Absolute path for frame directory relative to CryoSPARC Master instance')
     cs_dose=forms.FloatField(label='Dose',help_text='Total dose in e/A2')
     cs_apix=forms.FloatField(label='Pixel Size',help_text='Angstroms per pixel')
-
+    cs_lanes=forms.CharField(label='Worker Lane',help_text='Name of CryoSPARC Live Worker Lane')
 
     def __init__(self, *args,**kwargs):
         super().__init__(*args, **kwargs)
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.required = False
-
 
 class CryoSPARCCmdKwargs(BaseModel):
     cs_address:str = ""
@@ -61,6 +62,7 @@ class CryoSPARCCmdKwargs(BaseModel):
     frames_directory:str = ""
     cs_dose:float = 50.0
     cs_apix:float = 1.0
+    cs_lanes:str = ""
 
 
 class CryoSPARCPipeline(PreprocessingPipeline):
@@ -91,6 +93,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.frames_directory = self.cmd_data.frames_directory
         self.dose = self.cmd_data.cs_dose
         self.apix = self.cmd_data.cs_apix
+        self.lane = self.cs_lanes
 
     def start(self): #Abstract Class Function - Required
 
@@ -103,6 +106,12 @@ class CryoSPARCPipeline(PreprocessingPipeline):
 
         #Create new CryoSPARC Live session
         cs_session = cs_instance.rtp.create_new_live_workspace(project_uid=str(self.project), created_by_user_id=str(cs_instance.cli.get_id_by_email(self.email)), title=str(self.grid.session_id))
+
+        #Setup lanes
+        cs_instance.rtp.update_compute_configuration(project_uid=str(self.project), session_uid=cs_session, key='phase_one_lane', value=str(self.lane))
+        cs_instance.rtp.update_compute_configuration(project_uid=str(self.project), session_uid=cs_session, key='phase_one_gpus', value=2)
+        cs_instance.rtp.update_compute_configuration(project_uid=str(self.project), session_uid=cs_session, key='phase_two_lane', value=str(self.lane))
+        cs_instance.rtp.update_compute_configuration(project_uid=str(self.project), session_uid=cs_session, key='auxiliary_lane', value=str(self.lane))
 
         #Setup exposure group
         cs_instance.rtp.exposure_group_update_value(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1, name='file_engine_watch_path_abs', value=str(self.frames_directory))
