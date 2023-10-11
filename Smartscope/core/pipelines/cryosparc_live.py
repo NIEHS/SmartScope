@@ -137,6 +137,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
 
     def stop(self):  #Abstract Class Function - Required
         #Turn off live session
+        cs_instance = CryoSPARC(license=self.license,host=self.host,base_port=self.base_port,email=self.email,password=self.password)
         cs_instance.rtp.pause_session(project_uid=str(self.project), session_uid=cs_session)
 
     def check_for_update(self, instance):  #Abstract Class Function - Required
