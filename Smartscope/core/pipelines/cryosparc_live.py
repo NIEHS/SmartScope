@@ -91,7 +91,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.frames_directory = self.cmd_data.frames_directory
         self.dose = self.cmd_data.cs_dose
         self.apix = self.cmd_data.cs_apix
-        self.lane = self.cs_lanes
+        self.lane = self.cmd_data.cs_lanes
 
     def start(self): #Abstract Class Function - Required
 
