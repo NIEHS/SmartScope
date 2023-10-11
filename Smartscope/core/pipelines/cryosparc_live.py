@@ -94,6 +94,8 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.base_port = self.cmd_data.cs_port
         self.email = self.cmd_data.cs_email
         self.password = self.cmd_data.cs_password
+        self.project = 'P' + str(self.cmd_data.cs_project)
+
     def start(self): #Abstract Class Function - Required
         #Setup connection to CryoSPARC Instance
         cs_instance = CryoSPARC(license=self.license,host=self.host,base_port=self.base_port,email=self.email,password=self.password)
@@ -104,9 +106,8 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         # Here should go some logic to see if a session exists in the given project for this grid, and if not, initialize the session and workers. If it does exist, just restart the workers I guess?
         session = self.grid.session_id
 
-        project = cs_instance.find_project(self.cs_project)
-        cs_uid = cs_instance.cli.get_id_by_email(self.cs_email)
-        cs_instance.rtp.create_new_live_workspace(project_uid=self.cs_project, created_by_user=cs_uid, title=session)
+        cs_uid = cs_instance.cli.get_id_by_email(self.email)
+        cs_instance.rtp.create_new_live_workspace(project_uid=str(self.project), created_by_user_id=cs_uid, title="test")
 
     def stop(self):  #Abstract Class Function - Required
         #Turn off live session
