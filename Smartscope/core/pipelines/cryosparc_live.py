@@ -106,7 +106,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
 
         #Setup exposure group
         cs_instance.rtp.exposure_group_update_value(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1, name='file_engine_watch_path_abs', value=str(self.frames_directory)
-        cs_instance.rtp.exposure_group_update_value(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1, name='file_engine_filter', value=".tif")
+        cs_instance.rtp.exposure_group_update_value(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1, name='file_engine_filter', value='.tif')
         cs_instance.rtp.exposure_group_finalize_and_enable(project_uid=str(self.project), session_uid=cs_session, exp_group_id=1)
 
         #Motion Correction Settings
