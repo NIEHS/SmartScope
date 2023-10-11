@@ -93,6 +93,8 @@ class CryoSPARCPipeline(PreprocessingPipeline):
         self.apix = self.cmd_data.cs_apix
         self.lane = self.cmd_data.cs_lanes
 
+        cs_session = ""
+
     def start(self): #Abstract Class Function - Required
 
         #Setup connection to CryoSPARC Instance
@@ -135,7 +137,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
 
     def stop(self):  #Abstract Class Function - Required
         #Turn off live session
-        pass
+        cs_instance.rtp.pause_session(project_uid=str(self.project), session_uid=cs_session)
 
     def check_for_update(self, instance):  #Abstract Class Function - Required
         #Here should probably go some logic that will get the hole and image, check CryoSPARC for existing thumbnail and data, and update the object
