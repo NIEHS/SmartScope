@@ -106,6 +106,7 @@ class CryoSPARCPipeline(PreprocessingPipeline):
 
         #Create new CryoSPARC Live session
         cs_session = cs_instance.rtp.create_new_live_workspace(project_uid=str(self.project), created_by_user_id=str(cs_instance.cli.get_id_by_email(self.email)), title=str(self.grid.session_id))
+        return cs_session
 
         #Setup lanes
         cs_instance.rtp.update_compute_configuration(project_uid=str(self.project), session_uid=cs_session, key='phase_one_lane', value=str(self.lane))
