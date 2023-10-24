@@ -29,8 +29,13 @@ def root_directories(session):
             root_directories.append(custom_user_path.path)
     if settings.USE_STORAGE:
         root_directories.append(settings.AUTOSCREENDIR)
+        if (groupname:=session.group.name) is not None:
+            root_directories.append(os.path.join(settings.AUTOSCREENDIR,groupname))
     if settings.USE_LONGTERMSTORAGE:
         root_directories.append(settings.AUTOSCREENSTORAGE)
+        if (groupname:=session.group.name) is not None:
+            root_directories.append(os.path.join(settings.AUTOSCREENSTORAGE,groupname))
+    ###FIX AWS STORAGE
     return root_directories
  
 def find_screening_session(root_directories,directory_name):
@@ -38,13 +43,14 @@ def find_screening_session(root_directories,directory_name):
         logger.debug(f'Looking for {directory_name} in {directory}')
         if os.path.isdir(os.path.join(directory,directory_name)):
             return os.path.join(directory,directory_name)
+    raise FileNotFoundError(f'Could not find {directory_name} in {root_directories}')
 
 class ScreeningSession(BaseModel):
     from .microscope import Microscope
     from .detector import Detector
     
     session = models.CharField(max_length=30)
-    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, to_field='username')
+    user = models.ForeignKey(User, null=True, default=None, on_delete=models.SET_NULL, to_field='username')
     group = models.ForeignKey(
         Group,
         null=True,
@@ -78,7 +84,7 @@ class ScreeningSession(BaseModel):
         if (directory:=cache.get(cache_key)) is not None:
             logger.info(f'Session {self} directory from cache.')
             return directory
-        cwd = find_screening_session(root_directories(self),self.working_dir)
+        cwd = find_screening_session(root_directories(self),self.working_directory)
         cache.set(cache_key,cwd,timeout=10800)
         return cwd
 
@@ -97,9 +103,9 @@ class ScreeningSession(BaseModel):
         return self.autoloadergrid_set.all().order_by('position')\
             .exclude(status='complete').first()
 
-    @property
-    def storage(self):
-        return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
+    # @property
+    # def storage(self):
+    #     return os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -107,15 +113,18 @@ class ScreeningSession(BaseModel):
             if not self.date:
                 self.date = datetime.today().strftime('%Y%m%d')
             self.session_id = generate_unique_id(extra_inputs=[self.date, self.session])
+    
+    @property
+    def working_directory(self):
+        return f'{self.date}_{self.session}'
 
     def save(self, *args, **kwargs):
         self.session = self.session.replace(' ', '_')
         if not self.version:
             self.version = SmartscopeVersion
-        self.working_dir = os.path.join(self.group.name, f'{self.date}_{self.session}')
         super().save(*args, **kwargs)
         return self
 
     def __str__(self):
-        return f'{self.date}_{self.session}'
+        return self.working_directory
 

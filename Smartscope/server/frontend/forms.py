@@ -1,5 +1,6 @@
 from typing import Optional, Dict, Any
 from django import forms
+from django.urls import reverse
 from Smartscope.core.models import *
 from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, SMARTSCOPE_DEFAULT_CONFIG, PROTOCOLS_FACTORY 
 from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY
@@ -13,14 +14,16 @@ class ScreeningSessionForm(forms.ModelForm):
     class Meta:
         from Smartscope.core.models.screening_session import ScreeningSession
         model = ScreeningSession
-        fields = ("session", "group", "microscope_id", "detector_id", )  # 'atlas_x', 'atlas_y', 'squares_num', 'holes_per_square', 'target_defocus'
+        fields = ("session", "group", "user", "microscope_id", "detector_id", )  # 'atlas_x', 'atlas_y', 'squares_num', 'holes_per_square', 'target_defocus'
         labels = {"session": 'Session Name',
                   "group": 'Group',
+                  "user": "User",
                   "microscope_id": "Microscope",
                   "detector_id": "Detector",
                   }
         help_texts = {"session": 'Date will be automatically set. Use only [Aa-Zz], [1-9], _ and -',
                       "group": 'Field is required',
+                      "user": "Optionally select a user.",
                       "microscope_id": "Field is required",
                       "detector_id": "Field is required",
                       }
@@ -29,6 +32,17 @@ class ScreeningSessionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['session'].widget.attrs.update({
             "pattern": "^[a-zA-Z0-9-_]+$"
+        })
+        self.fields['group'].widget.attrs.update({
+            "hx-get": reverse('getUsersInGroup'),
+            "hx-target":"#id_user",
+            "hx-trigger":"change"
+        })
+        self.fields['user'].required = False
+        self.fields['microscope_id'].widget.attrs.update({
+            "hx-get": reverse('getMicroscopeDetectors'),
+            "hx-target":"#id_detector_id",
+            "hx-trigger":"change"
         })
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
