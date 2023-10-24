@@ -9,6 +9,7 @@ from Smartscope.core.models.detector import Detector
 from Smartscope.core.models.hole_type import HoleType
 from Smartscope.core.models.mesh import MeshSize, MeshMaterial
 from Smartscope.core.models.microscope import Microscope
+from Smartscope.core.models.custom_paths import CustomUserPath, CustomGroupPath
 # from Smartscope.core.models.screening_session import ScreeningSession
 # from Smartscope.core.models.target import Finder, Classifier
 
@@ -18,6 +19,8 @@ admin.site.register(MeshSize)
 admin.site.register(MeshMaterial)
 admin.site.register(Microscope)
 admin.site.register(Detector)
+admin.site.register(CustomUserPath)
+admin.site.register(CustomGroupPath)
 # admin.site.register(AutoloaderGrid)
 # admin.site.register(GridCollectionParams)
 # admin.site.register(Finder)
