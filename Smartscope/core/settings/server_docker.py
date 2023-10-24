@@ -18,8 +18,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
+USE_CUSTOM_PATHS = eval(os.getenv('USE_CUSTOM_PATHS', 'False'))
 TEMPDIR = os.getenv('TEMPDIR')
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/

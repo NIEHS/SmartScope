@@ -1,21 +1,50 @@
+import logging
+
 from .base_model import *
+
+from .custom_paths import CustomUserPath, CustomGroupPath
 from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
 from Smartscope import __version__ as SmartscopeVersion
 
 # from .microscope import Microscope
 # from .detector import Detector
+logger = logging.getLogger(__name__)
 
 class ScreeningSessionManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('microscope_id')\
             .prefetch_related('detector_id')
+    
 
+def root_directories(session):
+    root_directories = []
+    if settings.USE_CUSTOM_PATHS:
+        # if session.custom_path is not None:
+        #     root_directories.append(session.custom_path.path)
+        custom_group_path = CustomGroupPath.objects.filter(group=session.group).first()
+        if custom_group_path is not None:
+            root_directories.append(custom_group_path.path)
+        custom_user_path = CustomUserPath.objects.filter(user=session.user).first()
+        if custom_user_path is not None:
+            root_directories.append(custom_user_path.path)
+    if settings.USE_STORAGE:
+        root_directories.append(settings.AUTOSCREENDIR)
+    if settings.USE_LONGTERMSTORAGE:
+        root_directories.append(settings.AUTOSCREENSTORAGE)
+    return root_directories
+ 
+def find_screening_session(root_directories,directory_name):
+    for directory in root_directories:
+        logger.debug(f'Looking for {directory_name} in {directory}')
+        if os.path.isdir(os.path.join(directory,directory_name)):
+            return os.path.join(directory,directory_name)
 
 class ScreeningSession(BaseModel):
     from .microscope import Microscope
     from .detector import Detector
     
     session = models.CharField(max_length=30)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, to_field='username')
     group = models.ForeignKey(
         Group,
         null=True,
@@ -49,28 +78,9 @@ class ScreeningSession(BaseModel):
         if (directory:=cache.get(cache_key)) is not None:
             logger.info(f'Session {self} directory from cache.')
             return directory
-
-        if settings.USE_STORAGE:
-            cwd = os.path.join(settings.AUTOSCREENDIR, self.working_dir)
-            if os.path.isdir(cwd):
-                cache.set(cache_key,cwd,timeout=21600)
-                return cwd
-
-        if settings.USE_LONGTERMSTORAGE:
-            cwd_storage = os.path.join(settings.AUTOSCREENSTORAGE, self.working_dir)
-            if os.path.isdir(cwd_storage):
-                cache.set(cache_key,cwd_storage,timeout=21600)
-                return cwd_storage
-
-        if settings.USE_AWS:
-            storage = SmartscopeStorage()
-            if storage.dir_exists(self.working_dir):
-                cache.set(cache_key,self.working_dir,timeout=21600)
-                return self.working_dir
-
-        if settings.USE_STORAGE:
-            cache.set(cache_key,cwd,timeout=21600)
-            return cwd
+        cwd = find_screening_session(root_directories(self),self.working_dir)
+        cache.set(cache_key,cwd,timeout=10800)
+        return cwd
 
     @property
     def stop_file(self):
