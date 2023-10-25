@@ -3,6 +3,7 @@ source model with any other model through content_object
 '''
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+import math
 
 from .base_model import *
 
@@ -31,6 +32,13 @@ class Finder(TargetLabel):
  
     class Meta(BaseModel.Meta):
         db_table = 'finder'
+
+    def radius_from_origin(self, offset_x=0, offset_y=0) -> float:
+        return math.sqrt((self.stage_x + offset_x) ** 2 + (self.stage_y + offset_y) ** 2)
+    
+    def is_position_within_stage_limits(self, stage_radius_limit:int = 975, offset_x:float=0, offset_y:float=0) -> bool:
+        ##NEED TO ADD OFFSETS AND NOT HARDCODE THE LIMIT
+        return self.radius_from_origin(offset_x=offset_x,offset_y=offset_y) <= stage_radius_limit
 
 
 class Classifier(TargetLabel):

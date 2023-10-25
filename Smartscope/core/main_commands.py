@@ -122,13 +122,8 @@ def regroup_bis(grid_id, square_id):
     holes_for_grouping = []
     other_holes = []
     for h in filtered_holes:
-
-        # h.bis_group = None
-        # h.bis_type = None
-        if h.is_good() and not h.is_excluded()[0]:
+        if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
             holes_for_grouping.append(h)
-        # else:
-        #     other_holes.append(h)
 
     logger.info(f'Filtered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
 
@@ -194,4 +189,56 @@ def download_testfiles(overwrite=False):
         p.wait()
     print('Done.')
 
+def get_atlas_to_search_offset(detector_name,maximum=0):
+    if isinstance(maximum, str):
+        maximum = int(maximum)
+    detector = Detector.objects.filter(name__contains=detector_name).first()
+    if detector is None:
+        print(f'Could not find detector with name {detector_name}')
+        return
+    completed_square = SquareModel.just_labels.filter(status='completed',grid_id__session_id__detector_id__pk=detector.pk)
+    count = completed_square.count()
+    no_finder = 0
+    total_done = 0
+    if maximum > 0 and count > maximum:
+        print(f'Found {count} completed squares, limiting to {maximum}')
+        count=maximum
+    else:
+        print(f'Found {count} completed squares')
+    
+    for square in completed_square:
+        if total_done == count:
+            break
+        finders = square.finders.all()
+        recenter = finders.values_list('stage_x', 'stage_y').filter(method_name='Recentering').first()
+        original = finders.values_list('stage_x', 'stage_y').filter(method_name='AI square finder').first()
+        if any([recenter is None, original is None]):
+            no_finder+=1
+            total_done+=1
+            print(f'Progress: {total_done/count*100:.0f}%, Skipped: {no_finder}', end='\r')
+            continue
+        diff = np.array(original) - np.array(recenter)
+        if not 'array' in locals():
+            array = diff.reshape(1,2)
+            print(f'Progress: {total_done/count*100:.0f}%, Skipped: {no_finder}', end='\r')
+            total_done+=1
+            continue
+        total_done+=1
+        array = np.append(array, diff.reshape(1,2), axis=0)
+        print(f'Progress: {total_done/count*100:.0f}%, Skipped: {no_finder}', end='\r')
+    print(f'Progress: {total_done/count*100:.0f}%, Skipped: {no_finder}')
+    mean = np.mean(array, axis=0).round(2)
+    std = np.std(array, axis=0).round(2)
+    print(f'Calculated offset from {total_done-no_finder} squares:\n\t X: {mean[0]} +/- {std[0]} um\n\t Y: {mean[1]} +/-  {std[1]} um \n')
+    set_values = 'unset'
+    while set_values not in ['y', 'n']:
+        set_values = input(f'atlas_to_search_offset_x={mean[0]} um\natlas_to_search_offset_y={mean[1]} um\n\nSet values of for {detector}? (y/n)')
+    if set_values == 'y':
+        detector.atlas_to_search_offset_x = mean[0]
+        detector.atlas_to_search_offset_y = mean[1]
+        detector.save()
+        print('Saved')
+        return
+    print('Skip setting values')
 
+            

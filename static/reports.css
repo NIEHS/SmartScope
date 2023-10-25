@@ -189,6 +189,12 @@
     color: Gold;
 }
 
+.skipped {
+    stroke: gray;
+    /* fill: gray; */
+    color: gray;
+}
+
 .queued {
     stroke: orange;
     /* fill: orange; */

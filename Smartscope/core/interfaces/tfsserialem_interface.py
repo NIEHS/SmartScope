@@ -13,21 +13,35 @@ class Aperture:
     CONDENSER_3:int=3
     OBJECTIVE:int = 2
 
-def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int]):
+def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int], wait:int=3):
     def wrapper(*args, **kwargs):
         inital_aperture_size = int(sem.ReportApertureSize(aperture))
         if inital_aperture_size == aperture_size or aperture_size is None:
-            return function(*args, **kwargs) 
+            return function(*args, **kwargs)
+        msg = f'Changing condenser aperture {aperture} from {inital_aperture_size} to {aperture_size} and waiting {wait}s.'
+        sem.Echo(msg)
+        logger.info(msg)
         sem.SetApertureSize(aperture,aperture_size)
+        time.sleep(wait)
         function(*args, **kwargs)
+        msg = f'Resetting condenser aperture to {inital_aperture_size}.'
+        sem.Echo(msg)
+        logger.info(msg)
         sem.SetApertureSize(aperture,inital_aperture_size)
     return wrapper    
 
-def remove_objective_aperture(function: Callable):
+def remove_objective_aperture(function: Callable, wait:int=3):
     def wrapper(*args, **kwargs):
+        msg = 'Removing objective aperture.'
+        sem.Echo(msg)
+        logger.info(msg)
         sem.RemoveAperture(Aperture.OBJECTIVE)
         function(*args, **kwargs)
+        msg = f'Reinserting objective aperture and waiting {wait}s.'
+        sem.Echo(msg)
+        logger.info(msg)
         sem.ReInsertAperture(Aperture.OBJECTIVE)
+        time.sleep(wait)
     return wrapper
 
 class TFSSerialemInterface(SerialemInterface):

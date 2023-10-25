@@ -161,12 +161,15 @@ def run_grid(
                 params,
                 hole
             )
+            if hole.status == status.SKIPPED:
+                continue
             hole = update(hole,
                 status=status.ACQUIRED,
                 completion_time=timezone.now()
             )
             RunHole.process_hole_image(hole, grid, microscope)
-
+            if hole.status == status.SKIPPED:
+                continue
             # process high image
             scope.focusDrift(
                 params.target_defocus_min,
@@ -176,7 +179,9 @@ def run_grid(
             )
             scope.reset_image_shift_values()
             for hm in hole.targets.exclude(status__in=[status.ACQUIRED,status.COMPLETED]).order_by('hole_id__number'):
-                hm = update(hm, status=status.STARTED)
+                hm = update(hm, refresh_from_db=False, status=status.STARTED)
+                if hm.hole_id.status == status.SKIPPED:
+                    break
                 hm = runAcquisition(
                     scope,
                     protocol.highMag.acquisition,
@@ -245,11 +250,11 @@ def run_grid(
 
 
 def get_queue(grid):
-    square = grid.squaremodel_set.\
-        filter(selected=True, status__in=[status.QUEUED, status.STARTED]).\
+    square = grid.squaremodel_set.filter(selected=True).\
+        exclude(status__in=[status.SKIPPED, status.COMPLETED]).\
         order_by('number').first()
     hole = grid.holemodel_set.filter(selected=True, square_id__status=status.COMPLETED).\
-        exclude(status=status.COMPLETED).\
+        exclude(status__in=[status.SKIPPED, status.COMPLETED]).\
         order_by('square_id__completion_time', 'number').first()
     return square, hole#[h for h in holes if not h.bisgroup_acquired]
 

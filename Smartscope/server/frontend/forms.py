@@ -1,5 +1,6 @@
 from typing import Optional, Dict, Any
 from django import forms
+from django.urls import reverse
 from Smartscope.core.models import *
 from Smartscope.core.settings.worker import SMARTSCOPE_CUSTOM_CONFIG, SMARTSCOPE_DEFAULT_CONFIG, PROTOCOLS_FACTORY 
 from Smartscope.core.preprocessing_pipelines import PREPROCESSING_PIPELINE_FACTORY
@@ -13,14 +14,16 @@ class ScreeningSessionForm(forms.ModelForm):
     class Meta:
         from Smartscope.core.models.screening_session import ScreeningSession
         model = ScreeningSession
-        fields = ("session", "group", "microscope_id", "detector_id", )  # 'atlas_x', 'atlas_y', 'squares_num', 'holes_per_square', 'target_defocus'
+        fields = ("session", "group", "user", "microscope_id", "detector_id", )  # 'atlas_x', 'atlas_y', 'squares_num', 'holes_per_square', 'target_defocus'
         labels = {"session": 'Session Name',
                   "group": 'Group',
+                  "user": "User",
                   "microscope_id": "Microscope",
                   "detector_id": "Detector",
                   }
         help_texts = {"session": 'Date will be automatically set. Use only [Aa-Zz], [1-9], _ and -',
                       "group": 'Field is required',
+                      "user": "Optionally select a user.",
                       "microscope_id": "Field is required",
                       "detector_id": "Field is required",
                       }
@@ -29,6 +32,17 @@ class ScreeningSessionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['session'].widget.attrs.update({
             "pattern": "^[a-zA-Z0-9-_]+$"
+        })
+        self.fields['group'].widget.attrs.update({
+            "hx-get": reverse('getUsersInGroup'),
+            "hx-target":"#id_user",
+            "hx-trigger":"change"
+        })
+        self.fields['user'].required = False
+        self.fields['microscope_id'].widget.attrs.update({
+            "hx-get": reverse('getMicroscopeDetectors'),
+            "hx-target":"#id_detector_id",
+            "hx-trigger":"change"
         })
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
@@ -122,9 +136,9 @@ class GridCollectionParamsForm(forms.ModelForm):
             tilt_angle='Tilt angle. For tilted data collection.',
             save_frames='Save the frames for high-mag acquisition or just the aligned sum if unchecked. The Session needs to be stopped and restarted for this change to take effect',
             zeroloss_delay='Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
-            hardwaredark_delay= 'Delay in hours for the zero loss peak refinement procedure. Only takes effect if detector has an energy filter. Use -1 to deactivate',
-            offset_targeting='Enable random targeting off-center to sample the ice gradient and carbon mesh particles. Automatically disabled in data collection mode.',
-            offset_distance='Override the random offset by an absolute value in microns. Can be used in data collection mode. Use -1 to disable',
+            hardwaredark_delay= 'Delay in hours for the hardware dark acquisition. Use -1 to deactivate',
+            offset_targeting='Enable targeting off-center to sample the ice gradient and carbon mesh particles. Use the Offset Distance setting to change behavior. Disabled in data collection mode unless offset distance is set.',
+            offset_distance='Set a fixed offset value in microns. During screening, use -1 for a random offset dependent of the hole size. During data collection, only fixed values are allowed.',
             multishot_per_hole='Enable multishot per hole.'
         )
 

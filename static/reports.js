@@ -61,6 +61,8 @@ function setSVGcss(item, el) {
         el.classList.add(item.status)
 
         $(`#${item.id}_text`).removeClass(['queued', 'started', 'acquired', 'processed', 'targets_picked']).addClass(item.status)
+        console.log('Setting status')
+        el.setAttribute('status', item.status)
     }
     if (item.bis_type === "is_area") {
         el.classList.add('is_area')
@@ -116,6 +118,9 @@ $('#main').on('click', '.showLegend', function () {
 
 
 function selectElement(elem, selection) {
+    if (elem.getAttribute('label') == 'Out of range') {
+        return
+    }
     if (selection.includes(elem.id)) {
         console.log('Unselecting')
         elem.classList.remove('clicked')
@@ -331,10 +336,12 @@ function openGoTo(el) {
 
 function optionMenu(meta, type = 'holes') {
     var queueBtn = document.getElementById('opt-queued-square')
+    var skipBtn = document.getElementById(`opt-skip-square`)
     var queueDiv = document.getElementById('squareQueue')
     if (type == 'holes') {
-        var queueBtn = document.getElementById('opt-queued-hole')
-        var queueDiv = document.getElementById('holeQueue')
+    var queueBtn = document.getElementById('opt-queued-hole')
+    var queueDiv = document.getElementById('holeQueue')
+    var skipBtn = document.getElementById(`opt-skip-hole`)
     }
     if (queueBtn == null) {
         return
@@ -346,21 +353,26 @@ function optionMenu(meta, type = 'holes') {
     }
     queueDiv.classList.remove('d-none')
     queueDiv.classList.add('d-block')
-    let queued = meta.map( function (_key) {
+    let statuses = meta.map( function (_key) {
         return $(`#${_key}`).attr('status')
     })
-    queued = Array.from(new Set(queued))
-    console.log(queued)
+    statuses = Array.from(new Set(statuses))
+    console.log('Statuses:',statuses)
     queueBtn.disabled = true
-    if (queued.length == 1) {
+    skipBtn.disabled = false
+    if (statuses.length == 1 && !statuses.includes('completed')) {
         queueBtn.disabled = false
-        if (queued[0] == 'queued') {
+        if (statuses[0] == 'queued' || statuses[0] == 'skipped') {
             queueBtn.value = 0
             queueBtn.innerHTML = 'Remove from queue'
-            return
         }
-        queueBtn.value = 1
-        queueBtn.innerHTML = 'Add to queue'
+        else {
+            queueBtn.value = 1
+            queueBtn.innerHTML = 'Add to queue'
+        }
+    }
+    if (statuses.includes('completed') || statuses.includes('queued') || statuses.includes(undefined)) {
+        skipBtn.disabled = true
     }
 }
 

@@ -512,4 +512,21 @@ class CollectionStatsView(TemplateView):
     
     def get(self,request, grid_id, *args, **kwargs):
         context = self.get_context_data(grid_id, **kwargs)
-        return render(request,self.template_name, context)   
+        return render(request,self.template_name, context)
+    
+def getUsersInGroup(request):
+    group = request.GET.get('group',None)
+    if group is None:
+        return HttpResponse('Group not specified')
+    users = User.objects.filter(groups__name=group)
+    options = [{"value":u.username,"field":u.username} for u in users] 
+
+    return render(request, "general/options_fields.html", {"options": options})
+
+def getMicroscopeDetectors(request):
+    microscope = request.GET.get('microscope_id',None)
+    if microscope is None:
+        return HttpResponse('Microscope not specified')
+    detectors = Detector.objects.filter(microscope_id=microscope)
+    options = [{"value":d.pk,"field":d} for d in detectors]
+    return render(request, "general/options_fields.html", {"options": options})
