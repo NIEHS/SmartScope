@@ -14,8 +14,8 @@ from Smartscope.core.models import Microscope
 
 
 logger = logging.getLogger(__name__)
-logger.info(settings)
-logger.info(settings.AUTOSCREENDIR)
+# logger.info(settings)
+# logger.info(settings.AUTOSCREENDIR)
 
 def is_gpu_enabled():
     print('GPU enabled:', torch.cuda.is_available())
@@ -160,3 +160,31 @@ def list_plugins():
 def list_protocols():
     from Smartscope.core.settings.worker import PROTOCOLS_FACTORY
     [print(f"{'#'*60}\n{name}:\n\n\t{plugin}\n{'#'*60}\n") for name,plugin in PROTOCOLS_FACTORY.items()]
+
+def backup_db(ouput_directory='/mnt/backups/'):
+    from datetime import datetime
+    import subprocess
+    filename = datetime.now().strftime("%Y%m%d_backup.sql")
+    output_file = os.path.join(ouput_directory, filename)
+    logger.info(f'Backing up database to {output_file}')
+    command = f"mysqldump --user={os.getenv('MYSQL_USER')} --password={os.getenv('MYSQL_PASSWORD')} --host={os.getenv('MYSQL_HOST')} --port={os.getenv('MYSQL_PORT')} {os.getenv('MYSQL_DATABASE')} > {output_file}"
+    subprocess.call(command, shell=True)
+    logger.info('Finished backing up database.')
+
+def restore_db(backup_file=None,backup_directory='/mnt/backups/'):
+    from datetime import datetime
+    import subprocess
+    if backup_file is None:
+        print('No backup file specified.')
+        backup_files = sorted(Path(backup_directory).glob('*.sql'), reverse=True)
+        print('\n'.join([f'\t{i+1}) {file.name}' for i,file in enumerate(backup_files)]))
+        while True:
+            in_value = input('Please select one from the list above: ')
+            if in_value.isdigit() and 0 < int(in_value) <= len(backup_files):
+                backup_file = backup_files[int(in_value)-1]
+                break
+    backup_file = os.path.join(backup_directory, backup_file)
+    logger.info(f'Restoring database to {backup_file}')
+    command = f"mysql --user={os.getenv('MYSQL_USER')} --password={os.getenv('MYSQL_PASSWORD')} --host={os.getenv('MYSQL_HOST')} --port={os.getenv('MYSQL_PORT')} {os.getenv('MYSQL_DATABASE')} < {backup_file}"
+    subprocess.call(command, shell=True)
+    logger.info('Finished restoring database.')
