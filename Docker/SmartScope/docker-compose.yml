@@ -36,8 +36,6 @@ services:
       - database.conf
     volumes:
       - ./db/:/var/lib/mysql/
-      - ./backups/:/mnt/backups/
-      # - ./shared/initialdb.sql:/docker-entrypoint-initdb.d/initialdb.sql
     networks:
       - smartscopenet
   cache:
