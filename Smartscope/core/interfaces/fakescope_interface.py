@@ -23,6 +23,22 @@ class FakeScopeInterface(MicroscopeInterface):
         logger.info(f'Setting atlas optics from the {state_name} imaging state')
         logger.info('Done setting atlas optics')
 
+    def reset_stage(self):
+        pass
+
+    def remove_slit(self):
+        pass
+
+    def eucentricity_by_focus(self):
+        pass
+
+    def call(self, script):
+        logger.info(f'Calling {script}')
+
+    
+    def call_function(self, function, *args):
+        logger.info(f'Calling {function} with args {args}')
+
     def checkDewars(self, wait=30) -> None:
         pass
 

@@ -290,14 +290,29 @@ def is_stop_file(sessionid: str) -> bool:
         raise KeyboardInterrupt()
 
 
+def parse_method(method):
+    if not isinstance(method, dict):
+        logger.info(f'Running protocol method: {method}')
+        return method, {}, [], {}
+    args = []
+    kwargs = dict()
+    method_name, content = method.popitem()
+    kwargs = content.pop('kwargs', {})
+    args = content.pop('args', [])
+
+    logger.info(f'Running protocol method: {method_name}, {content} with args={args} and kwargs={kwargs}')
+    return method_name, content, args, kwargs
+    
+
 def runAcquisition(
         scope,
         methods,
         params,
-        instance
+        instance,
     ):
     for method in methods:
-        output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance)
+        method, content, args, kwargs = parse_method(method)
+        output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance, content, *args, **kwargs)
     return output
 
 

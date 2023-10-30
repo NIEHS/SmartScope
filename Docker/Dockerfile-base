@@ -6,9 +6,9 @@ RUN apt-get update && apt-get install -y \
 	python3-dev default-libmysqlclient-dev build-essential wget libglib2.0-0 ffmpeg libsm6 libxext6 curl mariadb-server git && \
 	apt-get clean && rm -rf /var/cache/apt/lists
 
-RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-	bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && \
-	rm Miniconda3-latest-Linux-x86_64.sh
+# RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+# 	bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && \
+# 	rm Miniconda3-latest-Linux-x86_64.sh
 
 RUN wget https://bio3d.colorado.edu/imod/AMD64-RHEL5/imod_4.11.24_RHEL7-64_CUDA10.1.sh && ls && \
 	yes | bash imod_4.11.24_RHEL7-64_CUDA10.1.sh -name IMOD && \
@@ -18,18 +18,18 @@ ADD config/singularity/ctffind /usr/local/
 
 ENV PATH=$PATH:/opt/miniconda3/bin
 
-RUN conda update -y conda && \
-	yes | conda install python=3.9 && \
-	yes | conda install cudatoolkit=11.1 cudnn -c nvidia \
-	yes | conda install pytorch torchvision -c pytorch-lts -c nvidia && \
-	conda clean --all
+# RUN conda update -y conda && \
+# 	yes | conda install python=3.9 && \
+# 	yes | conda install cudatoolkit=11.1 cudnn -c nvidia \
+# 	yes | conda install pytorch torchvision -c pytorch-lts -c nvidia && \
+# 	conda clean --all
 
-ADD config/docker/requirements.txt .
+# ADD config/docker/requirements.txt .
 
-RUN	yes | pip install numpy==1.21.0 && \
-	# yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111 && \
-	yes | pip install -r requirements.txt && \
-	pip cache purge
+# RUN	yes | pip install numpy==1.21.0 && \
+# 	# yes | pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111 && \
+# 	yes | pip install -r requirements.txt && \
+# 	pip cache purge
 	
 
 # create a non-root user

@@ -29,6 +29,26 @@ class MicroscopeInterface(ABC):
         self.state.reset_image_shift_values()
 
     @abstractmethod
+    def reset_stage(self):
+        pass
+
+    @abstractmethod
+    def remove_slit(self):
+        pass
+
+    @abstractmethod
+    def eucentricity_by_focus(self):
+        pass
+
+    @abstractmethod
+    def call(self, script):
+        pass
+
+    @abstractmethod
+    def call_function(self, function, *args):
+        pass
+
+    @abstractmethod
     def checkDewars(self, wait=30) -> None:
         pass
 

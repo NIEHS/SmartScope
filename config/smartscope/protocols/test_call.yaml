@@ -1,10 +1,15 @@
-name: SPA
+name: Test Call
 atlas:
   acquisition:
       - setAtlasOptics
       - resetStage
       - removeSlit
-      - eucentricSearch
+      - callFuntion:
+          function: mockScript::MyFunction
+          args:
+            - 1
+            - 2
+            - 3
       - atlas
   targets:
     finders:
@@ -15,7 +20,8 @@ square:
   acquisition:
     - moveStageWithAtlasToSearchOffset
     - realignToSquare
-    - eucentricSearch
+    - call:
+        script: Z_byV
     - square
   targets:
     finders:

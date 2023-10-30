@@ -1,3 +1,4 @@
+from typing import Dict
 from math import cos, radians
 from random import random
 import numpy as np
@@ -16,6 +17,26 @@ def setAtlasOpticsDelay(scope,params,instance) -> None:
 def setAtlasOpticsImagingState(scope,params,instance):
     """Sets the atlas optics from an Imaging State named "Atlas"."""
     scope.set_atlas_optics_imaging_state(state_name='Atlas')
+
+def resetStage(scope,params,instance) -> None:
+    """Resets the stage to the center of the image."""
+    scope.reset_stage()
+
+def removeSlit(scope,params,instance) -> None:
+    """Removes the slit from the beam path."""
+    scope.remove_slit()
+
+def call(scope,params,instance, content:Dict, *args, **kwargs) -> None:
+    """Calls any script that is saved in the SerialEM scripts."""
+    script = content.get('script', None)
+    assert script is not None, 'No script was specified'
+    scope.call(script=script)
+
+def callFunction(scope,params,instance, content:Dict, *args, **kwargs) -> None:
+    """Calls any function that is saved in the SerialEM scripts."""
+    function = content.get('function', None)
+    assert function is not None, 'No function was specified'
+    scope.call_function(function=function, *args)
 
 def atlas(scope,params,instance) -> None:
     """Collects and atlas of X by Y tiles from the collection parameters using the Montage command"""
@@ -156,6 +177,10 @@ protocolCommandsFactory = dict(
     setAtlasOptics=setAtlasOptics,
     setAtlasOpticsDelay=setAtlasOpticsDelay,
     setAtlasOpticsImagingState=setAtlasOpticsImagingState,
+    removeSlit=removeSlit,
+    resetStage=resetStage,
+    call=call,
+    callFunction=callFunction,
     atlas=atlas,
     realignToSquare=realignToSquare,
     square=square,
