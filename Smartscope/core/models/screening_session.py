@@ -21,12 +21,13 @@ def root_directories(session):
     if settings.USE_CUSTOM_PATHS:
         # if session.custom_path is not None:
         #     root_directories.append(session.custom_path.path)
-        custom_group_path = CustomGroupPath.objects.filter(group=session.group).first()
-        if custom_group_path is not None:
-            root_directories.append(custom_group_path.path)
         custom_user_path = CustomUserPath.objects.filter(user=session.user).first()
         if custom_user_path is not None:
             root_directories.append(custom_user_path.path)
+        custom_group_path = CustomGroupPath.objects.filter(group=session.group).first()
+        if custom_group_path is not None:
+            root_directories.append(custom_group_path.path)
+
     if settings.USE_STORAGE:
         root_directories.append(settings.AUTOSCREENDIR)
         if (groupname:=session.group.name) is not None:
@@ -87,6 +88,7 @@ class ScreeningSession(BaseModel):
         cwd = find_screening_session(root_directories(self),self.working_directory)
         cache.set(cache_key,cwd,timeout=10800)
         return cwd
+    
 
     @property
     def stop_file(self):
