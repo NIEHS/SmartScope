@@ -1,6 +1,8 @@
+import os
 from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
-from django.contrib import admin
+# from django.contrib import admin
+from django.conf import settings
 from django.urls import path, include, re_path
 from .viewsets import *
 from .views import *
@@ -32,3 +34,9 @@ urlpatterns = [
     path('report/', ReportPanel.as_view()),
     # path('squares', SquareListView.as_view())
 ]
+
+if settings.ALTERNATE_LOGIN:
+    urlpatterns += [
+        path('login/', AlternateLoginView.as_view(), name='login'),
+        path('logout/', AlternateLogoutView.as_view(), name='logout')
+    ]
