@@ -36,10 +36,16 @@ from . import forms
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('smartscope/', include('Smartscope.server.frontend.urls')),
-    path('login/', views.MyLoginView.as_view(authentication_form=forms.UserLoginForm), name='login'),
-    path('logout/', LogoutView.as_view()),
     path('', RedirectView.as_view(url="smartscope/browse")),
 ]
+
+if not settings.ALTERNATE_LOGIN:
+    urlpatterns+= [
+        path('login/', views.MyLoginView.as_view(authentication_form=forms.UserLoginForm), name='login'),
+        path('logout/', LogoutView.as_view(), name='logout')
+    ]
+
+
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Api urls
