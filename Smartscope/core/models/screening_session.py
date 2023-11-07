@@ -32,10 +32,13 @@ def root_directories(session):
         root_directories.append(settings.AUTOSCREENDIR)
         if (groupname:=session.group.name) is not None:
             root_directories.append(os.path.join(settings.AUTOSCREENDIR,groupname))
-    if settings.USE_LONGTERMSTORAGE:
-        root_directories.append(settings.AUTOSCREENSTORAGE)
+        else: 
+            root_directories.append(settings.AUTOSCREENDIR)
+    if settings.USE_LONGTERMSTORAGE:      
         if (groupname:=session.group.name) is not None:
             root_directories.append(os.path.join(settings.AUTOSCREENSTORAGE,groupname))
+        else:
+            root_directories.append(settings.AUTOSCREENSTORAGE)
     ###FIX AWS STORAGE
     return root_directories
  

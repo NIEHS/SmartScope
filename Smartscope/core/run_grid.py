@@ -133,6 +133,10 @@ def run_grid(
         selector_wrapper(protocol.atlas.targets.selectors, atlas, n_groups=5)
         select_n_areas(atlas, grid.params_id.squares_num)
         atlas = update(atlas, status=status.COMPLETED)
+
+    #Release atlas items from memory.
+    del montage
+    del atlas
     logger.info('Atlas analysis is complete')
 
 
