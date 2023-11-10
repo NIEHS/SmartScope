@@ -112,7 +112,7 @@ case $argument in
         mkdir -p logs shared/nginx shared/auth shared/smartscope db data backups;;
     update)
         version=${2:-latest}
-        echo "Updating smartscope to version ${2:-latest}"
+        echo "Updating smartscope to version: $version"
         if ! thencheckForUpdates $version; then
             echo "No updates available for version: $version"
             exit 0

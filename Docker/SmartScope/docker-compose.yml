@@ -15,7 +15,8 @@ services:
       # - /path/to/where/serialem/will/write/files/:/mnt/your_scope_name_here/
       # Example:
       # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
-      ###### OTHER DEFAULT VOLUMES - NO NEED TO CHANGE ####### 
+      ###### OTHER DEFAULT VOLUMES - NO NEED TO CHANGE #######
+      - ./shared/auth/:/opt/auth/:rw
       - ./shared/nginx/:/opt/shared/:rw
       - ./shared/smartscope/:/opt/config/:rw
       - ./testfiles/:/mnt/testfiles/:rw
