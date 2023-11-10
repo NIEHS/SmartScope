@@ -115,7 +115,7 @@ case $argument in
         echo "Updating smartscope to version: $version"
         if ! checkForUpdates $version; then
             echo "No updates available for version: $version"
-            exit 0
+            exit 0;;
         fi 
 
         backupDir="backups/$(date +%Y%m%d)_config_pre_update"
