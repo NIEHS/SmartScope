@@ -113,7 +113,7 @@ case $argument in
     update)
         version=${2:-latest}
         echo "Updating smartscope to version: $version"
-        if ! thencheckForUpdates $version; then
+        if ! checkForUpdates $version; then
             echo "No updates available for version: $version"
             exit 0
         fi 
