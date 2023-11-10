@@ -64,10 +64,11 @@ checkForUpdates () {
     echo "Online sha: $online_sha
 Local sha: $local_sha"
     if [[ "$online_sha" == "$local_sha" ]]; then
-        echo "No updates available"
-
+        # echo "No updates available"
+        return 1
     else
-        echo "Updates available"
+        # echo "Updates available"
+        return 0
     fi
 }
 
@@ -115,7 +116,7 @@ case $argument in
         echo "Updating smartscope to version: $version"
         if ! checkForUpdates $version; then
             echo "No updates available for version: $version"
-            exit 0;;
+            exit 0
         fi 
 
         backupDir="backups/$(date +%Y%m%d)_config_pre_update"
@@ -127,7 +128,6 @@ case $argument in
         mkdir $backupDir
         cp docker-compose.yml smartscope.yml smartscope.conf database.conf smartscope.sh $backupDir
         echo "Pulling updated docker-compose.yml"
-        exit 0
         repo_url="https://raw.githubusercontent.com/NIEHS/SmartScope/$version/Docker/SmartScope"
         wget $repo_url/docker-compose.yml
         echo "Pulling docker image"
