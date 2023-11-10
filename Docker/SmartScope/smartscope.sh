@@ -92,6 +92,7 @@ case $argument in
         stop;;
     restart)
         stop
+        sleep 2
         start;;
     run)
         cmd="$composeCmd exec smartscope smartscope.py ${@:2}"
