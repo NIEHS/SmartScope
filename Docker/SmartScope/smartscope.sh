@@ -131,7 +131,7 @@ case $argument in
         repo_url="https://raw.githubusercontent.com/NIEHS/SmartScope/$version/Docker/SmartScope"
         wget $repo_url/docker-compose.yml
         echo "Pulling docker image"
-        $composeCmd pull
+        $composeCmd pull smartscope
         echo "Pulling updated smartscope.sh"
         exec wget $repo_url/smartscope.sh && echo "Files updated, you may now restart smartscope";;
 
