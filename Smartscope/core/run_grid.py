@@ -134,9 +134,9 @@ def run_grid(
         select_n_areas(atlas, grid.params_id.squares_num)
         atlas = update(atlas, status=status.COMPLETED)
 
-    #Release atlas items from memory.
-    del montage
-    del atlas
+        #Release atlas items from memory.
+        del montage
+        del atlas
     logger.info('Atlas analysis is complete')
 
 
