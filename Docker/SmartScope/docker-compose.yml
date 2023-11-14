@@ -5,7 +5,7 @@
 version: "3"
 services:
   smartscope:
-    image: ghcr.io/niehs/smartscope:0.8
+    image: ghcr.io/niehs/smartscope:latest
     container_name: smartscope
     restart: always
     volumes:
