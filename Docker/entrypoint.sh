@@ -15,7 +15,7 @@ fi
 
 if $USE_SSL; then
   echo "Using SSL nginx template, Alternate login = $ALTERNATE_LOGIN"
-  if $ALTERNATE_LOGIN; then
+  if [[ "${ALTERNATE_LOGIN,,}" == "true" ]]; then
     echo "Using alternate login template"
     nginx_conf=/opt/smartscope/config/docker/templates_SSL/alternate_login.conf
   else
