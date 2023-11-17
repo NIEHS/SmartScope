@@ -62,8 +62,16 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
     objs = list(model.objects.filter(pk__in=objects_ids))
     if model is HoleModel:
         bis_groups = set([obj.bis_group for obj in objs])
+        extra_params = dict()
+        if bis_groups != set([None]):
+            extra_params = dict(
+                bis_type = 'center',
+                bis_groups__in = bis_groups
+            )
+        else:
+            extra_params=dict(pk__in=objects_ids)
         squares_ids = set([obj.square_id for obj in objs])
-        objs = model.objects.filter(square_id__in=squares_ids,bis_group__in=bis_groups,bis_type='center')
+        objs = model.objects.filter(square_id__in=squares_ids, **extra_params)
 
     with transaction.atomic():
         for obj in objs:
