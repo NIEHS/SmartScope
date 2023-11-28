@@ -66,7 +66,7 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
         if bis_groups != set([None]):
             extra_params = dict(
                 bis_type = 'center',
-                bis_groups__in = bis_groups
+                bis_group__in = bis_groups
             )
         else:
             extra_params=dict(pk__in=objects_ids)
