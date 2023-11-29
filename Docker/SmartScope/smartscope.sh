@@ -5,7 +5,7 @@ readonly dockerRepo="ghcr.io/niehs/smartscope"
 composeCmd="docker compose"
 dockerCmd="docker"
 
-if [ -e "$file_path" ]; then
+if [ -e "$cmd_file" ]; then
     read -r dockerCmd < "$cmd_file"
     read -r composeCmd < "$cmd_file"
 fi
