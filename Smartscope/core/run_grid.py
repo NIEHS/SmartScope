@@ -181,7 +181,7 @@ def run_grid(
                 params.step_defocus,
                 params.drift_crit
             )
-            scope.reset_image_shift_values()
+            scope.reset_image_shift_values(afis=params.afis)
             for hm in hole.targets.exclude(status__in=[status.ACQUIRED,status.COMPLETED]).order_by('hole_id__number'):
                 hm = update(hm, refresh_from_db=False, status=status.STARTED)
                 if hm.hole_id.status == status.SKIPPED:
