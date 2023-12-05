@@ -116,7 +116,10 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             data = dict()
             if not movie.check_metadata():
                 data['status'] = 'skipped'
-                instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
+                filtered_instances = list(filter(lambda x: x.name == movie.name, self.incomplete_processes))
+                if len(filtered_instances) != 1:
+                    logger.error(f'Could not find {movie.name} in {self.incomplete_processes}. Will try again on the next cycle.')
+                    continue
                 if instance.status != 'skipped':
                     self.to_update.append(update_fields(instance, data))
                 continue
