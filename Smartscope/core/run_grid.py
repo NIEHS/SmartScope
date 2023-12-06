@@ -1,10 +1,8 @@
 import os
 import sys
 import time
-# import multiprocessing
 import logging
 from pathlib import Path
-from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
 
@@ -61,16 +59,12 @@ def run_grid(
     if grid.status is GridStatus.NULL:
         grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
 
-    # add task into queue
     GridIO.create_grid_directories(grid.directory)
     logger.info(f"create and the enter into Grid directory={grid.directory}")
     os.chdir(grid.directory)
-    # processing_queue.put([os.chdir, [grid.directory], {}])
     params = grid.params_id
 
-    # ADD the new protocol loader
     protocol = get_or_set_protocol(grid)
-    # resume_incomplete_processes(processing_queue, grid, session.microscope_id)
     preprocessing = load_preprocessing_pipeline(Path('preprocessing.json'))
     preprocessing.start(grid)
     is_stop_file(session_id)
@@ -81,8 +75,6 @@ def run_grid(
     is_stop_file(session_id)
     scope.setup(params.save_frames, framesName=f'{session.date}_{grid.name}')
     scope.reset_state()
-    # grid_type = grid.holeType
-    # grid_mesh = grid.meshMaterial
 
     # run acquisition
     if atlas.status == status.QUEUED or atlas.status == status.STARTED:
@@ -239,10 +231,6 @@ def run_grid(
             else:
                 running = False
         else:
-            # logger.debug(f'Waiting for incomplete processes, {processing_queue.get()}, queue size={processing_queue.qsize()}')
-            
-            # processing_queue.join()
-
             logger.debug('All processes complete')
             is_done = True
         logger.debug(f'Running: {running}')
@@ -261,29 +249,6 @@ def get_queue(grid):
         exclude(status__in=[status.SKIPPED, status.COMPLETED]).\
         order_by('square_id__completion_time', 'number').first()
     return square, hole#[h for h in holes if not h.bisgroup_acquired]
-
-
-
-# def resume_incomplete_processes(queue, grid, microscope_id):
-#     """Query database for models with incomplete processes
-#      and adds them to the processing queue
-
-#     Args:
-#         queue (multiprocessing.JoinableQueue): multiprocessing queue of objects
-#           for processing by    the processing_worker
-#         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
-#         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
-#     """
-#     squares = grid.squaremodel_set.filter(selected=1).exclude(
-#         status__in=[status.QUEUED, status.STARTED, status.COMPLETED]).order_by('number')
-#     holes = grid.holemodel_set.filter(selected=1).exclude(status__in=[status.QUEUED, \
-#         status.STARTED, status.PROCESSED, status.COMPLETED]).\
-#         order_by('square_id__number', 'number')
-#     for square in squares:
-#         logger.info(f'Square {square} was not fully processed')
-#         renew_queue = [RunSquare.process_square_image, [square, grid, microscope_id], {}]
-#         transaction.on_commit(lambda: queue.put(renew_queue))
-
 
 
 def is_stop_file(sessionid: str) -> bool:
@@ -318,30 +283,3 @@ def runAcquisition(
         method, content, args, kwargs = parse_method(method)
         output = PROTOCOL_COMMANDS_FACTORY[method](scope,params,instance, content, *args, **kwargs)
     return output
-
-
-
-    
-
-
-
-
-# def print_queue(squares, holes, session):
-#     """Prints Queue to a file for displaying to the frontend
-
-#     Args:
-#         squares (list): list of squares returned from the get_queue method
-#         holes (list): list of holes returned from the get_queue method
-#         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
-#     """
-#     string = ['------------------------------------------------------------\nCURRENT QUEUE:\n------------------------------------------------------------\nSquares:\n']
-#     for s in squares:
-#         string.append(f"\t{s.number} -> {s.name}\n")
-#     string.append(f'------------------------------------------------------------\nHoles: (total={len(holes)})\n')
-#     for h in holes:
-#         string.append(f"\t{h.number} -> {h.name}\n")
-#     string.append('------------------------------------------------------------\n')
-#     string = ''.join(string)
-#     with open(os.path.join(session.directory, 'queue.txt'), 'w') as f:
-#         f.write(string)
-
