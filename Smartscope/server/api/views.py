@@ -1,22 +1,27 @@
 from django.http import HttpResponse
 from django.conf import settings
-from rest_framework import response
-from Smartscope.core.db_manipulations import update, update_target_selection, update_target_label
-from Smartscope.core.models import *
-from .serializers import *
-from rest_framework import generics
+from django.contrib.auth.models import User, Group
+from django.contrib.auth import login, logout
+from django.shortcuts import resolve_url
+from django.shortcuts import redirect
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
-from Smartscope.lib.s3functions import *
-from Smartscope.server.frontend.forms import *
-from django.db import transaction
-from Smartscope.server.lib.worker_jobs import send_to_worker
-from django.contrib.auth.models import User, Group
 from rest_framework.renderers import TemplateHTMLRenderer
-import json
+
+from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
+from Smartscope.server.frontend.forms import *
+from Smartscope.server.lib.worker_jobs import send_to_worker
+from Smartscope.core.db_manipulations import update, update_target_selection, update_target_label, update_target_status
+from Smartscope.core.models import *
+from .serializers import *
+
+
+import jwt
 import logging
+
 
 logger = logging.getLogger(__name__)
 # smartscopeServerLog = logging.getLogger('smartscope.server')
@@ -49,6 +54,37 @@ logger = logging.getLogger(__name__)
 #     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
 #                         'atlas_id', 'quality', ]
 
+class AlternateLoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self,request):
+        encrypted_user = request.query_params.get('user')
+        logger.debug(f"Encrypted user: {encrypted_user}")
+        decrypted_user = jwt.decode(encrypted_user, settings.SECRET_KEY, algorithms=["HS256"])
+        logger.debug(f"Decrypted user: {decrypted_user}")
+        user = User.objects.filter(username=decrypted_user['username']).first()
+        if user is None:
+            return redirect(settings.ALTERNATE_LOGIN_URL + '/login/usernotfound')
+        # if not user.is_authenticated:
+        logger.debug(f"User {user} is not authenticated")
+        if (expiry:=request.query_params.get('expiry',None)) is not None:
+            logger.debug(f"Setting session expiry to {expiry}")
+            request.session.set_expiry(int(expiry))
+        login(request, user)
+        return redirect(resolve_url(settings.LOGIN_REDIRECT_URL))
+        
+class AlternateLogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self,request):
+        logger.debug(f'Alternate Logout request received from {request.user}')
+        logout(request)
+        url = settings.ALTERNATE_LOGIN_URL + '/logoutcallback'
+        logger.debug('Returning to ' + url)
+        return redirect(url)
+
+
+
 class AssingBisGroupsView(APIView):
     pass
 
@@ -73,6 +109,7 @@ class UpdateTargetsView(APIView):
                'squares': SquareModel}
     
     _KEYS = {'selected': update_target_selection,
+             'status': update_target_status,
                 'label': update_target_label}
 
     response = dict(success=False, error=None)

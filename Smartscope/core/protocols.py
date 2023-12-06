@@ -1,9 +1,7 @@
 import logging
 from pathlib import Path
 import yaml
-import os
-from Smartscope.lib.s3functions import TemporaryS3File
-from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, SMARTSCOPE_CUSTOM_CONFIG
+from Smartscope.core.settings.worker import PROTOCOLS_FACTORY, SMARTSCOPE_CUSTOM_CONFIG, SMARTSCOPE_DEFAULT_CONFIG
 from Smartscope.lib.Datatypes.base_protocol import BaseProtocol
 from Smartscope.lib.converters import rgetattr
 
@@ -12,22 +10,26 @@ logger = logging.getLogger(__name__)
 def load_protocol(file:Path):
     if file.exists():
         with open(file) as f:
-            return BaseProtocol.parse_obj(yaml.safe_load(f))
+            return BaseProtocol.model_validate(yaml.safe_load(f))
 
+    # from Smartscope.lib.storage.temporary_s3_file import TemporaryS3File
     # if eval(os.getenv('USE_AWS')):
     #     with TemporaryS3File([file]) as temp:
     #         with open(temp.temporary_files[0]) as f:
     #             return yaml.safe_load(f)
 
 class AutoProtocol:
-    rules_file = SMARTSCOPE_CUSTOM_CONFIG / 'default_protocols.yaml'
+    rules_file = 'default_protocols.yaml'
 
     def __init__(self,grid):
         self.grid = grid
         self.load_default_protocol_rules()
 
     def load_default_protocol_rules(self):
-        with open(self.rules_file,'r') as f:
+        rules_file = SMARTSCOPE_CUSTOM_CONFIG / self.rules_file
+        if not rules_file.exists():
+            rules_file = SMARTSCOPE_DEFAULT_CONFIG / self.rules_file
+        with open(rules_file,'r') as f:
             self.rules = yaml.safe_load(f)
 
     def parse_rules(self):

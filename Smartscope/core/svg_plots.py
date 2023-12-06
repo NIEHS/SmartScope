@@ -1,5 +1,5 @@
-import drawSvg as draw
-from drawSvg import elements as elementsModule
+import drawsvg as draw
+from drawsvg import elements as elementsModule
 from math import floor, sqrt
 from io import StringIO
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
@@ -33,26 +33,26 @@ def add_scale_bar(pixelsize, w, h, id_type='atlas'):
     while final_lineLenght <= w*0.1:
         final_value += value
         final_lineLenght += lineLenght
-    line = draw.Line(startpoint - final_lineLenght, h * 0.02, startpoint, h * 0.02, stroke='white', stroke_width=ft_sz / 2, id=f'line_{id_type}')
-    text = draw.Text(f'{str(final_value)} {unit}', ft_sz, path=line, fill='white', text_anchor='middle', lineOffset=-0.5, id=f'text_{id_type}')
+    line = draw.Line(startpoint - final_lineLenght, h * 0.98, startpoint, h * 0.98, stroke='white', stroke_width=ft_sz / 2, id=f'line_{id_type}')
+    text = draw.Text(f'{str(final_value)} {unit}', ft_sz, path=line, fill='white', text_anchor='middle', line_offset=-0.5, id=f'text_{id_type}')
     scalebarGroup.append(line)
     scalebarGroup.append(text)
     return scalebarGroup
 
 
 def add_legend(label_list, w, h, prefix):
-    startpoint = h * 0.96
+    startpoint = h * 0.04
     ft_sz = h * 0.03
     step = h * 0.035
     legend = draw.Group(id='legend')
-    box = draw.Rectangle(w * 0.01, startpoint - (step * (len(label_list) + 0.25)), w * 0.25, step * (len(label_list) + 1.25),
+    box = draw.Rectangle(w * 0.01, startpoint - (step + 0.25), w * 0.25, step * (len(label_list) + 1.25),
                          fill='gray', stroke='black', stroke_width=floor(ft_sz / 5), opacity=0.6)
     legend.append(box)
     t = draw.Text(f"Legend", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                   stroke_width=floor(ft_sz / 5), stroke='black', fill="white")
     legend.append(t)
     for (color, label, prefix) in sorted(label_list, key=lambda x: x[1] if isinstance(x[1], (int, float)) else 9999):
-        startpoint -= step
+        startpoint += step
         t = draw.Text(f"{prefix} {label}", ft_sz, x=w * 0.02, y=startpoint, paint_order='stroke',
                       stroke_width=floor(ft_sz / 5), stroke='black', class_='legend', label=label, fill=color)
         legend.append(t)
@@ -78,74 +78,8 @@ def css_color(obj, display_type, method):
             return 'blue', 'N.D.', ''
         return PLUGINS_FACTORY[method].get_label(labels[0])
 
-
-class myDrawging(draw.Drawing):
-    def asSvg(self, outputFile=None):
-        returnString = outputFile is None
-        if returnString:
-            outputFile = StringIO()
-        imgWidth, imgHeight = self.calcRenderSize()
-        if self.pixelScale != 1:
-            startStr = '''<?xml version="1.0" encoding="UTF-8"?>
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-        width="{}" height="{}" viewBox="{} {} {} {}"'''.format(
-                imgWidth, imgHeight, *self.viewBox)
-        else:
-            startStr = '''<?xml version="1.0" encoding="UTF-8"?>
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-        viewBox="{} {} {} {}"'''.format(
-                *self.viewBox)
-        endStr = '</svg>'
-        outputFile.write(startStr)
-        elementsModule.writeXmlNodeArgs(self.svgArgs, outputFile)
-        outputFile.write('>\n<defs>\n')
-        # Write definition elements
-
-        def idGen(base=''):
-            idStr = self.idPrefix + base + str(self.idIndex)
-            self.idIndex += 1
-            return idStr
-        prevSet = set((id(defn) for defn in self.otherDefs))
-
-        def isDuplicate(obj):
-            nonlocal prevSet
-            dup = id(obj) in prevSet
-            prevSet.add(id(obj))
-            return dup
-        for element in self.otherDefs:
-            try:
-                element.writeSvgElement(idGen, isDuplicate, outputFile, False)
-                outputFile.write('\n')
-            except AttributeError:
-                pass
-        allElements = self.allElements()
-        for element in allElements:
-            try:
-                element.writeSvgDefs(idGen, isDuplicate, outputFile, False)
-            except AttributeError:
-                pass
-        outputFile.write('</defs>\n')
-        # Generate ids for normal elements
-        prevDefSet = set(prevSet)
-        for element in allElements:
-            try:
-                element.writeSvgElement(idGen, isDuplicate, outputFile, True)
-            except AttributeError:
-                pass
-        prevSet = prevDefSet
-        # Write normal elements
-        for element in allElements:
-            try:
-                element.writeSvgElement(idGen, isDuplicate, outputFile, False)
-                outputFile.write('\n')
-            except AttributeError:
-                pass
-        outputFile.write(endStr)
-        if returnString:
-            return outputFile.getvalue()
-
-def drawAtlas(atlas, targets, display_type, method) -> myDrawging:
-    d = myDrawging(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False)
+def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
+    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
 
     shapes = draw.Group(id='atlasShapes')
@@ -157,14 +91,17 @@ def drawAtlas(atlas, targets, display_type, method) -> myDrawging:
         if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
+            if not finder.is_position_within_stage_limits():
+                color = '#505050'
+                label = 'Out of range'
             x = finder.x - sz // 2
-            y = -(finder.y - sz // 2) + d.height - sz
+            y = (finder.y - sz // 2)
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
-                               class_=f'target', onclick="clickSquare(this)")
+                               class_=f'target', status=i.status, onclick="clickSquare(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 35)
-                t = draw.Text(str(i.number), ft_sz, x=x + sz, y=y + sz, id=f'{i.pk}_text', paint_order='stroke',
+                t = draw.Text(str(i.number), ft_sz, x=x + sz, y=y, id=f'{i.pk}_text', paint_order='stroke',
                               stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')
                 text.append(t)
                 r.args['class'] += f" {i.status}"
@@ -184,8 +121,8 @@ def drawAtlas(atlas, targets, display_type, method) -> myDrawging:
     return d
 
 
-def drawSquare(square, targets, display_type, method) -> myDrawging:
-    d = myDrawging(square.shape_y, square.shape_x, id='square-svg', displayInline=False)
+def drawSquare(square, targets, display_type, method) -> draw.Drawing:
+    d = draw.Drawing(square.shape_y, square.shape_x, id='square-svg', displayInline=False,  style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=square.png, embed= not square.is_aws))
 
     shapes = draw.Group(id='squareShapes')
@@ -197,14 +134,17 @@ def drawSquare(square, targets, display_type, method) -> myDrawging:
         color, label, prefix = css_color(i, display_type, method)
         if color is not None:
             finder = list(i.finders.all())[0]
+            if not finder.is_position_within_stage_limits():
+                color = '#505050'
+                label = 'Out of range'
             x = finder.x
-            y = -(finder.y) + d.height
+            y = finder.y
             c = draw.Circle(x, y, i.radius, id=i.pk, stroke_width=floor(d.width / 250), stroke=color, fill=color, fill_opacity=0, label=label,
-                            class_=f'target', number=i.number, onclick="clickHole(this)")
+                            class_=f'target',status=i.status, number=i.number, onclick="clickHole(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 3000 * 80)
-                t = draw.Text(str(i.number), ft_sz, x=x + i.radius, y=y + i.radius, id=f'{i.pk}_text', paint_order='stroke',
+                t = draw.Text(str(i.number), ft_sz, x=x + i.radius, y=y - i.radius, id=f'{i.pk}_text', paint_order='stroke',
                               stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')  # + qualityClass
                 text.append(t)
             if i.status is not None:
@@ -231,8 +171,8 @@ def drawSquare(square, targets, display_type, method) -> myDrawging:
     return d
 
 
-def drawMediumMag(hole, targets, display_type, method, **kwargs) -> myDrawging:
-    d = myDrawging(hole.shape_y, hole.shape_x, id='hole-svg', displayInline=False)
+def drawMediumMag(hole, targets, display_type, method, **kwargs) -> draw.Drawing:
+    d = draw.Drawing(hole.shape_y, hole.shape_x, id='hole-svg', displayInline=False,  style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=hole.png, embed= not hole.is_aws))
 
     shapes = draw.Group(id='holeShapes')
@@ -248,7 +188,7 @@ def drawMediumMag(hole, targets, display_type, method, **kwargs) -> myDrawging:
                 break
             finder = list(i.finders.all())[0]
             x = finder.x
-            y = -(finder.y) + d.height
+            y = finder.y
             
             c = draw.Circle(x, y, radius, id=i.pk, stroke_width=floor(d.width / 100), stroke=color, fill=color, fill_opacity=0, label=label,
                             class_=f'target', number=i.number)
@@ -263,9 +203,8 @@ def drawMediumMag(hole, targets, display_type, method, **kwargs) -> myDrawging:
     d.append(add_legend(set(labels_list), d.width, d.height, hole.pixel_size))
     return d
 
-
-def drawHighMag(highmag) -> myDrawging:
-    d = myDrawging(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False)
+def drawHighMag(highmag) -> draw.Drawing:
+    d = draw.Drawing(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png, embed= not highmag.is_aws))
     d.append(add_scale_bar(highmag.pixel_size, d.width, d.height, id_type=highmag.name))
     return d

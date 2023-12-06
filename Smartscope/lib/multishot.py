@@ -2,8 +2,7 @@ import cv2
 import numpy as np
 from numpy.typing import ArrayLike
 import logging
-from pathlib import Path
-from typing import List, Callable, Optional, Union
+from typing import List, Optional
 from pydantic import BaseModel, Field
 import io
 import base64
@@ -11,73 +10,20 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle
 
 from Smartscope.lib.Datatypes.models import generate_unique_id
-from Smartscope.lib.montage import Montage, Target, create_targets_from_center
+from .mask_box import MaskBox
+from .record_params import RecordParams
 
 logger = logging.getLogger(__name__)
 
-class MaskBox:
-    
-    def __init__(self,hole_size:float,box_size:int=100,padding_fraction=0.2):
-        self.hole_size = hole_size
-        self.box_size = box_size
-        self.pix_size = (self.hole_size*(1+padding_fraction))/self.box_size
-        self.center = np.int8(np.array(self.box().shape) /2)
-    
-    def box(self):
-        return np.zeros([self.box_size]*2)
-    
-    @property
-    def hole_mask(self):
-        radius = int(self.hole_size/2//self.pix_size)
-        mask = self.box()
-        return cv2.circle(mask,self.center,radius,1,cv2.FILLED)
 
- 
-class RecordParams(BaseModel):
-    detector_size_x:int
-    detector_size_y:int
-    pixel_size:float
-    beam_size:int
-    hole_size:float
-
-    @property
-    def detector_size(self):
-        return np.array([self.detector_size_x,self.detector_size_y])
-
-    @property
-    def pixel_size_um(self):
-        return self.pixel_size / 10_000
-    
-    @property
-    def detector_size_um(self):
-        return self.detector_size * self.pixel_size_um
-    
-    @property
-    def beam_size_um(self):
-        return self.beam_size / 1_000
-    
-def display_multishot_matplotlib(shots, hole_size,beam_size_um,detector_size_um):
-    fig, ax = plt.subplots( nrows=1, ncols=1 )  # create figure & 1 axis
-    hole = Circle([0,0],hole_size/2,fill=False, edgecolor='black',label='Hole')
-    ax.add_patch(hole)
-    limit = hole_size * 1.5 / 2
-    ax.set_xlim([-limit,limit])
-    ax.set_ylim([-limit,limit])
-    ax.set_aspect('equal')
-    for shot in shots:
-        ax.add_patch(Circle(shot,beam_size_um/2,fill=False,color='red',label='Beam'))
-        ax.add_patch(Rectangle(shot-(detector_size_um/2), *detector_size_um,  label='Field of view'))
-    output = io.BytesIO()
-    fig.savefig(output, bbox_inches='tight')
-    return output
 
 class MultiShot(BaseModel):
     n_shots:int
     shots: List
     in_hole: float
     coverage: float
-    display: Optional[str]
-    params: Optional[RecordParams]
+    display: Optional[str] = None
+    params: Optional[RecordParams] = None
     cache_id:str = Field(default_factory=generate_unique_id)
 
     class Config:
@@ -99,6 +45,22 @@ class MultiShot(BaseModel):
         self.display=base64.b64encode(stream.getvalue()).decode()
         self.params = record_params
 
+
+    
+def display_multishot_matplotlib(shots, hole_size,beam_size_um,detector_size_um):
+    fig, ax = plt.subplots( nrows=1, ncols=1 )  # create figure & 1 axis
+    hole = Circle([0,0],hole_size/2,fill=False, edgecolor='black',label='Hole')
+    ax.add_patch(hole)
+    limit = hole_size * 1.5 / 2
+    ax.set_xlim([-limit,limit])
+    ax.set_ylim([-limit,limit])
+    ax.set_aspect('equal')
+    for shot in shots:
+        ax.add_patch(Circle(shot,beam_size_um/2,fill=False,color='red',label='Beam'))
+        ax.add_patch(Rectangle(shot-(detector_size_um/2), *detector_size_um,  label='Field of view'))
+    output = io.BytesIO()
+    fig.savefig(output, bbox_inches='tight')
+    return output
 
 def make_beam_and_fov_masks(shots,beam_size,fov_size,box:MaskBox, beam_padding=1.1):
     radius = int(beam_size*beam_padding/2//box.pix_size)
@@ -126,7 +88,7 @@ def check_for_beam_fov_overlap(beam_masks,fov_masks,box):
             sum_box += j
         sum_box*=f
         if np.any(sum_box[sum_box>1]):
-            # print('Found beam overlap')
+            # logger.info('Found beam overlap')
             return True
 
 def check_fov_overlap(fov_masks,box):
@@ -148,7 +110,16 @@ def check_fraction_in_hole(fov_masks,box):
     return sum_in_hole/init_sum, sum_in_hole, init_sum
 
 
-def set_shots_per_hole(number_of_shots:int,hole_size:float,beam_size:float,image_size:np.ndarray,radius_step:int=0.02,starting_angle:float=0, consider_aspect=True, min_efficiency=0.85):
+def set_shots_per_hole(
+        number_of_shots:int,
+        hole_size:float,
+        beam_size:float,
+        image_size:np.ndarray,
+        radius_step:int=0.02,
+        starting_angle:float=0,
+        consider_aspect=True,
+        min_efficiency=0.85
+    ):
     hole_area = np.pi*(hole_size/2)**2
     min_allowed_coverage = np.prod(image_size)/hole_area
     angle_between_shots = 2*np.pi / number_of_shots
@@ -160,7 +131,8 @@ def set_shots_per_hole(number_of_shots:int,hole_size:float,beam_size:float,image
         aspect_step = 0.1
         steps=20
 
-    # start_radius = (hole_size/2 - np.sqrt(np.sum(image_size**2))/2) if number_of_shots != 1 else 0
+    # start_radius = (hole_size/2 - np.sqrt(np.sum(image_size**2))/2)
+    #  if number_of_shots != 1 else 0
     start_radius = beam_size/2000 if number_of_shots != 1 else 0
     max_radius = hole_size/2
     box = MaskBox(hole_size=hole_size)
@@ -222,11 +194,4 @@ def set_shots_per_hole(number_of_shots:int,hole_size:float,beam_size:float,image
             logger.info(f'Shots: {number_of_shots}; No pattern statisfying the {min_efficiency*100:.1f} % minimum effeciency found')
             return
 
-def load_multishot_from_file(file:Union[str,Path]) -> Union[MultiShot,None]:
-    if Path(file).exists():
-        return MultiShot.parse_file(file)
-    
 
-def split_target_for_multishot(shots:MultiShot, target_coords:ArrayLike, montage: Montage) -> List[Target]:
-    shots_in_pixels = shots.convert_shots_to_pixel(montage.pixel_size / 10_000) + target_coords
-    return create_targets_from_center(shots_in_pixels,montage)

@@ -8,13 +8,13 @@ function escapeRegExp(string) {
 
 async function loadSVG(data, element) {
     console.log(data, element)
-    if (data['fullmeta'] !== null) {
-        var targets = data['targets']
-        if ("svg" in data) {
-            element.html(data['svg'])
-        }
-        updateFullMeta(data['fullmeta'])
-        grabCuration()
+    // if (data['fullmeta'] !== null) {
+        // var targets = data['targets']
+    if ("svg" in data) {
+        element.html(data['svg'])
+        // }
+        // updateFullMeta(data['fullmeta'])
+        // grabCuration()
     }
 }
 
@@ -61,6 +61,8 @@ function setSVGcss(item, el) {
         el.classList.add(item.status)
 
         $(`#${item.id}_text`).removeClass(['queued', 'started', 'acquired', 'processed', 'targets_picked']).addClass(item.status)
+        console.log('Setting status')
+        el.setAttribute('status', item.status)
     }
     if (item.bis_type === "is_area") {
         el.classList.add('is_area')
@@ -83,7 +85,7 @@ async function loadAtlas(metaonly = false, display_type = null, method = null) {
     const data = await fetchAsync(url, message='Loading Atlas');
     currentState['atlasDisplayType'] = data.displayType
     currentState['atlasMethod'] = data.method
-    loadSVG(data, generalElements.atlas)
+    // loadSVG(data, generalElements.atlas)
     $("#Atlas_div").html(data.card)
     pushState()
 
@@ -116,6 +118,9 @@ $('#main').on('click', '.showLegend', function () {
 
 
 function selectElement(elem, selection) {
+    if (elem.getAttribute('label') == 'Out of range') {
+        return
+    }
     if (selection.includes(elem.id)) {
         console.log('Unselecting')
         elem.classList.remove('clicked')
@@ -179,18 +184,18 @@ function clearSelection(selection, type) {
 
 async function loadSquare(full_id, metaonly = false, display_type = null, method = null) {
     console.log('Loading Square:', full_id)
-    let meta = fullmeta.squares[full_id]
+    if ($(`#${full_id}`).attr('status') != 'completed')
+        return
 
-    if (meta.status == 'completed') {
-        var url = `/api/squares/${meta.id}/load/?format=json&display_type=${display_type}&method=${method}&metaonly=${metaonly}`
-        console.log('URL:', url)
-        const data = await fetchAsync(url, message=`Loading Square ${meta.id}`)
-        currentState['squareDisplayType'] = data.displayType
-        currentState['squareMethod'] = data.method
-        loadSVG(data, generalElements.square)
-        $("#Square_div").html(data.card)
-        pushState()
-    };
+    var url = `/api/squares/${full_id}/load/?format=json&display_type=${display_type}&method=${method}&metaonly=${metaonly}`
+    console.log('URL:', url)
+    const data = await fetchAsync(url, message=`Loading Square ${full_id}`)
+    currentState['squareDisplayType'] = data.displayType
+    currentState['squareMethod'] = data.method
+    // loadSVG(data, generalElements.square)
+    $("#Square_div").html(data.card)
+    pushState()
+
 };
 
 async function loadHole(elem, metaonly = false) {
@@ -203,7 +208,7 @@ async function loadHole(elem, metaonly = false) {
             }
             var imglm = document.createElement('img')
             let data = await fetchAsync(`/api/holes/${center.id}/load`, message=`Loading Hole ${center.id}`)
-            loadSVG(data, generalElements.hole)
+            // loadSVG(data, generalElements.hole)
             // $("#Atlas_div").html(data.card)
             // imglm.src = lm_data.png.url
             // imglm.className = "col-s-12 col-xl-3 col-lg-4 col-md-6 shadow-1-strong rounded p-2"
@@ -314,27 +319,6 @@ function hideSVGlabel(el, parentid) {
         element.setAttribute('visibility', final);
     }
 }
-// function downloadPNG(element_id) {
-//     // Get the SVG element
-//     const svg = document.getElementById(element_id);
-
-//     // Create a canvas element with the same dimensions as the SVG
-//     const canvas = document.createElement("canvas");
-//     canvas.width = svg.clientWidth;
-//     canvas.height = svg.clientHeight;
-
-//     // Use canvg to rasterize the SVG onto the canvas
-//     canvg(canvas, svg.outerHTML);
-
-//     // Create a data URL from the canvas
-//     const dataURL = canvas.toDataURL("image/png");
-
-//     // Create a download link with the data URL and click it to start the download
-//     const link = document.createElement("a");
-//     link.download = "image.png";
-//     link.href = dataURL;
-//     link.click();
-//   }
 
 function openMenu(el, menu) {
     menu.classList.remove('show')
@@ -352,50 +336,45 @@ function openGoTo(el) {
 
 function optionMenu(meta, type = 'holes') {
     var queueBtn = document.getElementById('opt-queued-square')
+    var skipBtn = document.getElementById(`opt-skip-square`)
     var queueDiv = document.getElementById('squareQueue')
     if (type == 'holes') {
-        var queueBtn = document.getElementById('opt-queued-hole')
-        var queueDiv = document.getElementById('holeQueue')
+    var queueBtn = document.getElementById('opt-queued-hole')
+    var queueDiv = document.getElementById('holeQueue')
+    var skipBtn = document.getElementById(`opt-skip-hole`)
     }
-    if (fullmeta.status != 'complete') {
-        queueDiv.classList.remove('d-none')
-        queueDiv.classList.add('d-block')
-        let queued = []
-        Object.keys(fullmeta[type]).map(function (_key) {
-            if (meta.includes(_key)) {
-                queued.push(fullmeta[type][_key].status)
-            }
-        })
-        queued = Array.from(new Set(queued))
-        console.log(queued)
-        if (queueBtn !== null) {
-            if (queued.length == 1) {
-                queueBtn.disabled = false
-                if (queued[0] == 'queued') {
-                    queueBtn.value = 0
-                    queueBtn.innerHTML = 'Remove from queue'
-
-                } else if (queued[0] === null) {
-                    queueBtn.value = 1
-                    queueBtn.innerHTML = 'Add to queue'
-                } else {
-                    queueBtn.disabled = true
-                }
-            } else {
-                queueBtn.disabled = true
-            }
-        }
-    } else {
+    if (queueBtn == null) {
+        return
+    }
+    if (fullmeta.status == 'complete') {
         queueDiv.classList.add('d-none')
         queueDiv.classList.remove('d-block')
+        return
     }
-    popupsele = [meta, type]
+    queueDiv.classList.remove('d-none')
+    queueDiv.classList.add('d-block')
+    let statuses = meta.map( function (_key) {
+        return $(`#${_key}`).attr('status')
+    })
+    statuses = Array.from(new Set(statuses))
+    console.log('Statuses:',statuses)
+    queueBtn.disabled = true
+    skipBtn.disabled = false
+    if (statuses.length == 1 && !statuses.includes('completed')) {
+        queueBtn.disabled = false
+        if (statuses[0] == 'queued' || statuses[0] == 'skipped') {
+            queueBtn.value = 0
+            queueBtn.innerHTML = 'Remove from queue'
+        }
+        else {
+            queueBtn.value = 1
+            queueBtn.innerHTML = 'Add to queue'
+        }
+    }
+    if (statuses.includes('completed') || statuses.includes('queued') || statuses.includes(undefined)) {
+        skipBtn.disabled = true
+    }
 }
-
-// function closeOptionMenu() {
-//     menu = document.getElementById("popupMenuGoTo")
-//     menu.classList.remove('show')
-// }
 
 function closePopup(element) {
     console.log(element);
@@ -510,11 +489,11 @@ async function popupSele(element) {
         console.log('Data', data)
         if (do_reload) {
             await reload(...Object.values(reloadArgs))
-            updateFullMeta(data.fullmeta)
+            // updateFullMeta(data.fullmeta)
             let svgToUpdate = { ...data.fullmeta.squares }
             svgUpdate(svgToUpdate)
         } else {
-            updateFullMeta(data.fullmeta)
+            // updateFullMeta(data.fullmeta)
             let svgToUpdate = { ...data.fullmeta.squares, ...data.fullmeta.holes }
             svgUpdate(svgToUpdate)
         }
@@ -725,10 +704,10 @@ function showIframe() {
 
 
 function clickSquare(elem) {
-    let meta = fullmeta['squares'][elem.id]
+    // let meta = fullmeta['squares'][elem.id]
     selectElement(elem, squareSelection);
     checkSelection('square')
-    if (meta.status == 'completed') {
+    if (elem.getAttribute('status') == 'completed') {
         if (currentState.square === elem.id) {
             console.log('Reloading square meta')
             loadSquare(elem.id, true)
@@ -801,7 +780,7 @@ $("#main").on('click', '.zoomBtn', function () {
 
 function updateData(data) {
     if (data.type == 'update') {
-        updateFullMeta(data.fullmeta)
+        // updateFullMeta(data.fullmeta)
         if (Object.keys(data.fullmeta.atlas).length === 0) {
             console.log('UPDATING!!')
             let svgToUpdate = { ...data.fullmeta.squares, ...data.fullmeta.holes }

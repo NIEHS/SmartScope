@@ -13,3 +13,9 @@ services:
       # - /path/to/where/serialem/will/write/files/:/mnt/your_scope_name_here/
       # Example:
       # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
+  nginx:
+    ports:
+      #### BROADCASTED PORT ####
+      # Default port is 48000 but this can be changed by any port of your choosing.
+      # Note: You need sudo permissions to use port 80
+      - 48000:80

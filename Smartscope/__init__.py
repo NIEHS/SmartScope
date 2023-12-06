@@ -47,4 +47,11 @@ if os.getenv('LOGDIR') is not None:
     }
     LOG['loggers'][__name__]['handlers'].append('file')
 
+
 logging.config.dictConfig(LOG)
+
+# connect db by python, which replace mysqlclient
+if os.environ.get('mode') == 'dev':
+    import pymysql
+    pymysql.version_info = (1, 4, 3, "final", 0)
+    pymysql.install_as_MySQLdb()

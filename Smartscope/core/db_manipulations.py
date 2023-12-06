@@ -1,6 +1,5 @@
 
 from typing import Any, Callable, List, Union
-from datetime import timedelta
 import numpy as np
 import random
 import logging
@@ -14,14 +13,21 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from Smartscope.core.models import *
-from Smartscope.lib.multishot import load_multishot_from_file
+# from Smartscope.core.run_grid import load_multishot_from_file
 from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
 
 logger = logging.getLogger(__name__)
 
+from django.db import models
+from .models.grid import AutoloaderGrid
+
 class Websocket_update_decorator:
 
-    def __init__(self, f: Callable[[Any], List[Any]] = None, grid: Union[AutoloaderGrid, None] = None):
+    def __init__(self,
+            f: Callable[[Any],
+            List[Any]] = None,
+            grid: Union[AutoloaderGrid, None] = None
+        ):
         self.f = f
         self.grid = grid
 
@@ -37,18 +43,18 @@ class Websocket_update_decorator:
 
 def websocket_update(objs, grid_id):
     channel_layer = get_channel_layer()
-    outputDict = {'type': 'update.metadata',
-                  'update': {}}
+    outputDict = {
+        'type': 'update.metadata',
+        'update': {}
+    }
     logger.debug(f'Updating {objs}, sending to websocket {grid_id} group')
     outputDict['update'] = update_to_fullmeta(objs)
     async_to_sync(channel_layer.group_send)(grid_id, outputDict)
 
-# def get_center_hole(instance:HoleModel):
-#     if instance.bis_type == 'center':
-#         return instance
-#     return HoleModel.objects.get(square_id=instance.square_id, bis_group=instance.bis_group, bis_type='center')
 
 def update_target_selection(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
+    from .models.hole import HoleModel
+
     status = None
     value = True if value == '1' else False
     if value:
@@ -56,8 +62,16 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
     objs = list(model.objects.filter(pk__in=objects_ids))
     if model is HoleModel:
         bis_groups = set([obj.bis_group for obj in objs])
+        extra_params = dict()
+        if bis_groups != set([None]):
+            extra_params = dict(
+                bis_type = 'center',
+                bis_group__in = bis_groups
+            )
+        else:
+            extra_params=dict(pk__in=objects_ids)
         squares_ids = set([obj.square_id for obj in objs])
-        objs = model.objects.filter(square_id__in=squares_ids,bis_group__in=bis_groups,bis_type='center')
+        objs = model.objects.filter(square_id__in=squares_ids, **extra_params)
 
     with transaction.atomic():
         for obj in objs:
@@ -66,6 +80,8 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
             obj.save()  
 
 def update_target_label(model:models.Model,objects_ids:List[str],value:str,method:str, *args, **kwargs):
+    from .models.target_label import Classifier
+
     content_type = ContentType.objects.get_for_model(model)
     logger.debug('Updating Classifier objects')
     objs = Classifier.objects.filter(object_id__in=objects_ids, method_name=method)
@@ -78,71 +94,17 @@ def update_target_label(model:models.Model,objects_ids:List[str],value:str,metho
         for obj in new_objs:
             Classifier(object_id=obj, method_name=method,content_type=content_type, label=value).save()
 
-
-# def update_target(data):
-#     model = data.pop('type', False)
-#     ids = data.pop('ids', [])
-#     key = data.pop('key', False)
-#     new_value = data.pop('new_value')
-#     display_type = data.pop('display_type', 'classifiers')
-#     method = data.pop('method', None)
-
-#     response = dict(success=False, error=None)
-#     if not key:
-#         response['error'] = 'No key specified'
-#         return response
-
-#     if not key in ['label', 'selected']:
-#         response['error'] = 'Wrong key choice for updating'
-#         return response
-
-#     if not model:
-#         response['error'] = 'No model specified'
-#         return response
-
-#     if model == 'holes':
-#         model = HoleModel
-
-#     elif model == 'squares':
-#         model = SquareModel
-#     else:
-#         response['error'] = 'Invalid model specified'
-#         return response
-#     content_type = ContentType.objects.get_for_model(model)
-
-#     if key == 'selected':
-#         new_value = True if new_value == '1' else False
-#         objs = list(model.objects.filter(pk__in=ids))
-#         if model is HoleModel:
-#             for i, obj in enumerate(objs):
-#                 if obj.bis_type == 'is_area':
-#                     objs[i] = HoleModel.objects.get(square_id=obj.square_id, bis_group=obj.bis_group, bis_type='center')
-#     else:
-#         logger.debug('Updating Classifier objects')
-#         objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
-#     logger.debug(f'From {len(ids)} ids, found {len(objs)}. Updating {key} to {new_value}')
-#     all_found = len(ids) == len(objs)
-#     with transaction.atomic():
-#         if all_found:
-#             for obj in objs:
-#                 setattr(obj, key, new_value)
-#                 obj.save()
-#         else:
-#             for id in ids:
-#                 Classifier.objects.update_or_create(object_id=id, method_name=method,
-#                                                     content_type=content_type, defaults=dict(label=new_value))
-#     try:
-#         instance = model.objects.get(pk=ids[0]).parent
-#         response = SvgSerializer(instance=instance, display_type=display_type, method=method).data
-
-#         response['success'] = True
-#         return response
-#     except Exception as err:
-#         logger.exception(f"An error occured while updating the page. {err}")
-#         return response
+def update_target_status(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
+    objs = list(model.objects.filter(pk__in=objects_ids))
+    with transaction.atomic():
+        for obj in objs:
+            obj.status = value
+            obj.save()
 
 
 def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
+    from .models.target_label import Finder
+
     refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
     if refined:
         refined.update(stage_x=stage_x,
@@ -162,37 +124,6 @@ def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
     )
     new.save()
 
-
-def get_hole_count(grid:AutoloaderGrid, hole_list=None):
-    if hole_list is not None:
-        queued = len(hole_list)
-    else:
-        queued = HoleModel.display.filter(grid_id=grid.grid_id,status='queued').count()
-        queued_exposures = queued
-    if grid.params_id.multishot_per_hole:
-        mutlishot_file = Path(grid.directory,'multishot.json')
-        multishot = load_multishot_from_file(mutlishot_file)
-        if multishot is not None:
-            queued_exposures = queued*multishot.n_shots
-    completed = HighMagModel.objects.filter(grid_id=grid.grid_id)
-    num_completed = completed.count()
-
-    holes_per_hour = 0
-    last_hour = 0
-    elapsed = 0
-    remaining = 0
-    if grid.start_time is not None:
-        elapsed = grid.time_spent
-        holes_per_hour = round(num_completed / (elapsed.total_seconds() / 3600), 1)
-        last_hour_date_time = grid.end_time - timedelta(hours=1)
-        last_hour = completed.filter(completion_time__gte=last_hour_date_time).count()
-        remaining = timedelta(hours=queued_exposures/last_hour)
-        
-    logger.debug(f'{num_completed} completed holes, {queued} queued holes, {holes_per_hour} holes per hour, {last_hour} holes in the last hour')
-
-    return dict(completed=num_completed, queued=queued, queued_exposures=queued_exposures, perhour=holes_per_hour, lasthour=last_hour, elapsed=str(elapsed).split('.', 2)[0], remaining=str(remaining).split('.', 2)[0])
-
-
 def viewer_only(user):
     groups = user.groups.all().values_list('name', flat=True)
     logger.debug(groups)
@@ -208,7 +139,8 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
         f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes
     prefetch_related_objects(hole_models, 'finders')
-    coords = np.array([[list(h.finders.all())[0].stage_x, list(h.finders.all())[0].stage_y] for h in hole_models])
+    coords = []
+    coords = np.array([h.stage_coords for h in hole_models])
     input_number = len(hole_models)
     # Generate distance matrix
     cd = cdist(coords, coords)
@@ -280,6 +212,8 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
 
 
 def queue_atlas(grid):
+    from .models.atlas import AtlasModel
+
     atlas, created = AtlasModel.objects.get_or_create(
         name=f'{grid.name}_atlas',
         grid_id=grid)
@@ -302,6 +236,10 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
 
 
 def add_targets(grid, parent, targets, model, finder, classifier=None, start_number=0, **extra_fields):
+    from .models.square import SquareModel
+    from .models.hole import HoleModel
+    from .models.high_mag import HighMagModel
+    from .models.target_label import Finder
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
     if model is SquareModel:
@@ -340,6 +278,8 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
 
 
 def add_high_mag(grid, parent):
+    from .models.high_mag import HighMagModel
+    
     hm, created = HighMagModel.objects.get_or_create(
         number=parent.number,
         hole_id=parent,
@@ -351,7 +291,7 @@ def add_high_mag(grid, parent):
 
 def select_n_squares(parent, n):
     squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
-    squares = [s for s in squares if s.is_good()]
+    squares = [s for s in squares if s.is_good() and not s.is_out_of_range()]
     if len(squares) == 0:
         return
     split_squares = np.array_split(squares, n)
@@ -371,7 +311,7 @@ def select_n_holes(parent, n, is_bis=False):
     holes = list(parent.holemodel_set.filter(
         **filter_fields).order_by('dist_from_center'))
 
-    holes = [h for h in holes if h.is_good()]
+    holes = [h for h in holes if h.is_good() and not h.is_out_of_range()]
 
     if n <= 0:
         with transaction.atomic():
@@ -409,13 +349,13 @@ def select_n_areas(parent, n, is_bis=False):
     if n <= 0:
         with transaction.atomic():
             for t in targets:
-                if t.is_good() and not t.is_excluded()[0]:
+                if t.is_good() and not t.is_excluded()[0] and not t.is_out_of_range():
                     update(t, selected=True, status='queued')
         return
 
     clusters = dict()
     for t in targets:
-        if not t.is_good():
+        if not t.is_good() or t.is_out_of_range():
             continue
         excluded, label = t.is_excluded()
         if excluded:
@@ -435,3 +375,74 @@ def select_n_areas(parent, n, is_bis=False):
                 update(sele, selected=True, status='queued')
     else:
         logger.info('All targets are rejected, skipping')
+
+
+# def get_center_hole(instance:HoleModel):
+#     if instance.bis_type == 'center':
+#         return instance
+#     return HoleModel.objects.get(square_id=instance.square_id, bis_group=instance.bis_group, bis_type='center')
+
+
+
+# def update_target(data):
+#     model = data.pop('type', False)
+#     ids = data.pop('ids', [])
+#     key = data.pop('key', False)
+#     new_value = data.pop('new_value')
+#     display_type = data.pop('display_type', 'classifiers')
+#     method = data.pop('method', None)
+
+#     response = dict(success=False, error=None)
+#     if not key:
+#         response['error'] = 'No key specified'
+#         return response
+
+#     if not key in ['label', 'selected']:
+#         response['error'] = 'Wrong key choice for updating'
+#         return response
+
+#     if not model:
+#         response['error'] = 'No model specified'
+#         return response
+
+#     if model == 'holes':
+#         model = HoleModel
+
+#     elif model == 'squares':
+#         model = SquareModel
+#     else:
+#         response['error'] = 'Invalid model specified'
+#         return response
+#     content_type = ContentType.objects.get_for_model(model)
+
+#     if key == 'selected':
+#         new_value = True if new_value == '1' else False
+#         objs = list(model.objects.filter(pk__in=ids))
+#         if model is HoleModel:
+#             for i, obj in enumerate(objs):
+#                 if obj.bis_type == 'is_area':
+#                     objs[i] = HoleModel.objects.get(square_id=obj.square_id, bis_group=obj.bis_group, bis_type='center')
+#     else:
+#         logger.debug('Updating Classifier objects')
+#         objs = Classifier.objects.filter(object_id__in=ids, method_name=method)
+#     logger.debug(f'From {len(ids)} ids, found {len(objs)}. Updating {key} to {new_value}')
+#     all_found = len(ids) == len(objs)
+#     with transaction.atomic():
+#         if all_found:
+#             for obj in objs:
+#                 setattr(obj, key, new_value)
+#                 obj.save()
+#         else:
+#             for id in ids:
+#                 Classifier.objects.update_or_create(object_id=id, method_name=method,
+#                                                     content_type=content_type, defaults=dict(label=new_value))
+#     try:
+#         instance = model.objects.get(pk=ids[0]).parent
+#         response = SvgSerializer(instance=instance, display_type=display_type, method=method).data
+
+#         response['success'] = True
+#         return response
+#     except Exception as err:
+#         logger.exception(f"An error occured while updating the page. {err}")
+#         return response
+

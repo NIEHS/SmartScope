@@ -6,7 +6,6 @@ version: "3"
 services:
   smartscope:
     image: ghcr.io/niehs/smartscope:latest
-    container_name: smartscope
     restart: always
     volumes:
       ######## FILL THIS ##########
@@ -16,10 +15,13 @@ services:
       # - /path/to/where/serialem/will/write/files/:/mnt/your_scope_name_here/
       # Example:
       # - /mnt/gatan_Raid_X/smartscope/:/mnt/arctica/
-      ###### OTHER DEFAULT VOLUMES - NO NEED TO CHANGE ####### 
+      ###### OTHER DEFAULT VOLUMES - NO NEED TO CHANGE #######
+      - ./shared/auth/:/opt/auth/:rw
       - ./shared/nginx/:/opt/shared/:rw
       - ./shared/smartscope/:/opt/config/:rw
       - ./testfiles/:/mnt/testfiles/:rw
+      - ./logs/:/opt/logs/
+      - ./backups/:/mnt/backups/
     env_file:
       - smartscope.conf
       - database.conf
@@ -30,13 +32,11 @@ services:
       - smartscopenet
   db:
     image: mariadb:10.5
-    container_name: smartscope-db
     restart: always
     env_file:
       - database.conf
     volumes:
       - ./db/:/var/lib/mysql/
-      # - ./shared/initialdb.sql:/docker-entrypoint-initdb.d/initialdb.sql
     networks:
       - smartscopenet
   cache:
@@ -48,8 +48,6 @@ services:
   nginx:
     image: nginx
     restart: always
-    ports:
-      - 48000:80
     volumes:
       - ./shared/nginx/:/opt/shared/:ro #Doesn't need to be changed
     networks:

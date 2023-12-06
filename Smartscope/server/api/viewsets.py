@@ -27,15 +27,16 @@ from .export_serializers import *
 from Smartscope.server.api.permissions import HasGroupPermission
 from Smartscope.server.frontend.forms import *
 
-from Smartscope.lib.converters import *
+from Smartscope.lib.converters import list_to_dict, get_request_param
 from Smartscope.lib.image_manipulations import power_spectrum
-from Smartscope.lib.system_monitor import disk_space
+from Smartscope.utils.system_monitor import disk_space
 from Smartscope.server.lib.worker_jobs import send_to_worker
 
 from Smartscope.core.models.models_actions import targets_methods
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.models import *
+from Smartscope.core.main_commands import check_pause
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,8 @@ def image_as_bytes(image_path):
 def svg_as_png(instance, context):
     d = instance.svg(display_type=context['display_type'], method=context['method'])
     scale = min([1000/d.width, 1000/d.height])
-    d.setPixelScale(scale)
-    d.savePng('/tmp/download.png')
+    d.set_pixel_scale(scale)
+    d.save_png('/tmp/download.png')
     with  open('/tmp/download.png','rb') as f:
         img = io.BytesIO(f.read())
 
@@ -63,19 +64,14 @@ class ExtraActionsMixin:
         return Response(serializer.data, template_name='mapcard.html')
     
     def get_card_context(self,instance,request,**kwargs):
-        context = dict()
-        display_type = request.query_params.get('display_type')
-        if display_type is not None:
-            display_type = isnull_to_none(display_type)
-        context['display_type'] = 'classifiers' if display_type is None else display_type
-        method = request.query_params.get('method')
-        if method is not None:
-            method = isnull_to_none(method)
-        context['method'] = method
-        context['targets_methods'] = targets_methods(instance)
-        context['instance'] = instance
+        context = {
+            'instance': instance,
+            'targets_methods': targets_methods(instance),
+            'display_type': get_request_param(request, 'display_type', 'classifiers'),
+            'method': get_request_param(request, 'method'),
+        }
         if context['method'] is None:
-            methods = context['targets_methods'][context['display_type']]
+            methods = context['targets_methods'].get(context['display_type'], [])
             if len(methods) > 0:
                 context['method'] = methods[0].name
         return context
@@ -89,7 +85,7 @@ class ExtraActionsMixin:
         context['card'] = render_to_string('mapcard.html', context=context, )
         logger.debug(f"{context['method']}, {context['display_type']}")
         logger.debug(f'Loading card required {len(connection.queries)} queries')
-        return Response(dict(fullmeta=context['fullmeta'], card=context['card'], displayType=context['display_type'], method=context['method']))
+        return Response(dict(card=context['card'], displayType=context['display_type'], method=context['method'])) #fullmeta=context['fullmeta'],
 
     @ action(detail=True, methods=['get'])
     def file_paths(self, request, *args, **kwargs):
@@ -118,7 +114,9 @@ class TargetRouteMixin:
 
     detailed_serializer = None
 
-    def get_detailed_serializer(self):
+    def get_detailed_serializer(self, serializer=None):
+        if serializer is not None:
+            return serializer
         if self.detailed_serializer is None:
             raise ValueError(f'detailed_serializer attribute is not set on {self.__class__.__name__}.')
         return self.detailed_serializer
@@ -131,8 +129,8 @@ class TargetRouteMixin:
         return Response(data=serializer.data)
 
     @ action(detail=False, methods=['get'], url_path='detailed')
-    def detailedMany(self, request, *args, **kwargs):
-        self.serializer_class = self.get_detailed_serializer()
+    def detailedMany(self, request, *args, serializer=None, **kwargs):
+        self.serializer_class = self.get_detailed_serializer(serializer)
         page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
@@ -147,7 +145,10 @@ class TargetRouteMixin:
             self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
+    
+    @ action(detail=False, methods=['get'], url_path='scipion_plugin')
+    def scipion_plugin(self, request, *args, **kwargs):
+        return self.detailedMany(request=request,*args,serializer=ScipionPluginHoleSerializer ,*kwargs)
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -204,12 +205,18 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
             process_init = process = self.object.process_set.first()
             if data['start'] is True:
                 logger.info('starting process')
-                send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
-                               arguments=['autoscreen', self.object.session_id],)
+                send_to_worker(
+                    self.object.microscope_id.worker_hostname,
+                    self.object.microscope_id.executable,
+                    arguments=['autoscreen', self.object.session_id],
+                )
             else:
                 logger.info('stopping')
-                send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
-                               arguments=['stop_session', self.object.session_id])
+                send_to_worker(
+                    self.object.microscope_id.worker_hostname,
+                    self.object.microscope_id.executable,
+                    arguments=['stop_session', self.object.session_id]
+                )
 
             rounds = 0
             check = True
@@ -217,7 +224,12 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                 logger.info('Starting checks')
                 rounds += 1
                 if rounds > 15:
-                    return Response({'error': 'Command Timeout reached', 'isRunning': process.status == 'running', 'pid': process.PID, 'status': process.status})
+                    return Response({
+                        'error': 'Command Timeout reached',
+                        'isRunning': process.status == 'running',
+                        'pid': process.PID,
+                        'status': process.status
+                    })
                 time.sleep(1)
                 process = self.object.process_set.first()
                 if process_init is None:
@@ -227,7 +239,11 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
                     if process_init.status != process.status:
                         check = False
 
-            return Response({'isRunning': process.status == 'running', 'pid': process.PID, 'status': process.status})
+            return Response({
+                'isRunning': process.status == 'running',
+                'pid': process.PID,
+                'status': process.status
+            })
 
     @ action(detail=True, methods=['get'])
     def check_is_running(self, request, **kwargs):
@@ -258,19 +274,18 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         if 'continue' in data.keys():
             out, err = send_to_worker(self.object.microscope_id.worker_hostname, self.object.microscope_id.executable,
                                       arguments=['continue_run', data['continue'], self.object.microscope_id.pk], communicate=True)
-            # print(out,err)
             out = out.decode("utf-8").strip().split('\n')[-1]
-            # print(out)
             return Response(json.loads(out))
 
     @ action(detail=True, methods=['get'])
     def get_logs(self, request, **kwargs):
         self.object = self.get_object()
         logger.info('Fetching logs')
-        check_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
-                                           self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
-        logger.debug(f'Check pause output: {check_output}')
-        check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
+        # check_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
+                                        #    self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
+        # logger.debug(f'Check pause output: {check_output}')
+        # check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
+        check_output = check_pause(self.object.microscope_id.pk, self.object.session_id)
         disk_status = disk_space(settings.AUTOSCREENDIR)
         out = self.read_file('run.out')
         proc = self.read_file('proc.out')
@@ -370,7 +385,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         serializer = self.get_serializer(obj, many=False)
         data = serializer.data
         data['atlas'] = list_to_dict(data['atlas'])
-        data['squares'] = list_to_dict(data['squares'])
+        data['squares'] = [] #list_to_dict(data['squares'])
         data['holes'] = []
         # data['counts'] = get_hole_count(obj)
         return Response(data)
@@ -520,7 +535,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         response_context= dict(cards=[])
         for hole in queryset:
             context['hole']=hole
-            context['svg'] = hole.svg().asSvg()
+            context['svg'] = hole.svg().as_svg()
             response_context['cards'].append(render_to_string('holecard.html',context))
         resp = SimpleTemplateResponse(context=response_context, content_type='text/html', template='holecards.html')
         logger.debug(resp)
@@ -551,6 +566,49 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
                         'grid_id__quality', 'hole_id', 'hole_id__square_id', 'grid_id__session_id', 'hm_id', 'number', 'status','name','frames']
 
     detailed_serializer = DetailedHighMagSerializer
+
+    @ action(detail=True, methods=['patch'])
+    def upload_images(self,request, *args, **kwargs):
+        
+            allowed_keys = ['mrc','png','ctf_img']
+            obj = self.get_object()
+            data = request.data
+            has_errors = False
+            has_success = False
+            return_data = dict()
+            logger.debug(data.keys())
+            for key,image in data.items():
+                if key not in allowed_keys:
+                    message = f"Key: {key} is not valid, choose from {', '.join(allowed_keys)}"
+                    return_data[key] = message
+                    has_errors = True
+                    logger.warning(message)
+                    continue
+                try:
+                    file = io.BytesIO(base64.b64decode(image))
+                    #Validate image while in memory
+                    filepath = getattr(obj,key)
+                    logger.info(f'Saving {obj.name} -> {key} image to {filepath}')
+                    with open(filepath, "wb") as f:
+                        f.write(file.getbuffer())
+                    message = f'Key: {key}, successfully uploaded and saved.'
+                    return_data[key] = message
+                    logger.info(message)
+                    has_success = True
+                except Exception as err:
+                    has_errors = True
+                    message = f'Key: {key}, an error occured: {err}. Check smartscope.log for more details'
+                    logger.info(message)
+                    return_data[key] = message
+                    logger.exception(err)
+            logger.info('Done uploading images.')
+            if not has_errors and has_success:
+                return Response(status=200, data=return_data)
+            if has_errors and has_success:
+                return Response(status=207, data=return_data)
+            if has_errors and not has_success:
+                return Response(status=200, data=return_data)
+
 
     @ action(detail=True, methods=['get'])
     def fft(self, request, *args, **kwargs):

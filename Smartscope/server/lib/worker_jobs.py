@@ -6,7 +6,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def send_to_worker(hostname: str, script: str, arguments: list = [], kw_arguments: dict = dict(), communicate=False, timeout=15):
+def send_to_worker(hostname: str, script: str, \
+        arguments: list = [], kw_arguments: dict = dict(), \
+        communicate=False, timeout=15):
     cmd = f'{script}'
     for i in arguments:
         cmd += f' {i}'

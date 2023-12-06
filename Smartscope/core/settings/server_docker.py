@@ -9,26 +9,27 @@ https://docs.djangoproject.com/en/3.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
-
 import os
 # from django.core.files.storage import FileSystemStorage
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(SETTINGS_DIR))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 AUTOSCREENDIR = os.getenv('AUTOSCREENDIR')
-AUTOSCREENING_URL = '/autoscreening/'
+USE_CUSTOM_PATHS = eval(os.getenv('USE_CUSTOM_PATHS', 'False'))
 TEMPDIR = os.getenv('TEMPDIR')
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = eval(os.getenv('DEBUG'))
-DEPLOY = os.getenv('DEPLOY', True)
+DEBUG = eval(os.getenv('DEBUG', 'False'))
+DEPLOY = eval(os.getenv('DEPLOY', 'True'))
 
+ALTERNATE_LOGIN = eval(os.getenv('ALTERNATE_LOGIN', 'False'))
+ALTERNATE_LOGIN_URL = os.getenv('ALTERNATE_LOGIN_URL', '')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 CSRF_TRUSTED_ORIGINS = [f'https://*.{host}' for host in ALLOWED_HOSTS]
@@ -36,22 +37,18 @@ CSRF_TRUSTED_ORIGINS = [f'https://*.{host}' for host in ALLOWED_HOSTS]
 APP = os.getenv('APP')
 # Application definition
 # Storage locations
-USE_STORAGE = eval(os.getenv('USE_STORAGE'))
-USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE'))
-USE_AWS = eval(os.getenv('USE_AWS'))
-USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE'))
+USE_STORAGE = eval(os.getenv('USE_STORAGE', 'True'))
+USE_LONGTERMSTORAGE = eval(os.getenv('USE_LONGTERMSTORAGE', 'False'))
+USE_AWS = eval(os.getenv('USE_AWS',  'False'))
+USE_MICROSCOPE = eval(os.getenv('USE_MICROSCOPE', 'True'))
 
 if USE_LONGTERMSTORAGE:
     AUTOSCREENSTORAGE = os.getenv('AUTOSCREENSTORAGE')
 else:
     AUTOSCREENSTORAGE = None
 
-# if DEPLOY is False:
-#     autoscreening = FileSystemStorage(location=AUTOSCREENDIR, base_url=AUTOSCREENING_URL)
-#     autoscreening_storage = FileSystemStorage(location=AUTOSCREENSTORAGE, base_url=AUTOSCREENINGSTORAGE_URL)
-
-
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -63,6 +60,7 @@ INSTALLED_APPS = [
     'django_filters',
     'storages',
     'channels',
+    'corsheaders',
     'Smartscope.core.settings.apps.Frontend',
     'Smartscope.core.settings.apps.API',
 ]
@@ -74,16 +72,21 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'Smartscope.server.main.urls'
 
+CORS_ORIGIN_ALLOW_ALL = eval(os.getenv('CORS_ORIGIN_ALLOW_ALL', 'False'))
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, '../server/main/custom_templates'), os.path.join(BASE_DIR, '../server/main/templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'server/main/custom_templates'),
+            os.path.join(BASE_DIR, 'server/main/templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -107,7 +110,10 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv("REDIS_HOST"), int(os.getenv("REDIS_PORT")))],
+            "hosts": [
+                (os.getenv("REDIS_HOST"), 
+                int(os.getenv("REDIS_PORT")))
+            ],
         },
     },
 }
@@ -119,25 +125,24 @@ CACHES = {
     }
 }
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('MYSQL_DATABASE'),
+        'HOST': os.environ.get("MYSQL_HOST"),
+        'PORT': os.getenv('MYSQL_PORT'),
+        'USER': os.getenv('MYSQL_USER'),
         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-
         'CONN_MAX_AGE': 0,
     }
 }
-if os.getenv('MYSQL_HOST') == 'localhost':
+
+if os.getenv('MYSQL_HOST') in ('localhost', '127.0.0.1'):
     DATABASES['default']['OPTIONS'] = {
         'unix_socket': '/run/mysqld/mysqld.sock',
     }
 else:
-    DATABASES['default']['USER'] = os.getenv('MYSQL_USER')
-    DATABASES['default']['PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-    DATABASES['default']['HOST'] = os.getenv('MYSQL_HOST')
-    DATABASES['default']['PORT'] = os.getenv('MYSQL_PORT')
-
     ssl = eval(os.getenv('MYSQL_SSL', 'False'))
     if ssl:
         DATABASES['default']['OPTIONS'] = {
@@ -196,19 +201,10 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
-
 STATIC_URL = '/static/'
 
-
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "../static"),
-)
-
-# STATIC_ROOT = os.path.join(BASE_DIR, "../static/")
+STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 
 LOGIN_REDIRECT_URL = '/smartscope'
 LOGOUT_REDIRECT_URL = '/login'
 LOGIN_URL = '/login'
-
-# LOGGING_CONFIG = None
-# CORS_ORIGIN_ALLOW_ALL = True
