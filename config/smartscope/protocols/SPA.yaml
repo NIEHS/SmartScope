@@ -1,7 +1,10 @@
 name: SPA
 atlas:
   acquisition:
-      - setAtlasOptics 
+      - setAtlasOptics
+      - resetStage
+      - removeSlit
+      - eucentricSearch
       - atlas
   targets:
     finders:

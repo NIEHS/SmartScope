@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 
 class TargetPlugins(BaseModel):
     finders: List[str] = Field(default_factory=list)
     selectors: List[str] = Field(default_factory=list)
 
 class MagLevel(BaseModel):
-    acquisition: List[str]
+    acquisition: List[Union[str,Dict]]
     targets: Optional[TargetPlugins] = TargetPlugins()
 
 class BaseProtocol(BaseModel):

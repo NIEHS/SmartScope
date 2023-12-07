@@ -45,11 +45,12 @@ ENV	ALLOWED_HOSTS=localhost \
 
 ENV PATH=$PATH:/opt/smartscope/Smartscope/bin:/usr/local/IMOD/bin
 
-ADD Template_files/ /opt/Template_files/
-ADD external_plugins/ /opt/external_plugins/
-ADD miniconda3/ /opt/miniconda3/
-ADD smartscope/ /opt/smartsope/
-ADD ctffind /opt/
+COPY --link Template_files/ /opt/Template_files/
+COPY --link ctffind /opt/
+COPY --link miniconda3/ /opt/miniconda3/
+COPY smartscope/ /opt/smartscope/
+COPY external_plugins/ /opt/external_plugins/
+
 
 # RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate && \
 # 	tar -xvf Smartscope0.6.tar.gz -C /opt/ && \
@@ -62,7 +63,7 @@ RUN	mkdir /opt/logs/ /mnt/fake_scope/ /mnt/fake_scope/raw/ /mnt/fake_scope/movie
 RUN chmod 777 -R /mnt/ && \
 	chmod 777 -R /opt/logs/ && \
 	chmod 777 /opt/shared/ && \
-	chmod 777 /opt/config/ && \
+	chmod 777 /opt/config/
 	# chmod 777 /mnt/testfiles/
 
 USER smartscope_user

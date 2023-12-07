@@ -1,8 +1,6 @@
 
 import os
 import sys
-from django.conf import settings
-# import multiprocessing
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,7 +13,6 @@ from Smartscope.core.status import status
 from .grid.grid_status import GridStatus
 from Smartscope.core.db_manipulations import update
 
-from Smartscope.lib.preprocessing_methods import processing_worker_wrapper
 from Smartscope.lib.logger import add_log_handlers
 
 from .run_grid import run_grid, is_stop_file
@@ -27,7 +24,6 @@ def autoscreen(session_id:str):
     '''
     session = ScreeningSession.objects.get(session_id=session_id)
     microscope = session.microscope_id
-    # lockFile, sessionLock = session.isScopeLocked
     add_log_handlers(directory=session.directory, name='run.out')
     logger.debug(f'Main Log handlers:{logger.handlers}')
     process = create_process(session)
@@ -56,13 +52,7 @@ def autoscreen(session_id:str):
                 detector= Detector.model_validate(session.detector_id) ,
                 atlas_settings= AtlasSettings.model_validate(session.detector_id)
             ) as scope:
-            # START image processing processes
-            # processing_queue = multiprocessing.JoinableQueue()
-            # child_process = multiprocessing.Process(
-            #     target=processing_worker_wrapper,
-            #     args=(session.directory, processing_queue,)
-            # )
-            # child_process.start()
+
             logger.debug(f'Main Log handlers:{logger.handlers}')
 
             # RUN grid
@@ -72,7 +62,7 @@ def autoscreen(session_id:str):
     except Exception as e:
         logger.exception(e)
         status = 'error'
-        if grid in locals():
+        if 'grid' in locals():
             update.grid = grid
             update(grid, status=GridStatus.ERROR)
     except KeyboardInterrupt:
@@ -81,11 +71,7 @@ def autoscreen(session_id:str):
     finally:
         os.remove(microscope.lockFile)
         update(process, status=status)
-        logger.debug('Wrapping up')
-        # processing_queue.put('exit')
-        # child_process.join()
-        # logger.debug('Process joined')
-
+        logger.info('Done.')
 
 
 def create_process(session):

@@ -14,6 +14,7 @@ from django.db.models.signals import post_save, pre_save
 from Smartscope.server.lib.worker_jobs import *
 from Smartscope.core.status import status
 from Smartscope.core.grid.grid_status import GridStatus
+from Smartscope.core.models.screening_session import root_directories
 from .session import *
 from .misc_func import get_fields
 
@@ -143,9 +144,10 @@ def change_group(sender, instance, **kwargs):
 @receiver(post_save, sender=ScreeningSession)
 def create_session_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
-        logger.debug(f'Creating session {instance} directories')
+        directory = Path(root_directories(instance)[0], instance.working_directory)
+        logger.debug(f'Creating session {instance} directory at {directory}')
         create_scope_dirs(instance.microscope_id.scope_path)
-        Path(instance.directory).mkdir(parents=True, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True)
 
 @receiver(post_save, sender=Microscope)
 def create_scope_directory(sender, instance, created, *args, **kwargs):

@@ -13,7 +13,7 @@ class Aperture:
     CONDENSER_3:int=3
     OBJECTIVE:int = 2
 
-def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int], wait:int=3):
+def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int], wait:int=10):
     def wrapper(*args, **kwargs):
         inital_aperture_size = int(sem.ReportApertureSize(aperture))
         if inital_aperture_size == aperture_size or aperture_size is None:
@@ -30,7 +30,7 @@ def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_
         sem.SetApertureSize(aperture,inital_aperture_size)
     return wrapper    
 
-def remove_objective_aperture(function: Callable, wait:int=3):
+def remove_objective_aperture(function: Callable, wait:int=10):
     def wrapper(*args, **kwargs):
         msg = 'Removing objective aperture.'
         sem.Echo(msg)

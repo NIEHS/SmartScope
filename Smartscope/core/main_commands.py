@@ -95,7 +95,7 @@ def check_pause(microscope_id: str, session_id: str):
     paused = os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'paused_{microscope_id}'))
     is_stop_file = os.path.isfile(os.path.join(os.getenv('TEMPDIR'), f'{session_id}.stop'))
 
-    print(json.dumps(dict(pause=pause, paused=paused, is_stop_file=is_stop_file)))
+    return dict(pause=pause, paused=paused, is_stop_file=is_stop_file)
 
 
 def toggle_pause(microscope_id: str):

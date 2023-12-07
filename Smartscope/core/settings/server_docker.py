@@ -28,6 +28,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = eval(os.getenv('DEBUG', 'False'))
 DEPLOY = eval(os.getenv('DEPLOY', 'True'))
 
+ALTERNATE_LOGIN = eval(os.getenv('ALTERNATE_LOGIN', 'False'))
+ALTERNATE_LOGIN_URL = os.getenv('ALTERNATE_LOGIN_URL', '')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 CSRF_TRUSTED_ORIGINS = [f'https://*.{host}' for host in ALLOWED_HOSTS]

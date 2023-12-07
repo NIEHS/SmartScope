@@ -54,8 +54,8 @@ class Microscope(BaseModel):
     port:int = Field(alias='serialem_PORT')
     directory:str= Field(alias='windows_path')
     scopePath:str = Field(alias='scope_path')
-    apertureControl:bool = Field(alias='aperture_control')
-    coldFEG:bool = Field(alias='cold_FEG')
+    apertureControl:bool = Field(alias='aperture_control', default=False)
+    coldFEG:bool = Field(alias='cold_FEG', default=False)
 
     class Config:
         from_attributes=True

@@ -51,6 +51,17 @@ class SerialemInterface(MicroscopeInterface):
         sem.GoToLowDoseArea('V')
         sem.Eucentricity(1)
     
+    def eucentricity_by_focus(self):
+        sem.GoToLowDoseArea('V')
+        sem.Eucentricity(-1,-1)
+    
+    def call(self, script):
+        sem.Call(script)
+
+    def call_function(self, function:str, *args):
+        str_args = [str(arg) for arg in args]
+        sem.CallFunction(f"{function} {' '.join(str_args)}")
+    
     def get_image_settings(self, magSet:str='V'):
         return sem.ReportCurrentPixelSize(magSet)
     
@@ -90,13 +101,18 @@ class SerialemInterface(MicroscopeInterface):
         sem.GoToImagingState(state_name)
         logger.info('Done setting atlas optics')
 
-    def atlas(self, size, file=''):
+    
+    def reset_stage(self):
         sem.TiltTo(0)
-        sem.MoveStageTo(0,0)
+        sem.MoveStageTo(0,0,0)
+
+    def remove_slit(self):
         if self.detector.energyFilter:
             if sem.ReportEnergyFilter()[2] == 1:
                 sem.SetSlitIn(0)
-        self.eucentricHeight()
+        
+
+    def atlas(self, size, file=''):
         sem.OpenNewMontage(size[0],size[1], file)
         self.checkDewars()
         self.checkPump()
@@ -281,12 +297,16 @@ class SerialemInterface(MicroscopeInterface):
     def reset_image_shift(self):
         return sem.ResetImageShift()
     
-    def reset_image_shift_values(self):
+    def reset_image_shift_values(self, afis:bool=False):
         self.state.reset_image_shift_values()
         self.state.preAFISimageShiftX, self.state.preAFISimageShiftY = sem.ReportImageShift()[:2]
+        if afis:
+            sem.SaveBeamTilt()
     
     def reset_AFIS_image_shift(self, afis:bool=False):
         sem.SetImageShift(self.state.preAFISimageShiftX, self.state.preAFISimageShiftY, 1, int(afis))
+        if afis:
+            sem.RestoreBeamTilt()
 
     def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))

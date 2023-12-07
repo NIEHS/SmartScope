@@ -36,6 +36,7 @@ from Smartscope.core.models.models_actions import targets_methods
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.models import *
+from Smartscope.core.main_commands import check_pause
 
 logger = logging.getLogger(__name__)
 
@@ -280,10 +281,11 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
     def get_logs(self, request, **kwargs):
         self.object = self.get_object()
         logger.info('Fetching logs')
-        check_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
-                                           self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
-        logger.debug(f'Check pause output: {check_output}')
-        check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
+        # check_output, err = send_to_worker(self.object.microscope_id. worker_hostname,
+                                        #    self.object.microscope_id.executable, arguments=['check_pause', self.object.microscope_id.pk, self.object.session_id], communicate=True)
+        # logger.debug(f'Check pause output: {check_output}')
+        # check_output = json.loads(check_output.decode("utf-8").strip().split('\n')[-1])
+        check_output = check_pause(self.object.microscope_id.pk, self.object.session_id)
         disk_status = disk_space(settings.AUTOSCREENDIR)
         out = self.read_file('run.out')
         proc = self.read_file('proc.out')
