@@ -66,12 +66,14 @@ class Movie(BaseImage):
 
     def check_mdoc(self, frames_file_name: str):
         mdoc_file = Path(self.frames_directory, f'{frames_file_name}.mdoc')
-        if mdoc_file.exists():
-            self.metadata = parse_mdoc(mdocFile=mdoc_file, movie=True)
-            if self.metadata is None:
-                logger.info(f'Mdoc file not found {mdoc_file}. Skipping.')
-                return None
-            return mdoc_file
-        logger.info(f'Mdoc file {mdoc_file} is not found. Skipping.')
-        return None
+        if not mdoc_file.exists():
+            logger.info(f'Mdoc file {mdoc_file} is not found. Skipping.')
+            return None 
+        self.metadata = parse_mdoc(mdocFile=mdoc_file, movie=True)
+        if self.metadata is None:
+            logger.info(f'Mdoc file not found {mdoc_file}. Skipping.')
+            return None
+        return mdoc_file
+        
+
         
