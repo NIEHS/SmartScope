@@ -14,6 +14,7 @@ def find_targets(montage: Montage, methods: list):
             targets, success, additional_outputs  = method.run(montage=montage)
         except Exception as err:
             logger.exception(err)
+            success = False
             continue
         if success:
             logger.debug(f"{method} was successful: {success}, '+ \
