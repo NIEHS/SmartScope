@@ -23,4 +23,4 @@ def find_targets(montage: Montage, methods: list):
                 return targets, method.name, method.name, additional_outputs
             else:
                 return targets, method.name, None, additional_outputs
-        return [], '', None, dict()
+    return [], '', None, dict()
