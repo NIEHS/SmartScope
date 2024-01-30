@@ -21,7 +21,6 @@ class JEOLadditionalSettings(BaseModel):
 class JEOLSerialemInterface(SerialemInterface):
     additional_settings: JEOLadditionalSettings = JEOLadditionalSettings()
         
-
     def checkPump(self, wait=30):
         pass
 

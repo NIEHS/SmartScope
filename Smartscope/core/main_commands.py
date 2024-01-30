@@ -245,4 +245,24 @@ def get_atlas_to_search_offset(detector_name,maximum=0):
         return
     print('Skip setting values')
 
+
+def export_grid(grid_id, export_to=''):
+    from Smartscope.core.utils.export_import import export_grid
+    if export_to == '':
+        export_to = os.path.join(grid.directory, 'export.yaml')
+        print(f'Export path not specified. Exporting to default loacation: {export_to}')
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    export_grid(grid, export_to=export_to)
+    print('Done.')
+
+def import_grid(file:str):
+    from Smartscope.core.utils.export_import import import_grid
+    if not Path(file).exists():
+        print(f'File {file} does not exist.')
+        return
+    print(f'Importing {file} into the smartscope database.')
+    import_grid(file)
+    print('Done.')
+
+
             
