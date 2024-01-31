@@ -1,0 +1,5 @@
+train: /nfs/bartesaghilab2/qh36/all_data/square_single_class/train/images #path to train images
+val: /nfs/bartesaghilab2/qh36/all_data/square_single_class/valid/images  #path to validation images
+
+nc: 1 #number of classes
+names: ['circle'] #class names
