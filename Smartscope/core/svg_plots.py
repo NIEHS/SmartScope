@@ -88,6 +88,7 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     labels_list = []
     for i in targets:
         color, label, prefix = css_color(i, display_type, method)
+
         if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
@@ -132,6 +133,7 @@ def drawSquare(square, targets, display_type, method) -> draw.Drawing:
     for i in targets:
 
         color, label, prefix = css_color(i, display_type, method)
+        # logger.debug(f'{i.number} -> {color}')
         if color is not None:
             finder = list(i.finders.all())[0]
             if not finder.is_position_within_stage_limits():

@@ -134,7 +134,7 @@ def viewer_only(user):
 
 def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=False, iterations=500, score_weight=2):
     if len(hole_models) == 0:
-        return
+        return  hole_models
     logger.debug(
         f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes

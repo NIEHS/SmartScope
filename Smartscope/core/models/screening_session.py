@@ -29,7 +29,7 @@ def root_directories(session):
             root_directories.append(custom_group_path.path)
 
     if settings.USE_STORAGE:
-        root_directories.append(settings.AUTOSCREENDIR)
+        # root_directories.append(settings.AUTOSCREENDIR)
         if (groupname:=session.group.name) is not None:
             root_directories.append(os.path.join(settings.AUTOSCREENDIR,groupname))
         else: 

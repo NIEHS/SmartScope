@@ -95,7 +95,7 @@ def detect_holes(square, weights_circle, imgsz=1280, thresh=0.2, iou=0.15, devic
     if method == 'rcnn':
         hole_coords = detect_holes_rcnn(square, imgsz, thresh=thresh, iou = iou, device = device, weights_circle=weights_circle)
     if method == 'yolo':
-        hole_coords = detect_holes_yolo(square, imgsz, conf_thres = thresh, iou_thres = thresh, device=device, weights_circle = weights_circle)
+        hole_coords = detect_holes_yolo(square, imgsz, conf_thres = thresh, iou_thres = thresh, weights_circle = weights_circle)
     return hole_coords
 
 def detect_and_classify_holes(square, weights_circle, weights_class, imgsz=1280,thresh=0.2, iou=0.15, device = '0', method = 'rcnn'):
@@ -231,6 +231,7 @@ def detect_holes_yolo(square, imgsz = 1280, augment = False, conf_thres = 0.7, i
     device = select_device(device)
     half = device.type != 'cpu'
     # square = cv2.normalize(square, None, 0, 255,cv2.NORM_MINMAX)
+
     model = attempt_load(weights_circle, map_location=device)  # load FP32 model
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
@@ -271,7 +272,9 @@ def detect_holes_yolo(square, imgsz = 1280, augment = False, conf_thres = 0.7, i
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     with torch.no_grad():
+
         pred = model(img_s, augment=augment)[0]
+
     pred = non_max_suppression(pred, conf_thres, iou_thres, classes=classes, agnostic=agnostic)
     for i, det in enumerate(pred):
         gn = torch.tensor(sp)[[1, 0, 1, 0]]
