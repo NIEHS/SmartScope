@@ -63,7 +63,8 @@ RUN	mkdir /opt/logs/ /mnt/fake_scope/ /mnt/fake_scope/raw/ /mnt/fake_scope/movie
 RUN chmod 777 -R /mnt/ && \
 	chmod 777 -R /opt/logs/ && \
 	chmod 777 /opt/shared/ && \
-	chmod 777 /opt/config/
+	chmod 777 /opt/config/ && \
+	chmod -R 777 /opt/Template_files
 	# chmod 777 /mnt/testfiles/
 
 USER smartscope_user
