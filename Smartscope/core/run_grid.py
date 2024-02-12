@@ -43,8 +43,11 @@ def run_grid(
     session_id = session.pk
     microscope = session.microscope_id
 
+
+    grid = update(grid, refresh_from_db=True, last_update=None)
     # Set the Websocket_update_decorator grid property
     update.grid = grid
+
     if grid.status == GridStatus.COMPLETED:
         logger.info(f'Grid {grid.name} already complete. grid ID={grid.grid_id}')
         return
@@ -55,7 +58,6 @@ def run_grid(
         return
 
     logger.info(f'Starting {grid.name}, status={grid.status}') 
-    grid = update(grid, refresh_from_db=True, last_update=None)
     if grid.status is GridStatus.NULL:
         grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
 
