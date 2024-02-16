@@ -486,19 +486,26 @@ class CollectionStatsView(TemplateView):
 
     def ctfGraph(self,grid_id):
         ### NEED TO MOVE THE GRAPHING LOGIC OUTSIDE OF HERE
-        data = list(HighMagModel.objects.filter(status='completed', grid_id=grid_id, ctffit__lte=15).values_list('ctffit', flat=True)) # replace with your own data source
-        hist = go.Histogram(x=data, nbinsx=30)
+        all_data = list(HighMagModel.objects.filter(status='completed', grid_id=grid_id).order_by('completion_time').values_list('ctffit', flat=True)) # replace with your own data source
+        all_data = list(map(lambda x: 15 if x > 15 else x, all_data))
+        latest_data = all_data[-100:]
+        hist_all = go.Histogram(x=all_data, nbinsx=30, name='All')
+        hist_latest = go.Histogram(x=latest_data, nbinsx=30, name='Latest 100')
+
+
         layout = go.Layout(
                             title='CTF fit distribution',
                             xaxis=dict(
-                                title='CTF fit resolution (Angstrom)'
+                                title='CTF fit resolution (Angstrom)',
                             ),
                             yaxis=dict(
                                 title='Number of exposures'
                             ),
-                            showlegend=False,
+                            showlegend=True,
                         )
-        fig = go.Figure(data=[hist],layout=layout,)
+        fig = go.Figure(data=[hist_all,hist_latest],layout=layout,)
+
+        
         graph = fig.to_html(full_html=False)
         return graph
 
