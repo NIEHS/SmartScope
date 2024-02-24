@@ -12,6 +12,7 @@ from Smartscope.core.models.mesh import MeshMaterial, MeshSize
 from Smartscope.core.models.atlas import AtlasModel
 from Smartscope.core.models.square import SquareModel
 from Smartscope.core.models.high_mag import HighMagModel
+from Smartscope.core.models.target_label import Classifier
 from Smartscope.lib.Datatypes.selector_sorter import SelectorSorter, LagacySorterError
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.svg_plots import drawAtlasNew
@@ -51,6 +52,12 @@ class SessionSerializer(RESTserializers.ModelSerializer):
     class Meta:
         model = ScreeningSession
         fields = '__all__'
+
+class ClassifierSerializer(RESTserializers.ModelSerializer):
+
+    class Meta:
+        model = Classifier
+        exclude = ['id']
 
 
 class AutoloaderGridSerializer(RESTserializers.ModelSerializer):

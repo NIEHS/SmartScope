@@ -21,20 +21,20 @@ def generate_selector(parent, target,value:float, label:Optional[str]=None):
                 value=value,
                 label=label)
 
-# def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
-#     output = list()
-#     if len(targets) > 0:
-#         split_targets = np.array_split(targets, n_groups)
-#         for ind, bucket in enumerate(split_targets):
-#             for target in bucket:
-#                 extra_updates = dict()
-#                 for field, attribute in extra_fields.items():
-#                     extra_updates[field] = getattr(target,attribute)
-#                 output.append(dict(content_type=ContentType.objects.get_for_model(target),
-#                                    object_id=target.pk,
-#                                    label=ind,
-#                                    **extra_updates))
-#     return output
+def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
+    output = list()
+    if len(targets) > 0:
+        split_targets = np.array_split(targets, n_groups)
+        for ind, bucket in enumerate(split_targets):
+            for target in bucket:
+                extra_updates = dict()
+                for field, attribute in extra_fields.items():
+                    extra_updates[field] = getattr(target,attribute)
+                output.append(dict(content_type=ContentType.objects.get_for_model(target),
+                                   object_id=target.pk,
+                                   label=ind,
+                                   **extra_updates))
+    return output
 
 
 def cluster_by_field(parent, n_groups, field='area', **kwargs):
@@ -54,7 +54,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
     for target in targets:
         finder = list(target.finders.all())[0]
         x, y = finder.x, finder.y
-        extracted = img[y - target.radius:y + target.radius, x - target.radius:x + target.radius]
+        extracted = montage.image[y - target.radius:y + target.radius, x - target.radius:x + target.radius]
         target.median = np.mean(extracted)
         target.std = np.std(extracted)
         # if save:

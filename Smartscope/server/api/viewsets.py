@@ -747,3 +747,12 @@ class HighMagModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActio
 
         fft = power_spectrum(img)
         return Response(dict(img=base64.b64encode(fft.getvalue())))
+    
+
+class ClassifierViewSet(viewsets.ModelViewSet):
+    queryset = Classifier.objects.all()
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
+    serializer_class = ClassifierSerializer
+    filterset_fields = ['object_id','method_name','content_type']
+
+    detailed_serializer = DetailedHighMagSerializer 

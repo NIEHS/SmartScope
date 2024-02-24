@@ -1,5 +1,5 @@
 from typing import List
-from .. import models
+from Smartscope.core import models
 import logging
 
 logger = logging.getLogger(__name__)
