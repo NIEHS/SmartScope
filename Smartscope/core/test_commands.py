@@ -99,7 +99,7 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
 
 
 def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=1):  # output_dir='/mnt/data/testing/'
-    from build_smartscope.SmartScope.Smartscope.lib.image.montage import Montage
+    from Smartscope.lib.image.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
     import cv2
     import math

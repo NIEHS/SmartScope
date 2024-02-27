@@ -88,6 +88,7 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     labels_list = []
     for i in targets:
         color, label, prefix = css_color(i, display_type, method)
+
         if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
@@ -120,6 +121,46 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     d.append(add_legend(set(labels_list), d.width, d.height, atlas.pixel_size))
     return d
 
+def drawAtlasNew(atlas, selector_sorter) -> draw.Drawing:
+    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False, style_='height: 100%; width: 100%')
+    d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
+
+    shapes = draw.Group(id='atlasShapes')
+    text = draw.Group(id='atlasText')
+
+    labels_list = []
+    for i, color, label, prefix in selector_sorter:
+        if color is not None:
+            sz = floor(sqrt(i.area))
+            finder = list(i.finders.all())[0]
+            if not finder.is_position_within_stage_limits():
+                color = '#505050'
+                label = 'Out of range'
+            x = finder.x - sz // 2
+            y = (finder.y - sz // 2)
+            r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
+                               class_=f'target', status=i.status, onclick="clickSquare(this)")
+
+            if i.selected:
+                ft_sz = floor(d.width / 35)
+                t = draw.Text(str(i.number), ft_sz, x=x + sz, y=y, id=f'{i.pk}_text', paint_order='stroke',
+                              stroke_width=floor(ft_sz / 5), stroke=color, fill='white', class_=f'svgtext {i.status}')
+                text.append(t)
+                r.args['class'] += f" {i.status}"
+                # if i.status == 'completed':
+                #     if i.has_active:
+                #         r.args['class'] += ' has_active'
+                #     elif i.has_queued:
+                #         r.args['class'] += ' has_queued'
+                #     elif i.has_completed:
+                #         r.args['class'] += ' has_completed'
+            labels_list.append((color, label, prefix))
+            shapes.append(r)
+    d.append(shapes)
+    d.append(text)
+    d.append(add_scale_bar(atlas.pixel_size, d.width, d.height))
+    d.append(add_legend(set(labels_list), d.width, d.height, atlas.pixel_size))
+    return d
 
 def drawSquare(square, targets, display_type, method) -> draw.Drawing:
     d = draw.Drawing(square.shape_y, square.shape_x, id='square-svg', displayInline=False,  style_='height: 100%; width: 100%')
@@ -132,6 +173,7 @@ def drawSquare(square, targets, display_type, method) -> draw.Drawing:
     for i in targets:
 
         color, label, prefix = css_color(i, display_type, method)
+        # logger.debug(f'{i.number} -> {color}')
         if color is not None:
             finder = list(i.finders.all())[0]
             if not finder.is_position_within_stage_limits():

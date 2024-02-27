@@ -92,7 +92,7 @@ def process_hm_from_frames(
     
     # validate *.mdoc file
     mdoc_file = movie.check_mdoc(frames_file_name)
-    if not mdoc_file:
+    if mdoc_file is None:
         return movie
     time.sleep(10)
 

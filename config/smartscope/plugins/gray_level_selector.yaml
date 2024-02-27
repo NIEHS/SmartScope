@@ -8,4 +8,5 @@ description: |
 clusters:
   values: ascending
   colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
-exclude: ['0']   
+exclude: ['0']
+limits: [0.3, 1.0]  

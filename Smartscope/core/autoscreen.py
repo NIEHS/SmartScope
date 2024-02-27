@@ -45,12 +45,13 @@ def autoscreen(session_id:str):
         logger.info(f'Process: {process}')
         logger.info(f'Session: {session}')
         logger.info(f"Grids: {', '.join([grid.__str__() for grid in grids])}")
-        scopeInterface = select_microscope_interface(microscope)
+        scopeInterface, additional_settings = select_microscope_interface(microscope)
 
         with scopeInterface(
                 microscope = Microscope.model_validate(session.microscope_id),
                 detector= Detector.model_validate(session.detector_id) ,
-                atlas_settings= AtlasSettings.model_validate(session.detector_id)
+                atlas_settings= AtlasSettings.model_validate(session.detector_id),
+                additional_settings=additional_settings
             ) as scope:
 
             logger.debug(f'Main Log handlers:{logger.handlers}')

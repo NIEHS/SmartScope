@@ -7,7 +7,7 @@ import os
 import sys
 
 version_file = Path(__file__).parents[1].resolve() / 'VERSION'
-__version__ = version_file.read_text()
+__version__ = version_file.read_text().strip()
 
 LOGLEVEL = os.getenv('LOGLEVEL') if os.getenv('LOGLEVEL') is not None else 'DEBUG'
 

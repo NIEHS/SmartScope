@@ -1,6 +1,7 @@
 import numpy as np
 from django.db import transaction
 import cv2
+from typing import Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.query import prefetch_related_objects
@@ -13,6 +14,12 @@ from Smartscope.lib.image_manipulations import save_image, to_8bits, auto_contra
 import logging
 logger = logging.getLogger(__name__)
 
+
+def generate_selector(parent, target,value:float, label:Optional[str]=None):
+    return dict(content_type=ContentType.objects.get_for_model(target),
+                object_id=target.pk,
+                value=value,
+                label=label)
 
 def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
     output = list()
@@ -31,9 +38,8 @@ def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
 
 
 def cluster_by_field(parent, n_groups, field='area', **kwargs):
-
     targets = np.array(parent.targets.order_by(field))
-    return generate_equal_clusters(parent, targets, n_groups)
+    return list(map(lambda x: generate_selector(parent,x, value=getattr(x,field)), targets))
 
 
 def gray_level_selector(parent, n_groups, save=True, montage=None):
@@ -43,17 +49,19 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
     if montage is None:
         montage = Montage(**parent.__dict__, working_dir=parent.grid_id.directory)
         montage.create_dirs()
-    if save:
-        img = cv2.bilateralFilter(auto_contrast(montage.image.copy()), 30, 75, 75)
+    # if save:
+    #     img = cv2.bilateralFilter(auto_contrast(montage.image.copy()), 30, 75, 75)
     for target in targets:
         finder = list(target.finders.all())[0]
         x, y = finder.x, finder.y
-        target.median = np.mean(img[y - target.radius:y + target.radius, x - target.radius:x + target.radius])
-        if save:
-            cv2.circle(img, (x, y), target.radius, target.median, 10)
+        extracted = montage.image[y - target.radius:y + target.radius, x - target.radius:x + target.radius]
+        target.median = np.mean(extracted)
+        target.std = np.std(extracted)
+        # if save:
+        #     cv2.circle(img, (x, y), target.radius, target.median, 10)
 
-    if save:
-        save_image(img, 'gray_level_selector', extension='png', destination=parent.directory, resize_to=1024)
+    # if save:
+    #     save_image(img, 'gray_level_selector', extension='png', destination=parent.directory, resize_to=1024)
 
     targets.sort(key=lambda x: x.median)
     return generate_equal_clusters(parent, targets, n_groups, extra_fields=dict(value='median'))

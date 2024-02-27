@@ -85,6 +85,7 @@ class Selector(BaseFeatureAnalyzer):
     clusters: Dict[(str, Any)]
     exclude: List[str] = Field(default_factory=list)
     target_class: str = TargetClass.SELECTOR
+    limits: List[float] = [0.0,1.0]
     kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     def get_label(self, label):

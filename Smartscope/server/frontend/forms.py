@@ -64,14 +64,14 @@ class AutoloaderGridForm(forms.ModelForm):
         fields = ('name', 'position', 'holeType', 'meshSize', 'meshMaterial')
         labels = dict(name='Name', position='Position', holeType='Hole Type', meshSize='Mesh Size', meshMaterial='Mesh Material')
         exclude = ['session_id', 'quality', 'notes', 'last_update', 'status', 'params_id', 'hole_angle', 'mesh_angle', 'start_time']
-        help_texts = dict(name='Use only [Aa-Zz], [1-9], _ and -', position='number must be between 1 and 12')
+        help_texts = dict(name='Use only [Aa-Zz], [1-9], _ and -', position='number must be between 1 and 12 for TFS microscope. For JEOL, number must match the grid ID in the loader')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['position'].widget.attrs.update({
             'class': 'form-control',
             'min': 0,
-            'max': 12
+            'max': 99999
         })
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control col-7'

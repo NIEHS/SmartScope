@@ -81,6 +81,11 @@ class AutoloaderGrid(BaseModel):
         if self.params_id.holes_per_square <= 0:
             return 'collection'
         return 'screening'
+    
+    def frames_dir(self, prefix:str=''):
+        if prefix:
+            return Path(f'{prefix}_{self.parent.working_directory}', f'{self.position}_{self.name}')
+        return Path(self.parent.working_directory, f'{self.position}_{self.name}')
 
     @property
     def atlas(self):

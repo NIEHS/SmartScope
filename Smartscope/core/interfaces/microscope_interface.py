@@ -14,18 +14,20 @@ class MicroscopeInterface(ABC):
     detector: Detector
     atlas_settings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
+    additional_settings: dict = None 
     has_hole_ref: bool = False
     hole_crop_size: int = 0
     focus_position_set: bool = False
 
     def __enter__(self):
+        logger.debug(f'Additional settings set: {self.additional_settings}')
         self.connect()
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.disconnect()
 
-    def reset_image_shift_values(self):
+    def reset_image_shift_values(self, afis:bool=False):
         self.state.reset_image_shift_values()
 
     @abstractmethod

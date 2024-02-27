@@ -4,6 +4,7 @@ import sys
 import json
 from django.db import transaction
 from django.conf import settings
+from django.core.cache import cache
 
 from Smartscope.core.models import *
 from Smartscope.core.test_commands import *
@@ -52,7 +53,7 @@ def add_holes(id, targets):
     instance = SquareModel.objects.get(pk=id)
     montage = Montage(name=instance.name, working_dir=instance.grid_id.directory)
     montage.load_or_process()
-    targets = np.array(targets) + np.array([0, instance.shape_x])
+    targets = np.array(targets) 
     hole_size = holeSize if (holeSize := instance.grid_id.holeType.hole_size) is not None else 1.2
     targets = list(map(lambda t: convert_centers_to_boxes(
         t, montage.pixel_size, montage.shape_x, montage.shape_y, hole_size), targets))
@@ -76,8 +77,8 @@ def add_holes(id, targets):
     return holes
 
 
-def add_single_targets(id, *args):
-    logger.info(f'Adding {len(args)} targets to square {id}')
+def add_single_targets(id_, *args):
+    logger.info(f'Adding {len(args)} targets to square {id_}')
     targets = []
     for i in args:
         j = i.split(',')
@@ -85,9 +86,12 @@ def add_single_targets(id, *args):
 
         targets.append(j)
     logger.debug(targets)
-    holes = add_holes(id=id, targets=targets)
+    holes = add_holes(id=id_, targets=targets)
 
-    logger.debug(holes)
+    logger.debug(f'Successfully added {len(holes)} targets.')
+    cache_key = f'{id_}_targets_methods'
+    cache.delete(cache_key)
+
 
 
 def check_pause(microscope_id: str, session_id: str):
@@ -240,5 +244,25 @@ def get_atlas_to_search_offset(detector_name,maximum=0):
         print('Saved')
         return
     print('Skip setting values')
+
+
+def export_grid(grid_id, export_to=''):
+    from Smartscope.core.utils.export_import import export_grid
+    if export_to == '':
+        export_to = os.path.join(grid.directory, 'export.yaml')
+        print(f'Export path not specified. Exporting to default loacation: {export_to}')
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    export_grid(grid, export_to=export_to)
+    print('Done.')
+
+def import_grid(file:str):
+    from Smartscope.core.utils.export_import import import_grid
+    if not Path(file).exists():
+        print(f'File {file} does not exist.')
+        return
+    print(f'Importing {file} into the smartscope database.')
+    import_grid(file)
+    print('Done.')
+
 
             

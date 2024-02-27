@@ -21,6 +21,7 @@ router.register(r'atlas', AtlasModelViewSet)
 router.register(r'squares', SquareModelViewSet)
 router.register(r'holes', HoleModelViewSet)
 router.register(r'highmag', HighMagModelViewSet)
+router.register(r'classes',ClassifierViewSet)
 
 
 urlpatterns = [

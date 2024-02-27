@@ -42,6 +42,15 @@ def remove_objective_aperture(function: Callable, wait:int=10):
         logger.info(msg)
         sem.ReInsertAperture(Aperture.OBJECTIVE)
         time.sleep(wait)
+
+    def no_wrap(*args,**kwargs):
+        msg = 'Objective aperture already out. Skipping removal and reinstertion.'
+        sem.Echo(msg)
+        logger.info(msg)
+        function(*args, **kwargs)
+
+    if sem.ReportApertureSize(Aperture.OBJECTIVE) == 0:
+        return no_wrap
     return wrapper
 
 class TFSSerialemInterface(SerialemInterface):
