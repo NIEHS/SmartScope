@@ -27,7 +27,7 @@ def align_frames(
     software: alignframes in IMOD
     used by process_hm_from_frames()
     '''
-    com = f'alignframes -mem 8 -input {frames} -output {output_file} -rotation -1 -pair -2'  + \
+    com = f'alignframes -mem 8 -input {frames} -output {output_file} -rotation -1 -pair -2 '  + \
         f'-dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
     if gain is not None:
        com += f' -gain {gain}'
