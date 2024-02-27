@@ -2,6 +2,8 @@ import os
 import sys
 import time
 import logging
+import yaml
+import re
 from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
@@ -19,13 +21,43 @@ from .interfaces.microscope_interface import MicroscopeInterface
 
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, SquareModel, AutoloaderGrid
-from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
+from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY, SMARTSCOPE_CUSTOM_CONFIG
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
 from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets
 
 from Smartscope.lib.image_manipulations import export_as_png
+
+
+def get_frames_prefix(grid:AutoloaderGrid):
+    detector = grid.parent.detector_id
+    custom_paths = SMARTSCOPE_CUSTOM_CONFIG / 'custom_paths.yaml'
+    if not custom_paths.exists():
+        logger.debug(f'No custom paths file found at {custom_paths}')
+        return ''
+    file = yaml.safe_load(custom_paths.read_text())
+    key = f'detector_id_{detector.pk}'
+    paths = file.get(key, None)
+    if paths is None:
+        logger.debug(f'No key {key} file found at {custom_paths}')
+        return ''
+    return paths.get('frames_prefix', '')
+
+
+def parse_frames_prefix(prefix:str, grid:AutoloaderGrid):
+    pattern = r'.*(\{\{.*\}\})'
+    matches = re.findall(pattern, prefix)
+    for match in matches:
+        clean_match = match.replace('{{', '').replace('}}', '')
+        split = clean_match.split('.')
+        x = grid
+        for s in split:
+            x = getattr(x, s)
+        logger.debug(f'Parsed {match} to {x}')
+        prefix = prefix.replace(match,x)
+    return prefix
+    
 
 
 def run_grid(
@@ -73,9 +105,14 @@ def run_grid(
     atlas = queue_atlas(grid)
 
     # scope
+
+    # create frames directory
+    prefix = parse_frames_prefix(get_frames_prefix(grid))
+    grid_dir = GridIO.create_grid_frames_directory(session.detector_id.frames_directory, grid.frames_dir(prefix=prefix))
+    logger.debug(f'Saving the frames in {grid_dir}')
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
-    scope.setup(params.save_frames, framesName=f'{session.date}_{grid.name}')
+    scope.setup(params.save_frames,grid_dir=grid_dir,framesName=f'{session.date}_{grid.name}')
     scope.reset_state()
 
     # run acquisition
