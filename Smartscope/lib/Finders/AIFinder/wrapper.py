@@ -57,7 +57,7 @@ def find_holes(montage:Montage, **kwargs):
     logger.debug(f'{holes[0]},{type(holes[0])}')
     
     holes = [(np.array(hole)-np.array(list(montage.center)*2))*binning + np.array(list(montage.center)*2) for hole in holes]
-    logger.debug(f'{holes[0]},{type(holes[0])}')
+    # logger.debug(f'{holes[0]},{type(holes[0])}')
     return holes, success, dict()
 
 

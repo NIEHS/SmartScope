@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 from Smartscope.core.db_manipulations import websocket_update
+from Smartscope.core.frames import get_frames_prefix, parse_frames_prefix
 from Smartscope.core.models.grid import AutoloaderGrid
 from Smartscope.lib.preprocessing_methods import get_CTFFIN4_data, \
     process_hm_from_average, process_hm_from_frames, processing_worker_wrapper
@@ -41,9 +42,12 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         self.detector = self.grid.session_id.detector_id
         self.cmd_data = self.cmdkwargs_handler.parse_obj(cmd_data)
         logger.debug(self.cmd_data)
-        self.frames_directory = [Path(self.detector.frames_directory)]
+        self.frames_directory = [Path(self.detector.frames_directory, grid.frames_dir(prefix=parse_frames_prefix(get_frames_prefix(grid),grid)))]
+        
         if self.cmd_data.frames_directory is not None:
             self.frames_directory.append(self.cmd_data.frames_directory)
+        frames_dirs_str = '\n\t-'.join([str(x) for x in self.frames_directory])
+        logger.info(f"Looking for frames in the following directories: {frames_dirs_str}")
 
     def clear_queue(self):
         while True:
@@ -116,12 +120,12 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             data = dict()
             if not movie.check_metadata():
                 data['status'] = 'skipped'
-                filtered_instances = list(filter(lambda x: x.name == movie.name, self.incomplete_processes))
-                if len(filtered_instances) != 1:
+                filtered_instance = next(filter(lambda x: x.name == movie.name, self.incomplete_processes),None)
+                if filtered_instance is None:
                     logger.error(f'Could not find {movie.name} in {self.incomplete_processes}. Will try again on the next cycle.')
                     continue
-                if instance.status != 'skipped':
-                    self.to_update.append(update_fields(instance, data))
+                if filtered_instance.status != 'skipped':
+                    self.to_update.append(update_fields(filtered_instance, data))
                 continue
             logger.debug(f'Updating {movie.name}')
             try:
