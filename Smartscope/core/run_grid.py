@@ -76,9 +76,10 @@ def run_grid(
     # scope
 
     # create frames directory
+    prefix = parse_frames_prefix(get_frames_prefix(grid),grid)
+    grid_dir = grid.frames_dir(prefix=prefix)
     if params.save_frames:
-        prefix = parse_frames_prefix(get_frames_prefix(grid),grid)
-        grid_dir = GridIO.create_grid_frames_directory(session.detector_id.frames_directory, grid.frames_dir(prefix=prefix))
+        GridIO.create_grid_frames_directory(session.detector_id.frames_directory, grid.frames_dir(prefix=prefix))
         logger.debug(f'Saving the frames in {grid_dir}')
     scope.loadGrid(grid.position)
     is_stop_file(session_id)

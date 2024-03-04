@@ -508,13 +508,38 @@ class CollectionStatsView(TemplateView):
         
         graph = fig.to_html(full_html=False)
         return graph
+    
+    def ice_thickness_graph(self,grid_id):
+        ### NEED TO MOVE THE GRAPHING LOGIC OUTSIDE OF HERE
+        all_data = list(HighMagModel.objects.filter(status='completed', grid_id=grid_id, ice_thickness__isnull=False).order_by('completion_time').values_list('ice_thickness', flat=True)) # replace with your own data source
+        # all_data = list(map(lambda x: 15 if x > 15 else x, all_data))
+        latest_data = all_data[-100:]
+        hist_all = go.Histogram(x=all_data, nbinsx=30, name='All')
+        hist_latest = go.Histogram(x=latest_data, nbinsx=30, name='Latest 100')
 
+
+        layout = go.Layout(
+                            title='Ice thickness distribution',
+                            xaxis=dict(
+                                title='Esstimated ice thickness (nm)',
+                            ),
+                            yaxis=dict(
+                                title='Number of exposures'
+                            ),
+                            showlegend=True,
+                        )
+        fig = go.Figure(data=[hist_all,hist_latest],layout=layout,)
+
+        
+        graph = fig.to_html(full_html=False)
+        return graph
 
     def get_context_data(self, grid_id, **kwargs):
         context = super().get_context_data(**kwargs)
         grid= AutoloaderGrid.objects.get(pk=grid_id)
         context.update(get_hole_count(grid))
         context['graph'] = self.ctfGraph(grid_id)
+        context['ice_thickness_graph'] = self.ice_thickness_graph(grid_id)
         return context
     
     def get(self,request, grid_id, *args, **kwargs):

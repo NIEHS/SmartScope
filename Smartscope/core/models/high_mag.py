@@ -35,6 +35,9 @@ class HighMagModel(Target, ExtraPropertyMixin):
     astig = models.FloatField(null=True)
     angast = models.FloatField(null=True)
     ctffit = models.FloatField(null=True)
+    tilt_axis_angle = models.FloatField(null=True)
+    tilt_angle = models.FloatField(null=True)
+    ice_thickness = models.IntegerField(null=True)
     # aliases
     objects = HighMagImageManager()
     display = DisplayManager()

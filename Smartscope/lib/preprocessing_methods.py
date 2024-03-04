@@ -41,14 +41,14 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
 '''
 
 
-def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
+def get_CTFFIND5_data(ctf_text: Path) -> List[float]:
     '''
     get results from ctf_*.txt determined by ctffinder
     args: 
     '''
     logger.info(f"Try to read CTF file {ctf_text}")
     ctf={}
-    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit']
+    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit','tilt_axis_angle','tilt_angle','ice_thickness']
     with open(ctf_text, 'r') as f:
         for line in f:
             if not line.startswith('#'):
@@ -61,6 +61,9 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
         'astig': ctf['df1'] - ctf['df2'],
         'angast': ctf['angast'],
         'ctffit': ctf['ctffit'],
+        'tilt_axis_angle': ctf['tilt_axis_angle'],
+        'tilt_angle': ctf['tilt_angle'],
+        'ice_thickness': int(round(ctf['ice_thickness']/10))
     }
 
 def process_hm_from_frames(
