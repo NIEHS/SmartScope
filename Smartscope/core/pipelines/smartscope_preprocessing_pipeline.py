@@ -1,7 +1,7 @@
 
 from functools import partial
 import time
-from typing import Dict
+from typing import Dict, List
 
 import multiprocessing
 import logging
@@ -30,7 +30,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     description = 'Default CPU-based Processing pipeline using IMOD alignframe and CTFFIND4.'
     to_process_queue = multiprocessing.JoinableQueue()
     processed_queue = multiprocessing.Queue()
-    child_process = []
+    child_process: List[multiprocessing.Process] = []
     to_update = []
     incomplete_processes = []
     cmdkwargs_handler = SmartScopePreprocessingCmdKwargs
@@ -57,19 +57,24 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             except multiprocessing.queues.Empty:
                 break
 
-    def start(self):
-        session = self.grid.session_id
-        logger.info(f'Starting the preprocessing with {self.cmd_data.n_processes}')
-        for n in range(int(self.cmd_data.n_processes)):
+    def start_processes(self, n_processes):
+        for n in range(int(n_processes)):
             proc = multiprocessing.Process(
                 target=processing_worker_wrapper,
-                args=(session.directory, self.to_process_queue,),
+                args=(self.grid.directory, self.to_process_queue,),
                 kwargs={'output_queue': self.processed_queue}
             )
             proc.start()
             self.child_process.append(proc)
+
+
+    def start(self):
+        # session = self.grid.session_id
+        logger.info(f'Starting the preprocessing with {self.cmd_data.n_processes}')
+        self.start_processes(self.cmd_data.n_processes)
         self.list_incomplete_processes()
         while not self.is_stop_file():
+            self.check_children_processes()
             self.queue_incomplete_processes()
             self.to_process_queue.join()
             self.check_for_update()
@@ -106,6 +111,19 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
                 self.to_process_queue.put(
                     [from_frames, [], dict(name=obj.name, frames_file_name=obj.frames)]
                 )
+    
+    def check_children_processes(self):
+        logger.info(f'Checking the status of children processes.')
+        for proc in self.child_process:
+            logger.debug(f'Checking process {proc}')
+            proc.join(1)
+            logger.debug(f'Process {proc} joined')
+            if proc.is_alive():
+                logger.debug(f'Child process {proc} is still alive.')
+                continue
+            logger.error(f'Child process {proc} has died. Restarting it.')
+            self.child_process.remove(proc)
+            self.start_processes(1)
 
     def stop(self):
         for proc in self.child_process:
@@ -115,6 +133,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         logger.debug('Process joined')
 
     def check_for_update(self):
+        logger.info(f'Checking for updates.')
         while self.processed_queue.qsize() > 0:
             movie = self.processed_queue.get()
             data = dict()

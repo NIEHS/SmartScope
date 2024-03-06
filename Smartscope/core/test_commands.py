@@ -188,3 +188,10 @@ def restore_db(backup_file=None,backup_directory='/mnt/backups/'):
     command = f"mysql --user={os.getenv('MYSQL_USER')} --password={os.getenv('MYSQL_PASSWORD')} --host={os.getenv('MYSQL_HOST')} --port={os.getenv('MYSQL_PORT')} {os.getenv('MYSQL_DATABASE')} < {backup_file}"
     subprocess.call(command, shell=True)
     logger.info('Finished restoring database.')
+
+def test_find_hole_geometry(grid_id):
+    from Smartscope.core.models import AutoloaderGrid
+    from Smartscope.core.mesh_rotation import save_hole_geometry
+    grid = AutoloaderGrid.objects.get(pk=grid_id)
+    rotation, spacing = save_hole_geometry(grid)
+    print(f'Updated grid {grid} with rotation: {rotation} degrees and spacing: {spacing} pixels.')
