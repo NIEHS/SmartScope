@@ -191,6 +191,13 @@ def process_hm_from_average(
         )
     return montage
 
+def clear_queue(queue):
+    logger.info(f'Clearing queue')
+    queue.task_done()
+    while not queue.empty():
+        item = queue.get()
+        logger.info(f'Got item={item} from queue')
+        queue.task_done()
 
 def processing_worker_wrapper(logdir, queue, output_queue=None):
     logger.info(f"processing worker: {logdir}\t{queue}\t{output_queue}")
@@ -205,8 +212,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
             item = queue.get()
             logger.info(f'Got item={item} from queue')
             if item == 'exit':
-                queue.task_done()
                 logger.info('Breaking processing worker loop.')
+                clear_queue(queue)
                 break
             if item is not None:
                 logger.debug(f'Running {item[0]} {item[1]} {item[2]} from queue')
@@ -221,5 +228,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
     except Exception as e:
         logger.error("Error in the processing worker")
         logger.exception(e)
+        clear_queue(queue)
     except KeyboardInterrupt as e:
         logger.info('SIGINT recieved by the processing worker')
+        clear_queue(queue)
+
