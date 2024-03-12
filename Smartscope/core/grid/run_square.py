@@ -34,7 +34,6 @@ class RunSquare:
             export_as_png(montage.image, montage.png)
             targets, finder_method, classifier_method, _ = find_targets(montage, protocol.finders)
             holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
-
             square = update(square,
                 status=status.PROCESSED,
                 shape_x=montage.shape_x,

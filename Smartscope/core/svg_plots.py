@@ -79,7 +79,7 @@ def css_color(obj, display_type, method):
         return PLUGINS_FACTORY[method].get_label(labels[0])
 
 def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
-    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False, style_='height: 100%; width: 100%')
+    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='atlas-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
 
     shapes = draw.Group(id='atlasShapes')
@@ -122,7 +122,7 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     return d
 
 def drawAtlasNew(atlas, selector_sorter) -> draw.Drawing:
-    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='square-svg', displayInline=False, style_='height: 100%; width: 100%')
+    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='atlas-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
 
     shapes = draw.Group(id='atlasShapes')

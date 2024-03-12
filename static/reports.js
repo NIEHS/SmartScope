@@ -556,6 +556,14 @@ function renderCounts() {
 }
 
 
+function addSVGCoord(svgElement, x, y) {
+    var pt = svgElement.createSVGPoint()
+    pt.x = x
+    pt.y = y
+    var target = add_target(pt)
+    svgElement.appendChild(target)
+    return [target, [pt.x, pt.y]]
+}
 
 function SvgCoords(evt) {
 
@@ -598,6 +606,14 @@ async function regroupBIS(square_id) {
     let url = `/api/squares/${square_id}/regroup_bis/`
     let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${square_id}`)
     console.log('regroupBIS: ', res)
+    await loadSquare(currentState.square, false)
+}
+
+async function deleteHoles(square_id) {
+    result = confirm('Are you sure you want to delete all holes on this square?')
+    let url = `/api/squares/${square_id}/delete_holes/`
+    let res = await apifetchAsync(url, {}, 'DELETE', message=`Deleting holes on ${square_id}`)
+    console.log('deleteHoles: ', res)
     await loadSquare(currentState.square, false)
 }
 
@@ -682,6 +698,17 @@ function clickHole(elem) {
     pushState()
 };
 
+async function extendLattice(square_id) {
+    var url = `/api/squares/${square_id}/extend_lattice/`
+    data = await fetchAsync(url, message=`Extending lattice for ${square_id}`)
+    console.log(data)
+    while (point = data.pop()) {
+        console.log(point)
+        targetsSelection.push(addSVGCoord(document.getElementById('square-svg'), point[0], point[1]))
+    }
+    checkSelection('targets')
+    
+}
 
 $('#main').on("click", '#Square_div svg', function (event) {
     if (event.shiftKey) {

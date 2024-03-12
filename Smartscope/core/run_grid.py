@@ -21,6 +21,7 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, SquareModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
 from Smartscope.core.frames import get_frames_prefix, parse_frames_prefix
+from Smartscope.core.mesh_rotation import calculate_hole_geometry
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
@@ -221,6 +222,7 @@ def run_grid(
                 )
                 square = update(square, status=status.ACQUIRED, completion_time=timezone.now())
             RunSquare.process_square_image(square, grid, microscope)
+            # calculate_hole_geometry(grid)
         elif is_done:
             microscope_id = session.microscope_id.pk
             tmp_file = os.path.join(settings.TEMPDIR, f'.pause_{microscope_id}')
