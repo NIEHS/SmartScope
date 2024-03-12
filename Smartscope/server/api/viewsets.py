@@ -616,6 +616,28 @@ class SquareModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraAction
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
             return Response(dict(success=False))
+        
+    @ action(detail=True, methods=['delete'])
+    def delete_holes(self,request, *args, **kwargs):
+        logger.debug('Received delete_holes request')
+        obj = self.get_object()
+        data = request.data
+        logger.debug(data)
+        queryset = obj.holemodel_set.filter(status__isnull=True, selected=False)
+        logger.debug(f"Deleting {queryset.count()} holes")
+        queryset.delete()
+        return Response(data=dict(success=True),status=rest_status.HTTP_204_NO_CONTENT)
+    
+    @ action(detail=True, methods=['get'])
+    def extend_lattice(self,request, *args, **kwargs):
+        obj = self.get_object()
+        logger.debug(f'Extending lattice for square {obj}')
+        microscope = obj.grid_id.session_id.microscope_id
+        out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
+            'extend_lattice', obj.square_id], communicate=True, timeout=30)
+        out = out.decode("utf-8").strip().split('\n')[-1]
+        return Response(data=json.loads(out), content_type='application/json')
+
 
 
 class HoleModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):

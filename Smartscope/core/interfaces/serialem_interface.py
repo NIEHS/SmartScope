@@ -103,12 +103,14 @@ class SerialemInterface(MicroscopeInterface):
 
     
     def reset_stage(self):
+        logger.info(f'Resetting stage to center.')
         sem.TiltTo(0)
         sem.MoveStageTo(0,0,0)
 
     def remove_slit(self):
         if self.detector.energyFilter:
             if sem.ReportEnergyFilter()[2] == 1:
+                logger.info('Removing slit.')
                 sem.SetSlitIn(0)
         
 

@@ -248,3 +248,9 @@ def find_square_center(img):
     cX = int(M["m10"] / M["m00"])
     cY = int(M["m01"] / M["m00"])
     return np.array([cX, cY])
+
+def create_square_mask(image):
+    cnts, center, _ = find_square(image)
+    mask = np.zeros(image.shape)
+    cv2.drawContours(mask,[cnts],-1,1,cv2.FILLED)
+    return mask

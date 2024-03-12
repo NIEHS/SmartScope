@@ -1,19 +1,19 @@
 import numpy as np
 import logging
-from ..mesh_operations import get_average_angle, filter_closest
+from ..mesh_operations import generate_rotated_grid, calculate_translation, remove_indices, filter_oob
+from .basic_finders import create_square_mask
 
 logger = logging.getLogger(__name__)
 
-def get_mesh_rotation_spacing(targets, mesh_spacing_in_pixels):
-    # grid = AutoloaderGrid.objects.get(pk=grid_id)
-    # print(f'Finding points within {mesh_spacing_in_pixels} pixels.')
-    filtered_points, spacing= filter_closest(targets, mesh_spacing_in_pixels*1.08)
-    logging.debug(f'Calculated mean spacing: {spacing} pixels')
-    rotation = get_average_angle(filtered_points)
-    logging.debug(f'Calculated mesh rotation: {rotation} degrees')
-    return rotation, spacing
-
-def lattice_extension(input_lattice:np.ndarray, image:np.ndarray, expected_spacing_in_pixels:float):
-    rotation, spacing = get_mesh_rotation_spacing(input_lattice,mesh_spacing_in_pixels=expected_spacing_in_pixels)
-
-
+def lattice_extension(input_lattice:np.ndarray, image:np.ndarray, rotation:float, spacing:float):
+    points = generate_rotated_grid(spacing, rotation, image.shape)
+    translation, _ = calculate_translation(input_lattice,points.T)
+    translated = points + translation.reshape(2,-1)
+    translation, min_idx = calculate_translation(input_lattice,translated.T)
+    translated = remove_indices(translated.T, min_idx)
+    translated = filter_oob(translated,image.shape)
+    translated = translated.astype(int)
+    mask = create_square_mask(image=image)
+    filtered = translated[np.where(mask[translated[:,1],translated[:,0]] == 1)]
+    return filtered
+    # return filtered, True, dict(spacing=spacing, rotation=rotation, translation=translation)

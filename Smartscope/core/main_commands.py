@@ -265,4 +265,24 @@ def import_grid(file:str):
     print('Done.')
 
 
+def extend_lattice(square_id):
+    from Smartscope.lib.Datatypes.grid_geometry import GridGeometry, GridGeometryLevel
+    from Smartscope.core.mesh_rotation import calculate_hole_geometry
+    from Smartscope.lib.Finders.lattice_extension import lattice_extension
+    from Smartscope.lib.image.montage import Montage
+    square = SquareModel.objects.get(pk=square_id)
+    grid = square.grid_id
+    geometry = GridGeometry.load(directory=grid.directory)
+    rotation, spacing = geometry.get_geometry(level=GridGeometryLevel.SQUARE)
+    if any([rotation is None, spacing is None]):
+        rotation, spacing = calculate_hole_geometry(grid)
+    montage = Montage(name=square.name, working_dir=grid.directory)
+    montage.read_image()
+    targets = square.holemodel_set.all()
+    coords = np.array([t.coords for t in targets])
+    new_targets = lattice_extension(coords, montage.image, rotation, spacing)
+    print(json.dumps(new_targets.tolist()))
+    
+    
+
             
