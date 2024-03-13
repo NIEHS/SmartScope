@@ -31,7 +31,7 @@ def register_plugins(directories, factory):
                 module = importlib.import_module('.'.join(split[:-1]))
                 out_class = getattr(module, split[-1])
 
-            factory[data['name']] = out_class.parse_obj(data)
+            factory[data['name']] = out_class.model_validate(data)
 
 def get_active_plugins_list(external_plugins_directory,external_plugins_list):
     with open(external_plugins_list,'r') as file:
@@ -43,7 +43,7 @@ def register_protocols(directories:List[Path], factory):
             logger.debug(f'Registering protocol {file}')
             with open(file) as f:
                 data = yaml.safe_load(f)
-            factory[data['name']] = BaseProtocol.parse_obj(data)
+            factory[data['name']] = BaseProtocol.model_validate(data)
 
 def register_external_plugins(external_plugins_list,plugins_factory,protocols_factory):   
     for path in external_plugins_list:
