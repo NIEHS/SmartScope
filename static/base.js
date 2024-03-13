@@ -76,14 +76,15 @@ let createLoadingMessage = (message) => {
 }
 
 let processLoadingMessage = (response, id) => {
+    let elem = $(`#loadingMessages #${id}`)
     if (response.ok) {
-        $(`#loadingMessages #${id}`).removeClass('alert-primary').addClass('alert-success')
+        elem.removeClass('alert-primary').addClass('alert-success')
         setTimeout(function() {
             $(`#loadingMessages #${id}`).alert('close');
             $(`#loadingMessages #${id}`).parent().remove()
         }, 2000);
     } else {
-        $(`#loadingMessages #${id}`).removeClass('alert-primary').addClass('alert-danger')
+        elem.removeClass('alert-primary').addClass('alert-danger')
     }
 }
 

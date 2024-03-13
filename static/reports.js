@@ -802,7 +802,60 @@ $("#main").on('click', '.zoomBtn', function () {
     }
     card.addClass('popupFull')
     icon.removeClass("bi-zoom-in").addClass("bi-zoom-out")
-}) 
+})
+
+function zoomOnOtherCard(elem, inc) {
+    let elems = $('#Hole').find('.holeCard')
+    let elem_ind = elems.index(elem)
+    let new_ind = elem_ind + inc
+    if (new_ind < 0 | new_ind > elems.length -1 ) {
+        console.log(new_ind, 'Out of range:', 0, elems.length)
+        return
+    }
+    console.log('Zooming out:', elem)
+    elem.find('.zoomBtn').click()
+    let new_elem = elems.eq(new_ind)
+    console.log('Zooming in on:', new_elem)
+    new_elem.find('.zoomBtn').click()
+}
+
+function scrollToOtherCard(inc) {
+    let elem = $('#Hole')
+    let elem_position = elem.scrollLeft()
+    let cards = elem.find('.holeCard')
+    let elem_size = elem.width()
+    let span = Math.abs(cards.eq(0).position().left - cards.eq(-1).position().left) / cards.length
+
+    let current_position = elem.scrollLeft()
+    let new_position = current_position + elem_size * inc
+    console.log('Moving by', elem_size, 'to', new_position)
+    elem.animate({'scrollLeft': new_position}, 500); 
+}
+
+$(document).keydown(function(e){
+    // left = 37
+    // right = 39
+    if (e.keyCode != 37 && e.keyCode != 39) {
+        return
+    }
+    e.preventDefault()
+    let inc = 0
+    if (e.keyCode == 39) {
+        inc = 1
+    }
+    if (e.keyCode == 37) {
+        inc = -1
+    }
+    let elem = $('.holeCard.popupFull')
+    
+    if (elem.length != 0) {
+        zoomOnOtherCard(elem, inc)
+        return
+    }
+    scrollToOtherCard(inc)
+
+
+});
 
 
 function updateData(data) {
