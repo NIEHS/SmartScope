@@ -279,6 +279,9 @@ def extend_lattice(square_id):
     montage = Montage(name=square.name, working_dir=grid.directory)
     montage.read_image()
     targets = square.holemodel_set.all()
+    if targets.count() == 0:
+        print('No targets found. The square needs at least one target to center the lattice on.')
+        return
     coords = np.array([t.coords for t in targets])
     new_targets = lattice_extension(coords, montage.image, rotation, spacing)
     print(json.dumps(new_targets.tolist()))
