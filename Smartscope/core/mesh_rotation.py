@@ -47,7 +47,7 @@ def calculate_hole_geometry(grid:AutoloaderGrid):
     pixel_size = targets[0].parent.pixel_size
     logger.debug(f'Calculating hole geometry for grid {grid} with {len(targets)} holes and mesh spacing: {mesh_spacing} um. Pixel size of {targets[0].parent}: {pixel_size} A.')
     rotation, spacing = get_mesh_rotation_spacing(coords, mesh_spacing / pixel_size * 10_000)
-
+    
     geometry = GridGeometry.load(directory=grid.directory)
     geometry.set_geometry(level=GridGeometryLevel.SQUARE, spacing=spacing, rotation=rotation)
     geometry.save(directory=grid.directory)
