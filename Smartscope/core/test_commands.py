@@ -7,10 +7,8 @@ import logging
 import time
 from django.conf import settings
 
-from .interfaces.tfsserialem_interface import TFSSerialemInterface
-from Smartscope.lib.preprocessing_methods import process_hm_from_frames
+
 from .grid.finders import find_targets
-from Smartscope.core.models import Microscope
 
 
 logger = logging.getLogger(__name__)
@@ -40,6 +38,7 @@ def test_high_mag_frame_processing(
     test_dir = autoscreen_dir + group + session
     name = grid_id
     '''
+    from Smartscope.lib.preprocessing_methods import process_hm_from_frames
     os.chdir(test_dir)
     frames_file_name = '20230321_AB_0317_2_3302_0.0.tif'
     frames_dirs = [Path(os.getenv('AUTOSCREENDIR')), Path(os.getenv('TEST_FILES'), 'highmagframes')]

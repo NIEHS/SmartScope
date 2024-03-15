@@ -3,18 +3,10 @@ import os
 import sys
 import json
 from django.db import transaction
-from django.conf import settings
 from django.core.cache import cache
 
-from Smartscope.core.models import *
 from Smartscope.core.test_commands import *
-from Smartscope.lib.image.montage import Montage
-from Smartscope.lib.image.targets import Targets
-from Smartscope.lib.image_manipulations import convert_centers_to_boxes
-from Smartscope.core.db_manipulations import group_holes_for_BIS, add_targets
-from .autoscreen import autoscreen
-from .run_grid import run_grid
-from .preprocessing_pipelines import highmag_processing
+
 
 import numpy as np
 
@@ -50,6 +42,12 @@ def run(command, *args):
 
 
 def add_holes(id, targets):
+    from Smartscope.lib.image.montage import Montage
+    from Smartscope.lib.image.targets import Targets
+    from Smartscope.core.db_manipulations import add_targets
+    from Smartscope.core.models import SquareModel, HoleModel
+    from Smartscope.lib.image_manipulations import convert_centers_to_boxes
+    
     instance = SquareModel.objects.get(pk=id)
     montage = Montage(name=instance.name, working_dir=instance.grid_id.directory)
     montage.load_or_process()
@@ -64,8 +62,11 @@ def add_holes(id, targets):
         montage=montage,
         target_type='hole'
     )
-    start_number = instance.holemodel_set.order_by('-number')\
-        .values_list('number', flat=True).first() + 1
+    start_number = 1
+    instance_number = instance.holemodel_set.order_by('-number')\
+        .values_list('number', flat=True).first()
+    if instance_number is not None:
+        start_number += instance_number
     holes = add_targets(
         grid=instance.grid_id,
         parent=instance,
@@ -113,6 +114,8 @@ def toggle_pause(microscope_id: str):
 
 
 def regroup_bis(grid_id, square_id):
+    from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
+    from Smartscope.core.db_manipulations import group_holes_for_BIS
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     square = SquareModel.objects.get(square_id=square_id)
     logger.debug(f"{grid_id} {square_id}")
@@ -194,6 +197,7 @@ def download_testfiles(overwrite=False):
     print('Done.')
 
 def get_atlas_to_search_offset(detector_name,maximum=0):
+    from Smartscope.core.models import Detector, SquareModel
     if isinstance(maximum, str):
         maximum = int(maximum)
     detector = Detector.objects.filter(name__contains=detector_name).first()
@@ -247,6 +251,7 @@ def get_atlas_to_search_offset(detector_name,maximum=0):
 
 
 def export_grid(grid_id, export_to=''):
+    from Smartscope.core.models import AutoloaderGrid
     from Smartscope.core.utils.export_import import export_grid
     if export_to == '':
         export_to = os.path.join(grid.directory, 'export.yaml')
@@ -266,6 +271,7 @@ def import_grid(file:str):
 
 
 def extend_lattice(square_id):
+    from Smartscope.core.models import SquareModel
     from Smartscope.lib.Datatypes.grid_geometry import GridGeometry, GridGeometryLevel
     from Smartscope.core.mesh_rotation import calculate_hole_geometry
     from Smartscope.lib.Finders.lattice_extension import lattice_extension
@@ -285,7 +291,15 @@ def extend_lattice(square_id):
     coords = np.array([t.coords for t in targets])
     new_targets = lattice_extension(coords, montage.image, rotation, spacing)
     print(json.dumps(new_targets.tolist()))
-    
+
+def highmag_processing(grid_id: str, *args, **kwargs):
+    from .preprocessing_pipelines import highmag_processing
+    highmag_processing(grid_id, *args, **kwargs)
+
+def autoscreen(session_id:str):
+    from .autoscreen import autoscreen
+    autoscreen(session_id=session_id)
+
     
 
             
