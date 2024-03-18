@@ -23,6 +23,7 @@ class TargetLabel(BaseModel):
     class Meta:
         abstract = True
         app_label = 'API'
+        ordering = ['-created_at']
 
 
 class Finder(TargetLabel):
