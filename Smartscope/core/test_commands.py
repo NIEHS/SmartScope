@@ -8,7 +8,7 @@ import time
 from django.conf import settings
 
 
-from .grid.finders import find_targets
+
 
 
 logger = logging.getLogger(__name__)
@@ -100,6 +100,7 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
 def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=1):  # output_dir='/mnt/data/testing/'
     from Smartscope.lib.image.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
+    from .grid.finders import find_targets
     import cv2
     import math
 
