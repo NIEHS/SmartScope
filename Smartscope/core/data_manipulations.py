@@ -5,6 +5,9 @@ import random
 from copy import copy
 from Smartscope.lib.image.target import Target
 from smartscope_connector.Datatypes.querylist import QueryList
+from Smartscope.lib.Datatypes.selector_sorter import SelectorSorter
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
+import numpy as np
 
 from smartscope_connector import models
 
@@ -30,8 +33,11 @@ def add_targets(targets:List[Target], model:Target, finder:str, classifier:Optio
 
 def get_target_methods(parent, method_type:['selectors','finders','classifiers']='selectors'):
     def get_selector_methods_names(target):
-        return map(lambda x: x.method_name ,getattr(target, method_type))
-    
+        items = getattr(target, method_type)
+        if isinstance(items, list):
+            return map(lambda x: x.method_name, items)
+        return map(lambda x: x.method_name ,list(items.all()))
+
     return set().union(*map(get_selector_methods_names, parent.targets))
 
 
@@ -40,26 +46,33 @@ def randomized_choice(filtered_set: set, n: int):
     while n >= len(filtered_set):
         choices += list(filtered_set)
         n -= len(filtered_set)
-    for _ in range(n):
+        logger.debug(f'More choices than length of filtered set, choosing one of each {choices}. {n} left to randomly choose from.')
+    for i in range(n):
+        
         choice = random.choice(list(filtered_set))
+        logger.debug(f'For {i}th choice, choosing {choice} from {filtered_set}.')
         choices.append(choice)
         filtered_set.remove(choice)
     return choices
 
 def choose_get_index(lst, value):
     indices = [i for i, x in enumerate(lst) if x == value]
-    return random.choice(indices)
+    choice = random.choice(indices)
+    del lst[choice]
+    return choice
 
 def filter_targets(parent):
-    from Smartscope.lib.Datatypes.base_plugin import SelectorSorter
-    from Smartscope.core.settings.worker import PLUGINS_FACTORY
-    import numpy as np
     classifiers = get_target_methods(parent, 'classifiers')
     selectors = get_target_methods(parent, 'selectors')
     filtered = [1] * len(parent.targets)
     for classifier in classifiers:
         for ind, target in enumerate(parent.targets):
-            label = next(filter(lambda x: x.method_name == classifier, target.classifiers))
+            t_classifiers = target.classifiers
+            if not isinstance(t_classifiers, list):
+                t_classifiers = list(t_classifiers.all())
+            label = next(filter(lambda x: x.method_name == classifier, t_classifiers),None)
+            if label is None:
+                continue
             if PLUGINS_FACTORY[classifier].classes[label.label].value <= 0:
                 filtered[ind] = 0
                 continue
@@ -76,7 +89,6 @@ def filter_targets(parent):
 
 
 def select_n_areas(parent, n, is_bis=False):
-
     filtered, filtered_set = filter_targets(parent)
     choices = randomized_choice(filtered_set, n)
     logger.debug(f'Randomized choices: {choices}')

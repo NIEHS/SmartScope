@@ -25,7 +25,8 @@ from Smartscope.core.mesh_rotation import calculate_hole_geometry
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
-from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets
+from Smartscope.core.db_manipulations import update, queue_atlas, add_targets
+from Smartscope.core.data_manipulations import select_n_areas
 
 from Smartscope.lib.image_manipulations import export_as_png
     
