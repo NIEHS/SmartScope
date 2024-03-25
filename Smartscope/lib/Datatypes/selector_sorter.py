@@ -73,11 +73,11 @@ class SelectorSorter:
         self._limits = np.array(self._selector.limits) * range_ + min(self.values)
 
     def set_labels(self):
-        logger.debug(f'Getting colored classes from selector {self._selector.name}. Inputs {len(self._targets)} targets and {self._n_classes} with {self.limits}.')
+        logger.debug(f'Getting colored classes from selector {self._selector.name}. Inputs {len(self._targets)} targets and {self._n_classes} classes with {self.limits} limits.')
         # classes, limits = self.classes(self._targets, n_classes=n_classes, limits=limits)
-        colors = self.set_colors(self._n_classes)
+        colors = self.set_colors()
         logger.debug(f'Colors are {colors}')
-        colored_classes = list(map(lambda x: (colors[x], x, 'Cluster' ) if x != 0 else ((colors[x], '', 'Rejected')), self.classes))
+        colored_classes = list(map(lambda x: (colors[x], x, 'Cluster' ) if x != 0 else ((colors[x], 0, 'Rejected')), self.classes))
         logger.debug(f'Colored classes are {colored_classes}')
         self._labels = colored_classes
         return colored_classes
@@ -100,8 +100,9 @@ class SelectorSorter:
         return self._classes
 
     def draw(self, n_classes=5, limits=None):
-        pass
-
+        if hasattr(self._selector, 'drawMethod'):
+            return self._selector.draw_method(self._targets, n_classes, limits)
+    
     def get_selector_value(self,target):
         if self._from_server:
             return self.get_selector_value_from_server(target)
@@ -111,7 +112,7 @@ class SelectorSorter:
         return next(filter(lambda x: x.method_name == self._selector.name ,target.selectors)).value
     
     def get_selector_value_from_server(self,target):
-        return target.selectors.filter(method_name=self._selector.name).first().value
+        return next(filter(lambda x: x.method_name == self._selector.name ,target.selectors.all())).value
     
     def extract_values(self):
         self._values = list(map(self.get_selector_value,self._targets))
@@ -126,10 +127,10 @@ class SelectorSorter:
         selector_value_within_limits = map(selector_value_within_limits,self.values)
         return list(selector_value_within_limits)
 
-    def set_colors(self, n_classes: float):
+    def set_colors(self):
         colors = list()
         cmap = cm.plasma
-        cmap_step = int(floor(cmap.N / n_classes))
+        cmap_step = int(floor(cmap.N / self._n_classes))
         for c in range(cmap.N, 0, -cmap_step):
             colors.append(rgb2hex(cmap(c)))
             continue
@@ -142,5 +143,5 @@ class SelectorSorter:
             # print(f'From CTF {prefix}{v*self.step}, color is {rgb2hex(cmap(c))}')
             colors.append((rgb2hex(cmap(c)), v * self.step, prefix))
 
-        # self._colors = colors
+        self._colors = colors
         return colors

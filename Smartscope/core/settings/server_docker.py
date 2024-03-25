@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'Smartscope.core.settings.apps.Frontend',
     'Smartscope.core.settings.apps.API',
+    'Smartscope.server.selector_viewer',
 ]
 
 MIDDLEWARE = [

@@ -92,7 +92,7 @@ class SquareModel(Target, ExtraPropertyMixin):
 
     @property
     def targets(self):
-        return self.holemodel_set.all()
+        return self.holemodel_set(manager='display').all()
 
 
     # @cached_model_property(key_prefix='svg', 

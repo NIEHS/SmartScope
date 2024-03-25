@@ -1,0 +1,20 @@
+
+{% extends 'general/full_overlay.html' %}
+
+{% block title %}Selector Viewer: {{selector.name}}{% endblock %}
+
+
+
+{% block overlay_content %}
+<span class="fw-bold">Description: </span>
+<span class="fw-light">{{selector.description}}</span>
+
+{{graph|safe}}
+{% include 'two_way_slider.html' %}
+{% endblock %}
+
+<!-- <div>
+
+{{svg|safe}}
+
+</div> -->

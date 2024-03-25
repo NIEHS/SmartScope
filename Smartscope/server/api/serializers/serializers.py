@@ -280,7 +280,7 @@ class SvgSerializer(RESTserializers.Serializer):
     def svg(self):
         if self.display_type == 'selectors':
             try:
-                sorter = SelectorSorter(PLUGINS_FACTORY[self.method], self.instance.targets, n_classes=5, from_server=True)
+                sorter = SelectorSorter(PLUGINS_FACTORY[self.method], list(self.instance.targets), n_classes=5, from_server=True)
                 return drawAtlasNew(self.instance, sorter).as_svg()
             except LagacySorterError:
                 logger.warning('Lagacy sorter error. Reverting to lagacy sorting.')
