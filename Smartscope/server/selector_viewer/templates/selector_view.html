@@ -10,7 +10,15 @@
 <span class="fw-light">{{selector.description}}</span>
 
 {{graph|safe}}
-{% include 'two_way_slider.html' %}
+{% include 'two_way_slider.html' with initial_limits=initial_limits values_range=values_range %}
+
+<div class="d-flex flex-row">
+    {% for im in selector_image %}
+    <div class="col-4">
+    {{im|safe}}
+    </div>
+    {% endfor %}
+    </div>
 {% endblock %}
 
 <!-- <div>

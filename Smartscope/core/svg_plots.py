@@ -122,14 +122,14 @@ def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     return d
 
 def drawAtlasNew(atlas, selector_sorter) -> draw.Drawing:
-    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='atlas-svg', displayInline=False, style_='height: 100%; width: 100%')
+    d = draw.Drawing(atlas.shape_y, atlas.shape_x, id=f'{atlas.prefix_lower}-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=atlas.png, embed= not atlas.is_aws))
 
-    shapes = draw.Group(id='atlasShapes')
-    text = draw.Group(id='atlasText')
+    shapes = draw.Group(id=f'{atlas.prefix_lower}Shapes')
+    text = draw.Group(id=f'{atlas.prefix_lower}Text')
 
     labels_list = []
-    for i, color, label, prefix in selector_sorter:
+    for i, (color, label, prefix) in zip(atlas.targets, selector_sorter.labels):
         if color is not None:
             sz = floor(sqrt(i.area))
             finder = list(i.finders.all())[0]
@@ -139,7 +139,7 @@ def drawAtlasNew(atlas, selector_sorter) -> draw.Drawing:
             x = finder.x - sz // 2
             y = (finder.y - sz // 2)
             r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, label=label,
-                               class_=f'target', status=i.status, onclick="clickSquare(this)")
+                               class_=f'target', status=i.status, onclick=f"click{i.prefix}(this)")
 
             if i.selected:
                 ft_sz = floor(d.width / 35)
@@ -249,4 +249,22 @@ def drawHighMag(highmag) -> draw.Drawing:
     d = draw.Drawing(highmag.shape_y, highmag.shape_x, id=f'{highmag.name}-svg', displayInline=False, style_='height: 100%; width: 100%')
     d.append(draw.Image(0, 0, d.width, d.height, path=highmag.png, embed= not highmag.is_aws))
     d.append(add_scale_bar(highmag.pixel_size, d.width, d.height, id_type=highmag.name))
+    return d
+
+
+def drawSelector(obj, selector_sorter) -> draw.Drawing:
+    d = draw.Drawing(obj.shape_y, obj.shape_x, id='selector-svg', displayInline=False, style_='height: 100%; width: 100%')
+    d.append(draw.Image(0, 0, d.width, d.height, path=obj.png, embed= not obj.is_aws))
+
+    shapes = draw.Group(id='selectorShapes')
+
+    for index, i in enumerate(obj.targets):
+        sz = floor(sqrt(i.area))
+        finder = list(i.finders.all())[0]
+        x = finder.x - sz // 2
+        y = (finder.y - sz // 2)
+        color = 'lightgreen' if selector_sorter.classes[index] != 0 else 'red'
+        r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, class_='selectorTarget',value_=selector_sorter.values[index],)
+        shapes.append(r)
+    d.append(shapes)
     return d

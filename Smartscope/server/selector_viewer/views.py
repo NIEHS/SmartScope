@@ -4,15 +4,27 @@ import plotly.graph_objs as go
 import plotly.express as px
 from django.template.response import TemplateResponse
 
-from Smartscope.core.models import AutoloaderGrid, HoleModel
-from Smartscope.lib.Datatypes.selector_sorter import SelectorSorter
+from Smartscope.core.models import AutoloaderGrid, HoleModel, SquareModel, AtlasModel
+from Smartscope.core.selector_sorter import SelectorSorter, SelectorSorterData, SelectorValueParser
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
+from Smartscope.core.svg_plots import drawSelector
+from Smartscope.core.status import status
 
 logger =logging.getLogger(__name__)
 
 
-def initialize_selector(grid_id, selector:str) -> SelectorSorter:
-    selector_sorter = SelectorSorter(selector=PLUGINS_FACTORY[selector],targets=HoleModel.display.filter(grid_id=grid_id, square_id='grid1_square11BeZGKcjKyUKT3nQh'))
+def parse_maglevel(func, *args, maglevel='square'):
+    def wrapper(*args, **kwargs):
+        if maglevel == 'square':
+            return func(*args,maglevel=SquareModel, **kwargs)
+        elif maglevel == 'atlas':
+            return func(*args,maglevel=AtlasModel, **kwargs)
+    return wrapper
+
+def initialize_selector(selector:str, queryset) -> SelectorSorter:
+    selector_data = SelectorValueParser(selector, from_server=True)
+    selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY[selector].limits)
+    selector_sorter.values = selector_data.extract_values(queryset)
     return selector_sorter
 
 def set_transparent_background(fig):
@@ -22,31 +34,43 @@ def set_transparent_background(fig):
         })
     return fig
 
-def plot_bars_selector(selector_sorter:SelectorSorter):
-    data = list(selector_sorter.values)
-    fig = px.histogram(x=data, nbins=int(abs(min(data) - max(data))), labels={'x': 'Values', 'color': 'Clusters'})
-    # layout = go.Layout(title='Selector distribution', xaxis=dict(title='Labels'), yaxis=dict(title='Values'), showlegend=False)
-    # fig = go.Figure(data=[trace], layout=layout)
-    fig.add_vline(x=selector_sorter.limits[0], line_width=3, line_color="black")
-    fig.add_vline(x=selector_sorter.limits[1], line_width=3, line_color="black")
-    fig = set_transparent_background(fig)
-    return fig.to_html(full_html=False, config = {'displayModeBar': False})
+# def plot_bars_selector(selector_sorter:SelectorSorter):
+#     data = list(selector_sorter.values)
+#     fig = px.histogram(x=data, nbins=int(abs(min(data) - max(data))), labels={'x': 'Values', 'color': 'Clusters'})
+#     # layout = go.Layout(title='Selector distribution', xaxis=dict(title='Labels'), yaxis=dict(title='Values'), showlegend=False)
+#     # fig = go.Figure(data=[trace], layout=layout)
+#     fig.add_vline(x=selector_sorter.limits[0], line_width=3, line_color="black")
+#     fig.add_vline(x=selector_sorter.limits[1], line_width=3, line_color="black")
+#     fig = set_transparent_background(fig)
+#     return fig.to_html(full_html=False, config = {'displayModeBar': False})
 
 def plot_scatter_selector(selector_sorter:SelectorSorter):
     data = list(selector_sorter.values)
     fig = px.scatter(y=data, labels={'x': 'Holes','y': 'Selector Value', 'color': 'Clusters'})
     fig.add_hrect(y0=selector_sorter.limits[0], y1=selector_sorter.limits[1], fillcolor='lightgreen', opacity=0.5, line_width=0)
     fig = set_transparent_background(fig)
-    return fig.to_html(full_html=False, config = {'displayModeBar': False}, div_id='selector_plot')
+    return fig.to_html(full_html=False, config = {'displayModeBar': False}, div_id='selectorPlot')
 
-def selector_view(request, grid_id, selector):
+def draw_selector_image(selector:str, grid_id:str,maglevel=SquareModel, num_to_plot=3):
+    objs = maglevel.objects.filter(grid_id=grid_id, status=status.COMPLETED)[:num_to_plot]
+    plots = []
+    for obj in objs:
+        selector_sorter = initialize_selector(selector, obj.targets)
+        plots.append(drawSelector(obj, selector_sorter).as_svg())
+    return plots
+
+
+@parse_maglevel
+def selector_view(request, grid_id, selector, maglevel='square'):
     logger.debug(f'Grid_id = {grid_id}, selector = {selector}')
     context = dict()
     context['grid_id'] = grid_id
-    selector_sorter = initialize_selector(grid_id, selector)
-    context['selector'] = selector_sorter._selector
-    
+    selector_sorter = initialize_selector(selector, maglevel.target_model().display.filter(grid_id=grid_id))
+    context['selector'] = PLUGINS_FACTORY[selector]
+    context['initial_limits'] = selector_sorter.limits
+    context['values_range'] = selector_sorter.values_range
     context['graph'] = plot_scatter_selector(selector_sorter)
+    context['selector_image'] = draw_selector_image(selector, grid_id, maglevel)
     return TemplateResponse(request, 'selector_view.html', context)
 
 

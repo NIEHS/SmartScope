@@ -1,5 +1,6 @@
 from .base_model import *
 
+
          
 class ImageManager(models.Manager):
     use_for_related_fields = True
@@ -93,15 +94,19 @@ class SquareModel(Target, ExtraPropertyMixin):
     @property
     def targets(self):
         return self.holemodel_set(manager='display').all()
+    
+    @classmethod
+    def target_model(cls):
+        from .hole import HoleModel
+        return HoleModel
 
 
     # @cached_model_property(key_prefix='svg', 
     # extra_suffix_from_function=['method'], timeout=3600)
     def svg(self, display_type, method):
-        from .hole import HoleModel
         from Smartscope.core.svg_plots import drawSquare
 
-        holes = list(HoleModel.display.filter(square_id=self.square_id))
+        holes = list(self.target_model().display.filter(square_id=self.square_id))
         sq = drawSquare(self, holes, display_type, method)
         
         return sq

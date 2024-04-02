@@ -5,7 +5,7 @@ import random
 from copy import copy
 from Smartscope.lib.image.target import Target
 from smartscope_connector.Datatypes.querylist import QueryList
-from Smartscope.lib.Datatypes.selector_sorter import SelectorSorter
+from Smartscope.core.selector_sorter import SelectorSorter, SelectorValueParser
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 import numpy as np
 
@@ -78,8 +78,10 @@ def filter_targets(parent):
                 continue
 
     filtered = np.array(filtered)
-    for selector in selectors: 
-        sorter = SelectorSorter(PLUGINS_FACTORY[selector], parent.targets, n_classes=5)
+    for selector in selectors:
+        sorter_data = SelectorValueParser(selector, from_server=True)
+        sorter = SelectorSorter(selector,n_classes=5,fractional_limits=PLUGINS_FACTORY[selector].limits)
+        sorter.values = sorter_data.extract_values(parent.targets)
         filtered *= np.array(sorter.classes)
     
     filtered_set = set(filtered[filtered > 0].tolist())

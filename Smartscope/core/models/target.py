@@ -46,6 +46,14 @@ class Target(BaseModel):
         abstract = True
 
     @property
+    def prefix(self):
+        raise NotImplementedError('Prefix must be implemented in the subclass')
+    
+    @property
+    def prefix_lower(self):
+        return self.prefix.lower()
+
+    @property
     def group(self):
         return self.grid_id.session_id.group
 
