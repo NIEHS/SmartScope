@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import logging
+from enum import Enum
 from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
@@ -155,10 +156,12 @@ def run_grid(
             break
         else:
             square, hole = get_queue(grid)
+            priority = get_target_priority(grid, (square, hole))
+            logger.debug(f'Priority: {priority}')
 
         logger.info(f'Queued => Square: {square}, Hole: {hole}')
         logger.info(f'Targets done: {is_done}')
-        if hole is not None and (square is None or grid.collection_mode == 'screening'):
+        if priority == TargetPriority.HOLE:
             is_done = False
             logger.info(f'Running Hole {hole}')
             # process medium image
@@ -208,7 +211,7 @@ def run_grid(
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
             scope.flash_cold_FEG(params.coldfegflash_delay)
-        elif square is not None:
+        elif priority == TargetPriority.SQUARE:
             is_done = False
             logger.info(f'Running Square {square}')
             # process square
@@ -252,7 +255,24 @@ def run_grid(
         logger.info('Grid finished')
         return 'finished'
 
+class TargetPriority(Enum):
+    HOLE = 'hole'
+    SQUARE = 'square'
 
+
+def get_target_priority(grid, queue):
+    square, hole = queue
+    if hole is None and square is None:
+        return
+    if hole is None:
+        return TargetPriority.SQUARE
+    if square is None:
+        return TargetPriority.HOLE
+    if grid.collection_mode == 'screening' and grid.session_id.microscope_id.vendor != 'JEOL':
+        return TargetPriority.HOLE
+    return TargetPriority.SQUARE
+
+    
 
 def get_queue(grid):
     square = grid.squaremodel_set.filter(selected=True).\
