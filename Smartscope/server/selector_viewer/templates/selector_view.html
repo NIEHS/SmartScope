@@ -1,0 +1,28 @@
+
+{% extends 'general/full_overlay.html' %}
+
+{% block title %}Selector Viewer: {{selector.name}}{% endblock %}
+
+
+
+{% block overlay_content %}
+<span class="fw-bold">Description: </span>
+<span class="fw-light">{{selector.description}}</span>
+
+{{graph|safe}}
+{% include 'two_way_slider.html' with initial_limits=initial_limits values_range=values_range %}
+
+<div class="d-flex flex-row">
+    {% for im in selector_image %}
+    <div class="col-4">
+    {{im|safe}}
+    </div>
+    {% endfor %}
+    </div>
+{% endblock %}
+
+<!-- <div>
+
+{{svg|safe}}
+
+</div> -->

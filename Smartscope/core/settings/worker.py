@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from Smartscope.core.config import register_plugins, register_protocols, \
     register_external_plugins, get_active_plugins_list, get_protocol_commands
@@ -10,6 +11,7 @@ SMARTSCOPE_DEFAULT_CONFIG = Path(__file__).parents[3] / 'config' / 'smartscope'
 SMARTSCOPE_DEFAULT_PLUGINS = SMARTSCOPE_DEFAULT_CONFIG / 'plugins'
 SMARTSCOPE_CUSTOM_PLUGINS = SMARTSCOPE_CUSTOM_CONFIG / 'plugins'
 EXTERNAL_PLUGINS_DIRECTORY = Path(os.getenv('EXTERNAL_PLUGINS_DIRECTORY'))
+sys.path.append(str(EXTERNAL_PLUGINS_DIRECTORY))
 EXTERNAL_PLUGINS_LIST:list = get_active_plugins_list(
     EXTERNAL_PLUGINS_DIRECTORY,
     SMARTSCOPE_CUSTOM_CONFIG / 'external_plugins.txt'

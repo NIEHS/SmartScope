@@ -50,11 +50,11 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
         montage = Montage(**parent.__dict__, working_dir=parent.grid_id.directory)
         montage.create_dirs()
     # if save:
-    #     img = cv2.bilateralFilter(auto_contrast(montage.image.copy()), 30, 75, 75)
+    img = auto_contrast(montage.image)
     for target in targets:
         finder = list(target.finders.all())[0]
         x, y = finder.x, finder.y
-        extracted = montage.image[y - target.radius:y + target.radius, x - target.radius:x + target.radius]
+        extracted = img[y - target.radius:y + target.radius, x - target.radius:x + target.radius]
         target.median = np.mean(extracted)
         target.std = np.std(extracted)
         # if save:
@@ -66,13 +66,17 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
     targets.sort(key=lambda x: x.median)
     return generate_equal_clusters(parent, targets, n_groups, extra_fields=dict(value='median'))
 
+def run_selector(selector_name,selection,*args, **kwargs):
+    method = PLUGINS_FACTORY[selector_name]
+    outputs = method.run(selection, *args, **kwargs)
+    with transaction.atomic():
+        for obj in outputs:
+            Selector(**obj, method_name=method.name).save()
+
 
 def selector_wrapper(selectors, selection, *args, **kwargs):
     logger.info(f'Running selectors {selectors} on {selection}')
     for method in selectors:
-        method = PLUGINS_FACTORY[method]
+        run_selector(method, selection, *args, **kwargs)
 
-        outputs = method.run(selection, *args, **kwargs)
-        with transaction.atomic():
-            for obj in outputs:
-                Selector(**obj, method_name=method.name).save()
+

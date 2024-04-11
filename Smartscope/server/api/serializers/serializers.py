@@ -13,7 +13,7 @@ from Smartscope.core.models.atlas import AtlasModel
 from Smartscope.core.models.square import SquareModel
 from Smartscope.core.models.high_mag import HighMagModel
 from Smartscope.core.models.target_label import Classifier
-from Smartscope.lib.Datatypes.selector_sorter import SelectorSorter, LagacySorterError
+from Smartscope.core.selector_sorter import SelectorSorter, LagacySorterError, SelectorValueParser
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.svg_plots import drawAtlasNew
 # from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
@@ -280,7 +280,10 @@ class SvgSerializer(RESTserializers.Serializer):
     def svg(self):
         if self.display_type == 'selectors':
             try:
-                sorter = SelectorSorter(PLUGINS_FACTORY[self.method], self.instance.targets, n_classes=5, from_server=True)
+                plugin = PLUGINS_FACTORY[self.method]
+                selector_data = SelectorValueParser(self.method, from_server=True)
+                sorter = SelectorSorter(self.method, fractional_limits=plugin.limits)
+                sorter.values = selector_data.extract_values(self.instance.targets)
                 return drawAtlasNew(self.instance, sorter).as_svg()
             except LagacySorterError:
                 logger.warning('Lagacy sorter error. Reverting to lagacy sorting.')
