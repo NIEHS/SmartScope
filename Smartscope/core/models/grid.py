@@ -137,10 +137,10 @@ class AutoloaderGrid(BaseModel):
 
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         self_wd = f'{self.position}_{self.name}'
         wd = self.parent.directory
-        return os.path.join(wd, self_wd)
+        return Path(wd, self_wd)
 
     class Meta(BaseModel.Meta):
         unique_together = ('position', 'name', 'session_id')

@@ -10,7 +10,14 @@
 <span class="fw-light">{{selector.description}}</span>
 
 {{graph|safe}}
+<form method="post">
+{% csrf_token %}
 {% include 'two_way_slider.html' with initial_limits=initial_limits values_range=values_range %}
+{% url 'save_selector_limits' grid_id selector.name as save_url%}
+{% include 'save_button.html' with url=save_url param1="sliderValue1" param2="sliderValue2" %}
+</form>
+
+
 
 <div class="d-flex flex-row">
     {% for im in selector_image %}
@@ -20,6 +27,8 @@
     {% endfor %}
     </div>
 {% endblock %}
+
+
 
 <!-- <div>
 

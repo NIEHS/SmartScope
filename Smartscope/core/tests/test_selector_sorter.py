@@ -1,5 +1,6 @@
 import pytest
 from Smartscope.bin import smartscope
+from pathlib import Path
 
 from ..models import HoleModel
 
@@ -64,3 +65,13 @@ def test_selector_data_create_sorter():
     assert sorter._n_classes == 5
     assert sorter.limits[0] == 0
     assert sorter.limits[-1] == 10
+
+def test_selector_data_save_load():
+    test_dir = Path('Smartscope/core/tests')
+    sorter_data = SelectorSorterData(selector_name='Graylevel selector', low_limit=0, high_limit=10)
+    sorter_data.save(test_dir)
+    sorter_data = SelectorSorterData.load(test_dir, 'Graylevel selector')
+    assert sorter_data.selector_name == 'Graylevel selector'
+    assert sorter_data.low_limit == 0
+    assert sorter_data.high_limit == 10
+    sorter_data.delete(test_dir)

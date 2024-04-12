@@ -1,11 +1,15 @@
 from datetime import datetime
+
 import logging
 import plotly.graph_objs as go
 import plotly.express as px
+
+from django.http import HttpResponse
+from django.http import HttpRequest
 from django.template.response import TemplateResponse
 
 from Smartscope.core.models import AutoloaderGrid, HoleModel, SquareModel, AtlasModel
-from Smartscope.core.selector_sorter import SelectorSorter, SelectorSorterData, SelectorValueParser
+from Smartscope.core.selector_sorter import SelectorSorter, initialize_selector, save_selector_data
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.svg_plots import drawSelector
 from Smartscope.core.status import status
@@ -21,11 +25,7 @@ def parse_maglevel(func, *args, maglevel='square'):
             return func(*args,maglevel=AtlasModel, **kwargs)
     return wrapper
 
-def initialize_selector(selector:str, queryset) -> SelectorSorter:
-    selector_data = SelectorValueParser(selector, from_server=True)
-    selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY[selector].limits)
-    selector_sorter.values = selector_data.extract_values(queryset)
-    return selector_sorter
+
 
 def set_transparent_background(fig):
     fig.update_layout({
@@ -51,11 +51,11 @@ def plot_scatter_selector(selector_sorter:SelectorSorter):
     fig = set_transparent_background(fig)
     return fig.to_html(full_html=False, config = {'displayModeBar': False}, div_id='selectorPlot')
 
-def draw_selector_image(selector:str, grid_id:str,maglevel=SquareModel, num_to_plot=3):
-    objs = maglevel.objects.filter(grid_id=grid_id, status=status.COMPLETED)[:num_to_plot]
+def draw_selector_image(selector:str, grid:AutoloaderGrid,maglevel=SquareModel, num_to_plot=3):
+    objs = maglevel.objects.filter(grid_id=grid, status=status.COMPLETED).order_by('?')[:num_to_plot]
     plots = []
     for obj in objs:
-        selector_sorter = initialize_selector(selector, obj.targets)
+        selector_sorter = initialize_selector(grid,selector, obj.targets)
         plots.append(drawSelector(obj, selector_sorter).as_svg())
     return plots
 
@@ -65,16 +65,27 @@ def selector_view(request, grid_id, selector, maglevel='square'):
     logger.debug(f'Grid_id = {grid_id}, selector = {selector}')
     context = dict()
     context['grid_id'] = grid_id
-    selector_sorter = initialize_selector(selector, maglevel.target_model().display.filter(grid_id=grid_id))
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    selector_sorter = initialize_selector(grid, selector, maglevel.target_model().display.filter(grid_id=grid_id))
     context['selector'] = PLUGINS_FACTORY[selector]
     context['initial_limits'] = selector_sorter.limits
     context['values_range'] = selector_sorter.values_range
     context['graph'] = plot_scatter_selector(selector_sorter)
-    context['selector_image'] = draw_selector_image(selector, grid_id, maglevel)
+    context['selector_image'] = draw_selector_image(selector, grid, maglevel)
     return TemplateResponse(request, 'selector_view.html', context)
 
 
+def save_selector_limits(request:HttpRequest, grid_id, selector):
+    logger.debug(f'Request received: {request.__dict__}')
+    if request.method != 'POST':
+        return HttpResponse('Method not allowed')
+    low_limit = request.POST.get('low_limit', None)
+    high_limit = request.POST.get('high_limit', None)
+    if high_limit is None:
+        return HttpResponse('High Limit cannot be none')
+    selector_data = save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit))
 
+    return HttpResponse(f"{selector_data.low_limit} {selector_data.high_limit}")
 
 
 # class CollectionStatsView(TemplateView):
