@@ -1,12 +1,14 @@
 import numpy as np
+from pathlib import Path
 from typing import List, Optional
 import logging
 from matplotlib import cm
 from matplotlib.colors import rgb2hex
 from math import floor
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-from .models import Target
+from .models import Target, AutoloaderGrid
+from .settings.worker import PLUGINS_FACTORY
 
 logger = logging.getLogger(__name__)
 
@@ -22,15 +24,50 @@ class SelectorSorterData(BaseModel):
     low_limit: float
     high_limit: Optional[float] = None
 
+    @field_validator('low_limit', 'high_limit', mode='before')
+    def check_low_limit(cls, value):
+        if isinstance(value, str) and value.isnumeric():
+            return float(value)
+        return value
+
     def create_sorter(self,):
         sorter = SelectorSorter(self.selector_name)
         sorter.limits = [self.low_limit, self.high_limit]
         return sorter
     
+    @property
+    def file_name(self):
+        selector_name = self.selector_name.replace(' ', '_')
+        return f'{selector_name}_data.json'
+
+    def save(self, grid_directory):
+        with open(grid_directory / self.file_name, 'w') as f:
+            f.write(self.model_dump_json())
+
+    @classmethod
+    def exists(cls, grid_directory:Path, selector_name:str):
+        selector_name = selector_name.replace(' ', '_')
+        return (grid_directory / f'{selector_name}_data.json').exists()
+
+    @classmethod
+    def load(cls, grid_directory:Path, selector_name):
+        selector_name = selector_name.replace(' ', '_')
+        with open(grid_directory / f'{selector_name}_data.json', 'r') as f:
+            data = f.read()
+        return cls.model_validate_json(data)
+    
+    def delete(self, grid_directory):
+        (grid_directory / self.file_name).unlink()
+
     @classmethod
     def parse_sorter(cls, sorter):
         return cls(selector_name=sorter.selector_name, low_limit=sorter.limits[0], high_limit=sorter.limits[1])
 
+def save_selector_data(grid_id:str, selector_name:str, data:dict) -> SelectorSorterData:
+    selector_data = SelectorSorterData(selector_name=selector_name,**data)
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    selector_data.save(grid.directory)
+    return selector_data
 
 class SelectorValueParser:
 
@@ -170,3 +207,12 @@ class SelectorSorter:
 
         self._colors = colors
         return colors
+    
+def initialize_selector(grid: AutoloaderGrid, selector:str, queryset) -> SelectorSorter:
+    selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY[selector].limits)
+    if SelectorSorterData.exists(grid.directory, selector):
+        selector_data = SelectorSorterData.load(grid.directory, selector)
+        selector_sorter = selector_data.create_sorter()
+    selector_data = SelectorValueParser(selector, from_server=True)
+    selector_sorter.values = selector_data.extract_values(queryset)
+    return selector_sorter

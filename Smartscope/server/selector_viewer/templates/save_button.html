@@ -1,0 +1,13 @@
+<button class="btn btn-primary"
+hx-post="{{url}}" 
+hx-vals="js:{
+    low_limit: document.getElementById('{{param1}}').value,
+    high_limit: document.getElementById('{{param2}}').value
+}"
+hx-target="#btnResult"
+hx-swap="innerHTML"
+>
+Save
+</button>
+
+<div id="btnResult"></div>
