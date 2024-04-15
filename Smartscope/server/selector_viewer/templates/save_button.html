@@ -2,12 +2,15 @@
 hx-post="{{url}}" 
 hx-vals="js:{
     low_limit: document.getElementById('{{param1}}').value,
-    high_limit: document.getElementById('{{param2}}').value
+    high_limit: document.getElementById('{{param2}}').value,
+    apply_to: '{{apply_to}}'
 }"
 hx-target="#btnResult"
 hx-swap="innerHTML"
+
+{% include "bootstrap_tooltip.html" with position="top" tooltip=tooltip %}
+
 >
-Save
+{{inner_html}}
 </button>
 
-<div id="btnResult"></div>

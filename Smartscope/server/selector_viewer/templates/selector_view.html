@@ -12,9 +12,23 @@
 {{graph|safe}}
 <form method="post">
 {% csrf_token %}
-{% include 'two_way_slider.html' with initial_limits=initial_limits values_range=values_range %}
-{% url 'save_selector_limits' grid_id selector.name as save_url%}
-{% include 'save_button.html' with url=save_url param1="sliderValue1" param2="sliderValue2" %}
+    <div class="d-flex flex-row justify-content-between align-items-center ">
+        <div class="col-8">
+        {% include 'two_way_slider.html' with initial_limits=initial_limits values_range=values_range %}
+        </div>
+        {% url 'save_selector_limits' grid_id selector.name as save_url%}
+
+
+        <div class="col d-flex flex-row ">
+        {% with  url=save_url param1="sliderValue1" param2="sliderValue2"%}
+        {% include 'save_button.html' with apply_to="grid" inner_html="Save" tooltip="Save for the current grid"%}
+            <span class="mx-1"></span>
+        {% include 'save_button.html' with apply_to="session" inner_html="Save to session" tooltip="Save and apply all the grid in the current session. **This may have wierd results if the session combines carbon and gold foil grids."%}
+        {% endwith %}
+        <div id="btnResult" class="mx-1"></div>
+        </div>
+        
+    </div>
 </form>
 
 

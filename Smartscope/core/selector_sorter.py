@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Callable
 import logging
 from matplotlib import cm
 from matplotlib.colors import rgb2hex
@@ -38,21 +38,22 @@ class SelectorSorterData(BaseModel):
     @property
     def file_name(self):
         selector_name = self.selector_name.replace(' ', '_')
-        return f'{selector_name}_data.json'
+        return f'{selector_name.lower()}_data.json'
 
     def save(self, grid_directory):
         with open(grid_directory / self.file_name, 'w') as f:
             f.write(self.model_dump_json())
 
     @classmethod
-    def exists(cls, grid_directory:Path, selector_name:str):
+    def exists(cls, directory:Path, selector_name:str):
         selector_name = selector_name.replace(' ', '_')
-        return (grid_directory / f'{selector_name}_data.json').exists()
+        return (directory / f'{selector_name.lower()}_data.json').exists()
 
     @classmethod
-    def load(cls, grid_directory:Path, selector_name):
+    def load(cls, directory:Path, selector_name):
+        logger.info(f'Loading selector data from {directory} for {selector_name}')
         selector_name = selector_name.replace(' ', '_')
-        with open(grid_directory / f'{selector_name}_data.json', 'r') as f:
+        with open(directory / f'{selector_name.lower()}_data.json', 'r') as f:
             data = f.read()
         return cls.model_validate_json(data)
     
@@ -63,10 +64,18 @@ class SelectorSorterData(BaseModel):
     def parse_sorter(cls, sorter):
         return cls(selector_name=sorter.selector_name, low_limit=sorter.limits[0], high_limit=sorter.limits[1])
 
-def save_selector_data(grid_id:str, selector_name:str, data:dict) -> SelectorSorterData:
-    selector_data = SelectorSorterData(selector_name=selector_name,**data)
+def save_to_grid_directory(grid_id):
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
-    selector_data.save(grid.directory)
+    return grid.directory
+
+def save_to_session_directory(grid_id):
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    return grid.session_id.directory
+
+def save_selector_data(grid_id, selector_name:str, data:dict,save_to:Callable=save_to_grid_directory) -> SelectorSorterData:
+    selector_data = SelectorSorterData(selector_name=selector_name,**data)
+    save_directory = save_to(grid_id)
+    selector_data.save(save_directory)
     return selector_data
 
 class SelectorValueParser:
@@ -148,7 +157,7 @@ class SelectorSorter:
 
     @property
     def values_range(self) -> List[float]:
-        return [min(self.values), max(self.values)]
+        return [floor(min(self.values)), max(self.values)]
 
     def set_limits(self):
         range_ = max(self.values) - min(self.values)
@@ -207,11 +216,20 @@ class SelectorSorter:
 
         self._colors = colors
         return colors
+
+
+def check_directories_for_selector_data(grid:AutoloaderGrid, selector_name:str) -> Path:
+    priority = [grid.directory, grid.session_id.directory]
+    for directory in priority:
+        if SelectorSorterData.exists(directory, selector_name):
+            return directory
     
+
 def initialize_selector(grid: AutoloaderGrid, selector:str, queryset) -> SelectorSorter:
     selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY[selector].limits)
-    if SelectorSorterData.exists(grid.directory, selector):
-        selector_data = SelectorSorterData.load(grid.directory, selector)
+    directory = check_directories_for_selector_data(grid,selector)
+    if directory is not None:
+        selector_data = SelectorSorterData.load(directory, selector)
         selector_sorter = selector_data.create_sorter()
     selector_data = SelectorValueParser(selector, from_server=True)
     selector_sorter.values = selector_data.extract_values(queryset)
