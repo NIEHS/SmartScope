@@ -116,23 +116,33 @@ def toggle_pause(microscope_id: str):
 def regroup_bis(grid_id, square_id):
     from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
     from Smartscope.core.db_manipulations import group_holes_for_BIS
+    from Smartscope.core.data_manipulations import filter_targets, apply_filter
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
-    square = SquareModel.objects.get(square_id=square_id)
+    if square_id == 'all':
+        queryparams = dict(grid_id=grid_id)
+    else:
+        queryparams = dict(grid_id=grid_id, square_id=square_id)
     logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
     logger.debug(f"Removing all holes from queue")
-    HoleModel.objects.filter(square_id=square,status__isnull=True)\
+    HoleModel.objects.filter(**queryparams,status__isnull=True)\
         .update(selected=False,status=None,bis_group=None,bis_type=None)
-    HoleModel.objects.filter(square_id=square,status='queued',)\
+    HoleModel.objects.filter(**queryparams,status='queued',)\
         .update(selected=False,status=None,bis_group=None,bis_type=None)
-    filtered_holes = HoleModel.display.filter(square_id=square,status__isnull=True)
+    
+    # filtered_holes = HoleModel.display.filter(**queryparams,status__isnull=True)
     holes_for_grouping = []
-    other_holes = []
-    for h in filtered_holes:
-        if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
-            holes_for_grouping.append(h)
+    # other_holes = []
+    # for h in filtered_holes:
+    #     if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
+    #         holes_for_grouping.append(h)
+    for square in SquareModel.display.filter(**queryparams):
+        logger.debug(f"Filtering square {square}, {square.pk}")
+        filtered, _, targets = filter_targets(square, additional_filters=dict(status=None))
+        holes_for_grouping += apply_filter(targets, filtered)
 
-    logger.info(f'Filtered holes = {len(filtered_holes)}\nHoles for grouping = {len(holes_for_grouping)}')
+
+    logger.info(f'Holes for grouping = {len(holes_for_grouping)}')
 
     holes = group_holes_for_BIS(
         holes_for_grouping,
