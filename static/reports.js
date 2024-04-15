@@ -195,6 +195,7 @@ async function loadSquare(full_id, metaonly = false, display_type = null, method
     // loadSVG(data, generalElements.square)
     $("#Square_div").html(data.card)
     pushState()
+    htmx.process(htmx.find('#Square_div'))
 
 };
 

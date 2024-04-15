@@ -9,7 +9,7 @@ from django.http import HttpRequest
 from django.template.response import TemplateResponse
 
 from Smartscope.core.models import AutoloaderGrid, HoleModel, SquareModel, AtlasModel
-from Smartscope.core.selector_sorter import SelectorSorter, initialize_selector, save_selector_data
+from Smartscope.core.selector_sorter import SelectorSorter, initialize_selector, save_selector_data, save_to_session_directory
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.svg_plots import drawSelector
 from Smartscope.core.status import status
@@ -24,7 +24,6 @@ def parse_maglevel(func, *args, maglevel='square'):
         elif maglevel == 'atlas':
             return func(*args,maglevel=AtlasModel, **kwargs)
     return wrapper
-
 
 
 def set_transparent_background(fig):
@@ -75,15 +74,20 @@ def selector_view(request, grid_id, selector, maglevel='square'):
     return TemplateResponse(request, 'selector_view.html', context)
 
 
+
 def save_selector_limits(request:HttpRequest, grid_id, selector):
     logger.debug(f'Request received: {request.__dict__}')
+    kwargs = dict()
     if request.method != 'POST':
         return HttpResponse('Method not allowed')
     low_limit = request.POST.get('low_limit', None)
     high_limit = request.POST.get('high_limit', None)
+    apply_to = request.POST.get('apply_to', 'grid')
+    if apply_to == 'session':
+        kwargs = {'save_to':save_to_session_directory}
     if high_limit is None:
         return HttpResponse('High Limit cannot be none')
-    selector_data = save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit))
+    selector_data = save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
 
     return HttpResponse(f"{selector_data.low_limit} {selector_data.high_limit}")
 

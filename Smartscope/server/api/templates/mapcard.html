@@ -13,6 +13,8 @@
                 <li class="nav-item d-flex align-items-center">
                     <a hx-get="{% url 'selector_view' grid_id=instance.grid_id.pk selector=method %}" 
                     hx-trigger="click" class="nav-link"
+                    hx-on--before-request="createHTMXloadingMessage(event, 'Loading selector viewer')"
+                    hx-on--after-request="processHTMXloadingMessage(event)"
                     hx-target="#main" 
                     hx-swap="beforeend"
                     data-bs-toggle="tooltip" data-bs-placement="top" title="Edit selector"><i
