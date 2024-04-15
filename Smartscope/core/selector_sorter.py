@@ -4,7 +4,7 @@ from typing import List, Optional, Callable
 import logging
 from matplotlib import cm
 from matplotlib.colors import rgb2hex
-from math import floor
+from math import floor, ceil
 from pydantic import BaseModel, field_validator
 
 from .models import Target, AutoloaderGrid
@@ -157,7 +157,7 @@ class SelectorSorter:
 
     @property
     def values_range(self) -> List[float]:
-        return [floor(min(self.values)), max(self.values)]
+        return [floor(min(self.values)), ceil(max(self.values))]
 
     def set_limits(self):
         range_ = max(self.values) - min(self.values)

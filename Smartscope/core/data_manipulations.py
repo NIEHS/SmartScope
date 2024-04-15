@@ -1,5 +1,5 @@
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 import logging
 import random
 from copy import copy
@@ -61,12 +61,14 @@ def choose_get_index(lst, value):
     del lst[choice]
     return choice
 
-def filter_targets(parent):
+def filter_targets(parent, additional_filters:Dict=dict()):
     classifiers = get_target_methods(parent, 'classifiers')
     selectors = get_target_methods(parent, 'selectors')
-    filtered = [1] * len(parent.targets)
+    targets = list(parent.targets.filter(**additional_filters))
+    filtered = [1] * len(targets)
+    logger.debug(f'Filtering {len(filtered)} targets.')
     for classifier in classifiers:
-        for ind, target in enumerate(parent.targets):
+        for ind, target in enumerate(targets):
             t_classifiers = target.classifiers
             if not isinstance(t_classifiers, list):
                 t_classifiers = list(t_classifiers.all())
@@ -82,17 +84,19 @@ def filter_targets(parent):
         # sorter_data = SelectorValueParser(selector, from_server=True)
         # sorter = SelectorSorter(selector,n_classes=5,fractional_limits=PLUGINS_FACTORY[selector].limits)
         # sorter.values = sorter_data.extract_values(parent.targets)
-        sorter = initialize_selector(parent.grid_id, selector, parent.targets)
+        sorter = initialize_selector(parent.grid_id, selector, targets)
         filtered *= np.array(sorter.classes)
     
     filtered_set = set(filtered[filtered > 0].tolist())
     logger.debug(f'Filtered classes against classifiers {classifiers} and selectors {selectors}: {filtered}')
     logger.debug(f'Selecting from {len(filtered_set)} subsets.')
-    return filtered, filtered_set
+    return filtered, filtered_set, targets
 
+def apply_filter(targets, filtered):
+    return [target for target, filt in zip(targets, filtered) if filt > 0]
 
 def select_n_areas(parent, n, is_bis=False):
-    filtered, filtered_set = filter_targets(parent)
+    filtered, filtered_set, _ = filter_targets(parent)
     choices = randomized_choice(filtered_set, n)
     logger.debug(f'Randomized choices: {choices}')
     output = []
