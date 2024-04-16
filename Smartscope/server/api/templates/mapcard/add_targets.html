@@ -27,4 +27,13 @@
             Targets</button>
     </div>
 </li>
+{% else %}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-bs-toggle="dropdown"
+        aria-haspopup="true" aria-expanded="false">All Holes</a>
+    <div id='' class="dropdown-menu">
+        <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS('{{instance.grid_id.pk}}', getRegroupBISallUrl)"
+            value=''>Regroup BIS</button>
+    </div>
+</li>
 {% endif %}

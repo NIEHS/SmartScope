@@ -117,6 +117,7 @@ def regroup_bis(grid_id, square_id):
     from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
     from Smartscope.core.db_manipulations import group_holes_for_BIS
     from Smartscope.core.data_manipulations import filter_targets, apply_filter
+    from Smartscope.core.status import status
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     if square_id == 'all':
         queryparams = dict(grid_id=grid_id)
@@ -126,9 +127,9 @@ def regroup_bis(grid_id, square_id):
     collection_params = grid.params_id
     logger.debug(f"Removing all holes from queue")
     HoleModel.objects.filter(**queryparams,status__isnull=True)\
-        .update(selected=False,status=None,bis_group=None,bis_type=None)
+        .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
     HoleModel.objects.filter(**queryparams,status='queued',)\
-        .update(selected=False,status=None,bis_group=None,bis_type=None)
+        .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
     
     # filtered_holes = HoleModel.display.filter(**queryparams,status__isnull=True)
     holes_for_grouping = []
@@ -136,7 +137,7 @@ def regroup_bis(grid_id, square_id):
     # for h in filtered_holes:
     #     if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
     #         holes_for_grouping.append(h)
-    for square in SquareModel.display.filter(**queryparams):
+    for square in SquareModel.display.filter(status=status.COMPLETED,**queryparams):
         logger.debug(f"Filtering square {square}, {square.pk}")
         filtered, _, targets = filter_targets(square, additional_filters=dict(status=None))
         holes_for_grouping += apply_filter(targets, filtered)
