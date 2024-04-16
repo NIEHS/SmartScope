@@ -603,9 +603,16 @@ async function addTargets(btn, selection) {
     loadSquare(currentState.square, false)
 }
 
-async function regroupBIS(square_id) {
-    let url = `/api/squares/${square_id}/regroup_bis/`
-    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${square_id}`)
+function getRegroupBISallUrl(object_id) {
+    return `/api/grids/${object_id}/regroup_bis/`
+}
+function getRegroupBISurl(object_id) {
+    return `/api/squares/${object_id}/regroup_bis/`
+}
+
+async function regroupBIS(object_id, getUrlFunc=getRegroupBISurl) {
+    let url= getUrlFunc(object_id)
+    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${object_id}`)
     console.log('regroupBIS: ', res)
     await loadSquare(currentState.square, false)
 }

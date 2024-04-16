@@ -542,6 +542,19 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraAct
         hole_data = DetailedFullHoleSerializer(hole).data if hole else None
         
         return Response({'squaremodel': square_data, 'holemodel': hole_data})
+    
+    @ action(detail=True, methods=['patch'], url_path='regroup_bis')
+    def regroup_bis(self, request, *args, **kwargs):
+        try:
+            obj = self.get_object()
+            microscope = obj.session_id.microscope_id
+            out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
+                'regroup_bis', obj.pk, 'all'], communicate=True, timeout=30)
+            out = out.decode("utf-8").strip().split('\n')[-1]
+            return Response(dict(out=out))
+        except Exception as err:
+            logger.error(f'Error tring to regrouping BIS, {err}')
+            return Response(dict(success=False))  
 
 
 class AtlasModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
@@ -615,7 +628,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraAction
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
-            return Response(dict(success=False))
+            return Response(dict(success=False))      
         
     @ action(detail=True, methods=['delete'])
     def delete_holes(self,request, *args, **kwargs):

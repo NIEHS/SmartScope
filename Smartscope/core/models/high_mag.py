@@ -4,6 +4,9 @@ from .misc_func import set_shape_values
 
 from Smartscope.core.svg_plots import drawHighMag
 from Smartscope.lib.image_manipulations import embed_image
+from .extra_property_mixin import ExtraPropertyMixin
+from .target import Target
+from .hole import HoleModel
 
 
 class HighMagImageManager(models.Manager):
@@ -16,10 +19,9 @@ class DisplayManager(models.Manager):
         return super().get_queryset().prefetch_related('finders').prefetch_related('classifiers').prefetch_related('selectors')
 
 
-from .extra_property_mixin import ExtraPropertyMixin
-from .target import Target
+
 class HighMagModel(Target, ExtraPropertyMixin):
-    from .hole import HoleModel
+
 
     hm_id = models.CharField(max_length=30, primary_key=True, editable=False)
     hole_id = models.ForeignKey(

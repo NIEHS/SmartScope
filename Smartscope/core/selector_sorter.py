@@ -7,7 +7,7 @@ from matplotlib.colors import rgb2hex
 from math import floor, ceil
 from pydantic import BaseModel, field_validator
 
-from .models import Target, AutoloaderGrid
+from . import models
 from .settings.worker import PLUGINS_FACTORY
 
 logger = logging.getLogger(__name__)
@@ -65,11 +65,11 @@ class SelectorSorterData(BaseModel):
         return cls(selector_name=sorter.selector_name, low_limit=sorter.limits[0], high_limit=sorter.limits[1])
 
 def save_to_grid_directory(grid_id):
-    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    grid = models.AutoloaderGrid.objects.get(grid_id=grid_id)
     return grid.directory
 
 def save_to_session_directory(grid_id):
-    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    grid = models.AutoloaderGrid.objects.get(grid_id=grid_id)
     return grid.session_id.directory
 
 def save_selector_data(grid_id, selector_name:str, data:dict,save_to:Callable=save_to_grid_directory) -> SelectorSorterData:
@@ -95,7 +95,7 @@ class SelectorValueParser:
     def get_selector_value_from_server(self,target):
         return next(filter(lambda x: x.method_name == self._selector_name ,target.selectors.all())).value
     
-    def extract_values(self, targets:List[Target]) -> List[float]:
+    def extract_values(self, targets:List[models.Target]) -> List[float]:
         values = list(map(self.get_selector_value,targets))
         if all([value == None for value in values]):
             raise LagacySorterError('No values found in targets. Reverting to lagacy sorting.')
@@ -218,14 +218,14 @@ class SelectorSorter:
         return colors
 
 
-def check_directories_for_selector_data(grid:AutoloaderGrid, selector_name:str) -> Path:
+def check_directories_for_selector_data(grid:models.AutoloaderGrid, selector_name:str) -> Path:
     priority = [grid.directory, grid.session_id.directory]
     for directory in priority:
         if SelectorSorterData.exists(directory, selector_name):
             return directory
     
 
-def initialize_selector(grid: AutoloaderGrid, selector:str, queryset) -> SelectorSorter:
+def initialize_selector(grid: models.AutoloaderGrid, selector:str, queryset) -> SelectorSorter:
     selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY[selector].limits)
     directory = check_directories_for_selector_data(grid,selector)
     if directory is not None:
