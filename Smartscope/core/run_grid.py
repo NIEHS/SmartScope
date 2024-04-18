@@ -6,6 +6,7 @@ from enum import Enum
 from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,10 @@ def run_grid(
     # 
     if atlas.status == status.PROCESSED:
         selector_wrapper(protocol.atlas.targets.selectors, atlas, n_groups=5)
-        select_n_areas(atlas, grid.params_id.squares_num)
+        selected = select_n_areas(atlas, grid.params_id.squares_num)
+        with transaction.atomic():
+            for obj in selected:
+                update(obj, selected=True, status='queued')
         atlas = update(atlas, status=status.COMPLETED)
 
         #Release atlas items from memory.

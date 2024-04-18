@@ -31,14 +31,14 @@ def add_targets(targets:List[Target], model:Target, finder:str, classifier:Optio
     return QueryList(output)
 
 
-def get_target_methods(parent, method_type:['selectors','finders','classifiers']='selectors'):
+def get_target_methods(targets, method_type:['selectors','finders','classifiers']='selectors'):
     def get_selector_methods_names(target):
         items = getattr(target, method_type)
         if isinstance(items, list):
             return map(lambda x: x.method_name, items)
         return map(lambda x: x.method_name ,list(items.all()))
 
-    return set().union(*map(get_selector_methods_names, parent.targets))
+    return set().union(*map(get_selector_methods_names, targets))
 
 
 def randomized_choice(filtered_set: set, n: int):
@@ -57,18 +57,29 @@ def randomized_choice(filtered_set: set, n: int):
 
 def choose_get_index(lst, value):
     indices = [i for i, x in enumerate(lst) if x == value]
+    if indices == []:
+        return None
     choice = random.choice(indices)
     del lst[choice]
     return choice
 
-def filter_targets(parent, additional_filters:Dict=dict()):
-    classifiers = get_target_methods(parent, 'classifiers')
-    selectors = get_target_methods(parent, 'selectors')
-    targets = list(parent.targets.filter(**additional_filters))
-    filtered = [1] * len(targets)
+
+def filter_out_of_range(target):
+    return 0 if target.is_out_of_range() else 1
+
+
+def filter_targets(parent, targets):
+    classifiers = get_target_methods(targets, 'classifiers')
+    selectors = get_target_methods(targets, 'selectors')
+
+    ##Filter out of range targets
+    filtered = list(map(filter_out_of_range, targets))
     logger.debug(f'Filtering {len(filtered)} targets.')
+    
     for classifier in classifiers:
         for ind, target in enumerate(targets):
+            if filtered[ind] == 0:
+                continue
             t_classifiers = target.classifiers
             if not isinstance(t_classifiers, list):
                 t_classifiers = list(t_classifiers.all())
@@ -81,29 +92,41 @@ def filter_targets(parent, additional_filters:Dict=dict()):
 
     filtered = np.array(filtered)
     for selector in selectors:
-        # sorter_data = SelectorValueParser(selector, from_server=True)
-        # sorter = SelectorSorter(selector,n_classes=5,fractional_limits=PLUGINS_FACTORY[selector].limits)
-        # sorter.values = sorter_data.extract_values(parent.targets)
         sorter = initialize_selector(parent.grid_id, selector, targets)
         filtered *= np.array(sorter.classes)
-    
-    filtered_set = set(filtered[filtered > 0].tolist())
     logger.debug(f'Filtered classes against classifiers {classifiers} and selectors {selectors}: {filtered}')
-    logger.debug(f'Selecting from {len(filtered_set)} subsets.')
-    return filtered, filtered_set, targets
+    
+    return filtered.tolist()
 
 def apply_filter(targets, filtered):
     return [target for target, filt in zip(targets, filtered) if filt > 0]
 
-def select_n_areas(parent, n, is_bis=False):
-    filtered, filtered_set, _ = filter_targets(parent)
+def select_random_areas(targets, filtered, n):
+    filtered_set = set(filtered)
+    if filtered_set == {0}:
+        return []
+    filtered_set.discard(0) 
+    logger.debug(f'Selecting from {len(filtered_set)} subsets.')
     choices = randomized_choice(filtered_set, n)
     logger.debug(f'Randomized choices: {choices}')
     output = []
     for choice in choices:
         ind = choose_get_index(filtered, choice)
-        output.append(parent.targets[ind])
+        if ind is None:
+            break
+        output.append(targets[ind])
     return output
+
+def select_n_areas(parent, n, is_bis=False):
+    additional_filters = dict()
+    if is_bis:
+        additional_filters['bis_type'] = 'center'
+    additional_filters['status__isnull'] = True
+    targets = list(parent.targets.filter(**additional_filters))
+    filtered= filter_targets(parent, targets)
+    if n <=0:
+        return apply_filter(targets, filtered)
+    return select_random_areas(targets, filtered, n)
 
 def set_or_update_refined_finder(instance, stage_x, stage_y, stage_z):
     refined = next(filter(lambda x: x.method_name == 'Recentering',instance.finders), None)

@@ -554,7 +554,7 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraAct
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
-            return Response(dict(success=False))  
+            return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)  
 
 
 class AtlasModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):

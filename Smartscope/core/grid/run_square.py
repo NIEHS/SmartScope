@@ -13,7 +13,8 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import HoleModel
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.core.db_manipulations import update, select_n_areas, add_targets, group_holes_for_BIS
+from Smartscope.core.db_manipulations import update, add_targets, group_holes_for_BIS
+from Smartscope.core.data_manipulations import select_n_areas
 from Smartscope.lib.image_manipulations import export_as_png
 from Smartscope.lib.image.montage import Montage
 
@@ -60,7 +61,10 @@ class RunSquare:
                 for hole in holes:
                     hole.save()
             logger.info(f'Picking holes on {square}')
-            select_n_areas(square, grid.params_id.holes_per_square, is_bis=is_bis)
+            selected = select_n_areas(square, grid.params_id.holes_per_square, is_bis=is_bis)
+            with transaction.atomic():
+                for obj in selected:
+                    update(obj, selected=True, status='queued')
             square = update(square, status=status.TARGETS_PICKED)
         if square.status == status.TARGETS_PICKED:
             square = update(square,
