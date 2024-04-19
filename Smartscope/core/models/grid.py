@@ -81,6 +81,11 @@ class AutoloaderGrid(BaseModel):
         if self.params_id.holes_per_square <= 0:
             return 'collection'
         return 'screening'
+    
+    def frames_dir(self, prefix:str=''):
+        if prefix:
+            return Path(f'{prefix}_{self.parent.working_directory}', f'{self.position}_{self.name}')
+        return Path(self.parent.working_directory, f'{self.position}_{self.name}')
 
     @property
     def atlas(self):
@@ -132,10 +137,10 @@ class AutoloaderGrid(BaseModel):
 
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         self_wd = f'{self.position}_{self.name}'
         wd = self.parent.directory
-        return os.path.join(wd, self_wd)
+        return Path(wd, self_wd)
 
     class Meta(BaseModel.Meta):
         unique_together = ('position', 'name', 'session_id')

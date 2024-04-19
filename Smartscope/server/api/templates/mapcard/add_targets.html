@@ -8,8 +8,11 @@
         <button class="dropdown-item" onclick='queueSquareTargets(this)' value='cancelall'>Cancel all
             holes</button>
         <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS('{{instance.pk}}')"
-            value=''>Regroup
-            BIS</button>
+            value=''>Regroup BIS</button>
+        <button id="deleteHoles" class="dropdown-item" onclick="deleteHoles('{{instance.pk}}')"
+            value=''>Delete Holes</button>
+        <button if="extendLattice" class="dropdown-item" onclick="extendLattice('{{instance.pk}}')"
+            value=''>Extend Lattice</button>
     </div>
 </li>
 <li class="nav-item dropdown" data-bs-toggle="tooltip" title="Hold Shift+click to start adding new targets on the image">
@@ -22,6 +25,15 @@
         <button id='clearTargets' class="dropdown-item"
             onclick="clearSelection(targetsSelection,'targets')" value='addTargets'>Clear
             Targets</button>
+    </div>
+</li>
+{% else %}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-bs-toggle="dropdown"
+        aria-haspopup="true" aria-expanded="false">All Holes</a>
+    <div id='' class="dropdown-menu">
+        <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS('{{instance.grid_id.pk}}', getRegroupBISallUrl)"
+            value=''>Regroup BIS</button>
     </div>
 </li>
 {% endif %}

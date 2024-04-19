@@ -41,14 +41,14 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
 '''
 
 
-def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
+def get_CTFFIND5_data(ctf_text: Path) -> List[float]:
     '''
     get results from ctf_*.txt determined by ctffinder
     args: 
     '''
     logger.info(f"Try to read CTF file {ctf_text}")
     ctf={}
-    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit']
+    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit','tilt_axis_angle','tilt_angle','ice_thickness']
     with open(ctf_text, 'r') as f:
         for line in f:
             if not line.startswith('#'):
@@ -61,6 +61,9 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
         'astig': ctf['df1'] - ctf['df2'],
         'angast': ctf['angast'],
         'ctffit': ctf['ctffit'],
+        'tilt_axis_angle': ctf['tilt_axis_angle'],
+        'tilt_angle': ctf['tilt_angle'],
+        'ice_thickness': int(round(ctf['ice_thickness']/10))
     }
 
 def process_hm_from_frames(
@@ -188,6 +191,13 @@ def process_hm_from_average(
         )
     return montage
 
+def clear_queue(queue):
+    logger.info(f'Clearing queue')
+    queue.task_done()
+    while not queue.empty():
+        item = queue.get()
+        logger.info(f'Got item={item} from queue')
+        queue.task_done()
 
 def processing_worker_wrapper(logdir, queue, output_queue=None):
     logger.info(f"processing worker: {logdir}\t{queue}\t{output_queue}")
@@ -202,8 +212,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
             item = queue.get()
             logger.info(f'Got item={item} from queue')
             if item == 'exit':
-                queue.task_done()
                 logger.info('Breaking processing worker loop.')
+                clear_queue(queue)
                 break
             if item is not None:
                 logger.debug(f'Running {item[0]} {item[1]} {item[2]} from queue')
@@ -218,5 +228,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
     except Exception as e:
         logger.error("Error in the processing worker")
         logger.exception(e)
+        clear_queue(queue)
     except KeyboardInterrupt as e:
         logger.info('SIGINT recieved by the processing worker')
+        clear_queue(queue)
+

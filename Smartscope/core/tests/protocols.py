@@ -1,4 +1,5 @@
 import Smartscope.bin.smartscope
+import pytest
 from ..run_grid import parse_method, runAcquisition
 from ..interfaces.utils import generate_mock_fake_scope_interface
 

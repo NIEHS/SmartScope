@@ -32,6 +32,7 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
     reference: Optional[str]= ''
     method: Optional[str] = ''
     module: Optional[str] = ''
+    draw_method: Optional[str] = None
     kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
     importPaths: Union[str,List] = Field(default_factory=list)
 
@@ -85,6 +86,7 @@ class Selector(BaseFeatureAnalyzer):
     clusters: Dict[(str, Any)]
     exclude: List[str] = Field(default_factory=list)
     target_class: str = TargetClass.SELECTOR
+    limits: List[float] = [0.0,1.0]
     kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     def get_label(self, label):

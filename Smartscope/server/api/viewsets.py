@@ -6,7 +6,7 @@ from django.http import FileResponse
 from django.template.loader import render_to_string
 from rest_framework import viewsets
 from rest_framework import permissions
-from rest_framework import status
+from rest_framework import status as rest_status
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -23,7 +23,6 @@ import mrcfile.mrcinterpreter
 import mrcfile.mrcfile
 
 from .serializers import *
-from .export_serializers import *
 from Smartscope.server.api.permissions import HasGroupPermission
 from Smartscope.server.frontend.forms import *
 
@@ -55,6 +54,35 @@ def svg_as_png(instance, context):
 
     return img, f'{instance.name}.png'
 
+class GeneralActionsMixin:
+
+    @action(detail=False, methods=['post'])
+    def delete_many(self,request):
+        logger.debug('Received delete_many request')
+        logger.debug(request.data)
+        queryset = self.queryset.filter(pk__in=request.data)
+        logger.debug(queryset)
+        queryset.delete()
+        return Response(status=rest_status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['post'])
+    def post_many(self, request, *args, **kwargs):
+        logger.debug('Received post_many request')
+        logger.debug(request.data)
+        serializer = self.get_serializer(data=request.data, many=True)
+        try:
+            if serializer.is_valid():
+                logger.debug(f'Valid!')
+                objs = serializer.create(serializer.validated_data)
+            logger.debug(f'Created {len(objs)} objects')
+            headers = self.get_success_headers(serializer.data)
+            output = self.get_serializer(data=objs,many=True)
+            output.is_valid()
+            return Response(data=output.data, status=rest_status.HTTP_201_CREATED)
+        except Exception as err:
+            logger.exception(f'Error while posting many, {err}.')
+            return Response(serializer.errors, status=rest_status.HTTP_400_BAD_REQUEST)
+        
 class ExtraActionsMixin:
 
     def load(self, request, **kwargs):
@@ -110,6 +138,8 @@ class ExtraActionsMixin:
         return response
 
 
+
+
 class TargetRouteMixin:
 
     detailed_serializer = None
@@ -121,9 +151,12 @@ class TargetRouteMixin:
             raise ValueError(f'detailed_serializer attribute is not set on {self.__class__.__name__}.')
         return self.detailed_serializer
 
-    @ action(detail=True, methods=['get'], url_path='detailed')
+    @ action(detail=True, methods=['get','patch'], url_path='detailed')
     def detailedOne(self, request, *args, **kwargs):
         self.serializer_class = self.get_detailed_serializer()
+        if request.method == 'PATCH':
+            return self.detailed_patch(request=request, *args, **kwargs)
+
         obj = self.get_object()
         serializer = self.get_serializer(obj, many=False)
         return Response(data=serializer.data)
@@ -131,7 +164,14 @@ class TargetRouteMixin:
     @ action(detail=False, methods=['get'], url_path='detailed')
     def detailedMany(self, request, *args, serializer=None, **kwargs):
         self.serializer_class = self.get_detailed_serializer(serializer)
-        page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+        
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
@@ -148,9 +188,56 @@ class TargetRouteMixin:
     
     @ action(detail=False, methods=['get'], url_path='scipion_plugin')
     def scipion_plugin(self, request, *args, **kwargs):
-        return self.detailedMany(request=request,*args,serializer=ScipionPluginHoleSerializer ,*kwargs)
+        return self.detailedMany(request=request,*args,serializer=ScipionPluginHoleSerializer ,**kwargs)
 
-class UserViewSet(viewsets.ModelViewSet):
+    @action(detail=False, methods=['post'])
+    def add_targets(self, request, *args, **kwargs):
+        logger.debug(f'Received create_targets request with params: {request.query_params}')
+        self.serializer_class = self.get_detailed_serializer()
+        serializer = self.get_serializer(data=request.data, many=True)
+        label_types = request.query_params.get('label_types', '__all__').split(',')
+        try:
+            logger.debug(request.data[0])
+            if serializer.is_valid(raise_exception=True):
+                logger.debug(f'Valid!')
+                objs, labels = serializer.create(request.data, label_types=label_types)
+                logger.debug(f'Created {len(objs)} objects')
+                with transaction.atomic():
+                    objs = [obj.save() for obj in objs]
+                    [label.save() for label in labels]
+                outputs = self.get_serializer(instance=objs, many=True)
+                # outputs.is_valid(raise_exception=True)
+                logger.debug(f'Ouputs:\n{outputs.data}')
+                return Response(data=outputs.data, status=rest_status.HTTP_201_CREATED)
+            serializer.errors()
+        except Exception as err:
+            logger.exception(f'Error while posting many, {err}.')
+            return Response(serializer.errors, status=rest_status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=False, methods=['patch'])    
+    def update_many(self,request, *args, **kwargs):
+        logger.debug('Received update_many request')
+        logger.debug(request.data)
+        data = request.data.copy()
+        uids = data.pop('uids')
+        objs = self.queryset.filter(pk__in=uids)
+        try:
+            with transaction.atomic():
+                for obj in objs:
+                    for key, value in data.items():
+                        setattr(obj, key, value)
+                    obj.save()
+            return Response(status=rest_status.HTTP_200_OK)
+        except Exception as err:
+            logger.exception(f'Error while updating many, {err}.')
+            return Response(err, status=rest_status.HTTP_400_BAD_REQUEST)
+        
+    def detailed_patch(self,request,*args,**kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+          
+
+class UserViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows users to be viewed or edited.
     """
@@ -159,7 +246,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAdminUser]
 
 
-class GroupViewSet(viewsets.ModelViewSet):
+class GroupViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows groups to be viewed or edited.
     """
@@ -168,7 +255,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAdminUser]
 
 
-class MicroscopeViewSet(viewsets.ModelViewSet):
+class MicroscopeViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows ScreeningSessions to be viewed or edited.
     """
@@ -177,7 +264,7 @@ class MicroscopeViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class DetectorViewSet(viewsets.ModelViewSet):
+class DetectorViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows ScreeningSessions to be viewed or edited.
     """
@@ -185,8 +272,18 @@ class DetectorViewSet(viewsets.ModelViewSet):
     serializer_class = DetectorSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    filterset_fields = ['id', 'microscope_id', 'name']
 
-class ScreeningSessionsViewSet(viewsets.ModelViewSet):
+
+class GridCollectionParamsViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
+    """
+    API endpoint that allows ScreeningSessions to be viewed or edited.
+    """
+    queryset = GridCollectionParams.objects.all()
+    serializer_class = GridCollectionParamsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ScreeningSessionsViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows ScreeningSessions to be viewed or edited.
     """
@@ -333,7 +430,7 @@ class ScreeningSessionsViewSet(viewsets.ModelViewSet):
         return None, 'No PID file found for session'
 
 
-class MeshMaterialViewSet(viewsets.ModelViewSet):
+class MeshMaterialViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows Mesh Material to be viewed or edited.
     """
@@ -342,7 +439,7 @@ class MeshMaterialViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class MeshSizeViewSet(viewsets.ModelViewSet):
+class MeshSizeViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows Mesh Sizes to be viewed or edited.
     """
@@ -351,7 +448,7 @@ class MeshSizeViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class HoleTypeViewSet(viewsets.ModelViewSet):
+class HoleTypeViewSet(viewsets.ModelViewSet, GeneralActionsMixin,):
     """
     API endpoint that allows Hole types to be viewed or edited.
     """
@@ -359,8 +456,16 @@ class HoleTypeViewSet(viewsets.ModelViewSet):
     serializer_class = HoleTypeSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+def get_queue(grid):
+    square = grid.squaremodel_set.filter(selected=True).\
+        exclude(status__in=[status.SKIPPED, status.COMPLETED]).\
+        order_by('number').first()
+    hole = grid.holemodel_set.filter(selected=True, square_id__status=status.COMPLETED).\
+        exclude(status__in=[status.SKIPPED, status.COMPLETED]).\
+        order_by('square_id__completion_time', 'number').first()
+    return square, hole
 
-class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
+class AutoloaderGridViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin):
     """
     API endpoint that allows Grids to be viewed or edited.
     """
@@ -422,14 +527,56 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         self.serializer_class = ExportMetaSerializer
         serializer = self.get_serializer(obj, many=False)
         return Response(data=serializer.data)
+    
+
+    @action(detail=True, methods=['get'])
+    def get_queue(self,request, **kwargs):
+        obj = self.get_object()
+        if obj is None:
+            return Response({'error': f'Grid {obj} not found'}, status=404)
+        
+        square, hole = get_queue(obj)
+        
+        # Serialize the data if needed
+        square_data = DetailedFullSquareSerializer(square).data if square else None
+        hole_data = DetailedFullHoleSerializer(hole).data if hole else None
+        
+        return Response({'squaremodel': square_data, 'holemodel': hole_data})
+    
+    @ action(detail=True, methods=['patch'], url_path='regroup_bis')
+    def regroup_bis(self, request, *args, **kwargs):
+        try:
+            obj = self.get_object()
+            microscope = obj.session_id.microscope_id
+            out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
+                'regroup_bis', obj.pk, 'all'], communicate=True, timeout=30)
+            out = out.decode("utf-8").strip().split('\n')[-1]
+            return Response(dict(out=out))
+        except Exception as err:
+            logger.error(f'Error tring to regrouping BIS, {err}')
+            return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)  
+
+    @ action(detail=True, methods=['patch'])
+    def regroup_and_reselect(self, request, *args, **kwargs):
+        try:
+            obj = self.get_object()
+            microscope = obj.session_id.microscope_id
+            out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
+                'regroup_bis_and_select', obj.pk, 'all'], communicate=True, timeout=120)
+            out = out.decode("utf-8").strip().split('\n')[-1]
+            return Response(dict(out=out))
+        except Exception as err:
+            logger.error(f'Error tring to regrouping BIS and reselecting, {err}')
+            return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)  
 
 
-class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
+class AtlasModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Atlases to be viewed or edited.
     """
     queryset = AtlasModel.objects.all()
     serializer_class = AtlasSerializer
+    detailed_serializer = DetailedFullAtlasSerializer
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType',
                         'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id', 'status']
@@ -439,7 +586,7 @@ class AtlasModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin):
         return super().load_card(request, **kwargs)
 
 
-class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
+class SquareModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Squares to be viewed or edited.
     """
@@ -448,7 +595,7 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMi
     permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality',
                         'atlas_id', 'selected', 'grid_id__session_id', 'status']
-    detailed_serializer = DetailedSquareSerializer
+    detailed_serializer = DetailedFullSquareSerializer
 
     @ action(detail=True, methods=['get'])
     def load(self, request, **kwargs):
@@ -494,10 +641,32 @@ class SquareModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMi
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS, {err}')
-            return Response(dict(success=False))
+            return Response(dict(success=False))      
+        
+    @ action(detail=True, methods=['delete'])
+    def delete_holes(self,request, *args, **kwargs):
+        logger.debug('Received delete_holes request')
+        obj = self.get_object()
+        data = request.data
+        logger.debug(data)
+        queryset = obj.holemodel_set.filter(status__isnull=True, selected=False)
+        logger.debug(f"Deleting {queryset.count()} holes")
+        queryset.delete()
+        return Response(data=dict(success=True),status=rest_status.HTTP_204_NO_CONTENT)
+    
+    @ action(detail=True, methods=['get'])
+    def extend_lattice(self,request, *args, **kwargs):
+        obj = self.get_object()
+        logger.debug(f'Extending lattice for square {obj}')
+        microscope = obj.grid_id.session_id.microscope_id
+        out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
+            'extend_lattice', obj.square_id], communicate=True, timeout=30)
+        out = out.decode("utf-8").strip().split('\n')[-1]
+        return Response(data=json.loads(out), content_type='application/json')
 
 
-class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
+
+class HoleModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Squares to be viewed or edited.
     """
@@ -507,7 +676,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
     filterset_fields = ['grid_id', 'grid_id__meshMaterial', 'grid_id__holeType', 'grid_id__meshSize', 'grid_id__quality', 'grid_id__session_id',
                         'square_id', 'status', 'bis_group', 'bis_type']
 
-    detailed_serializer = DetailedHoleSerializer
+    detailed_serializer = DetailedFullHoleSerializer
 
     @ action(detail=True, methods=['get'])
     def load(self, request, **kwargs):
@@ -555,7 +724,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixi
         return Response(dict(data=serializer.data, count=count))
 
 
-class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteMixin):
+class HighMagModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
     """
     API endpoint that allows Atlases to be viewed or edited.
     """
@@ -626,3 +795,12 @@ class HighMagModelViewSet(viewsets.ModelViewSet, ExtraActionsMixin, TargetRouteM
 
         fft = power_spectrum(img)
         return Response(dict(img=base64.b64encode(fft.getvalue())))
+    
+
+class ClassifierViewSet(viewsets.ModelViewSet):
+    queryset = Classifier.objects.all()
+    permission_classes = [permissions.IsAuthenticated, HasGroupPermission]
+    serializer_class = ClassifierSerializer
+    filterset_fields = ['object_id','method_name','content_type']
+
+    detailed_serializer = DetailedHighMagSerializer 

@@ -10,7 +10,7 @@ classes:
     color: "MediumSlateBlue"
   Decent:
     value: 2
-    name: Decent
+    name: Acceptable
     color: "#56B4E9"
   Great:
     value: 3

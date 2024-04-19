@@ -7,10 +7,8 @@ import logging
 import time
 from django.conf import settings
 
-from .interfaces.tfsserialem_interface import TFSSerialemInterface
-from Smartscope.lib.preprocessing_methods import process_hm_from_frames
-from .grid.finders import find_targets
-from Smartscope.core.models import Microscope
+
+
 
 
 logger = logging.getLogger(__name__)
@@ -40,9 +38,10 @@ def test_high_mag_frame_processing(
     test_dir = autoscreen_dir + group + session
     name = grid_id
     '''
+    from Smartscope.lib.preprocessing_methods import process_hm_from_frames
     os.chdir(test_dir)
-    frames_file_name = '20211119_AR2_0723-1_5383.tif'
-    frames_dirs = [Path(os.getenv('AUTOSCREENDIR')), Path(os.getenv('TEST_FILES'), 'highmag_frames')]
+    frames_file_name = '20230321_AB_0317_2_3302_0.0.tif'
+    frames_dirs = [Path(os.getenv('AUTOSCREENDIR')), Path(os.getenv('TEST_FILES'), 'highmagframes')]
     movie = process_hm_from_frames(name, frames_file_name=frames_file_name, frames_directories=frames_dirs)
     print(f'All movie data: {movie.check_metadata()}')
 
@@ -101,6 +100,7 @@ def refine_pixel_size_from_targets(instances, spacings) -> Tuple[float, float]:
 def test_finder(plugin_name: str, raw_image_path: str, output_dir: str, repeats=1):  # output_dir='/mnt/data/testing/'
     from Smartscope.lib.image.montage import Montage
     from Smartscope.lib.image_manipulations import auto_contrast, save_image
+    from .grid.finders import find_targets
     import cv2
     import math
 
@@ -188,3 +188,10 @@ def restore_db(backup_file=None,backup_directory='/mnt/backups/'):
     command = f"mysql --user={os.getenv('MYSQL_USER')} --password={os.getenv('MYSQL_PASSWORD')} --host={os.getenv('MYSQL_HOST')} --port={os.getenv('MYSQL_PORT')} {os.getenv('MYSQL_DATABASE')} < {backup_file}"
     subprocess.call(command, shell=True)
     logger.info('Finished restoring database.')
+
+def test_find_hole_geometry(grid_id):
+    from Smartscope.core.models import AutoloaderGrid
+    from Smartscope.core.mesh_rotation import save_hole_geometry
+    grid = AutoloaderGrid.objects.get(pk=grid_id)
+    rotation, spacing = save_hole_geometry(grid)
+    print(f'Updated grid {grid} with rotation: {rotation} degrees and spacing: {spacing} pixels.')

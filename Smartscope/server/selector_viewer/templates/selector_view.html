@@ -1,0 +1,53 @@
+
+{% extends 'general/full_overlay.html' %}
+
+{% block title %}Selector Viewer: {{selector.name}}{% endblock %}
+
+
+
+{% block overlay_content %}
+<span class="fw-bold">Description: </span>
+<span class="fw-light">{{selector.description}}</span>
+
+{{graph|safe}}
+<div class="d-flex flex-row justify-content-between align-items-center">
+    <form method="post" class="col-10">
+    {% csrf_token %}
+        <div class="d-flex flex-row justify-content-between align-items-center">
+            <div class="col-8">
+            {% include 'two_way_slider.html' with initial_limits=initial_limits values_range=values_range %}
+            </div>
+            {% url 'save_selector_limits' grid_id selector.name as save_url%}
+
+
+            <div class="col d-flex flex-row ">
+            {% with  url=save_url param1="sliderValue1" param2="sliderValue2"%}
+            {% include 'save_button.html' with apply_to="grid" inner_html="Save" tooltip="Save for the current grid" message="Saving parameter for the current grid"%}
+                <span class="mx-1"></span>
+            {% include 'save_button.html' with apply_to="session" inner_html="Save to session" tooltip="Save and apply all the grid in the current session. **This may have wierd results if the session combines carbon and gold foil grids." message="Saving parameters to the session"%}
+            {% endwith %}
+            
+            </div>
+            
+        </div>
+    </form>
+    <div id="btnResult" class="col-2 mx-1"></div>
+</div>
+
+
+<div class="d-flex flex-row">
+    {% for im in selector_image %}
+    <div class="col-4">
+    {{im|safe}}
+    </div>
+    {% endfor %}
+    </div>
+{% endblock %}
+
+
+
+<!-- <div>
+
+{{svg|safe}}
+
+</div> -->

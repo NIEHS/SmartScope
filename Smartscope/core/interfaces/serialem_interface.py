@@ -1,4 +1,4 @@
-from pathlib import PureWindowsPath
+from pathlib import PureWindowsPath, Path
 from typing import Callable, Tuple
 import serialem as sem
 import time
@@ -103,12 +103,14 @@ class SerialemInterface(MicroscopeInterface):
 
     
     def reset_stage(self):
+        logger.info(f'Resetting stage to center.')
         sem.TiltTo(0)
         sem.MoveStageTo(0,0,0)
 
     def remove_slit(self):
         if self.detector.energyFilter:
             if sem.ReportEnergyFilter()[2] == 1:
+                logger.info('Removing slit.')
                 sem.SetSlitIn(0)
         
 
@@ -232,12 +234,12 @@ class SerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, framesName=None):
+    def setup(self, saveframes:bool, grid_dir:str='', framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.detector.framesDir).as_posix().replace('/', '\\')
-            logger.info(f'Saving frames to {movies_directory}')
+            movies_directory = PureWindowsPath(self.detector.framesDir, grid_dir).as_posix().replace('/', '\\')
+            logger.info(f'SerialEM will be saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
             if framesName is not None:
                 sem.SetFrameBaseName(0, 1, 0, framesName)

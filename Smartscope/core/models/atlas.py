@@ -28,6 +28,10 @@ class AtlasModel(BaseModel, ExtraPropertyMixin):
         return 'Atlas'
 
     @property
+    def prefix_lower(self):
+        return self.prefix.lower()
+
+    @property
     def prefix(self):
         return 'Atlas'
 

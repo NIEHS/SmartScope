@@ -1,0 +1,30 @@
+<div id="fullOverlayMenu" class="position-absolute top-0 end-0 bg-white h-100 border-start px-2 overflow-auto" style="width: 70%; z-index: 1070;">
+    
+    <div class="d-flex flex-row justify-content-between">
+        <h3 class="pt-2">{% block title %}{% endblock %}</h3>
+        <button id="close-right-sidebar" 
+            class="btn btn-light" 
+            data-bs-toggle="tooltip" 
+            data-placement="left" 
+            title="Click here to close or press ESC button" 
+            onclick="$('#fullOverlayMenu,.tooltip').remove()">
+        <i class="bi bi-x-circle"></i>
+        </button>
+    </div>
+
+
+
+
+    {% block overlay_content %}{% endblock %}
+
+    <script>
+
+    $(document).on('keydown', function(event) {
+       if (event.key == "Escape") {
+           $('#fullOverlayMenu,.tooltip').remove()
+       }
+   });
+
+   $('[data-bs-toggle="tooltip"]').tooltip();   
+    </script>
+</div>

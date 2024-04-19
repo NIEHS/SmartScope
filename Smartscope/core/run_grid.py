@@ -2,9 +2,11 @@ import os
 import sys
 import time
 import logging
+from enum import Enum
 from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -20,18 +22,21 @@ from .interfaces.microscope_interface import MicroscopeInterface
 from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, SquareModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
+from Smartscope.core.frames import get_frames_prefix, parse_frames_prefix
+from Smartscope.core.mesh_rotation import calculate_hole_geometry
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
-from Smartscope.core.db_manipulations import update, select_n_areas, queue_atlas, add_targets
+from Smartscope.core.db_manipulations import update, queue_atlas, add_targets
+from Smartscope.core.data_manipulations import select_n_areas
 
 from Smartscope.lib.image_manipulations import export_as_png
+    
 
 
 def run_grid(
         grid:AutoloaderGrid,
         session:ScreeningSession,
-        
         scope:MicroscopeInterface
     ): #processing_queue:multiprocessing.JoinableQueue,
     """Main logic for the SmartScope process
@@ -43,8 +48,11 @@ def run_grid(
     session_id = session.pk
     microscope = session.microscope_id
 
+
+    grid = update(grid, refresh_from_db=True, last_update=None)
     # Set the Websocket_update_decorator grid property
     update.grid = grid
+
     if grid.status == GridStatus.COMPLETED:
         logger.info(f'Grid {grid.name} already complete. grid ID={grid.grid_id}')
         return
@@ -55,7 +63,6 @@ def run_grid(
         return
 
     logger.info(f'Starting {grid.name}, status={grid.status}') 
-    grid = update(grid, refresh_from_db=True, last_update=None)
     if grid.status is GridStatus.NULL:
         grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
 
@@ -71,9 +78,16 @@ def run_grid(
     atlas = queue_atlas(grid)
 
     # scope
+
+    # create frames directory
+    prefix = parse_frames_prefix(get_frames_prefix(grid),grid)
+    grid_dir = grid.frames_dir(prefix=prefix)
+    if params.save_frames:
+        GridIO.create_grid_frames_directory(session.detector_id.frames_directory, grid.frames_dir(prefix=prefix))
+        logger.debug(f'Saving the frames in {grid_dir}')
     scope.loadGrid(grid.position)
     is_stop_file(session_id)
-    scope.setup(params.save_frames, framesName=f'{session.date}_{grid.name}')
+    scope.setup(params.save_frames,grid_dir=grid_dir,framesName=f'{session.date}_{grid.name}')
     scope.reset_state()
 
     # run acquisition
@@ -123,7 +137,10 @@ def run_grid(
     # 
     if atlas.status == status.PROCESSED:
         selector_wrapper(protocol.atlas.targets.selectors, atlas, n_groups=5)
-        select_n_areas(atlas, grid.params_id.squares_num)
+        selected = select_n_areas(atlas, grid.params_id.squares_num)
+        with transaction.atomic():
+            for obj in selected:
+                update(obj, selected=True, status='queued')
         atlas = update(atlas, status=status.COMPLETED)
 
         #Release atlas items from memory.
@@ -143,10 +160,12 @@ def run_grid(
             break
         else:
             square, hole = get_queue(grid)
+            priority = get_target_priority(grid, (square, hole))
+            logger.debug(f'Priority: {priority}')
 
         logger.info(f'Queued => Square: {square}, Hole: {hole}')
         logger.info(f'Targets done: {is_done}')
-        if hole is not None and (square is None or grid.collection_mode == 'screening'):
+        if priority == TargetPriority.HOLE:
             is_done = False
             logger.info(f'Running Hole {hole}')
             # process medium image
@@ -196,7 +215,7 @@ def run_grid(
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
             scope.flash_cold_FEG(params.coldfegflash_delay)
-        elif square is not None:
+        elif priority == TargetPriority.SQUARE:
             is_done = False
             logger.info(f'Running Square {square}')
             # process square
@@ -211,6 +230,7 @@ def run_grid(
                 )
                 square = update(square, status=status.ACQUIRED, completion_time=timezone.now())
             RunSquare.process_square_image(square, grid, microscope)
+            # calculate_hole_geometry(grid)
         elif is_done:
             microscope_id = session.microscope_id.pk
             tmp_file = os.path.join(settings.TEMPDIR, f'.pause_{microscope_id}')
@@ -239,7 +259,24 @@ def run_grid(
         logger.info('Grid finished')
         return 'finished'
 
+class TargetPriority(Enum):
+    HOLE = 'hole'
+    SQUARE = 'square'
 
+
+def get_target_priority(grid, queue):
+    square, hole = queue
+    if hole is None and square is None:
+        return
+    if hole is None:
+        return TargetPriority.SQUARE
+    if square is None:
+        return TargetPriority.HOLE
+    if grid.collection_mode == 'screening' and grid.session_id.microscope_id.vendor != 'JEOL':
+        return TargetPriority.HOLE
+    return TargetPriority.SQUARE
+
+    
 
 def get_queue(grid):
     square = grid.squaremodel_set.filter(selected=True).\

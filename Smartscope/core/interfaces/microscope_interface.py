@@ -27,7 +27,7 @@ class MicroscopeInterface(ABC):
     def __exit__(self, exception_type, exception_value, traceback):
         self.disconnect()
 
-    def reset_image_shift_values(self):
+    def reset_image_shift_values(self, afis:bool=False):
         self.state.reset_image_shift_values()
 
     @abstractmethod
