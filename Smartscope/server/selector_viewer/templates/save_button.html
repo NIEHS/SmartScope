@@ -7,6 +7,8 @@ hx-vals="js:{
 }"
 hx-target="#btnResult"
 hx-swap="innerHTML"
+hx-on--before-request="createHTMXloadingMessage(event, '{{message}}')"
+hx-on--after-request="processHTMXloadingMessage(event)"
 
 {% include "bootstrap_tooltip.html" with position="top" tooltip=tooltip %}
 

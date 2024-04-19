@@ -112,6 +112,22 @@ def toggle_pause(microscope_id: str):
         open(pause_file, 'w').close()
         print(json.dumps(dict(pause=True)))
 
+def select_areas(mag_level, object_id, n_areas):
+    from Smartscope.core.data_manipulations import select_n_areas
+    from Smartscope.core.models import SquareModel, AtlasModel
+    from Smartscope.core.db_manipulations import update
+    if mag_level == 'atlas':
+        obj = AtlasModel.objects.get(pk=object_id)
+        is_bis = False
+    else:
+        obj = SquareModel.objects.get(pk=object_id)
+        is_bis = obj.grid_id.params_id.bis_max_distance > 0
+    output = select_n_areas(obj, int(n_areas), is_bis=is_bis)
+    logger.info(f'Selected {output} areas.')
+    with transaction.atomic():
+        for obj in output:
+            update(obj, selected=True, status='queued')
+    print('Done.')
 
 def regroup_bis(grid_id, square_id):
     from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
@@ -137,9 +153,11 @@ def regroup_bis(grid_id, square_id):
     # for h in filtered_holes:
     #     if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
     #         holes_for_grouping.append(h)
-    for square in SquareModel.display.filter(status=status.COMPLETED,**queryparams):
+    squares = SquareModel.display.filter(status=status.COMPLETED,**queryparams)
+    for square in squares:
         logger.debug(f"Filtering square {square}, {square.pk}")
-        filtered, _, targets = filter_targets(square, additional_filters=dict(status=None))
+        targets = square.targets.filter(status__isnull=True)
+        filtered = filter_targets(square, targets)
         holes_for_grouping += apply_filter(targets, filtered)
 
 
@@ -149,14 +167,21 @@ def regroup_bis(grid_id, square_id):
         holes_for_grouping,
         max_radius=collection_params.bis_max_distance,
         min_group_size=collection_params.min_bis_group_size,
-        queue_all=collection_params.holes_per_square == 0
     )
 
     with transaction.atomic():
-        for hole in sorted(holes, key=lambda x: x.selected):
+        for hole in holes:
             hole.save()
     
     logger.info('Regrouping BIS done.')
+    return squares
+
+def regroup_bis_and_select(grid_id, square_id):
+    from Smartscope.core.models import AutoloaderGrid
+    squares = regroup_bis(grid_id, square_id)
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+    for square in squares:
+        select_areas('square', square.pk, grid.params_id.holes_per_square)
 
 
 def continue_run(next_or_continue, microscope_id):

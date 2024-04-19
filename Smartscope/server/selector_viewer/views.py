@@ -4,7 +4,7 @@ import logging
 import plotly.graph_objs as go
 import plotly.express as px
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
 from django.http import HttpRequest
 from django.template.response import TemplateResponse
 
@@ -79,17 +79,17 @@ def save_selector_limits(request:HttpRequest, grid_id, selector):
     logger.debug(f'Request received: {request.__dict__}')
     kwargs = dict()
     if request.method != 'POST':
-        return HttpResponse('Method not allowed')
+        return HttpResponse('Method not allowed', status=405)
     low_limit = request.POST.get('low_limit', None)
     high_limit = request.POST.get('high_limit', None)
     apply_to = request.POST.get('apply_to', 'grid')
     if apply_to == 'session':
         kwargs = {'save_to':save_to_session_directory}
     if high_limit is None:
-        return HttpResponse('High Limit cannot be none')
+        return HttpResponse('High Limit cannot be none', status=400)
     selector_data = save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
 
-    return HttpResponse(f"{selector_data.low_limit} {selector_data.high_limit}")
+    return TemplateResponse(request, 'update_all_button.html', {'grid_id': grid_id}, status=200)
 
 
 # class CollectionStatsView(TemplateView):

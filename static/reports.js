@@ -610,9 +610,13 @@ function getRegroupBISurl(object_id) {
     return `/api/squares/${object_id}/regroup_bis/`
 }
 
+function getRegroupBISandReselectUrl(object_id) {
+    return `/api/grids/${object_id}/regroup_and_reselect/`
+}
+
 async function regroupBIS(object_id, getUrlFunc=getRegroupBISurl) {
     let url= getUrlFunc(object_id)
-    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${object_id}`)
+    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on ${object_id}`)
     console.log('regroupBIS: ', res)
     await loadSquare(currentState.square, false)
 }
