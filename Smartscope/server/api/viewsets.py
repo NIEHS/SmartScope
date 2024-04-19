@@ -556,6 +556,19 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraAct
             logger.error(f'Error tring to regrouping BIS, {err}')
             return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)  
 
+    @ action(detail=True, methods=['patch'])
+    def regroup_and_reselect(self, request, *args, **kwargs):
+        try:
+            obj = self.get_object()
+            microscope = obj.session_id.microscope_id
+            out, err = send_to_worker(microscope.worker_hostname, microscope.executable, arguments=[
+                'regroup_bis_and_select', obj.pk, 'all'], communicate=True, timeout=120)
+            out = out.decode("utf-8").strip().split('\n')[-1]
+            return Response(dict(out=out))
+        except Exception as err:
+            logger.error(f'Error tring to regrouping BIS and reselecting, {err}')
+            return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)  
+
 
 class AtlasModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
     """

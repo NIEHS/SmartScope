@@ -132,11 +132,11 @@ def viewer_only(user):
     return False
 
 
-def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=False, iterations=500, score_weight=2):
+def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, iterations=500, score_weight=2):
     if len(hole_models) == 0:
         return  hole_models
     logger.debug(
-        f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, queue all = {queue_all}, max iterations = {iterations}, score_weight = {score_weight}')
+        f'grouping params, max radius = {max_radius}, min group size = {min_group_size}, max iterations = {iterations}, score_weight = {score_weight}')
     # Extract coordinated for the holes
     prefetch_related_objects(hole_models, 'finders')
     coords = []
@@ -197,10 +197,6 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, queue_all=F
     for i, g in best[3]:
         center = hole_models[i]
         group_name = center.generate_bis_group_name()
-
-        if queue_all:
-            center.selected = True
-            center.status = 'queued'
 
         bis = g[g != i]
         for item in bis:
