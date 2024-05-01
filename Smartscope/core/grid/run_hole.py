@@ -10,7 +10,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 from .finders import find_targets
-from .transformations import register_to_other_montage, register_targets_by_proximity
+from .transformations import register_to_other_montage, register_targets_by_proximity, recenter_targets
 from .diagnostics import generate_diagnostic_figure, Timer
 
 
@@ -92,10 +92,10 @@ class RunHole:
             if len(protocol.targets.finders) == 0 or targets == []:
                 targets = Targets.create_targets_from_center(image_coords, montage)
             timer.report_timer('Identifying and registering targets')
-            
+            targets_coords = np.array([target.coords for target in targets])
             register = register_targets_by_proximity(
-                image_coords,
-                [target.coords for target in targets]
+                targets = image_coords,
+                new_targets= recenter_targets(targets_coords, montage.center),
             )
             for h, index in zip(hole_group,register):
                 target = targets[index]
