@@ -41,6 +41,21 @@ def run(command, *args):
     globals()[command](*args)
 
 
+def run_selectors(square_id):
+    from Smartscope.core.models import SquareModel
+    from Smartscope.core.selectors import selector_wrapper
+    from Smartscope.lib.image.montage import Montage
+    from Smartscope.core.protocols import get_or_set_protocol
+    from django.core.cache import cache
+    square = SquareModel.objects.get(pk=square_id)
+    protocol = get_or_set_protocol(square.grid_id).square.targets
+    montage = Montage(name=square.name, working_dir=square.grid_id.directory)
+    montage.load_or_process()
+    selector_wrapper(protocol.selectors, square, n_groups=5, montage=montage)
+    cache_key = f'{square_id}_targets_methods'
+    cache.delete(cache_key)
+
+
 def add_holes(id, targets):
     from Smartscope.lib.image.montage import Montage
     from Smartscope.lib.image.targets import Targets
@@ -75,6 +90,8 @@ def add_holes(id, targets):
         finder=finder,
         start_number=start_number
     )
+
+    run_selectors(id)
     return holes
 
 
@@ -92,7 +109,6 @@ def add_single_targets(id_, *args):
     logger.debug(f'Successfully added {len(holes)} targets.')
     cache_key = f'{id_}_targets_methods'
     cache.delete(cache_key)
-
 
 
 def check_pause(microscope_id: str, session_id: str):
