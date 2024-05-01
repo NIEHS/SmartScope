@@ -48,7 +48,6 @@ def randomized_choice(filtered_set: set, n: int):
         n -= len(filtered_set)
         logger.debug(f'More choices than length of filtered set, choosing one of each {choices}. {n} left to randomly choose from.')
     for i in range(n):
-        
         choice = random.choice(list(filtered_set))
         logger.debug(f'For {i}th choice, choosing {choice} from {filtered_set}.')
         choices.append(choice)
@@ -103,7 +102,7 @@ def apply_filter(targets, filtered):
 
 def select_random_areas(targets, filtered, n):
     filtered_set = set(filtered)
-    if filtered_set == {0}:
+    if filtered_set == {0} or len(filtered_set) == 0:
         return []
     filtered_set.discard(0) 
     logger.debug(f'Selecting from {len(filtered_set)} subsets.')
