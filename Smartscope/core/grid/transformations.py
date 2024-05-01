@@ -53,6 +53,30 @@ def register_stage_to_montage(
     return centered_pixel_coords
 
 
+def closest_to_center(
+        coords:np.ndarray,
+        center_coords:np.ndarray
+    ) -> int: 
+    """Finds the closest coordinate to a center coordinate
+
+    Args:
+        coords (np.ndarray): 2-D array of x,y coordinates where each line is a coordinate pair
+        center_coords (np.ndarray): x,y coordinates of the center
+
+    Returns:
+        int: Index of the closest coordinate
+    """
+    centered_coords = coords - center_coords
+    distance = np.sqrt(np.sum(np.power(centered_coords,2),axis=1))
+    return np.argmin(distance)
+
+def recenter_targets(
+        coords:np.ndarray,
+        center_coords:np.ndarray
+        ) -> np.ndarray:
+    closest_to_center_index = closest_to_center(coords, center_coords)
+    return coords - (coords[closest_to_center_index] - center_coords)
+
 # def rotate_axis(coord, angle):
 #     theta = np.radians(angle)
 #     c, s = np.cos(theta), np.sin(theta)
@@ -61,8 +85,8 @@ def register_stage_to_montage(
 #     return rotated
     
 def register_targets_by_proximity(
-        targets:np.array,
-        new_targets:np.array
+        targets:np.ndarray,
+        new_targets:np.ndarray,
     ):
     distance_matrix = cdist(targets,new_targets)
     closest_index = np.argmin(distance_matrix,1)
