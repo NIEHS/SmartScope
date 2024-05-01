@@ -50,6 +50,7 @@ COPY --link ctffind /opt/
 COPY --link miniconda3/ /opt/miniconda3/
 COPY smartscope/ /opt/smartscope/
 COPY external_plugins/ /opt/external_plugins/
+COPY Smartscope-connector /opt/Smartscope-connector/
 
 
 # RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate && \
