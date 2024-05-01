@@ -21,7 +21,8 @@ def create_basic_mesh(spacing:float,size=10):
 
 def hole_mesh(grid_instance):
     # square = SquareModel.display.filter(grid_id=grid_instance,status='completed').first()
-    holes = HoleModel.display.filter(grid_id=grid_instance)   
+    holes = HoleModel.display.filter(grid_id=grid_instance)
+    holes = filter(lambda x: x.finders.all()[0].method_name != 'Regular pattern', holes)   
     hole_spacing = grid_instance.holeType.pitch
     return holes, hole_spacing
 
