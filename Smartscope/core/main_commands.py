@@ -305,10 +305,10 @@ def get_atlas_to_search_offset(detector_name,maximum=0):
 def export_grid(grid_id, export_to=''):
     from Smartscope.core.models import AutoloaderGrid
     from Smartscope.core.utils.export_import import export_grid
+    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     if export_to == '':
         export_to = os.path.join(grid.directory, 'export.yaml')
         print(f'Export path not specified. Exporting to default loacation: {export_to}')
-    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     export_grid(grid, export_to=export_to)
     print('Done.')
 
