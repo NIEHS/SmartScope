@@ -1,9 +1,9 @@
 from Smartscope.core.models import AutoloaderGrid
-from Smartscope.server.api.export_serializers import ExportMetaSerializer
+from Smartscope.server.api.serializers.export_serializers import ExportMetaSerializer
 from rest_framework_yaml.renderers import YAMLRenderer
 import yaml
 
-def export_grid(instance, export_to:str):
+def export_grid(instance:AutoloaderGrid, export_to:str):
     serializer = ExportMetaSerializer(instance=instance)
     with open(export_to,'wb') as file:
         file.write(YAMLRenderer().render(data=serializer.data))
