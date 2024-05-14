@@ -1,5 +1,6 @@
 from pathlib import PureWindowsPath, Path
 from typing import Callable, Tuple
+from abc import ABC
 import serialem as sem
 import time
 import logging
@@ -10,7 +11,6 @@ from .microscope_interface import MicroscopeInterface
 from Smartscope.lib.Finders.basic_finders import find_square
 
 logger = logging.getLogger(__name__)
-
 
 class SerialemInterface(MicroscopeInterface):
 
@@ -335,3 +335,16 @@ class SerialemInterface(MicroscopeInterface):
                 frames = frames[0]
             logger.debug(f"Frames: {frames},")
             return frames.split('\\')[-1]
+        
+    def get_property(self, property_name:str):
+        return sem.ReportProperty(property_name)
+    
+    def _remove_aperture(self, aperture:int):
+        if sem.ReportApertureSize(aperture) != 0:
+            sem.RemoveAperture(aperture)
+    
+    def _reinsert_aperture(self, aperture:int):
+        if sem.ReportApertureSize(aperture) == 0:
+            sem.ReInsertAperture(aperture)
+
+    # def _set_aperture_size(self, aperture:int, aperture_size:int):

@@ -1,25 +1,37 @@
 import serialem as sem
+
 from typing import Callable
 from pydantic import BaseModel
 import time
 import logging
 from .serialem_interface import SerialemInterface
+from .microscope_interface import Apertures
 
 logger = logging.getLogger(__name__)
 
-
-def remove_condenser_aperture(function: Callable, *args, **kwargs):
+def remove_condenser_aperture(function: Callable, aperture, *args, **kwargs):
     def wrapper(*args, **kwargs):
         sem.RemoveAperture(0)
         function(*args, **kwargs)
         sem.ReInsertAperture(0)
     return wrapper
 
+class JEOLDefaultApertures(Apertures):
+    CONDENSER:int=1
+    OBJECTIVE:int = 2
+    
+class JEOLExtraApertures(Apertures):
+    CONDENSER:int=0
+    CONDENSER_2:int=1
+    OBJECTIVE:int = 2
+    OBJECTIVE_LOWER:int = 3
+
 class JEOLadditionalSettings(BaseModel):
     transfer_cartridge_path: str = 'C:\Program Data\SerialEM\PyTool\Transfer_Cartridge.bat'
 
 class JEOLSerialemInterface(SerialemInterface):
     additional_settings: JEOLadditionalSettings = JEOLadditionalSettings()
+    apertures: Apertures = None
         
     def checkPump(self, wait=30):
         pass
@@ -35,9 +47,20 @@ class JEOLSerialemInterface(SerialemInterface):
         if not self.microscope.apertureControl:
             return super().atlas(*args,**kwargs)
         remove_condenser_aperture(
-            super().atlas)(*args,**kwargs)
-        
+            super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
 
+    def setup(self, *args, **kwargs):
+        super().setup(*args, **kwargs)
+        self.aperture = self._apertures_setter()
+
+    def _apertures_setter(self):
+        if not self.apertureControl:
+            return None
+        extra_apertures = bool(int(self.get_property('JeolHasExtraApertures')))
+        if extra_apertures:
+            return JEOLExtraApertures
+        return JEOLDefaultApertures
+  
     def loadGrid(self, position):
         if self.microscope.loaderSize > 1:
             sem.Delay(5)
