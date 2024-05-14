@@ -8,12 +8,17 @@ from .microscope import MicroscopeState, AtlasSettings, Detector, Microscope
 logger = logging.getLogger(__name__)
 
 
+class Apertures(ABC):
+    pass
+
+
 @dataclass
 class MicroscopeInterface(ABC):
     microscope: Microscope
     detector: Detector
     atlas_settings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
+    apertures: Apertures = None
     additional_settings: dict = None 
     has_hole_ref: bool = False
     hole_crop_size: int = 0

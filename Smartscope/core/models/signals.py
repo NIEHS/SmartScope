@@ -152,9 +152,13 @@ def create_session_scope_directory(sender, instance, created, *args, **kwargs):
 @receiver(post_save, sender=Microscope)
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
+
         create_scope_dirs(instance.scope_path)
 
 def create_scope_dirs(scope_path):
+    if not Path(scope_path).exists():
+        logger.warning(f'Scope directory {scope_path} does not exist. Cannot create scope directories.')
+        return  
     source = scope_path
     scope_dirs = [
         source,
