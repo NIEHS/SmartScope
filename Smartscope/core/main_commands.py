@@ -312,13 +312,13 @@ def export_grid(grid_id, export_to=''):
     export_grid(grid, export_to=export_to)
     print('Done.')
 
-def import_grid(file:str):
+def import_grid(file:str, group:str='', user:str=''):
     from Smartscope.core.utils.export_import import import_grid
     if not Path(file).exists():
         print(f'File {file} does not exist.')
         return
     print(f'Importing {file} into the smartscope database.')
-    import_grid(file)
+    import_grid(file, override_group=group, override_user=user)
     print('Done.')
 
 

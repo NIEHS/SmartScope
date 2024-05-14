@@ -8,10 +8,15 @@ def export_grid(instance:AutoloaderGrid, export_to:str):
     with open(export_to,'wb') as file:
         file.write(YAMLRenderer().render(data=serializer.data))
 
-def import_grid(file_to_import:str):
+def import_grid(file_to_import:str, override_group:str='', override_user:str=''):
     with open(file_to_import,'r') as file:
-        data = yaml.safe_load(file) 
-    grid= ExportMetaSerializer(data=data)
+        data = yaml.safe_load(file)
+    if override_group:
+        data['session_id']['group'] = override_group
+    if override_user:
+        data['session_id']['user'] = override_user
+    # data['session_id']['user'] = user
+    grid = ExportMetaSerializer(data=data)
     grid.is_valid()
     print(grid.errors) 
     grid.save()
