@@ -189,4 +189,11 @@ class MicroscopeInterface(ABC):
     def reset_AFIS_image_shift(self, afis:bool=False):
         pass
 
+    @abstractmethod
+    def autofocus(self, def1, def2, step):
+        pass
+
+    @abstractmethod
+    def wait_drift(self, driftTarget):
+        pass
 

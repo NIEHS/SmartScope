@@ -212,11 +212,12 @@ class SerialemInterface(MicroscopeInterface):
         sem.Save()
         sem.CloseFile()
 
-    def focusDrift(self, def1, def2, step, drifTarget):
+    def autofocus(self, def1, def2, step):
         self.rollDefocus(def1, def2, step)
-        sem.SetTargetDefocus(self.state.defocusTarget)
         sem.AutoFocus()
         self.state.currentDefocus = sem.ReportDefocus()
+
+    def wait_drift(self, drifTarget):
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
