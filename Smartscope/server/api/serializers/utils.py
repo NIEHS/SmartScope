@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 def extract_targets(data, label_types:List[str]=['__all__']):
     if label_types == ['__all__']:
-        logger.debug(f'Label types: {label_types}. Using all available label types')
+        # logger.debug(f'Label types: {label_types}. Using all available label types')
         label_types = ['finders','classifiers','selectors']
     target_labels= dict()
     output_labels = []
