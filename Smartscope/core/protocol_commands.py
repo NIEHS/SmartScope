@@ -69,6 +69,18 @@ def moveStageWithAtlasToSearchOffset(scope,params,instance, content:Dict, *args,
     stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
     scope.moveStage(stage_x+offset_x,stage_y+offset_y,stage_z)
 
+def autoFocus(scope,params,instance, content:Dict, *args, **kwargs) :
+    """Acquires the focus drift image using the Search preset."""
+    scope.autofocus(
+        params.target_defocus_min,
+        params.target_defocus_max,
+        params.step_defocus,
+    )
+
+def waitDrift(scope,params,instance, content:Dict, *args, **kwargs) :
+    """Waits for the drift to settle."""
+    scope.wait_drift()
+
 def eucentricSearch(scope,params,instance, content:Dict, *args, **kwargs) :
     """Calculates eucentricity using the Search preset. 
     
@@ -194,4 +206,6 @@ protocolCommandsFactory = dict(
     loadHoleRef=loadHoleRef,
     highMag=highMag,
     setFocusPosition=setFocusPosition,
+    autoFocus=autoFocus,
+    waitDrift=waitDrift
 )
