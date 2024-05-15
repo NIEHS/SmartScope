@@ -77,47 +77,60 @@ class RunHole:
             image_coords = register_to_other_montage(np.array([x.coords for x in hole_group]),hole.coords, montage, square_montage)
             timer.report_timer('Initial registration to the higher mag image')
             targets = []
-            finder_method = 'Registration'
-            classifier_method=None
-            if len(protocol.targets.finders) != 0:
-                targets, finder_method, classifier_method, additional_outputs = find_targets(
-                    montage, protocol.targets.finders
-                )
-                generate_diagnostic_figure(
-                    montage.image,
-                    [([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],
-                    Path(montage.directory / f'hole_recenter_it.png')
-                )
+            if protocol.targets.reregister:
+                finder_method = 'Registration'
+                classifier_method=None
+                if len(protocol.targets.finders) != 0:
+                    targets, finder_method, classifier_method, additional_outputs = find_targets(
+                        montage, protocol.targets.finders
+                    )
+                    generate_diagnostic_figure(
+                        montage.image,
+                        [([montage.center],(0,255,0), 1), ([t.coords for t in targets],(0,0,255),1)],
+                        Path(montage.directory / f'hole_recenter_it.png')
+                    )
+                    
+                if len(protocol.targets.finders) == 0 or targets == []:
+                    targets = Targets.create_targets_from_center(image_coords, montage)
+                timer.report_timer('Identifying and registering targets')
                 
-            if len(protocol.targets.finders) == 0 or targets == []:
-                targets = Targets.create_targets_from_center(image_coords, montage)
-            timer.report_timer('Identifying and registering targets')
-            targets_coords = np.array([target.coords for target in targets])
-            register = register_targets_by_proximity(
-                targets = image_coords,
-                new_targets= recenter_targets(targets_coords, montage.center),
-            )
-            for h, index in zip(hole_group,register):
-                target = targets[index]
-                if not params.multishot_per_hole:
-                    targets_to_register=[target]
-                else:
-                    targets_to_register= RunHole.split_target_for_multishot(multishot,target.coords,montage)
-                add_targets(
-                    grid,
-                    h,
-                    targets_to_register,
-                    HighMagModel,
-                    finder_method,
-                    classifier=classifier_method
+                register = register_targets_by_proximity(
+                    image_coords,
+                    [target.coords for target in targets]
                 )
-            timer.report_timer('Final registration and saving to db')
-            update(hole,
+                for h, index in zip(hole_group,register):
+                    target = targets[index]
+                    if not params.multishot_per_hole:
+                        targets_to_register=[target]
+                    else:
+                        targets_to_register= RunHole.split_target_for_multishot(multishot,target.coords,montage)
+                    add_targets(
+                        grid,
+                        h,
+                        targets_to_register,
+                        HighMagModel,
+                        finder_method,
+                        classifier=classifier_method
+                    )
+                timer.report_timer('Final registration and saving to db')
+                update(hole,
+                    shape_x=montage.shape_x,
+                    shape_y=montage.shape_y,
+                    pixel_size=montage.pixel_size,
+                    status=status.PROCESSED
+                )
+                return
+            targets, finder_method, classifier_method, _ = find_targets(montage, protocol.finders)
+            holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
+
+            square = update(square,
+                status=status.PROCESSED,
                 shape_x=montage.shape_x,
                 shape_y=montage.shape_y,
                 pixel_size=montage.pixel_size,
-                status=status.PROCESSED
+                refresh_from_db=True
             )
+        
 
     @staticmethod
     def load_multishot_from_file(file:Union[str,Path]) -> Union[MultiShot,None]:

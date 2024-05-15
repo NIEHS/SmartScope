@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Union
 
 class TargetPlugins(BaseModel):
+    reregister: bool = True
     finders: List[str] = Field(default_factory=list)
     selectors: List[str] = Field(default_factory=list)
 
