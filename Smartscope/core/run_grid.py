@@ -188,13 +188,7 @@ def run_grid(
             RunHole.process_hole_image(hole, grid, microscope)
             if hole.status == status.SKIPPED:
                 continue
-            # process high image
-            # scope.focusDrift(
-            #     params.target_defocus_min,
-            #     params.target_defocus_max,
-            #     params.step_defocus,
-            #     params.drift_crit
-            # )
+
             scope.reset_image_shift_values(afis=params.afis)
             for hm in hole.targets.exclude(status__in=[status.ACQUIRED,status.COMPLETED]).order_by('hole_id__number'):
                 hm = update(hm, refresh_from_db=False, status=status.STARTED)
