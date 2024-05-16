@@ -1,6 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
+import numpy as np
 
 
 @dataclass
@@ -12,6 +13,8 @@ class MicroscopeState:
     stageX: float = 0
     stageY: float = 0
     stageZ: float = 0
+    last_autofocus_stage_X: float = 999999
+    last_autofocus_stage_y: float = 999999
     tiltAngle: float = None
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
@@ -20,6 +23,13 @@ class MicroscopeState:
         self.stageX = stageX
         self.stageY = stageY
         self.stageZ = stageZ
+
+    def set_last_autofocus_position(self):
+        self.last_autofocus_stage_X = self.stageX
+        self.last_autofocus_stage_y = self.stageY
+
+    def get_last_autofocus_distance(self):
+        return np.sqrt((self.stageX - self.last_autofocus_stage_X)**2 + (self.stageY - self.last_autofocus_stage_y)**2)
     
     def getStage(self):
         return self.stageX, self.stageY, self.stageZ

@@ -168,3 +168,6 @@ class FakeScopeInterface(MicroscopeInterface):
 
     def wait_drift(self, driftTarget):
         pass
+
+    def autofocus_after_distance(self, def1, def2, step, distance):
+        pass
