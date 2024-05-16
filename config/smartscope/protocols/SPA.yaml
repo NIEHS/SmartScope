@@ -31,7 +31,7 @@ mediumMag:
     - loadHoleRef
     - alignToHoleRef
     - mediumMagHole
-    - autoFocus
+    - autoFocusAfterDistance
     - waitDrift
 highMag:
   acquisition:
