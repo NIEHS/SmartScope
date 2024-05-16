@@ -120,11 +120,12 @@ class RunHole:
                     status=status.PROCESSED
                 )
                 return
-            targets, finder_method, classifier_method, _ = find_targets(montage, protocol.finders)
-            holes = add_targets(grid, square, targets, HoleModel, finder_method, classifier_method)
+            targets, finder_method, classifier_method, _ = find_targets(montage, protocol.targets.finders)
+            targets = add_targets(grid, hole, targets, HighMagModel, finder_method, classifier_method)
 
-            square = update(square,
+            update(hole,
                 status=status.PROCESSED,
+                bis_type='center',
                 shape_x=montage.shape_x,
                 shape_y=montage.shape_y,
                 pixel_size=montage.pixel_size,
