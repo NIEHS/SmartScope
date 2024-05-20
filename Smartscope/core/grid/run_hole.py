@@ -94,6 +94,7 @@ class RunHole:
                     targets = Targets.create_targets_from_center(image_coords, montage)
                 timer.report_timer('Identifying and registering targets')
                 
+
                 register = register_targets_by_proximity(
                     image_coords,
                     [target.coords for target in targets]
@@ -118,6 +119,7 @@ class RunHole:
                     shape_y=montage.shape_y,
                     pixel_size=montage.pixel_size,
                     status=status.PROCESSED
+
                 )
                 return
             targets, finder_method, classifier_method, _ = find_targets(montage, protocol.targets.finders)
