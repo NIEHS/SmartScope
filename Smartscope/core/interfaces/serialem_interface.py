@@ -212,11 +212,14 @@ class SerialemInterface(MicroscopeInterface):
         sem.Save()
         sem.CloseFile()
 
-    def focusDrift(self, def1, def2, step, drifTarget):
+    def autofocus(self, def1, def2, step):
         self.rollDefocus(def1, def2, step)
         sem.SetTargetDefocus(self.state.defocusTarget)
         sem.AutoFocus()
         self.state.currentDefocus = sem.ReportDefocus()
+        self.state.set_last_autofocus_position()
+
+    def wait_drift(self, drifTarget):
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
@@ -346,5 +349,19 @@ class SerialemInterface(MicroscopeInterface):
     def _reinsert_aperture(self, aperture:int):
         if sem.ReportApertureSize(aperture) == 0:
             sem.ReInsertAperture(aperture)
+
+    def autofocus_after_distance(self, def1, def2, step, distance):
+        last_autofocus_distance = self.state.get_last_autofocus_distance()
+        if last_autofocus_distance > distance:
+            logger.info(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), running autofocus')
+            return self.autofocus(def1, def2, step)
+        logger.debug(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), skipping autofocus.')
+        current_defocus = self.state.currentDefocus
+        defocus_target = self.state.defocusTarget
+        new_defocus_target = self.rollDefocus(def1, def2, step)
+        sem.SetTargetDefocus(new_defocus_target)
+        new_currentdefocus = new_defocus_target - defocus_target + current_defocus
+        self.state.currentDefocus = new_currentdefocus
+        sem.SetDefocus(new_currentdefocus)
 
     # def _set_aperture_size(self, aperture:int, aperture_size:int):

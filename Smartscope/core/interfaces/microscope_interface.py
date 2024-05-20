@@ -73,6 +73,7 @@ class MicroscopeInterface(ABC):
         if defocusTarget < maxdef or defocusTarget > mindef:
             defocusTarget = mindef
         self.state.defocusTarget = defocusTarget
+        return defocusTarget
 
     def reset_state(self):
         self.has_hole_ref = False
@@ -189,4 +190,14 @@ class MicroscopeInterface(ABC):
     def reset_AFIS_image_shift(self, afis:bool=False):
         pass
 
+    @abstractmethod
+    def autofocus(self, def1, def2, step):
+        pass
 
+    @abstractmethod
+    def wait_drift(self, driftTarget):
+        pass
+
+    @abstractmethod
+    def autofocus_after_distance(self, def1, def2, step, distance):
+        pass
