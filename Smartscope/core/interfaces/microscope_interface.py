@@ -145,9 +145,9 @@ class MicroscopeInterface(ABC):
     def medium_mag_hole(self, tiltAngle, file=''):
         pass
 
-    @abstractmethod
-    def focusDrift(self, def1, def2, step, drifTarget):
-        pass
+    # @abstractmethod
+    # def focusDrift(self, def1, def2, step, drifTarget):
+    #     pass
 
     @abstractmethod
     def load_hole_ref(self):

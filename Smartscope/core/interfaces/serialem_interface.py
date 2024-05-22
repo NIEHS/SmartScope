@@ -314,6 +314,7 @@ class SerialemInterface(MicroscopeInterface):
             sem.RestoreBeamTilt()
 
     def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
+        sem.GoToLowDoseArea('Record')
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
@@ -356,12 +357,16 @@ class SerialemInterface(MicroscopeInterface):
             logger.info(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), running autofocus')
             return self.autofocus(def1, def2, step)
         logger.debug(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), skipping autofocus.')
-        current_defocus = self.state.currentDefocus
         defocus_target = self.state.defocusTarget
+        current_defocus = self.state.currentDefocus
         new_defocus_target = self.rollDefocus(def1, def2, step)
+        defocus_change = new_defocus_target - defocus_target
+        logger.debug(f'Last defocus target: {defocus_target}. New defocus target: {defocus_target}. Change: {defocus_change}')
         sem.SetTargetDefocus(new_defocus_target)
-        new_currentdefocus = new_defocus_target - defocus_target + current_defocus
-        self.state.currentDefocus = new_currentdefocus
-        sem.SetDefocus(new_currentdefocus)
+        self.state.currentDefocus += defocus_change
+        logger.debug(f'Current defocus: {current_defocus}. New current defocus: {self.state.currentDefocus}')
+        if defocus_change != 0:
+            sem.ChangeFocus(defocus_change)
+            return
 
     # def _set_aperture_size(self, aperture:int, aperture_size:int):
