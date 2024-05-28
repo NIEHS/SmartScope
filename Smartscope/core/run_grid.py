@@ -63,8 +63,10 @@ def run_grid(
         return
 
     logger.info(f'Starting {grid.name}, status={grid.status}') 
-    # if grid.status is GridStatus.NULL:
-    grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
+    if grid.status is GridStatus.NULL:
+        grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
+    else:
+        grid = update(grid, status=GridStatus.STARTED)
 
     GridIO.create_grid_directories(grid.directory)
     logger.info(f"create and the enter into Grid directory={grid.directory}")
