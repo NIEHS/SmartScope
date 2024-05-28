@@ -80,7 +80,7 @@ def autoFocus(scope:MicroscopeInterface,params,instance, content:Dict, *args, **
 
 def waitDrift(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Waits for the drift to settle."""
-    scope.wait_drift()
+    scope.wait_drift(params.drift_crit)
 
 def eucentricSearch(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Calculates eucentricity using the Search preset. 
