@@ -226,7 +226,7 @@ def check_directories_for_selector_data(grid:models.AutoloaderGrid, selector_nam
     
 
 def initialize_selector(grid: models.AutoloaderGrid, selector:str, queryset) -> SelectorSorter:
-    selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY[selector].limits)
+    selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY.get_plugin(selector).limits)
     directory = check_directories_for_selector_data(grid,selector)
     if directory is not None:
         selector_data = SelectorSorterData.load(directory, selector)

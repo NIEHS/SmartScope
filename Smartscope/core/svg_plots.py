@@ -71,12 +71,12 @@ def css_color(obj, display_type, method):
         label = [i for i in labels if i.method_name == method]
         if len(label) == 0:
             return 'blue', 'target', ''
-        return PLUGINS_FACTORY[method].get_label(label[0].label)
+        return PLUGINS_FACTORY.get_plugin(method).get_label(label[0].label)
     if method == 'CTF viewer':
         labels = obj.highmagmodel_set.values_list('ctffit', flat=True)
         if len(labels) == 0:
             return 'blue', 'N.D.', ''
-        return PLUGINS_FACTORY[method].get_label(labels[0])
+        return PLUGINS_FACTORY.get_plugin(method).get_label(labels[0])
 
 def drawAtlas(atlas, targets, display_type, method) -> draw.Drawing:
     d = draw.Drawing(atlas.shape_y, atlas.shape_x, id='atlas-svg', displayInline=False, style_='height: 100%; width: 100%')

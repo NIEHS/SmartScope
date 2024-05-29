@@ -14,7 +14,6 @@ from Smartscope.core.models.square import SquareModel
 from Smartscope.core.models.high_mag import HighMagModel
 from Smartscope.core.models.target_label import Classifier
 from Smartscope.core.selector_sorter import SelectorSorter, LagacySorterError, SelectorValueParser, initialize_selector
-from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.svg_plots import drawAtlasNew
 # from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
 from Smartscope.lib.converters import *

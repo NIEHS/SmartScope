@@ -53,7 +53,7 @@ class Montage(BaseImage):
             self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
             self.metadata['piece_center'] = self.metadata.piece_limits.apply(piece_center)
             self._image = img
-            self.make_symlink()
+            # self.make_symlink()
             return
 
         self.metadata['piece_limits'] = self.metadata.apply(piece_pos, axis=1)
