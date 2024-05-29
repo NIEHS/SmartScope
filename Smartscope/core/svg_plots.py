@@ -72,7 +72,7 @@ def css_color(obj, display_type, method):
         if len(label) == 0:
             return 'blue', 'target', ''
         return PLUGINS_FACTORY[method].get_label(label[0].label)
-    if method == 'CTF Viewer':
+    if method == 'CTF viewer':
         labels = obj.highmagmodel_set.values_list('ctffit', flat=True)
         if len(labels) == 0:
             return 'blue', 'N.D.', ''

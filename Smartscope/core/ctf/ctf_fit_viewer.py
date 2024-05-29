@@ -1,15 +1,20 @@
 from matplotlib import cm
 from matplotlib.colors import rgb2hex
 from math import floor
+from typing import List, Dict, Any
+from Smartscope.lib.Datatypes.base_plugin import BaseFeatureAnalyzer
 
 
-class CTFFitViewer():
-    name = 'CTF Viewer'
-    description = 'Color areas by their CTF resolution'
-    range = [3, 10]
-    step = 0.5
+class CTFFitViewer(BaseFeatureAnalyzer):
+    name: str = 'CTF viewer'
+    description: str = 'Color areas by their CTF resolution'
+    range: List = [3, 10]
+    step: float = 0.5
+    colors: List = []
+    # clusters:Dict[(str, Any)] = {}
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.colors = self.get_colors()
 
     def get_colors(self):
