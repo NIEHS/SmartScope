@@ -121,6 +121,9 @@ class PluginFactory:
         raise PluginDoesnNotExistError(name, self._factory)
 
     def get_plugins(self):
+        if self._factory == {}:
+            logger.debug('No plugins registered, loading plugins now.')
+            self.load_plugins()
         return self._factory
     
     def load_plugins(self):
