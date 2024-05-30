@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import json
 from django.db import transaction
 from django.core.cache import cache
