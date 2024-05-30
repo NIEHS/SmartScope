@@ -134,7 +134,9 @@ def highMag(scope:MicroscopeInterface, params,instance, content:Dict, *args, **k
     isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(params.tilt_angle))
     logger.debug(f'The tilt angle is {params.tilt_angle}, Y axis image-shift corrected from {stage_y - finder.stage_y:.2f} to {isY:.2f}')
     scope.image_shift_by_microns(isX,isY,params.tilt_angle, afis=params.afis)
-    frames = scope.highmag(file=instance.raw, frames=params.save_frames, earlyReturn=any([params.force_process_from_average, params.save_frames is False]))
+    frames = scope.highmag(file=instance.raw, 
+                           frames=params.save_frames, 
+                           earlyReturn=any([params.force_process_from_average, params.save_frames is False, 'Falcon' in grid.session_id.detecor_id.vendor]))
     instance.is_x=isX
     instance.is_y=isY
     instance.offset=offset

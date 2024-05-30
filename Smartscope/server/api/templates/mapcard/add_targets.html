@@ -3,15 +3,15 @@
     <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-bs-toggle="dropdown"
         aria-haspopup="true" aria-expanded="false">All Holes</a>
     <div id='' class="dropdown-menu">
-        <button class="dropdown-item" onclick='queueSquareTargets(this)' value='addall'>Queue
+        <button class="dropdown-item" onmousedown='queueSquareTargets(this)' value='addall'>Queue
             all holes</button>
-        <button class="dropdown-item" onclick='queueSquareTargets(this)' value='cancelall'>Cancel all
+        <button class="dropdown-item" onmousedown='queueSquareTargets(this)' value='cancelall'>Cancel all
             holes</button>
-        <button id='regroupBIS' class="dropdown-item" onclick="regroupBIS('{{instance.pk}}')"
+        <button id='regroupBIS' class="dropdown-item" onmousedown="regroupBIS('{{instance.pk}}')"
             value=''>Regroup BIS</button>
-        <button id="deleteHoles" class="dropdown-item" onclick="deleteHoles('{{instance.pk}}')"
+        <button id="deleteHoles" class="dropdown-item" onmousedown="deleteHoles('{{instance.pk}}')"
             value=''>Delete Holes</button>
-        <button if="extendLattice" class="dropdown-item" onclick="extendLattice('{{instance.pk}}')"
+        <button if="extendLattice" class="dropdown-item" onmousedown="extendLattice('{{instance.pk}}')"
             value=''>Extend Lattice</button>
     </div>
 </li>
