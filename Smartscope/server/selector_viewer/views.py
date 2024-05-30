@@ -66,7 +66,7 @@ def selector_view(request, grid_id, selector, maglevel='square'):
     context['grid_id'] = grid_id
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     selector_sorter = initialize_selector(grid, selector, maglevel.target_model().display.filter(grid_id=grid_id))
-    context['selector'] = PLUGINS_FACTORY[selector]
+    context['selector'] = PLUGINS_FACTORY.get_plugin(selector)
     context['initial_limits'] = selector_sorter.limits
     context['values_range'] = selector_sorter.values_range
     context['graph'] = plot_scatter_selector(selector_sorter)

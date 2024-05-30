@@ -35,6 +35,7 @@ from Smartscope.core.models.models_actions import targets_methods
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.cache import save_json_from_cache
 from Smartscope.core.models import *
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.core.main_commands import check_pause
 
 logger = logging.getLogger(__name__)
@@ -700,7 +701,7 @@ class HoleModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsM
             queryset = list(HighMagModel.objects.filter(grid_id=obj.grid_id,
                                                         hole_id__bis_group=obj.bis_group, status='completed').order_by('hole_id__number','number'))
         context = {}
-        context['classifier'] = PLUGINS_FACTORY['Micrographs curation']
+        context['classifier'] = PLUGINS_FACTORY.get_plugin('Micrographs curation')
         response_context= dict(cards=[])
         for hole in queryset:
             context['hole']=hole

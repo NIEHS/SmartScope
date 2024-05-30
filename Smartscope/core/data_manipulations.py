@@ -85,7 +85,7 @@ def filter_targets(parent, targets):
             label = next(filter(lambda x: x.method_name == classifier, t_classifiers),None)
             if label is None:
                 continue
-            if PLUGINS_FACTORY[classifier].classes[label.label].value <= 0:
+            if PLUGINS_FACTORY.get_plugin(classifier).classes[label.label].value <= 0:
                 filtered[ind] = 0
                 continue
 

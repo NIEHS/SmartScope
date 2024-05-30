@@ -51,10 +51,10 @@ class JEOLSerialemInterface(SerialemInterface):
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
-        self.aperture = self._apertures_setter()
+        self.apertures = self._apertures_setter()
 
     def _apertures_setter(self):
-        if not self.apertureControl:
+        if not self.microscope.apertureControl:
             return None
         extra_apertures = bool(int(self.get_property('JeolHasExtraApertures')))
         if extra_apertures:

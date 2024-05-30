@@ -3,15 +3,14 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smartscope"
-url = "smartscope.org"
+name = "Smartscope"
 authors = [
     {name = "Jonathan Bouvette", email = "bouvette@princeton.edu"},
 ]
 description = "Smartscope module for automatic CryoEM grid screening"
-requires-python = "3.9"
+requires-python = ">=3.9,<3.10"
 keywords = ["smartscope", "cryoem", "screening","serialem"]
-license = "BSD-3-Clause"
+license = {file = "LICENSE"}
 classifiers = [
     "Framework :: Django",
     "Programming Language :: Python :: 3",
@@ -58,12 +57,17 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["black", "flake8"]
 
-[project.scripts]
-my-script = "my_package.module:function"
+[project.urls]
+Homepage = "https://smartscope.org"
+Documentation = "https://docs.smartscope.org/"
+Repository = "https://github.com/NIEHS/SmartScope"
+# [project.scripts]
+# my-script = "my_package.module:function"
 
 [tool.setuptools.dynamic]
 version = {file = ["VERSION"]}
 readme = {file = ["README.md"]}
 
 [tool.setuptools]
+packages = ["Smartscope"]
 script-files = ["Smartscope/bin/smartscope.py","Smartscope/bin/manage.py","Smartscope/bin/smartscope.sh"]

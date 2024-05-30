@@ -67,7 +67,7 @@ def gray_level_selector(parent, n_groups, save=True, montage=None):
     return generate_equal_clusters(parent, targets, n_groups, extra_fields=dict(value='median'))
 
 def run_selector(selector_name,selection,*args, **kwargs):
-    method = PLUGINS_FACTORY[selector_name]
+    method = PLUGINS_FACTORY.get_plugin(selector_name)
     outputs = method.run(selection, *args, **kwargs)
     with transaction.atomic():
         for obj in outputs:

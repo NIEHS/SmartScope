@@ -23,7 +23,6 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, SquareModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
 from Smartscope.core.frames import get_frames_prefix, parse_frames_prefix
-from Smartscope.core.mesh_rotation import calculate_hole_geometry
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
@@ -63,8 +62,10 @@ def run_grid(
         return
 
     logger.info(f'Starting {grid.name}, status={grid.status}') 
-    # if grid.status is GridStatus.NULL:
-    grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
+    if grid.status is GridStatus.NULL:
+        grid = update(grid, status=GridStatus.STARTED, start_time=timezone.now())
+    else:
+        grid = update(grid, status=GridStatus.STARTED)
 
     GridIO.create_grid_directories(grid.directory)
     logger.info(f"create and the enter into Grid directory={grid.directory}")
