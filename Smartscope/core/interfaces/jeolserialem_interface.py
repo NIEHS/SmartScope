@@ -60,7 +60,9 @@ class JEOLSerialemInterface(SerialemInterface):
         logger.info(f'Extra apertures property: {extra_apertures_property}. Type: {type(extra_apertures_property)}')
         # extra_apertures = bool(int(self.get_property('JeolHasExtraApertures')))
         if extra_apertures_property == 1 or extra_apertures_property is True or extra_apertures_property == '1':
+            logging.info('Extra apertures detected')
             return JEOLExtraApertures
+        logging.info('Default apertures detected')
         return JEOLDefaultApertures
   
     def loadGrid(self, position):
