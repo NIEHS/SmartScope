@@ -56,8 +56,10 @@ class JEOLSerialemInterface(SerialemInterface):
     def _apertures_setter(self):
         if not self.microscope.apertureControl:
             return None
-        extra_apertures = bool(int(self.get_property('JeolHasExtraApertures')))
-        if extra_apertures:
+        extra_apertures_property = self.get_property('JeolHasExtraApertures')
+        logger.debug(f'Extra apertures property: {extra_apertures_property}. Type: {type(extra_apertures_property)}')
+        # extra_apertures = bool(int(self.get_property('JeolHasExtraApertures')))
+        if extra_apertures_property == 1 or extra_apertures_property is True or extra_apertures_property == '1':
             return JEOLExtraApertures
         return JEOLDefaultApertures
   
@@ -72,7 +74,7 @@ class JEOLSerialemInterface(SerialemInterface):
         sem.SetColumnOrGunValve(1)
 
     def flash_cold_FEG(self, ffDelay:int):
-        if not self.microscope.coldFEG or ffDelay > 0:
+        if not self.microscope.coldFEG or ffDelay < 0:
             return
         logger.info('Flashing the cold FEG.')
         sem.LongOperation('FF', ffDelay)
