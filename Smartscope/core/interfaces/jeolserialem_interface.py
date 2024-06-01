@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 def remove_condenser_aperture(function: Callable, aperture, *args, **kwargs):
     def wrapper(*args, **kwargs):
-        sem.RemoveAperture(0)
+        sem.RemoveAperture(aperture)
         function(*args, **kwargs)
-        sem.ReInsertAperture(0)
+        sem.ReInsertAperture(aperture)
     return wrapper
 
 class JEOLDefaultApertures(Apertures):
@@ -57,9 +57,9 @@ class JEOLSerialemInterface(SerialemInterface):
         if not self.microscope.apertureControl:
             return None
         extra_apertures_property = self.get_property('JeolHasExtraApertures')
-        logger.info(f'Extra apertures property: {extra_apertures_property}. Type: {type(extra_apertures_property)}')
+        # logger.info(f'Extra apertures property: {extra_apertures_property}. Type: {type(extra_apertures_property)}')
         # extra_apertures = bool(int(self.get_property('JeolHasExtraApertures')))
-        if extra_apertures_property == 1 or extra_apertures_property is True or extra_apertures_property == '1':
+        if extra_apertures_property == 1:
             logging.info('Extra apertures detected')
             return JEOLExtraApertures
         logging.info('Default apertures detected')
