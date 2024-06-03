@@ -70,8 +70,10 @@ class JEOLSerialemInterface(SerialemInterface):
             sem.Delay(5)
             sem.SetColumnOrGunValve(0)
             sem.Delay(5)
-            ## HARCODED FOR NOW SINCE THE EXECUTABLE SHOULD BE THERE IN ALL SCOPES
-            sem.RunInShell(f"""{self.additional_settings.transfer_cartridge_path} "{position} 3 0" """)
+            command = f"""{self.additional_settings.transfer_cartridge_path} "{position} 3 0" """
+            logger.info(f'Loading grid with command: {command}')
+            sem.Echo(f'Loading grid with command: {command}')
+            sem.RunInShell(command))
             sem.Delay(5)
         sem.SetColumnOrGunValve(1)
 
