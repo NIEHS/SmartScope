@@ -188,7 +188,7 @@ def process_hm_from_average(
     # calculate CTF
     if not montage.ctf.exists():
         CTFfind(
-            input_mrc=montage.image_path,
+            input_mrc=montage.raw,
             output_directory=montage.name,
             voltage=montage.metadata.Voltage.iloc[-1],
             pixel_size=montage.pixel_size,
