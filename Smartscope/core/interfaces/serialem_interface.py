@@ -136,8 +136,10 @@ class SerialemInterface(MicroscopeInterface):
         logger.info('Square acquisition finished')
     
     def buffer_to_numpy(self, buffer:str='A') -> Tuple[np.array, int, int, int, float, float]:
+        sem.Delay(1)
         shape_x, shape_y, binning, exposure, pixel_size, _ = sem.ImageProperties(buffer)
-        return np.asarray(sem.bufferImage(buffer)), shape_x, shape_y, binning, exposure, pixel_size
+        buffer = sem.bufferImage(buffer)
+        return np.asarray(buffer), shape_x, shape_y, binning, exposure, pixel_size
 
     def numpy_to_buffer(self,image,buffer='T'):
         sem.PutImageInBuffer(image, buffer, *image.shape, 'A')
