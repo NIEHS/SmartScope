@@ -188,7 +188,7 @@ def setFocusPosition(scope:MicroscopeInterface,params,instance, content:Dict, *a
 
 def autoFocusAfterDistance(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Acquires the focus only after a specific distance in microns was traveled. Default: 15 um"""
-    distance = kwargs.pop('distance', 15)
+    distance = kwargs.pop('distance', 5)
     scope.autofocus_after_distance(
         params.target_defocus_min,
         params.target_defocus_max,
