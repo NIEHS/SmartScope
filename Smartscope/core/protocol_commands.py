@@ -136,7 +136,7 @@ def highMag(scope:MicroscopeInterface, params,instance, content:Dict, *args, **k
     scope.image_shift_by_microns(isX,isY,params.tilt_angle, afis=params.afis)
     frames = scope.highmag(file=instance.raw, 
                            frames=params.save_frames, 
-                           earlyReturn=any([params.force_process_from_average, params.save_frames is False, 'Falcon' in grid.session_id.detecor_id.vendor]))
+                           earlyReturn=any([params.force_process_from_average, params.save_frames is False, 'Falcon' in grid.session_id.detector_id.vendor]))
     instance.is_x=isX
     instance.is_y=isY
     instance.offset=offset
