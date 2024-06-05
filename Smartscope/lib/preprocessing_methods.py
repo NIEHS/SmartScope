@@ -99,7 +99,7 @@ def process_hm_from_frames(
         return movie
     time.sleep(10)
 
-    if not movie.shifts.exists() or not movie.image_path.exists():
+    if not movie.shifts.exists() or not movie.raw.exists():
         try:
             gain = Path(movie.frames_directory, movie.metadata.GainReference.iloc[-1])
         except AttributeError:
@@ -109,7 +109,7 @@ def process_hm_from_frames(
         logger.info(f"Aligning frames for {movie.name}")
         has_aligned = align_frames(
             frames=movie.frames_file,
-            output_file=movie.image_path,
+            output_file=movie.raw,
             output_shifts=movie.shifts,
             gain=gain,
             mdoc=mdoc_file,
@@ -124,7 +124,7 @@ def process_hm_from_frames(
         logger.info(f"Running CTFfind for {movie.name}")
         # launch ctffind
         ctf_file = CTFfind(
-            input_mrc=movie.image_path,
+            input_mrc=movie.raw,
             output_directory=movie.name,
             voltage=movie.metadata.Voltage.iloc[-1],
             pixel_size=movie.pixel_size,
