@@ -48,6 +48,8 @@ class JEOLSerialemInterface(SerialemInterface):
             return super().atlas(*args,**kwargs)
         remove_condenser_aperture(
             super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
+        logger.info('Atlas finished, going to Record setting in Low dose.')
+        sem.GoToLowDoseArea('R')
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
