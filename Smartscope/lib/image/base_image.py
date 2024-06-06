@@ -149,7 +149,7 @@ class BaseImage(ABC):
         self.read_metadata()
 
     def check_metadata(self, check_AWS=False):
-        if any([self.image_path.exists(),self.raw.exists()]) and self.metadataFile.exists():
+        if self.metadataFile.exists(): #any([self.image_path.exists(),self.raw.exists()]) and 
             logger.info('Found metadata, reading...')
             self.read_data()
             return True
