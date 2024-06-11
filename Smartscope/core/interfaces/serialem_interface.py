@@ -122,7 +122,15 @@ class SerialemInterface(MicroscopeInterface):
         sem.Montage()
         sem.CloseFile()
         logger.info('Atlas acquisition finished')
-        sem.SetLowDoseMode(1)
+        # sem.SetLowDoseMode(1)
+
+    def save_image(self, file:str):
+        image_to_stage_matrix = sem.BufImageToStageMatrix('A', 1)
+        sem.OpenNewFile(file)
+        sem.Save()
+        sem.AddToAutodoc('ImageToStageMatrix', ' '.join(image_to_stage_matrix))
+        sem.WriteAutodoc()
+        sem.CloseFile()
 
     def square(self, file=''):
         sem.SetLowDoseMode(1)
@@ -130,9 +138,7 @@ class SerialemInterface(MicroscopeInterface):
         self.checkDewars()
         self.checkPump()
         sem.Search()
-        sem.OpenNewFile(file)
-        sem.Save()
-        sem.CloseFile()
+        self.save_image(file)
         logger.info('Square acquisition finished')
     
     def buffer_to_numpy(self, buffer:str='A') -> Tuple[np.array, int, int, int, float, float]:
@@ -210,9 +216,7 @@ class SerialemInterface(MicroscopeInterface):
     def medium_mag_hole(self, file=''):
         sem.AllowFileOverwrite(1)
         self.acquire_medium_mag()
-        sem.OpenNewFile(file)
-        sem.Save()
-        sem.CloseFile()
+        self.save_image(file)
 
     def autofocus(self, def1, def2, step):
         self.rollDefocus(def1, def2, step)

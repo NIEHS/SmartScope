@@ -32,6 +32,7 @@ class JEOLadditionalSettings(BaseModel):
 class JEOLSerialemInterface(SerialemInterface):
     additional_settings: JEOLadditionalSettings = JEOLadditionalSettings()
     apertures: Apertures = None
+    record_mag: int = 0
         
     def checkPump(self, wait=30):
         pass
@@ -43,17 +44,32 @@ class JEOLSerialemInterface(SerialemInterface):
             logger.info(f'LN2 is refilling, waiting {wait}s')
             time.sleep(wait)
 
+    def go_to_highmag(self):
+        if self.record_mag == 0:
+            raise ValueError('Record mag not set. It should be set in the setup method.')
+        sem.SetMag(self.record_mag)
+        
+
     def atlas(self, *args, **kwargs):
         if not self.microscope.apertureControl:
-            return super().atlas(*args,**kwargs)
-        remove_condenser_aperture(
-            super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
-        logger.info('Atlas finished, going to Record setting in Low dose.')
-        sem.GoToLowDoseArea('R')
+            super().atlas(*args,**kwargs)
+        else:
+            remove_condenser_aperture(
+                super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
+        logger.info('Atlas finished, going to high mag before setting Low dose.')
+        # Necessary to go to high mag before setting low dose to call the right beam alignment
+        self.go_to_highmag()
+        sem.SetLowDoseMode(1)
+        sem.GoToLowDoseArea('Search')
+        
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
         self.apertures = self._apertures_setter()
+        sem.SetLowDoseMode(1)
+        sem.GoToLowDoseArea('R')
+        self.record_mag = sem.ReportMag()
+        logger.info(f'LD highmag parameters found. Record mag: {self.record_mag}')
 
     def _apertures_setter(self):
         if not self.microscope.apertureControl:
