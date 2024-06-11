@@ -136,8 +136,10 @@ class SerialemInterface(MicroscopeInterface):
         logger.info('Square acquisition finished')
     
     def buffer_to_numpy(self, buffer:str='A') -> Tuple[np.array, int, int, int, float, float]:
+        sem.Delay(1)
         shape_x, shape_y, binning, exposure, pixel_size, _ = sem.ImageProperties(buffer)
-        return np.asarray(sem.bufferImage(buffer)), shape_x, shape_y, binning, exposure, pixel_size
+        buffer = sem.bufferImage(buffer)
+        return np.asarray(buffer), shape_x, shape_y, binning, exposure, pixel_size
 
     def numpy_to_buffer(self,image,buffer='T'):
         sem.PutImageInBuffer(image, buffer, *image.shape, 'A')
@@ -212,11 +214,14 @@ class SerialemInterface(MicroscopeInterface):
         sem.Save()
         sem.CloseFile()
 
-    def focusDrift(self, def1, def2, step, drifTarget):
+    def autofocus(self, def1, def2, step):
         self.rollDefocus(def1, def2, step)
         sem.SetTargetDefocus(self.state.defocusTarget)
         sem.AutoFocus()
         self.state.currentDefocus = sem.ReportDefocus()
+        self.state.set_last_autofocus_position()
+
+    def wait_drift(self, drifTarget):
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
@@ -311,6 +316,7 @@ class SerialemInterface(MicroscopeInterface):
             sem.RestoreBeamTilt()
 
     def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
+        sem.GoToLowDoseArea('Record')
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
@@ -346,5 +352,23 @@ class SerialemInterface(MicroscopeInterface):
     def _reinsert_aperture(self, aperture:int):
         if sem.ReportApertureSize(aperture) == 0:
             sem.ReInsertAperture(aperture)
+
+    def autofocus_after_distance(self, def1, def2, step, distance):
+        last_autofocus_distance = self.state.get_last_autofocus_distance()
+        if last_autofocus_distance > distance:
+            logger.info(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), running autofocus')
+            return self.autofocus(def1, def2, step)
+        logger.debug(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), skipping autofocus.')
+        defocus_target = self.state.defocusTarget
+        current_defocus = self.state.currentDefocus
+        new_defocus_target = self.rollDefocus(def1, def2, step)
+        defocus_change = new_defocus_target - defocus_target
+        logger.debug(f'Last defocus target: {defocus_target}. New defocus target: {defocus_target}. Change: {defocus_change}')
+        sem.SetTargetDefocus(new_defocus_target)
+        self.state.currentDefocus += defocus_change
+        logger.debug(f'Current defocus: {current_defocus}. New current defocus: {self.state.currentDefocus}')
+        if defocus_change != 0:
+            sem.ChangeFocus(defocus_change)
+            return
 
     # def _set_aperture_size(self, aperture:int, aperture_size:int):

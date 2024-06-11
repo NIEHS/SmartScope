@@ -94,7 +94,7 @@ async function loadAtlas(metaonly = false, display_type = null, method = null) {
 $('#main').on("mouseenter mouseleave", '.legend', function () {
     $(this).closest('.mapCard').find(`[label='${$(this).attr('label')}']`).toggleClass('hovered')
 })
-$('#main').on("click", '.legend', function () {
+$('#main').on("mousedown", '.legend', function () {
     let card = $(this).closest('.mapCard')
     let elems = card.find(`[label=${$(this).attr('label')}]`)
     for (elem of elems) {
@@ -109,7 +109,7 @@ $('#main').on("click", '.legend', function () {
     }
 })
 
-$('#main').on('click', '.showLegend', function () {
+$('#main').on('mousedown', '.showLegend', function () {
     console.log($(this), $(this).closest('.mapCard'))
     $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
@@ -722,7 +722,7 @@ async function extendLattice(square_id) {
     
 }
 
-$('#main').on("click", '#Square_div svg', function (event) {
+$('#main').on("mousedown", '#Square_div svg', function (event) {
     if (event.shiftKey) {
         targetsSelection.push(SvgCoords(event))
         console.log(targetsSelection)
@@ -802,7 +802,7 @@ function colorBISgroups() {
 
 }
 
-$("#main").on('click', '.zoomBtn', function () {
+$("#main").on('mousedown', '.zoomBtn', function () {
     console.log('Click', $(this))
     let card = $(this).closest('.holeCard')
     let icon = $(this).children('.zoomIcon')

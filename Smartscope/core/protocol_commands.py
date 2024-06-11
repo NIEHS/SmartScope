@@ -3,46 +3,47 @@ from math import cos, radians
 from random import random
 import numpy as np
 import logging
+from Smartscope.core.interfaces.microscope_interface import MicroscopeInterface
 
 logger = logging.getLogger(__name__)
 
-def setAtlasOptics(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def setAtlasOptics(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Set the microscope mag, spot size and C2 current for the atlas based on the chosen detector."""
     scope.set_atlas_optics()
 
-def setAtlasOpticsDelay(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def setAtlasOpticsDelay(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Same as setAtlasOptics with delays between each commands."""
     scope.set_atlas_optics_delay(delay=1)
 
-def setAtlasOpticsImagingState(scope,params,instance, content:Dict, *args, **kwargs) :
+def setAtlasOpticsImagingState(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Sets the atlas optics from an Imaging State named "Atlas"."""
     scope.set_atlas_optics_imaging_state(state_name='Atlas')
 
-def resetStage(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def resetStage(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Resets the stage to the center of the image."""
     scope.reset_stage()
 
-def removeSlit(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def removeSlit(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Removes the slit from the beam path."""
     scope.remove_slit()
 
-def call(scope,params,instance, content:Dict, *args, **kwargs) -> None:
+def call(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) -> None:
     """Calls any script that is saved in the SerialEM scripts."""
     script = content.get('script', None)
     assert script is not None, 'No script was specified'
     scope.call(script=script)
 
-def callFunction(scope,params,instance, content:Dict, *args, **kwargs) -> None:
+def callFunction(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) -> None:
     """Calls any function that is saved in the SerialEM scripts."""
     function = content.get('function', None)
     assert function is not None, 'No function was specified'
     scope.call_function(function=function, *args)
 
-def atlas(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def atlas(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Collects and atlas of X by Y tiles from the collection parameters using the Montage command"""
     scope.atlas(size=[params.atlas_x,params.atlas_y],file=instance.raw)
 
-def realignToSquare(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def realignToSquare(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Realigns to the square using the Search magnification. 
     Mainly useful when the alignement between the Atlas and the Square is off.
     """
@@ -51,17 +52,17 @@ def realignToSquare(scope,params,instance, content:Dict, *args, **kwargs)  -> No
     set_or_update_refined_finder(instance.square_id, stageX, stageY, stageZ)
     scope.moveStage(stageX,stageY,stageZ)   
 
-def square(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def square(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Acquires and save the square image using the Search preset."""
     scope.square(file=instance.raw)
 
-def moveStage(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def moveStage(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Moves the stage to the instance position"""
     finder = instance.finders.first()
     stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
     scope.moveStage(stage_x,stage_y,stage_z)
 
-def moveStageWithAtlasToSearchOffset(scope,params,instance, content:Dict, *args, **kwargs)  -> None:
+def moveStageWithAtlasToSearchOffset(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Moves the stage to the instance position with an offset"""
     offset_x = scope.atlas_settings.atlas_to_search_offset_x
     offset_y = scope.atlas_settings.atlas_to_search_offset_y
@@ -69,7 +70,19 @@ def moveStageWithAtlasToSearchOffset(scope,params,instance, content:Dict, *args,
     stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
     scope.moveStage(stage_x+offset_x,stage_y+offset_y,stage_z)
 
-def eucentricSearch(scope,params,instance, content:Dict, *args, **kwargs) :
+def autoFocus(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    """Acquires the focus drift image using the Search preset."""
+    scope.autofocus(
+        params.target_defocus_min,
+        params.target_defocus_max,
+        params.step_defocus,
+    )
+
+def waitDrift(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    """Waits for the drift to settle."""
+    scope.wait_drift(params.drift_crit)
+
+def eucentricSearch(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Calculates eucentricity using the Search preset. 
     
     This is faster than using the built-in serialEM Eucentricity by not having to switch the optics back and forth between View and Search. Will speed up screening.
@@ -78,18 +91,18 @@ def eucentricSearch(scope,params,instance, content:Dict, *args, **kwargs) :
     """
     scope.eucentricHeight()
 
-def eucentricMediumMag(scope,params,instance, content:Dict, *args, **kwargs) :
+def eucentricMediumMag(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Calculates eucentricity using the View preset. Equivalent to Eucentric Rough."""
     scope.eucentricity()
 
-def mediumMagHole(scope,params,instance, content:Dict, *args, **kwargs) :
+def mediumMagHole(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Acquires the hole at the View preset."""
     scope.medium_mag_hole(file=instance.raw)
 
-def tiltToAngle(scope,params,instance, content:Dict, *args, **kwargs) :
+def tiltToAngle(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     scope.tiltTo(params.tilt_angle)
 
-def alignToHoleRef(scope,params,instance, content:Dict, *args, **kwargs) :
+def alignToHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Aligns the medium mag to the template hole image stored in buffer T. Either load an image manually or use the loadHoleRef command prior to this one."""
     while True:
         shift = scope.align_to_hole_ref()
@@ -97,13 +110,13 @@ def alignToHoleRef(scope,params,instance, content:Dict, *args, **kwargs) :
             break
         scope.reset_image_shift()
 
-def loadHoleRef(scope,params,instance, content:Dict, *args, **kwargs) :
+def loadHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Loads the references/holeref.mrc image into buffer T to be used as hole template for the alignToHoleRef command."""
     if scope.has_hole_ref:
         return
     scope.load_hole_ref()
 
-def highMag(scope, params,instance, content:Dict, *args, **kwargs) :
+def highMag(scope:MicroscopeInterface, params,instance, content:Dict, *args, **kwargs) :
     """Acquires the highmag image. 
     
     Will set image shift and the specificed offset from the collection parameters.
@@ -121,7 +134,9 @@ def highMag(scope, params,instance, content:Dict, *args, **kwargs) :
     isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(params.tilt_angle))
     logger.debug(f'The tilt angle is {params.tilt_angle}, Y axis image-shift corrected from {stage_y - finder.stage_y:.2f} to {isY:.2f}')
     scope.image_shift_by_microns(isX,isY,params.tilt_angle, afis=params.afis)
-    frames = scope.highmag(file=instance.raw, frames=params.save_frames, earlyReturn=any([params.force_process_from_average, params.save_frames is False]))
+    frames = scope.highmag(file=instance.raw, 
+                           frames=params.save_frames, 
+                           earlyReturn=any([params.force_process_from_average, params.save_frames is False, 'Falcon' in grid.session_id.detector_id.detector_model]))
     instance.is_x=isX
     instance.is_y=isY
     instance.offset=offset
@@ -145,7 +160,7 @@ def add_IS_offset(
     return offset_in_um
 
 
-def setFocusPosition(scope,params,instance, content:Dict, *args, **kwargs) :
+def setFocusPosition(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Caculates the rotation and shift of the focus position
 
     Will calculates the rotation from the identified holes.
@@ -171,6 +186,15 @@ def setFocusPosition(scope,params,instance, content:Dict, *args, **kwargs) :
     logger.info(f'Setting focus at {distance} um offset and {angle} degrees rotation')
     scope.setFocusPosition(distance, angle)
 
+def autoFocusAfterDistance(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    """Acquires the focus only after a specific distance in microns was traveled. Default: 15 um"""
+    distance = kwargs.pop('distance', 5)
+    scope.autofocus_after_distance(
+        params.target_defocus_min,
+        params.target_defocus_max,
+        params.step_defocus,
+        distance
+        )
 
 
 protocolCommandsFactory = dict(
@@ -194,4 +218,7 @@ protocolCommandsFactory = dict(
     loadHoleRef=loadHoleRef,
     highMag=highMag,
     setFocusPosition=setFocusPosition,
+    autoFocus=autoFocus,
+    autoFocusAfterDistance=autoFocusAfterDistance,
+    waitDrift=waitDrift
 )

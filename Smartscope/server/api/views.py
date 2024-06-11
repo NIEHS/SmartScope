@@ -15,6 +15,7 @@ from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
 from Smartscope.server.frontend.forms import *
 from Smartscope.server.lib.worker_jobs import send_to_worker
 from Smartscope.core.db_manipulations import update, update_target_selection, update_target_label, update_target_status
+from Smartscope.core.main_commands import list_plugins, reload_plugins
 from Smartscope.core.models import *
 from .serializers import *
 
@@ -228,3 +229,17 @@ class ReportPanel(APIView):
             return Response(context, content_type='html')
         else:
             return HttpResponse(f'Sorry, {user} is not allowed to view this content.')
+
+class PluginView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        logger.debug('PluginView')
+        plugins = list_plugins()
+        logger.debug(plugins)
+        return Response(plugins.keys())
+
+    def post(self, request):
+        logger.debug('Reloading plugins')
+        reload_plugins()
+        return Response('Plugins reloaded')

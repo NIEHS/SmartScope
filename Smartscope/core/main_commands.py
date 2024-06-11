@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import json
 from django.db import transaction
 from django.core.cache import cache
@@ -352,6 +351,15 @@ def autoscreen(session_id:str):
     from .autoscreen import autoscreen
     autoscreen(session_id=session_id)
 
+def reload_plugins():
+    from Smartscope.core.settings.worker import PLUGINS_FACTORY
+    PLUGINS_FACTORY.reload_plugins()
+
+def list_plugins():
+    from Smartscope.core.settings.worker import PLUGINS_FACTORY
+    plugins = PLUGINS_FACTORY.get_plugins()
+    print(plugins)
+    return plugins
     
 
             

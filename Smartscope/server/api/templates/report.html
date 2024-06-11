@@ -23,12 +23,12 @@
             <div class="p-0">
                 <span class=''><b> Status:</b> <span id="gridStatus">loading...</span>
                     <button id="stop-button" class="btn btn-xs btn-outline-danger" type="button" value="aborting"
-                        onclick="changeGridStatus(this.value)" 
+                        onmousedown="changeGridStatus(this.value)" 
                         data-bs-toggle="tooltip" data-bs-placement="bottom" title="Abort current grid. This will skip all remaining targets and move to the next sample.">
                         Abort
                     </button>
                     <button id="restart-button" class="btn btn-xs btn-outline-primary"
-                        type="button" value="started" onclick="changeGridStatus(this.value)" 
+                        type="button" value="started" onmousedown="changeGridStatus(this.value)" 
                         data-bs-toggle="tooltip" data-bs-placement="top" title="Sets the status from 'completed' back to 'started'. Useful to resume a finished grid and add new targets to the queue.">
                         Restart
                     </button>
@@ -39,9 +39,9 @@
         <div class="col-auto align-items-center justify-content-end">
             <span class="title m-0"><b>Quality:</b></span>
             <button id="goodGrid" class="btn btn-outline-success h-50 {% if grid.quality == 'good' %}active{% endif %}"
-                onclick='rateGrid(this)' value='good'>Good</button>
+                onmousedown='rateGrid(this)' value='good'>Good</button>
             <button id="badGrid" class="btn btn-outline-danger h-50 {% if grid.quality == 'bad' %}active{% endif %}"
-                onclick='rateGrid(this)' value='bad'>Bad</button>
+                onmousedown='rateGrid(this)' value='bad'>Bad</button>
         </div>
     </div>
     <div class="d-flex flex-row align-items-center justify-content-between mx-0 px-0">
@@ -129,27 +129,27 @@
     <div class='col-12'>
         <div class='d-flex flex-row align-items-center'>
             <b>General Toggle:</b>
-            <button class='btn btn-sm btn-outline-primary active' onclick='hideSVG(this)' value='Numbers'>
+            <button class='btn btn-sm btn-outline-primary active' onmousedown='hideSVG(this)' value='Numbers'>
                 Numbers</button>
-            <button class='btn btn-sm btn-outline-primary active' onclick='hideSVG(this)' value='Labels'>
+            <button class='btn btn-sm btn-outline-primary active' onmousedown='hideSVG(this)' value='Labels'>
                 Labels</button>
         </div>
     </div>
     <div class='col-6'>
         <div id='atlasLegend' class='row'>
             <b>Atlas labels:</b>
-            <button class="btn btn-xs completed active" onclick="hideSVGlabel(this,'Atlas_im')"
+            <button class="btn btn-xs completed active" onmousedown="hideSVGlabel(this,'Atlas_im')"
                 value='completed'>Acquired</button>
-            <button class='btn btn-xs queued active' onclick="hideSVGlabel(this,'Atlas_im')"
+            <button class='btn btn-xs queued active' onmousedown="hideSVGlabel(this,'Atlas_im')"
                 value='queued'>Queued</button>
         </div>
     </div>
     <div class='col-6'>
         <div id='squareLegend' class='row'>
             <b>Status labels:</b>
-            <button class="btn btn-xs completed active" onclick="hideSVGlabel(this,'Square_im')"
+            <button class="btn btn-xs completed active" onmousedown="hideSVGlabel(this,'Square_im')"
                 value='completed'>Acquired</button>
-            <button class='btn btn-xs queued active' onclick="hideSVGlabel(this,'Square_im')"
+            <button class='btn btn-xs queued active' onmousedown="hideSVGlabel(this,'Square_im')"
                 value='queued'>Queued</button>
         </div>
     </div>
@@ -235,7 +235,7 @@
 </div> -->
 
 <div id='zoomedView' class="popupFull hidden">
-    <button class="btn btn-outline-primary close-btn" onclick='closePopup(this.parentElement)' value=''>X</button>
+    <button class="btn btn-outline-primary close-btn" onmousedown='closePopup(this.parentElement)' value=''>X</button>
 
     <h3 id='hm_name'></h3>
     <div id='hmQuality'>
@@ -264,7 +264,7 @@
 
 
 <div id='logPopup' class="popupFull hidden">
-    <button class="btn btn-outline-primary close-btn" onclick='closePopup(this.parentElement)' value=''>X</button>
+    <button class="btn btn-outline-primary close-btn" onmousedown='closePopup(this.parentElement)' value=''>X</button>
     <div id='logPage'>
 
     </div>

@@ -27,6 +27,8 @@ mediumMag:
     - tiltToAngle
     - moveStage
     - mediumMagHole
+    - autoFocus
+    - waitDrift
 highMag:
   acquisition:
     - highMag

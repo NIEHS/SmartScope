@@ -1,14 +1,15 @@
 import logging
 from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.Datatypes.base_plugin import TargetClass
+from Smartscope.core.settings.worker import PLUGINS_FACTORY
 
 logger = logging.getLogger(__name__)
 
 def find_targets(montage: Montage, methods: list):
     logger.debug(f'Using method: {methods}')
-    from Smartscope.core.settings.worker import PLUGINS_FACTORY
+    
     for method in methods:
-        method = PLUGINS_FACTORY[method]
+        method = PLUGINS_FACTORY.get_plugin(method)
 
         try:
             targets, success, additional_outputs  = method.run(montage=montage)

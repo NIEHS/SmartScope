@@ -99,13 +99,14 @@ def process_hm_from_frames(
         return movie
     time.sleep(10)
 
-    if not movie.shifts.exists() or not movie.ctf.exists():
+    if not movie.shifts.exists() or not movie.raw.exists():
         try:
             gain = Path(movie.frames_directory, movie.metadata.GainReference.iloc[-1])
         except AttributeError:
             gain = None
 
         # launch alignframes
+        logger.info(f"Aligning frames for {movie.name}")
         has_aligned = align_frames(
             frames=movie.frames_file,
             output_file=movie.raw,
@@ -116,12 +117,14 @@ def process_hm_from_frames(
         )
         if not has_aligned:
             return movie
-        if not movie.image_path.exists():
-            movie.make_symlink()
-        
+        logger.info(f"Done aligning frames for {movie.name}")
+        # if not movie.image_path.exists():
+        #     movie.make_symlink()
+    if not movie.ctf.exists():
+        logger.info(f"Running CTFfind for {movie.name}")
         # launch ctffind
         ctf_file = CTFfind(
-            input_mrc=movie.image_path,
+            input_mrc=movie.raw,
             output_directory=movie.name,
             voltage=movie.metadata.Voltage.iloc[-1],
             pixel_size=movie.pixel_size,
@@ -129,8 +132,10 @@ def process_hm_from_frames(
         )
         if not ctf_file:
             return movie
+        logger.info(f"Done running CTFfind for {movie.name}")
+    
     # create png based on mrc
-    mrc_to_png(ctf_file)
+    # mrc_to_png(ctf_file)
     movie.read_image()
     movie.set_shape_from_image()
     export_as_png(
@@ -183,7 +188,7 @@ def process_hm_from_average(
     # calculate CTF
     if not montage.ctf.exists():
         CTFfind(
-            input_mrc=montage.image_path,
+            input_mrc=montage.raw,
             output_directory=montage.name,
             voltage=montage.metadata.Voltage.iloc[-1],
             pixel_size=montage.pixel_size,

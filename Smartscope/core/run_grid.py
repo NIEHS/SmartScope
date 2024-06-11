@@ -23,7 +23,6 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import ScreeningSession, SquareModel, AutoloaderGrid
 from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
 from Smartscope.core.frames import get_frames_prefix, parse_frames_prefix
-from Smartscope.core.mesh_rotation import calculate_hole_geometry
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
 from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
@@ -188,13 +187,7 @@ def run_grid(
             RunHole.process_hole_image(hole, grid, microscope)
             if hole.status == status.SKIPPED:
                 continue
-            # process high image
-            scope.focusDrift(
-                params.target_defocus_min,
-                params.target_defocus_max,
-                params.step_defocus,
-                params.drift_crit
-            )
+
             scope.reset_image_shift_values(afis=params.afis)
             for hm in hole.targets.exclude(status__in=[status.ACQUIRED,status.COMPLETED]).order_by('hole_id__number'):
                 hm = update(hm, refresh_from_db=False, status=status.STARTED)

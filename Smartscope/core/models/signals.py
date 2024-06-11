@@ -90,7 +90,7 @@ def queue_bis_group(sender,instance,created, **kwargs):
             logger.debug("Updating status bis target to 'queued'")
             HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status=status.QUEUED)
             return
-        logger.debug("Updating status bis target to 'null'")
+        # logger.debug("Updating status bis target to 'null'")
         HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=status.QUEUED).update(status=status.NULL)
 
 @ receiver(pre_save, sender=HoleModel)
