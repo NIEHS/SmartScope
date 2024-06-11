@@ -73,9 +73,11 @@ class TFSSerialemInterface(SerialemInterface):
 
     def atlas(self, size, file=''):
         if self.microscope.apertureControl:
-            return change_aperture_temporarily(
+            change_aperture_temporarily(
                 function=remove_objective_aperture(super().atlas), 
                 aperture=self.apertures.CONDENSER_2,
                 aperture_size=self.atlas_settings.atlas_c2_aperture
             )(size,file)
-        return super().atlas(size, file)
+        else:
+            super().atlas(size, file)
+        sem.SetLowDoseMode(1)
