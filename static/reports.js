@@ -825,10 +825,10 @@ function zoomOnOtherCard(elem, inc) {
         return
     }
     console.log('Zooming out:', elem)
-    elem.find('.zoomBtn').click()
+    elem.find('.zoomBtn').trigger('mousedown')
     let new_elem = elems.eq(new_ind)
     console.log('Zooming in on:', new_elem)
-    new_elem.find('.zoomBtn').click()
+    new_elem.find('.zoomBtn').trigger('mousedown')
 }
 
 function scrollToOtherCard(inc) {
