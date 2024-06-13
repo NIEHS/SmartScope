@@ -126,6 +126,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def save_image(self, file:str):
         image_to_stage_matrix = sem.BufImageToStageMatrix('A', 1)
+        image_to_stage_matrix = [str(x) for x in image_to_stage_matrix]
         sem.OpenNewFile(file)
         sem.Save()
         sem.AddToAutodoc('ImageToStageMatrix', ' '.join(image_to_stage_matrix))
