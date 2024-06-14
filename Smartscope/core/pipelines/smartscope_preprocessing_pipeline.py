@@ -87,7 +87,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
     def list_incomplete_processes(self):
         self.incomplete_processes = list(self.grid.highmagmodel_set\
             .filter(status__in=['acquired','skipped'])\
-            .order_by('status','-completion_time')[:5*self.cmd_data.n_processes]
+            .order_by('status','completion_time')[:5*self.cmd_data.n_processes]
         )
 
     def queue_incomplete_processes(self):
