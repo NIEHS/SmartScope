@@ -68,7 +68,7 @@ class JEOLSerialemInterface(SerialemInterface):
         self.apertures = self._apertures_setter()
         sem.SetLowDoseMode(1)
         sem.GoToLowDoseArea('R')
-        self.record_mag = sem.ReportMag()
+        self.record_mag = sem.ReportMag()[0]
         logger.info(f'LD highmag parameters found. Record mag: {self.record_mag}')
 
     def _apertures_setter(self):
