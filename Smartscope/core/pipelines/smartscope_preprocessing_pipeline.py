@@ -27,7 +27,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
 
     verbose_name = 'SmartScope Preprocessing Pipeline'
     name = 'smartscopePipeline'
-    description = 'Default CPU-based Processing pipeline using IMOD alignframe and CTFFIND4.'
+    description = 'Default CPU-based Processing pipeline using IMOD alignframe and CTFFIND5.'
     to_process_queue = multiprocessing.JoinableQueue()
     processed_queue = multiprocessing.Queue()
     child_process: List[multiprocessing.Process] = []
@@ -136,24 +136,23 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
         logger.info(f'Checking for updates.')
         while self.processed_queue.qsize() > 0:
             movie = self.processed_queue.get()
+            instance = next(filter(lambda x: x.name == movie.name, self.incomplete_processes),None)
+            if instance is None:
+                logger.error(f'Could not find {movie.name} in {self.incomplete_processes}. Will try again on the next cycle.')
+                continue
             data = dict()
             if not movie.check_metadata():
                 data['status'] = 'skipped'
-                filtered_instance = next(filter(lambda x: x.name == movie.name, self.incomplete_processes),None)
-                if filtered_instance is None:
-                    logger.error(f'Could not find {movie.name} in {self.incomplete_processes}. Will try again on the next cycle.')
-                    continue
-                if filtered_instance.status != 'skipped':
-                    self.to_update.append(update_fields(filtered_instance, data))
+                if instance.status != 'skipped':
+                    self.to_update.append(update_fields(instance, data))
                 continue
             logger.debug(f'Updating {movie.name}')
             try:
                 data = get_CTFFIND5_data(movie.ctf)
             except Exception as err:
                 logger.exception(err)
-                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again later.')
+                logger.info(f'An error occured while getting CTF data from {movie.name}. Will try again on the next cycle.')
                 data['status'] = 'skipped'
-                instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
                 if instance.status != 'skipped':
                     self.to_update.append(update_fields(instance, data))
                 continue
@@ -163,7 +162,6 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
             data['shape_y'] = movie.shape_y
             data['pixel_size'] = movie.pixel_size
             logger.debug(f'Updating {movie.name} with Data: {data}')
-            instance = [obj for obj in self.incomplete_processes if obj.name == movie.name][0]
             parent = instance.hole_id
             self.to_update += [update_fields(instance, data), update_fields(parent, dict(status='completed'))]
 
