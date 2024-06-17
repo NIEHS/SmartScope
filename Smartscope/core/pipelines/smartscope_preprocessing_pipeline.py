@@ -27,7 +27,7 @@ class SmartscopePreprocessingPipeline(PreprocessingPipeline):
 
     verbose_name = 'SmartScope Preprocessing Pipeline'
     name = 'smartscopePipeline'
-    description = 'Default CPU-based Processing pipeline using IMOD alignframe and CTFFIND4.'
+    description = 'Default CPU-based Processing pipeline using IMOD alignframe and CTFFIND5.'
     to_process_queue = multiprocessing.JoinableQueue()
     processed_queue = multiprocessing.Queue()
     child_process: List[multiprocessing.Process] = []
