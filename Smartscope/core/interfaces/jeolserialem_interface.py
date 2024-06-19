@@ -60,6 +60,7 @@ class JEOLSerialemInterface(SerialemInterface):
         # Necessary to go to high mag before setting low dose to call the right beam alignment
         self.go_to_highmag()
         sem.SetLowDoseMode(1)
+        sem.GoToLowDoseArea('R')
         sem.GoToLowDoseArea('Search')
         
 
@@ -68,7 +69,7 @@ class JEOLSerialemInterface(SerialemInterface):
         self.apertures = self._apertures_setter()
         sem.SetLowDoseMode(1)
         sem.GoToLowDoseArea('R')
-        self.record_mag = sem.ReportMag()[0]
+        self.record_mag = int(sem.ReportMag()[0])
         logger.info(f'LD highmag parameters found. Record mag: {self.record_mag}')
 
     def _apertures_setter(self):
