@@ -57,11 +57,21 @@ class JEOLSerialemInterface(SerialemInterface):
             remove_condenser_aperture(
                 super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
         logger.info('Atlas finished, going to high mag before setting Low dose.')
+
         # Necessary to go to high mag before setting low dose to call the right beam alignment
+        delay = 5
+        logger.info(f'Setting record mag {self.record_mag} and waiting {delay} s.')
         self.go_to_highmag()
+        sem.Delay(delay)
+        logger.info(f'Enabling Low Dose and waiting {delay} s')
         sem.SetLowDoseMode(1)
+        sem.Delay(delay)
+        logger.info(f'Going to Low Dose Record and waiting {delay} s')
         sem.GoToLowDoseArea('R')
+        sem.Delay(delay)
+        logger.info(f'Going to Low Dose Search and waiting {delay} s')
         sem.GoToLowDoseArea('Search')
+        logger.info(f'Finished setting Low Dose.')
         
 
     def setup(self, *args, **kwargs):
