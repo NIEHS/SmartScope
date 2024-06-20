@@ -56,22 +56,35 @@ class JEOLSerialemInterface(SerialemInterface):
         else:
             remove_condenser_aperture(
                 super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
-        logger.info('Atlas finished, going to high mag before setting Low dose.')
-
+        msg = 'Atlas finished, going to high mag before setting Low dose.'
+        logger.info(msg)
+        sem.Echo(msg)
         # Necessary to go to high mag before setting low dose to call the right beam alignment
         delay = 5
-        logger.info(f'Setting record mag {self.record_mag} and waiting {delay} s.')
+        msg = f'Setting record mag {self.record_mag} and waiting {delay} s.'
+        logger.info(msg)
+        sem.Echo(msg)
         self.go_to_highmag()
         sem.Delay(delay)
-        logger.info(f'Enabling Low Dose and waiting {delay} s')
+        msg = f'Enabling Low Dose and waiting {delay} s'
+        logger.info(msg)
+        sem.Echo(msg)
         sem.SetLowDoseMode(1)
         sem.Delay(delay)
-        logger.info(f'Going to Low Dose Record and waiting {delay} s')
+        msg = f'Going to Low Dose Record and waiting {delay} s'
+        logger.info(msg)
+        sem.Echo(msg)
         sem.GoToLowDoseArea('R')
         sem.Delay(delay)
-        logger.info(f'Going to Low Dose Search and waiting {delay} s')
+        msg = f'Going to Low Dose Search and waiting {delay} s'
+        logger.info(msg)
+        sem.Echo(msg)
         sem.GoToLowDoseArea('Search')
-        logger.info(f'Finished setting Low Dose.')
+        msg = f'Finished setting Low Dose. Taking a Search Image just to test.'
+        logger.info(msg)
+        sem.Echo(msg)
+        sem.Search()
+
         
 
     def setup(self, *args, **kwargs):
