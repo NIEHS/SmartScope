@@ -29,3 +29,10 @@ class ProcessImage:
         R = np.array(((c, -s), (s, c)))
         rotated = np.sum(R * np.reshape(coord, (-1, 1)), axis=0)
         return rotated
+    
+    @staticmethod
+    def pixel_to_stage_from_vectors(coord, transform_vector:str):
+        # transform_vector = np.array(transform_vector.split(' ')).astype(float)
+        x = np.sum(coord * transform_vector[:2]) + transform_vector[-2]
+        y = np.sum(coord * transform_vector[2:4]) + transform_vector[-1]
+        return np.array([x, y])
