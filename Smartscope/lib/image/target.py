@@ -55,6 +55,7 @@ class Target:
     @property
     def coords(self):
         return np.array([self._x,self._y])
+    
 
     @property
     def stage_coords(self):
@@ -84,11 +85,23 @@ class Target:
         self.radius = min(len1, len2) / 2
             # self.area = np.pi * (self.radius ** 2)
 
+    def flip_y(self, coords, shape_y):
+        return np.array([coords[0],shape_y - coords[1]])
+
     def convert_image_coords_to_stage(self, montage):
         tile, dist = ProcessImage.closest_node(
             self.coords.reshape(-1,2),
             montage.metadata.piece_center
         )
+        if 'ImageToStageMatrix' in montage.metadata:
+            print('Using ImageToStageMatrix')
+            self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
+                self.flip_y(self.coords,montage.shape_y),
+                montage.metadata.iloc[tile].ImageToStageMatrix
+            )
+            self.stage_z = montage.stage_z
+            return 
+        
         self.stage_x, self.stage_y = ProcessImage.pixel_to_stage(
             dist,
             montage.metadata.iloc[tile],
