@@ -1,0 +1,2 @@
+name: CTF viewer
+pluginClass: Smartscope.core.ctf.ctf_fit_viewer.CTFFitViewer

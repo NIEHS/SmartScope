@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from .base_model import *
 
@@ -87,7 +88,7 @@ class ScreeningSession(BaseModel):
         cache_key = f'{self.session_id}_directory'
         if (directory:=cache.get(cache_key)) is not None:
             logger.info(f'Session {self} directory from cache.')
-            return directory
+            return Path(directory)
         cwd = find_screening_session(root_directories(self),self.working_directory)
         cache.set(cache_key,cwd,timeout=10800)
         return cwd

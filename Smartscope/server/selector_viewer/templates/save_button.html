@@ -1,0 +1,18 @@
+<button class="btn btn-primary"
+hx-post="{{url}}" 
+hx-vals="js:{
+    low_limit: document.getElementById('{{param1}}').value,
+    high_limit: document.getElementById('{{param2}}').value,
+    apply_to: '{{apply_to}}'
+}"
+hx-target="#btnResult"
+hx-swap="innerHTML"
+hx-on--before-request="createHTMXloadingMessage(event, '{{message}}')"
+hx-on--after-request="processHTMXloadingMessage(event)"
+
+{% include "bootstrap_tooltip.html" with position="top" tooltip=tooltip %}
+
+>
+{{inner_html}}
+</button>
+

@@ -1,6 +1,5 @@
 
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 import numpy as np
 
 from .base_model import *
@@ -46,6 +45,14 @@ class Target(BaseModel):
         abstract = True
 
     @property
+    def prefix(self):
+        raise NotImplementedError('Prefix must be implemented in the subclass')
+    
+    @property
+    def prefix_lower(self):
+        return self.prefix.lower()
+
+    @property
     def group(self):
         return self.grid_id.session_id.group
 
@@ -61,7 +68,7 @@ class Target(BaseModel):
 
     def is_excluded(self):
         for selector in self.selectors.all():
-            plugin = PLUGINS_FACTORY[selector.method_name]
+            plugin = PLUGINS_FACTORY.get_plugin(selector.method_name)
             if selector.label in plugin.exclude:
                 return True, selector.label
         return False, ''
@@ -84,17 +91,5 @@ class Target(BaseModel):
 
     def is_out_of_range(self) -> bool:
         return not self.finders.first().is_position_within_stage_limits()
-    # def css_color(self, display_type, method):
-
-    #     if method is None:
-    #         return 'blue', 'target', ''
-
-    #     # Must use list comprehension instead of a filter query to use the prefetched data
-    #     # Reduces the amount of queries subsitantially.
-    #     labels = list(getattr(self, display_type).all())
-    #     label = [i for i in labels if i.method_name == method]
-    #     if len(label) == 0:
-    #         return 'blue', 'target', ''
-    #     return PLUGINS_FACTORY[method].get_label(label[0].label)
 
 

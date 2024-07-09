@@ -29,9 +29,9 @@ def targets_methods(instance):
         classifiers.append('Micrographs curation')
     selectors = list(Selector.objects.filter(content_type=contenttype, object_id__in=targets).values_list('method_name', flat=True).distinct())
     logger.debug(f'Finders: {finders}, Classifiers: {classifiers}, Selectors: {selectors}')
-    output = dict(finders=[PLUGINS_FACTORY[finder] for finder in finders],
-                classifiers=[PLUGINS_FACTORY[classifier] for classifier in classifiers],
-                selectors=[PLUGINS_FACTORY[selector] for selector in selectors],
+    output = dict(finders=[PLUGINS_FACTORY.get_plugin(finder) for finder in finders],
+                classifiers=[PLUGINS_FACTORY.get_plugin(classifier) for classifier in classifiers],
+                selectors=[PLUGINS_FACTORY.get_plugin(selector) for selector in selectors],
                 metadata=[CTFFitViewer()])
     cache.set(cache_key,output,timeout=300)
     return output

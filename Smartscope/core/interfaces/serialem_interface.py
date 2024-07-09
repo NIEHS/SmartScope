@@ -1,5 +1,6 @@
-from pathlib import PureWindowsPath
+from pathlib import PureWindowsPath, Path
 from typing import Callable, Tuple
+from abc import ABC
 import serialem as sem
 import time
 import logging
@@ -10,7 +11,6 @@ from .microscope_interface import MicroscopeInterface
 from Smartscope.lib.Finders.basic_finders import find_square
 
 logger = logging.getLogger(__name__)
-
 
 class SerialemInterface(MicroscopeInterface):
 
@@ -103,12 +103,14 @@ class SerialemInterface(MicroscopeInterface):
 
     
     def reset_stage(self):
+        logger.info(f'Resetting stage to center.')
         sem.TiltTo(0)
         sem.MoveStageTo(0,0,0)
 
     def remove_slit(self):
         if self.detector.energyFilter:
             if sem.ReportEnergyFilter()[2] == 1:
+                logger.info('Removing slit.')
                 sem.SetSlitIn(0)
         
 
@@ -120,7 +122,16 @@ class SerialemInterface(MicroscopeInterface):
         sem.Montage()
         sem.CloseFile()
         logger.info('Atlas acquisition finished')
-        sem.SetLowDoseMode(1)
+        # sem.SetLowDoseMode(1)
+
+    def save_image(self, file:str):
+        image_to_stage_matrix = sem.BufImageToStageMatrix('A', 1)
+        image_to_stage_matrix = [str(x) for x in image_to_stage_matrix]
+        sem.OpenNewFile(file)
+        sem.Save()
+        sem.AddToAutodoc('ImageToStageMatrix', ' '.join(image_to_stage_matrix))
+        sem.WriteAutodoc()
+        sem.CloseFile()
 
     def square(self, file=''):
         sem.SetLowDoseMode(1)
@@ -128,14 +139,14 @@ class SerialemInterface(MicroscopeInterface):
         self.checkDewars()
         self.checkPump()
         sem.Search()
-        sem.OpenNewFile(file)
-        sem.Save()
-        sem.CloseFile()
+        self.save_image(file)
         logger.info('Square acquisition finished')
     
     def buffer_to_numpy(self, buffer:str='A') -> Tuple[np.array, int, int, int, float, float]:
+        sem.Delay(1)
         shape_x, shape_y, binning, exposure, pixel_size, _ = sem.ImageProperties(buffer)
-        return np.asarray(sem.bufferImage(buffer)), shape_x, shape_y, binning, exposure, pixel_size
+        buffer = sem.bufferImage(buffer)
+        return np.asarray(buffer), shape_x, shape_y, binning, exposure, pixel_size
 
     def numpy_to_buffer(self,image,buffer='T'):
         sem.PutImageInBuffer(image, buffer, *image.shape, 'A')
@@ -206,15 +217,16 @@ class SerialemInterface(MicroscopeInterface):
     def medium_mag_hole(self, file=''):
         sem.AllowFileOverwrite(1)
         self.acquire_medium_mag()
-        sem.OpenNewFile(file)
-        sem.Save()
-        sem.CloseFile()
+        self.save_image(file)
 
-    def focusDrift(self, def1, def2, step, drifTarget):
+    def autofocus(self, def1, def2, step):
         self.rollDefocus(def1, def2, step)
         sem.SetTargetDefocus(self.state.defocusTarget)
         sem.AutoFocus()
         self.state.currentDefocus = sem.ReportDefocus()
+        self.state.set_last_autofocus_position()
+
+    def wait_drift(self, drifTarget):
         if drifTarget > 0:
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
@@ -232,12 +244,12 @@ class SerialemInterface(MicroscopeInterface):
         sem.ClearPersistentVars()
         sem.AllowFileOverwrite(1)
 
-    def setup(self, saveframes, framesName=None):
+    def setup(self, saveframes:bool, grid_dir:str='', framesName=None):
         if saveframes:
             logger.info('Saving frames enabled')
             sem.SetDoseFracParams('P', 1, 1, 0)
-            movies_directory = PureWindowsPath(self.detector.framesDir).as_posix().replace('/', '\\')
-            logger.info(f'Saving frames to {movies_directory}')
+            movies_directory = PureWindowsPath(self.detector.framesDir, grid_dir).as_posix().replace('/', '\\')
+            logger.info(f'SerialEM will be saving frames to {movies_directory}')
             sem.SetFolderForFrames(movies_directory)
             if framesName is not None:
                 sem.SetFrameBaseName(0, 1, 0, framesName)
@@ -309,6 +321,7 @@ class SerialemInterface(MicroscopeInterface):
             sem.RestoreBeamTilt()
 
     def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
+        sem.GoToLowDoseArea('Record')
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
         self.state.imageShiftX = isX
         self.state.imageShiftY = isY
@@ -333,3 +346,34 @@ class SerialemInterface(MicroscopeInterface):
                 frames = frames[0]
             logger.debug(f"Frames: {frames},")
             return frames.split('\\')[-1]
+        
+    def get_property(self, property_name:str):
+        return sem.ReportProperty(property_name)
+    
+    def _remove_aperture(self, aperture:int):
+        if sem.ReportApertureSize(aperture) != 0:
+            sem.RemoveAperture(aperture)
+    
+    def _reinsert_aperture(self, aperture:int):
+        if sem.ReportApertureSize(aperture) == 0:
+            sem.ReInsertAperture(aperture)
+
+    def autofocus_after_distance(self, def1, def2, step, distance):
+        last_autofocus_distance = self.state.get_last_autofocus_distance()
+        if last_autofocus_distance > distance:
+            logger.info(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), running autofocus')
+            return self.autofocus(def1, def2, step)
+        logger.debug(f'Last autofocus distance was {last_autofocus_distance} um (Threshold {distance} um), skipping autofocus.')
+        defocus_target = self.state.defocusTarget
+        current_defocus = self.state.currentDefocus
+        new_defocus_target = self.rollDefocus(def1, def2, step)
+        defocus_change = new_defocus_target - defocus_target
+        logger.debug(f'Last defocus target: {defocus_target}. New defocus target: {defocus_target}. Change: {defocus_change}')
+        sem.SetTargetDefocus(new_defocus_target)
+        self.state.currentDefocus += defocus_change
+        logger.debug(f'Current defocus: {current_defocus}. New current defocus: {self.state.currentDefocus}')
+        if defocus_change != 0:
+            sem.ChangeFocus(defocus_change)
+            return
+
+    # def _set_aperture_size(self, aperture:int, aperture_size:int):

@@ -1,5 +1,5 @@
 {% load static %}
-<div class="card multishotResult" id="{{result.cache_id}}" onclick="selectMultishot(this)">
+<div class="card multishotResult" id="{{result.cache_id}}" onmousedown="selectMultishot(this)">
     <div class="card-header">
         <div class="d-flex flex-row p-0 align-items-center justify-content-between">
             <h3 class="d-inline">{{result.n_shots}} shots per hole</h3>

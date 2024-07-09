@@ -1,0 +1,164 @@
+<style>
+    .slider-container {
+        width: 90%;
+        margin: 5px auto;
+    }
+    .slider {
+        height: 20px;
+        position: relative;
+        background-color: #ddd;
+        border-radius: 10px;
+    }
+    .slider-handle {
+        width: 20px;
+        height: 20px;
+        background-color: #007bff;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+    -moz-appearance: textfield;
+    }
+</style>
+<body>
+
+<div class="d-flex flex-row align-items-center slider-container">
+    <div class="col-2">
+        <input type="number" id="sliderValue1" step="0.1" class="form-control">
+    </div>
+    <div class="slider col-8 mx-2" id="slider">
+        <div class="slider-handle" id="handle1"></div>
+        <div class="slider-handle" id="handle2"></div>
+    </div>
+    <div class="col-2">
+    <input type="number" id="sliderValue2" step="0.1" class="form-control">
+    </div>
+</div>
+
+<script>
+    $('#fullOverlayMenu').ready(function() {
+        const $slider = $('#slider');
+        const $handle1 = $('#handle1');
+        const $handle2 = $('#handle2');
+
+        let minvalue = {{values_range.0}};
+        let maxvalue = {{values_range.1}};
+        let pos1 = ({{initial_limits.0}} - minvalue)/(maxvalue-minvalue) * ($slider.width()- $handle1.width()) - $handle1.width()/2;
+        let pos2 = ({{initial_limits.1}} - minvalue)/(maxvalue-minvalue) *($slider.width()- $handle1.width()) + $handle2.width()/2;
+
+        $handle1.css('left', pos1);
+        $handle2.css('left', pos2);
+
+        
+        updateSliderValues(calculatePos())
+
+        $handle1.mousedown(function(e) {
+            e.preventDefault();
+            $(document).mousemove(onDrag1);
+            $(document).mouseup(stopDrag1);
+        });
+
+        $handle2.mousedown(function(e) {
+            e.preventDefault();
+            $(document).mousemove(onDrag2);
+            $(document).mouseup(stopDrag2);
+        });
+
+        function calculatePos() {
+            let value1 = Math.round(pos1 / ($slider.width() - $handle1.width()) * (maxvalue-minvalue) + minvalue);
+            let value2 = Math.round(pos2 / ($slider.width() - $handle1.width()) * (maxvalue-minvalue) + minvalue);
+            console.log(value1, value2);
+            return [value1, value2];
+        }
+
+        function onDrag1(e) {
+            let newX = e.clientX - $slider.offset().left;
+            newX = Math.min(newX, pos2);
+            newX = Math.max(newX, 0);
+            $handle1.css('left', newX);
+            pos1 = newX;
+            let values = calculatePos();
+            updateHRect(values);
+            updateSliderValues(values);
+            updateSvgColor(values)
+        }
+
+        function onDrag2(e) {
+            let newX = e.clientX - $slider.offset().left;
+            newX = Math.min(newX, $slider.width() - $handle2.width());
+            newX = Math.max(newX, pos1);
+            $handle2.css('left', newX);
+            pos2 = newX;
+            let values = calculatePos();
+            updateHRect(values);
+            updateSliderValues(values);
+            updateSvgColor(values)
+        }
+
+        function stopDrag1() {
+            $(document).off('mousemove', onDrag1);
+            $(document).off('mouseup', stopDrag1);
+ 
+        }
+
+        function stopDrag2() {
+            $(document).off('mousemove', onDrag2);
+            $(document).off('mouseup', stopDrag2);
+            // let values = calculatePos();
+            // updateHRect(values);
+        }
+
+        function updateSliderValues(values) {
+            $('#sliderValue1').val(values[0]);
+            $('#sliderValue2').val(values[1]);
+        }
+
+        function updateHRect(values) {
+            const currentLayout = document.getElementById('selectorPlot').layout;
+            console.log(currentLayout);
+            const xRange = currentLayout.xaxis.range;
+            console.log(xRange)
+            const update = {
+                shapes: [{
+                    type: 'rect',
+                    xref: 'x',
+                    yref: 'y',
+                    x0: xRange[0],
+                    x1: xRange[1],
+                    y0: values[0],
+                    y1: values[1],
+                    line: {
+                        width: 0
+                    },
+                    fillcolor: 'lightgreen',
+                    opacity: 0.5
+                }]
+            };
+
+            Plotly.relayout('selectorPlot', update);
+        }
+        function updateSvgColor(values) {
+                const svgItems = $('.selectorTarget');
+                $('.selectorTarget').each(function() {
+                $(this).attr('stroke',  (values[0] < $(this).attr('value') &&  $(this).attr('value') < values[1]) ? 'lightgreen' : 'red');
+            });
+        }
+
+
+    });
+</script>
+
+</body>
+</html>

@@ -12,6 +12,9 @@ from Smartscope.core.models.mesh import MeshMaterial, MeshSize
 from Smartscope.core.models.atlas import AtlasModel
 from Smartscope.core.models.square import SquareModel
 from Smartscope.core.models.high_mag import HighMagModel
+from Smartscope.core.models.target_label import Classifier
+from Smartscope.core.selector_sorter import SelectorSorter, LagacySorterError, SelectorValueParser, initialize_selector
+from Smartscope.core.svg_plots import drawAtlasNew
 # from Smartscope.lib.storage.smartscope_storage import SmartscopeStorage
 from Smartscope.lib.converters import *
 import logging
@@ -48,6 +51,12 @@ class SessionSerializer(RESTserializers.ModelSerializer):
     class Meta:
         model = ScreeningSession
         fields = '__all__'
+
+class ClassifierSerializer(RESTserializers.ModelSerializer):
+
+    class Meta:
+        model = Classifier
+        exclude = ['id']
 
 
 class AutoloaderGridSerializer(RESTserializers.ModelSerializer):
@@ -267,13 +276,27 @@ class SvgSerializer(RESTserializers.Serializer):
             return dict()
         return update_to_fullmeta(targets)
 
+    def svg(self):
+        if self.display_type == 'selectors':
+            try:
+                # plugin = PLUGINS_FACTORY[self.method]
+                # selector_data = SelectorValueParser(self.method, from_server=True)
+                # sorter = SelectorSorter(self.method, fractional_limits=plugin.limits)
+                # sorter.values = selector_data.extract_values(self.instance.targets)
+                sorter = initialize_selector(self.instance.grid_id, self.method, self.instance.targets)
+                return drawAtlasNew(self.instance, sorter).as_svg()
+            except LagacySorterError:
+                logger.warning('Lagacy sorter error. Reverting to lagacy sorting.')
+        return self.instance.svg(display_type=self.display_type, method=self.method,).as_svg()
+        
+
     def to_representation(self, instance):
         return {
             'type': 'reload',
             'display_type': self.display_type,
             'method': self.method,
             'element': models_to_serializers[self.instance.__class__.__name__]['element'],
-            'svg': self.instance.svg(display_type=self.display_type, method=self.method,).as_svg(),
+            'svg': self.svg()
             # 'fullmeta': self.load_meta()
         }
 

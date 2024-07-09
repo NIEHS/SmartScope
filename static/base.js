@@ -75,15 +75,29 @@ let createLoadingMessage = (message) => {
     return id
 }
 
+function createHTMXloadingMessage(event, message) {
+    console.log('Creating htmx loading message')
+    messageID = createLoadingMessage(message)
+    event.target.setAttribute('messageid', messageID)
+}
+
+function processHTMXloadingMessage(event) {
+    console.log('Processing htmx loading message')
+    const responseCode = event.detail.xhr.status;
+    const response = {ok: responseCode < 400}
+    processLoadingMessage(response, event.target.getAttribute('messageid'))
+}
+
 let processLoadingMessage = (response, id) => {
+    let elem = $(`#loadingMessages #${id}`)
     if (response.ok) {
-        $(`#loadingMessages #${id}`).removeClass('alert-primary').addClass('alert-success')
+        elem.removeClass('alert-primary').addClass('alert-success')
         setTimeout(function() {
             $(`#loadingMessages #${id}`).alert('close');
             $(`#loadingMessages #${id}`).parent().remove()
         }, 2000);
     } else {
-        $(`#loadingMessages #${id}`).removeClass('alert-primary').addClass('alert-danger')
+        elem.removeClass('alert-primary').addClass('alert-danger')
     }
 }
 

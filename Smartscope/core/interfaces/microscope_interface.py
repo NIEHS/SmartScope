@@ -8,12 +8,17 @@ from .microscope import MicroscopeState, AtlasSettings, Detector, Microscope
 logger = logging.getLogger(__name__)
 
 
+class Apertures(ABC):
+    pass
+
+
 @dataclass
 class MicroscopeInterface(ABC):
     microscope: Microscope
     detector: Detector
     atlas_settings:AtlasSettings
     state: MicroscopeState = MicroscopeState()
+    apertures: Apertures = None
     additional_settings: dict = None 
     has_hole_ref: bool = False
     hole_crop_size: int = 0
@@ -27,7 +32,7 @@ class MicroscopeInterface(ABC):
     def __exit__(self, exception_type, exception_value, traceback):
         self.disconnect()
 
-    def reset_image_shift_values(self):
+    def reset_image_shift_values(self, afis:bool=False):
         self.state.reset_image_shift_values()
 
     @abstractmethod
@@ -68,6 +73,7 @@ class MicroscopeInterface(ABC):
         if defocusTarget < maxdef or defocusTarget > mindef:
             defocusTarget = mindef
         self.state.defocusTarget = defocusTarget
+        return defocusTarget
 
     def reset_state(self):
         self.has_hole_ref = False
@@ -139,9 +145,9 @@ class MicroscopeInterface(ABC):
     def medium_mag_hole(self, tiltAngle, file=''):
         pass
 
-    @abstractmethod
-    def focusDrift(self, def1, def2, step, drifTarget):
-        pass
+    # @abstractmethod
+    # def focusDrift(self, def1, def2, step, drifTarget):
+    #     pass
 
     @abstractmethod
     def load_hole_ref(self):
@@ -184,4 +190,14 @@ class MicroscopeInterface(ABC):
     def reset_AFIS_image_shift(self, afis:bool=False):
         pass
 
+    @abstractmethod
+    def autofocus(self, def1, def2, step):
+        pass
 
+    @abstractmethod
+    def wait_drift(self, driftTarget):
+        pass
+
+    @abstractmethod
+    def autofocus_after_distance(self, def1, def2, step, distance):
+        pass

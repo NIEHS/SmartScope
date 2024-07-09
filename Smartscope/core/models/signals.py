@@ -90,7 +90,7 @@ def queue_bis_group(sender,instance,created, **kwargs):
             logger.debug("Updating status bis target to 'queued'")
             HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=None).update(status=status.QUEUED)
             return
-        logger.debug("Updating status bis target to 'null'")
+        # logger.debug("Updating status bis target to 'null'")
         HoleModel.objects.filter(grid_id=instance.grid_id,bis_group=instance.bis_group,bis_type='is_area',status=status.QUEUED).update(status=status.NULL)
 
 @ receiver(pre_save, sender=HoleModel)
@@ -152,9 +152,13 @@ def create_session_scope_directory(sender, instance, created, *args, **kwargs):
 @receiver(post_save, sender=Microscope)
 def create_scope_directory(sender, instance, created, *args, **kwargs):
     if created:
+
         create_scope_dirs(instance.scope_path)
 
 def create_scope_dirs(scope_path):
+    if not Path(scope_path).exists():
+        logger.warning(f'Scope directory {scope_path} does not exist. Cannot create scope directories.')
+        return  
     source = scope_path
     scope_dirs = [
         source,

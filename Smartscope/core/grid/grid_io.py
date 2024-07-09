@@ -1,11 +1,4 @@
 import os
-import time
-import shutil
-import sys
-from typing import List, Union
-from collections import namedtuple
-from datetime import datetime
-import glob
 import logging
 from pathlib import Path
 
@@ -39,3 +32,9 @@ class GridIO:
         path = Path(path)
         for directory in [path, path / 'raw', path / 'pngs']:
             directory.mkdir(exist_ok=True)
+
+    @staticmethod
+    def create_grid_frames_directory(path, grid_dir):
+        directory = Path(path, grid_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        return grid_dir

@@ -1,6 +1,8 @@
 from typing import Optional
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
+import numpy as np
+import time
 
 
 @dataclass
@@ -12,6 +14,8 @@ class MicroscopeState:
     stageX: float = 0
     stageY: float = 0
     stageZ: float = 0
+    last_autofocus_stage_X: float = 999999
+    last_autofocus_stage_y: float = 999999
     tiltAngle: float = None
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
@@ -20,6 +24,13 @@ class MicroscopeState:
         self.stageX = stageX
         self.stageY = stageY
         self.stageZ = stageZ
+
+    def set_last_autofocus_position(self):
+        self.last_autofocus_stage_X = self.stageX
+        self.last_autofocus_stage_y = self.stageY
+
+    def get_last_autofocus_distance(self):
+        return np.sqrt((self.stageX - self.last_autofocus_stage_X)**2 + (self.stageY - self.last_autofocus_stage_y)**2)
     
     def getStage(self):
         return self.stageX, self.stageY, self.stageZ
@@ -63,3 +74,28 @@ class Microscope(BaseModel):
 class CartridgeLoadingError(Exception):
     pass
 
+# class ImagingState(BaseModel):
+#     mag: int = -1
+#     c2_perc: float = -1
+#     last_update: float = time.time()
+
+#     def set_mag(self, mag):
+#         self.mag = mag
+
+#     def set_c2_perc(self, c2_perc):
+#         self.c2_perc = c2_perc
+    
+
+
+#     def update(self, mag, c2_perc, exposure_time):
+#         self.mag = mag
+#         self.c2_perc = c2_perc
+#         self.exposure_time = exposure_time
+#         self.last_update = time.time()
+
+    
+
+# class ImagingStates(BaseModel):
+#     search: ImagingState = ImagingState()
+#     view: ImagingState = ImagingState()
+#     record: ImagingState = ImagingState()

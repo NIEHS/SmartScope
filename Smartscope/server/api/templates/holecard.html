@@ -8,11 +8,11 @@
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">Rate</a>
+                                aria-expanded="false">Rating</a>
                             <div class="dropdown-menu hmQuality">
                                 {% for key,class in classifier.classes.items %}
                                 <button id='' class="dropdown-item" label="{{class.name}}"
-                                    onclick="updateTargets('holes', false,'{{classifier.name}}', 'label', '{{key}}', ['{{hole.hole_id.pk}}'])">{{class.name}}</button>
+                                    onmousedown="updateTargets('holes', false,'{{classifier.name}}', 'label', '{{key}}', ['{{hole.hole_id.pk}}'])">{{class.name}}</button>
                                 {% endfor %}
                             </div>
                         </li>
@@ -45,7 +45,9 @@
             <p class="card-text text-left m-0">Defocus: {{hole.defocus|floatformat:0}} &#8491;</p>
             <p class="card-text text-left m-0">CTFfit: {{hole.ctffit|floatformat:1}} &#8491;</p>
             <p class="card-text text-left m-0">Astig: {{hole.astig|floatformat:0}} &#8491;</p>
-            <p class="card-text text-left m-0">Angle: {{hole.angast|floatformat:0}} &#176;</p>
+            <p class="card-text text-left m-0">Astig Angle: {{hole.angast|floatformat:0}} &#176;</p>
+            <p class="card-text text-left m-0">Ice thickness: {{hole.ice_thickness}} nm</p>
+            <!-- <p class="card-text text-left m-0">Tilt angle: {{hole.tilt_angle|floatformat:1}} &#176;</p> -->
             <p class="card-text text-left m-0">Targeting offset: {{hole.offset|floatformat:1}} &mu;m;</p>
         </div>
         <div class="card-footer py-1">

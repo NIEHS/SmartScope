@@ -2,6 +2,8 @@ import numpy as np
 import logging
 from typing import Callable
 from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
+from Smartscope.lib.Datatypes.grid_geometry import GridGeometry, GridGeometryLevel
+from Smartscope.lib.mesh_operations import filter_closest, get_average_angle, get_mesh_rotation_spacing
 # from scipy.spatial import KDTree
 # from scipy.signal import correlate2d
 from scipy.spatial.distance import cdist #, pdist
@@ -19,7 +21,8 @@ def create_basic_mesh(spacing:float,size=10):
 
 def hole_mesh(grid_instance):
     # square = SquareModel.display.filter(grid_id=grid_instance,status='completed').first()
-    holes = HoleModel.display.filter(grid_id=grid_instance)   
+    holes = HoleModel.display.filter(grid_id=grid_instance)
+    holes = list(filter(lambda x: x.finders.all()[0].method_name != 'Regular pattern', holes))
     hole_spacing = grid_instance.holeType.pitch
     return holes, hole_spacing
 
@@ -28,117 +31,30 @@ def square_mesh(grid_instance):
     square_spacing = grid_instance.meshSize.pitch
     return squares,square_spacing
 
-# def kabsch_rotation_2d(P, Q):
-#     """Kabsch algorithm implementation for 2D coordinates"""
-#     # center the point sets
-#     P_centered = P - np.mean(P, axis=0)
-#     Q_centered = Q - np.mean(Q, axis=0)
-#     # calculate the covariance matrix
-#     C = np.dot(np.transpose(P_centered), Q_centered)
-#     # singular value decomposition of the covariance matrix
-#     U, S, V = np.linalg.svd(C)
-#     # calculate the optimal rotation matrix
-#     R = np.dot(U, V)
-#     # calculate the rotation angle from the trace of R
-#     cos_theta = np.trace(R)
-#     sin_theta = R[1, 0] - R[0, 1]
-#     theta = np.degrees(np.arctan2(sin_theta, cos_theta))
-#     return theta
-
-# def icp_rotation(P, Q, max_iterations=500, tolerance=1e-6):
-#     """ICP algorithm implementation to get rotation angle"""
-#     # initialize the rotation matrix to identity
-#     R = np.eye(2)
-#     # create a KD tree for nearest neighbor search
-#     tree_Q = KDTree(Q)
-#     # iterate until convergence
-#     for i in range(max_iterations):
-#         # find the nearest neighbors of each point in P in Q
-#         distances, indices = tree_Q.query(P)
-#         # compute the centroid of each set of points
-#         centroid_P = np.mean(P, axis=0)
-#         centroid_Q = np.mean(Q[indices], axis=0)
-#         # compute the centered point sets
-#         P_centered = P - centroid_P
-#         Q_centered = Q[indices] - centroid_Q
-#         # compute the covariance matrix
-#         C = np.dot(np.transpose(Q_centered), P_centered)
-#         # compute the SVD of the covariance matrix
-#         U, _, V = np.linalg.svd(C)
-#         # compute the optimal rotation matrix
-#         R_new = np.dot(U, V)
-#         # update the rotation matrix
-#         R = np.dot(R_new, R)
-#         # update the point set P
-#         P = np.dot(P, R_new.T)
-#         # check for convergence
-#         if np.abs(np.trace(R_new) - 2) < tolerance:
-#             print(f'tolerace reached at iteration {i}')
-#             break
-#     # compute the rotation angle from the rotation matrix
-#     theta = np.degrees(np.arctan2(R[1, 0], R[0, 0]))
-#     return theta
-
-# def cc_rotation(points, *args):
-#     # Assume we have a grid of 2D points stored as a numpy array 'points', where each row represents a point
-#     # Create a template that is aligned with the grid (e.g., a 1D sine wave)
-#     template = np.sin(np.linspace(0, 2 * np.pi, len(points)))
-#     # Compute the cross-correlation of the grid with the template
-#     corr = correlate2d(points, template[:, np.newaxis], mode='same')
-#     # Find the peak of the cross-correlation
-#     peak = np.argmax(corr)
-#     # Compute the angle of the grid using the phase of the peak
-#     angle = np.angle(np.exp(1j * 2 * np.pi * peak / len(points)))
-#     return np.degrees(angle)
-
-# def hough_rotation(points):
-#     h, theta, d = hough_line(np.vstack([points[:, 1], points[:, 0]]))
-#     # Find the peaks in the Hough transform
-#     peaks = hough_line_peaks(h, theta, d)
-#     # Compute the angle of the dominant line
-#     angle = np.mean(peaks[1])
-#     return np.degrees(angle)
-
-# def PCA_rotation(points, *args):
-#     centered_points = points - np.mean(points, axis=0)
-#     # Compute the covariance matrix of the centered points
-#     cov = np.cov(centered_points.T)
-#     # Compute the eigenvectors and eigenvalues of the covariance matrix
-#     eigenvalues, eigenvectors = np.linalg.eig(cov)
-#     # Identify the index of the principal component (i.e., the eigenvector with the largest eigenvalue)
-#     principal_component_index = np.argmax(eigenvalues)
-#     # Compute the angle of the principal component
-#     angle = np.arctan2(eigenvectors[principal_component_index, 1], eigenvectors[principal_component_index, 0])
-#     return np.degrees(angle)
-
-def filter_closest(points,max_dist):
-    distances = cdist(points,points)
-    out_points = []
-    for ind,row in enumerate(distances):
-        indexes= [i[1] for i in np.argwhere([row > 0, row < max_dist]) if i[0] ==1 and i[1] != ind]
-        filtered = points[indexes,:] - points[ind]
-        out_points.extend(filtered)
-    return np.array(out_points)
-
-def atan2_firstquad(point):
-    angle = np.degrees(np.arctan2(point[1],point[0]))
-    while angle > 90:
-        angle-=90
-    while angle < 0:
-        angle += 90
-    return angle
-
-def get_average_angle(points):
-    angles = np.apply_along_axis(atan2_firstquad,axis=1, arr=points)
-    return np.mean(angles)
-
 def get_mesh_rotation(grid:AutoloaderGrid, level:Callable=hole_mesh, algo:Callable=get_average_angle):
     # grid = AutoloaderGrid.objects.get(pk=grid_id)
     targets, mesh_spacing = level(grid)
     stage_coords = np.array([t.stage_coords for t in targets])
     logger.debug(f'Found {len(targets)} targets. Mesh Spacing is {mesh_spacing} um.')
-    filtered_points= filter_closest(stage_coords, mesh_spacing*1.08)
+    filtered_points, _= filter_closest(stage_coords, mesh_spacing*1.08)
     rotation = algo(filtered_points)
     logger.debug(f'Calculated mesh rotation: {rotation}')
     return rotation
 
+
+def calculate_hole_geometry(grid:AutoloaderGrid):
+    targets, mesh_spacing = hole_mesh(grid)
+    coords = np.array([t.coords for t in targets])
+    pixel_size = targets[0].parent.pixel_size
+    logger.debug(f'Calculating hole geometry for grid {grid} with {len(targets)} holes and mesh spacing: {mesh_spacing} um. Pixel size of {targets[0].parent}: {pixel_size} A.')
+    rotation, spacing = get_mesh_rotation_spacing(coords, mesh_spacing / pixel_size * 10_000)
+    
+    geometry = GridGeometry.load(directory=grid.directory)
+    geometry.set_geometry(level=GridGeometryLevel.SQUARE, spacing=spacing, rotation=rotation)
+    geometry.save(directory=grid.directory)
+    logger.info(f'Updated grid {grid} with rotation: {rotation} degrees and spacing: {spacing} pixels.')
+    return rotation, spacing
+
+def save_mm_geometry(grid:AutoloaderGrid):
+    pass
+    

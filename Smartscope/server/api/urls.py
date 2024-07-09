@@ -21,6 +21,7 @@ router.register(r'atlas', AtlasModelViewSet)
 router.register(r'squares', SquareModelViewSet)
 router.register(r'holes', HoleModelViewSet)
 router.register(r'highmag', HighMagModelViewSet)
+router.register(r'classes',ClassifierViewSet)
 
 
 urlpatterns = [
@@ -32,6 +33,7 @@ urlpatterns = [
     path('addtargets/', AddTargets.as_view()),
     path('sidepanel/', SidePanel.as_view()),
     path('report/', ReportPanel.as_view()),
+    path('plugins/', PluginView.as_view()),
     # path('squares', SquareListView.as_view())
 ]
 

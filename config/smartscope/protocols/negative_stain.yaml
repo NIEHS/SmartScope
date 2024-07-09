@@ -4,7 +4,7 @@ atlas:
       - setAtlasOptics
       - resetStage
       - removeSlit
-      - eucentricSearch
+      # - eucentricSearch
       - atlas
   targets:
     finders:
@@ -27,6 +27,8 @@ mediumMag:
     - tiltToAngle
     - moveStage
     - mediumMagHole
+    - autoFocus
+    - waitDrift
 highMag:
   acquisition:
     - highMag

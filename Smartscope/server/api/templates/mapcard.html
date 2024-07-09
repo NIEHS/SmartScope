@@ -9,12 +9,23 @@
         <div class="collapse navbar-collapse justify-content-center" id="atlasNavBar">
             <ul id="queueBtns" class="navbar-nav">
                 <li id="{{instance.targets_prefix}}SeleMenu" class="nav-item dropdown">
-
+                {% if display_type == 'selectors' %}
+                <li class="nav-item d-flex align-items-center">
+                    <a hx-get="{% url 'selector_view' grid_id=instance.grid_id.pk selector=method %}" 
+                    hx-trigger="mousedown" class="nav-link"
+                    hx-on--before-request="createHTMXloadingMessage(event, 'Loading selector viewer')"
+                    hx-on--after-request="processHTMXloadingMessage(event)"
+                    hx-target="#main" 
+                    hx-swap="beforeend"
+                    data-bs-toggle="tooltip" data-bs-placement="top" title="Edit selector"><i
+                        class="bi bi-pencil"></i></a>
+                </li>
+                {% endif %}
                 {% include "mapcard/add_targets.html" %}
                 {% include "mapcard/action_menu.html" %}
                 <li class="nav-item d-flex align-items-center">
                     <a id='{{instance.targets_prefix}}ClearSele' class="nav-link disabled"
-                        onclick="clearSelection({{instance.targets_prefix}}Selection,'{{instance.targets_prefix}}')"
+                        onmousedown="clearSelection({{instance.targets_prefix}}Selection,'{{instance.targets_prefix}}')"
                         data-bs-toggle="tooltip" data-bs-placement="top" title="Clear Selection"><i
                             class="bi bi-x-square"></i></a>
                 </li>

@@ -4,16 +4,17 @@ import functools
 import time
 import logging
 from .serialem_interface import SerialemInterface
+from .microscope_interface import Apertures
 
 logger = logging.getLogger(__name__)
 
-class Aperture:
+class TFSApertures(Apertures):
     CONDENSER_1:int=0
     CONDENSER_2:int=1
     CONDENSER_3:int=3
     OBJECTIVE:int = 2
 
-def change_aperture_temporarily(function: Callable, aperture:Aperture, aperture_size:Optional[int], wait:int=10):
+def change_aperture_temporarily(function: Callable, aperture:Apertures, aperture_size:Optional[int], wait:int=10):
     def wrapper(*args, **kwargs):
         inital_aperture_size = int(sem.ReportApertureSize(aperture))
         if inital_aperture_size == aperture_size or aperture_size is None:
@@ -35,12 +36,12 @@ def remove_objective_aperture(function: Callable, wait:int=10):
         msg = 'Removing objective aperture.'
         sem.Echo(msg)
         logger.info(msg)
-        sem.RemoveAperture(Aperture.OBJECTIVE)
+        sem.RemoveAperture(TFSApertures.OBJECTIVE)
         function(*args, **kwargs)
         msg = f'Reinserting objective aperture and waiting {wait}s.'
         sem.Echo(msg)
         logger.info(msg)
-        sem.ReInsertAperture(Aperture.OBJECTIVE)
+        sem.ReInsertAperture(TFSApertures.OBJECTIVE)
         time.sleep(wait)
 
     def no_wrap(*args,**kwargs):
@@ -49,11 +50,12 @@ def remove_objective_aperture(function: Callable, wait:int=10):
         logger.info(msg)
         function(*args, **kwargs)
 
-    if sem.ReportApertureSize(Aperture.OBJECTIVE) == 0:
+    if sem.ReportApertureSize(TFSApertures.OBJECTIVE) == 0:
         return no_wrap
     return wrapper
 
 class TFSSerialemInterface(SerialemInterface):
+    apertures: Apertures = TFSApertures
 
     def checkDewars(self, wait=30):
         while True:
@@ -71,10 +73,11 @@ class TFSSerialemInterface(SerialemInterface):
 
     def atlas(self, size, file=''):
         if self.microscope.apertureControl:
-
-            return change_aperture_temporarily(
+            change_aperture_temporarily(
                 function=remove_objective_aperture(super().atlas), 
-                aperture=Aperture.CONDENSER_2,
+                aperture=self.apertures.CONDENSER_2,
                 aperture_size=self.atlas_settings.atlas_c2_aperture
             )(size,file)
-        return super().atlas(size, file)
+        else:
+            super().atlas(size, file)
+        sem.SetLowDoseMode(1)

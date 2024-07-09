@@ -141,7 +141,7 @@ class FakeScopeInterface(MicroscopeInterface):
                 destination_dir=self.microscope.scopePath
             )
             return
-        movies = os.path.join(self.microscope.scopePath, 'movies')
+        movies = os.path.join(self.microscope.scopePath, 'movies', self.grid_dir)
         logger.info(f"High resolution movies are stored at {movies} in fake mode")
         frames = Fake.generate_fake_file(
             file,
@@ -154,11 +154,20 @@ class FakeScopeInterface(MicroscopeInterface):
     def connect(self):
         logger.info('Connecting to fake scope.')
 
-    def setup(self, saveframes, framesName=None):
-        pass
+    def setup(self, saveframes:bool, grid_dir:str, framesName=None):
+        self.grid_dir = grid_dir
 
     def disconnect(self, close_valves=True):
         logger.info('Disconnecting from fake scope.')
 
     def loadGrid(self, position):
+        pass
+
+    def autofocus(self, def1, def2, step):
+        pass
+
+    def wait_drift(self, driftTarget):
+        pass
+
+    def autofocus_after_distance(self, def1, def2, step, distance):
         pass

@@ -41,14 +41,14 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
 '''
 
 
-def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
+def get_CTFFIND5_data(ctf_text: Path) -> List[float]:
     '''
     get results from ctf_*.txt determined by ctffinder
     args: 
     '''
     logger.info(f"Try to read CTF file {ctf_text}")
     ctf={}
-    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit']
+    columns=['l', 'df1', 'df2', 'angast', 'phshift', 'cc', 'ctffit','tilt_axis_angle','tilt_angle','ice_thickness']
     with open(ctf_text, 'r') as f:
         for line in f:
             if not line.startswith('#'):
@@ -61,6 +61,9 @@ def get_CTFFIN4_data(ctf_text: Path) -> List[float]:
         'astig': ctf['df1'] - ctf['df2'],
         'angast': ctf['angast'],
         'ctffit': ctf['ctffit'],
+        'tilt_axis_angle': ctf['tilt_axis_angle'],
+        'tilt_angle': ctf['tilt_angle'],
+        'ice_thickness': int(round(ctf['ice_thickness']/10))
     }
 
 def process_hm_from_frames(
@@ -96,13 +99,14 @@ def process_hm_from_frames(
         return movie
     time.sleep(10)
 
-    if not movie.shifts.exists() or not movie.ctf.exists():
+    if not movie.shifts.exists() or not movie.raw.exists():
         try:
             gain = Path(movie.frames_directory, movie.metadata.GainReference.iloc[-1])
         except AttributeError:
             gain = None
 
         # launch alignframes
+        logger.info(f"Aligning frames for {movie.name}")
         has_aligned = align_frames(
             frames=movie.frames_file,
             output_file=movie.raw,
@@ -113,12 +117,14 @@ def process_hm_from_frames(
         )
         if not has_aligned:
             return movie
-        if not movie.image_path.exists():
-            movie.make_symlink()
-        
+        logger.info(f"Done aligning frames for {movie.name}")
+        # if not movie.image_path.exists():
+        #     movie.make_symlink()
+    if not movie.ctf.exists():
+        logger.info(f"Running CTFfind for {movie.name}")
         # launch ctffind
         ctf_file = CTFfind(
-            input_mrc=movie.image_path,
+            input_mrc=movie.raw,
             output_directory=movie.name,
             voltage=movie.metadata.Voltage.iloc[-1],
             pixel_size=movie.pixel_size,
@@ -126,8 +132,10 @@ def process_hm_from_frames(
         )
         if not ctf_file:
             return movie
+        logger.info(f"Done running CTFfind for {movie.name}")
+    
     # create png based on mrc
-    mrc_to_png(ctf_file)
+    # mrc_to_png(ctf_file)
     movie.read_image()
     movie.set_shape_from_image()
     export_as_png(
@@ -180,7 +188,7 @@ def process_hm_from_average(
     # calculate CTF
     if not montage.ctf.exists():
         CTFfind(
-            input_mrc=montage.image_path,
+            input_mrc=montage.raw,
             output_directory=montage.name,
             voltage=montage.metadata.Voltage.iloc[-1],
             pixel_size=montage.pixel_size,
@@ -188,6 +196,13 @@ def process_hm_from_average(
         )
     return montage
 
+def clear_queue(queue):
+    logger.info(f'Clearing queue')
+    queue.task_done()
+    while not queue.empty():
+        item = queue.get()
+        logger.info(f'Got item={item} from queue')
+        queue.task_done()
 
 def processing_worker_wrapper(logdir, queue, output_queue=None):
     logger.info(f"processing worker: {logdir}\t{queue}\t{output_queue}")
@@ -202,8 +217,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
             item = queue.get()
             logger.info(f'Got item={item} from queue')
             if item == 'exit':
-                queue.task_done()
                 logger.info('Breaking processing worker loop.')
+                clear_queue(queue)
                 break
             if item is not None:
                 logger.debug(f'Running {item[0]} {item[1]} {item[2]} from queue')
@@ -218,5 +233,8 @@ def processing_worker_wrapper(logdir, queue, output_queue=None):
     except Exception as e:
         logger.error("Error in the processing worker")
         logger.exception(e)
+        clear_queue(queue)
     except KeyboardInterrupt as e:
         logger.info('SIGINT recieved by the processing worker')
+        clear_queue(queue)
+

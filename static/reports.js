@@ -94,7 +94,7 @@ async function loadAtlas(metaonly = false, display_type = null, method = null) {
 $('#main').on("mouseenter mouseleave", '.legend', function () {
     $(this).closest('.mapCard').find(`[label='${$(this).attr('label')}']`).toggleClass('hovered')
 })
-$('#main').on("click", '.legend', function () {
+$('#main').on("mousedown", '.legend', function () {
     let card = $(this).closest('.mapCard')
     let elems = card.find(`[label=${$(this).attr('label')}]`)
     for (elem of elems) {
@@ -109,7 +109,7 @@ $('#main').on("click", '.legend', function () {
     }
 })
 
-$('#main').on('click', '.showLegend', function () {
+$('#main').on('mousedown', '.showLegend', function () {
     console.log($(this), $(this).closest('.mapCard'))
     $(this).closest('.mapCard').find('#legend, #scaleBar').toggleClass('d-none')
 })
@@ -195,6 +195,7 @@ async function loadSquare(full_id, metaonly = false, display_type = null, method
     // loadSVG(data, generalElements.square)
     $("#Square_div").html(data.card)
     pushState()
+    htmx.process(htmx.find('#Square_div'))
 
 };
 
@@ -556,6 +557,14 @@ function renderCounts() {
 }
 
 
+function addSVGCoord(svgElement, x, y) {
+    var pt = svgElement.createSVGPoint()
+    pt.x = x
+    pt.y = y
+    var target = add_target(pt)
+    svgElement.appendChild(target)
+    return [target, [pt.x, pt.y]]
+}
 
 function SvgCoords(evt) {
 
@@ -594,10 +603,29 @@ async function addTargets(btn, selection) {
     loadSquare(currentState.square, false)
 }
 
-async function regroupBIS(square_id) {
-    let url = `/api/squares/${square_id}/regroup_bis/`
-    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on for ${square_id}`)
+function getRegroupBISallUrl(object_id) {
+    return `/api/grids/${object_id}/regroup_bis/`
+}
+function getRegroupBISurl(object_id) {
+    return `/api/squares/${object_id}/regroup_bis/`
+}
+
+function getRegroupBISandReselectUrl(object_id) {
+    return `/api/grids/${object_id}/regroup_and_reselect/`
+}
+
+async function regroupBIS(object_id, getUrlFunc=getRegroupBISurl) {
+    let url= getUrlFunc(object_id)
+    let res = await apifetchAsync(url, {}, 'PATCH', message=`Regrouping BIS on ${object_id}`)
     console.log('regroupBIS: ', res)
+    await loadSquare(currentState.square, false)
+}
+
+async function deleteHoles(square_id) {
+    result = confirm('Are you sure you want to delete all holes on this square?')
+    let url = `/api/squares/${square_id}/delete_holes/`
+    let res = await apifetchAsync(url, {}, 'DELETE', message=`Deleting holes on ${square_id}`)
+    console.log('deleteHoles: ', res)
     await loadSquare(currentState.square, false)
 }
 
@@ -682,8 +710,19 @@ function clickHole(elem) {
     pushState()
 };
 
+async function extendLattice(square_id) {
+    var url = `/api/squares/${square_id}/extend_lattice/`
+    data = await fetchAsync(url, message=`Extending lattice for ${square_id}`)
+    console.log(data)
+    while (point = data.pop()) {
+        console.log(point)
+        targetsSelection.push(addSVGCoord(document.getElementById('square-svg'), point[0], point[1]))
+    }
+    checkSelection('targets')
+    
+}
 
-$('#main').on("click", '#Square_div svg', function (event) {
+$('#main').on("mousedown", '#Square_div svg', function (event) {
     if (event.shiftKey) {
         targetsSelection.push(SvgCoords(event))
         console.log(targetsSelection)
@@ -763,7 +802,7 @@ function colorBISgroups() {
 
 }
 
-$("#main").on('click', '.zoomBtn', function () {
+$("#main").on('mousedown', '.zoomBtn', function () {
     console.log('Click', $(this))
     let card = $(this).closest('.holeCard')
     let icon = $(this).children('.zoomIcon')
@@ -775,7 +814,60 @@ $("#main").on('click', '.zoomBtn', function () {
     }
     card.addClass('popupFull')
     icon.removeClass("bi-zoom-in").addClass("bi-zoom-out")
-}) 
+})
+
+function zoomOnOtherCard(elem, inc) {
+    let elems = $('#Hole').find('.holeCard')
+    let elem_ind = elems.index(elem)
+    let new_ind = elem_ind + inc
+    if (new_ind < 0 | new_ind > elems.length -1 ) {
+        console.log(new_ind, 'Out of range:', 0, elems.length)
+        return
+    }
+    console.log('Zooming out:', elem)
+    elem.find('.zoomBtn').trigger('mousedown')
+    let new_elem = elems.eq(new_ind)
+    console.log('Zooming in on:', new_elem)
+    new_elem.find('.zoomBtn').trigger('mousedown')
+}
+
+function scrollToOtherCard(inc) {
+    let elem = $('#Hole')
+    let elem_position = elem.scrollLeft()
+    let cards = elem.find('.holeCard')
+    let elem_size = elem.width()
+    let span = Math.abs(cards.eq(0).position().left - cards.eq(-1).position().left) / cards.length
+
+    let current_position = elem.scrollLeft()
+    let new_position = current_position + elem_size * inc
+    console.log('Moving by', elem_size, 'to', new_position)
+    elem.animate({'scrollLeft': new_position}, 500); 
+}
+
+$(document).keydown(function(e){
+    // left = 37
+    // right = 39
+    if (e.keyCode != 37 && e.keyCode != 39) {
+        return
+    }
+    e.preventDefault()
+    let inc = 0
+    if (e.keyCode == 39) {
+        inc = 1
+    }
+    if (e.keyCode == 37) {
+        inc = -1
+    }
+    let elem = $('.holeCard.popupFull')
+    
+    if (elem.length != 0) {
+        zoomOnOtherCard(elem, inc)
+        return
+    }
+    scrollToOtherCard(inc)
+
+
+});
 
 
 function updateData(data) {

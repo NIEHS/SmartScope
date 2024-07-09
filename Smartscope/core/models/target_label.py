@@ -3,6 +3,7 @@ source model with any other model through content_object
 '''
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 import math
 
 from .base_model import *
@@ -17,10 +18,12 @@ class TargetLabel(BaseModel):
     object_id = models.CharField(max_length=30)
     content_object = GenericForeignKey('content_type', 'object_id')
     method_name = models.CharField(max_length=50, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         abstract = True
         app_label = 'API'
+        ordering = ['-created_at']
 
 
 class Finder(TargetLabel):
@@ -54,3 +57,4 @@ class Selector(TargetLabel):
 
     class Meta(BaseModel.Meta):
         db_table = 'selector'
+            

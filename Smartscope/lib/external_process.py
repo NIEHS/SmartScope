@@ -27,7 +27,7 @@ def align_frames(
     software: alignframes in IMOD
     used by process_hm_from_frames()
     '''
-    com = f'alignframes -input {frames} -output {output_file} -rotation -1 ' + \
+    com = f'alignframes -mem 8 -input {frames} -output {output_file} -rotation -1 -pair -2 '  + \
         f'-dfile {mdoc} -volt {voltage} -plottable {output_shifts}'
     if gain is not None:
        com += f' -gain {gain}'
@@ -68,7 +68,7 @@ def CTFfind(
     output_file = os.path.join(output_directory, 'ctf.mrc')
     # interactive mode required by ctffind
     inputs = [input_mrc, output_file, pixel_size, voltage, spherical_abberation,\
-        0.1, 512, 30, 10, 5000, 50000, 200, 'no','no','no','no','no']
+        0.1, 512, 30, 10, 5000, 40000, 200, 'no','no','no','no','no','yes','no','no','30','7','no','no','no']
     inputs = '\n'.join([str(i) for i in inputs])
     # f'{input_mrc}\n{output_file}\n{pixel_size}\n{voltage}\n{spherical_abberation}\n0.1\n512\n30\n10\n5000\n50000\n200\nno\nno\nno\nno\nno',
     p = subprocess.run(

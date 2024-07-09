@@ -50,6 +50,7 @@ COPY --link ctffind /opt/
 COPY --link miniconda3/ /opt/miniconda3/
 COPY smartscope/ /opt/smartscope/
 COPY external_plugins/ /opt/external_plugins/
+COPY Smartscope-connector /opt/Smartscope-connector/
 
 
 # RUN wget docs.smartscope.org/downloads/Smartscope0.6.tar.gz --no-check-certificate && \
@@ -63,7 +64,8 @@ RUN	mkdir /opt/logs/ /mnt/fake_scope/ /mnt/fake_scope/raw/ /mnt/fake_scope/movie
 RUN chmod 777 -R /mnt/ && \
 	chmod 777 -R /opt/logs/ && \
 	chmod 777 /opt/shared/ && \
-	chmod 777 /opt/config/
+	chmod 777 /opt/config/ && \
+	chmod -R 777 /opt/Template_files
 	# chmod 777 /mnt/testfiles/
 
 USER smartscope_user
