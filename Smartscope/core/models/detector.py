@@ -50,6 +50,7 @@ class Detector(BaseModel):
     frames_windows_directory = models.CharField(
         max_length=200,
         default='movies',
+        blank=True,
         help_text='Location of the frames from the perspective of SerialEM. ' + \
             'This values will use the SetDirectory command.'
     )
