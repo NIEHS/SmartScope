@@ -55,6 +55,7 @@ def autoscreen(session_id:str):
             ) as scope:
 
             logger.debug(f'Main Log handlers:{logger.handlers}')
+            logger.debug(scope.__dict__)
 
             # RUN grid
             for grid in grids:

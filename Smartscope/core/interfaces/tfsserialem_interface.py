@@ -57,6 +57,10 @@ def remove_objective_aperture(function: Callable, wait:int=10):
 class TFSSerialemInterface(SerialemInterface):
     apertures: Apertures = TFSApertures
 
+    def setup(self, *args, **kwargs):
+        super().setup(*args, **kwargs)
+        self.apertures = TFSApertures
+
     def checkDewars(self, wait=30):
         while True:
             if sem.AreDewarsFilling() == 0:
