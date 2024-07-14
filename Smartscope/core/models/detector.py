@@ -52,7 +52,7 @@ class Detector(BaseModel):
         default='movies',
         blank=True,
         help_text='Location of the frames from the perspective of SerialEM. ' + \
-            'This values will use the SetDirectory command.'
+            'This values will use the SetDirectory command. Leave this field empty for Falcon detectors.'
     )
     # frame_directory is path used in container
     # that should be mapped to real dir at server
