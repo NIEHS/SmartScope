@@ -58,9 +58,11 @@ class JEOLSerialemInterface(SerialemInterface):
         else:
             remove_condenser_aperture(
                 super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
-        msg = 'Atlas finished, going to high mag before setting Low dose.'
+        msg = 'Atlas finished, Restoring state.'
         logger.info(msg)
         sem.Echo(msg)
+        sem.RestoreState()
+
         # Necessary to go to high mag before setting low dose to call the right beam alignment
         # delay = 5
         # msg = f'Setting record mag {self.record_mag} and waiting {delay} s.'
