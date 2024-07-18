@@ -49,6 +49,8 @@ class JEOLSerialemInterface(SerialemInterface):
             raise ValueError('Record mag not set. It should be set in the setup method.')
         sem.SetMag(self.record_mag)
         
+    def set_atlas_optics(self):
+        return self.set_atlas_optics_imaging_state()
 
     def atlas(self, *args, **kwargs):
         if not self.microscope.apertureControl:
@@ -60,30 +62,30 @@ class JEOLSerialemInterface(SerialemInterface):
         logger.info(msg)
         sem.Echo(msg)
         # Necessary to go to high mag before setting low dose to call the right beam alignment
-        delay = 5
-        msg = f'Setting record mag {self.record_mag} and waiting {delay} s.'
-        logger.info(msg)
-        sem.Echo(msg)
-        self.go_to_highmag()
-        sem.Delay(delay)
-        msg = f'Enabling Low Dose and waiting {delay} s'
-        logger.info(msg)
-        sem.Echo(msg)
-        sem.SetLowDoseMode(1)
-        sem.Delay(delay)
-        msg = f'Going to Low Dose Record and waiting {delay} s'
-        logger.info(msg)
-        sem.Echo(msg)
-        sem.GoToLowDoseArea('R')
-        sem.Delay(delay)
-        msg = f'Going to Low Dose Search and waiting {delay} s'
-        logger.info(msg)
-        sem.Echo(msg)
-        sem.GoToLowDoseArea('Search')
-        msg = f'Finished setting Low Dose. Taking a Search Image just to test.'
-        logger.info(msg)
-        sem.Echo(msg)
-        sem.Search()
+        # delay = 5
+        # msg = f'Setting record mag {self.record_mag} and waiting {delay} s.'
+        # logger.info(msg)
+        # sem.Echo(msg)
+        # self.go_to_highmag()
+        # sem.Delay(delay)
+        # msg = f'Enabling Low Dose and waiting {delay} s'
+        # logger.info(msg)
+        # sem.Echo(msg)
+        # sem.SetLowDoseMode(1)
+        # sem.Delay(delay)
+        # msg = f'Going to Low Dose Record and waiting {delay} s'
+        # logger.info(msg)
+        # sem.Echo(msg)
+        # sem.GoToLowDoseArea('R')
+        # sem.Delay(delay)
+        # msg = f'Going to Low Dose Search and waiting {delay} s'
+        # logger.info(msg)
+        # sem.Echo(msg)
+        # sem.GoToLowDoseArea('Search')
+        # msg = f'Finished setting Low Dose. Taking a Search Image just to test.'
+        # logger.info(msg)
+        # sem.Echo(msg)
+        # sem.Search()
 
         
 
