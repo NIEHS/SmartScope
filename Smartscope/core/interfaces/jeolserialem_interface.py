@@ -89,6 +89,14 @@ class JEOLSerialemInterface(SerialemInterface):
         # sem.Echo(msg)
         # sem.Search()
 
+    def square(self, *args, **kwargs):
+        if not self.microscope.apertureControl:
+            super().square(*args,**kwargs)
+        else:
+            remove_condenser_aperture(
+                super().square, aperture=self.apertures.CONDENSER)(*args,**kwargs)
+            
+
         
 
     def setup(self, *args, **kwargs):
