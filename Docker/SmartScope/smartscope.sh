@@ -6,9 +6,15 @@ composeCmd="docker compose"
 dockerCmd="docker"
 
 if [ -e "$cmd_file" ]; then
-    read -r dockerCmd < "$cmd_file"
-    read -r composeCmd < "$cmd_file"
+    {
+        read -r dockerCmd
+        read -r composeCmd
+    } < "$cmd_file"
+    echo "Using docker command: $dockerCmd"
+    echo "Using docker-compose command: $composeCmd"
 fi
+
+
 
 helpText () {
     OPTIONS="
@@ -102,10 +108,10 @@ case $argument in
         helpText;;
     python)
         echo "Running a python shell inside the smartscope container"
-        $composeCmd exec -it smartscope manage.py shell -i ipython ;;
+        $composeCmd exec smartscope manage.py shell -i ipython ;;
     exec)
         echo "Executing shell command inside the smartscope container:"
-        $composeCmd exec -it smartscope ${@:2};;
+        $composeCmd exec smartscope ${@:2};;
     setup)
         version=${2:-latest}
         echo "Setting up the latest version of smartscope"
