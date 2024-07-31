@@ -9,12 +9,6 @@ from .microscope_interface import Apertures
 
 logger = logging.getLogger(__name__)
 
-def remove_condenser_aperture(function: Callable, aperture, *args, **kwargs):
-    def wrapper(*args, **kwargs):
-        sem.RemoveAperture(aperture)
-        function(*args, **kwargs)
-        sem.ReInsertAperture(aperture)
-    return wrapper
 
 class JEOLDefaultApertures(Apertures):
     CONDENSER:int=1
@@ -53,16 +47,12 @@ class JEOLSerialemInterface(SerialemInterface):
         return self.set_atlas_optics_imaging_state()
 
     def atlas(self, *args, **kwargs):
-        if self.microscope.apertureControl:
-            self.remove_aperture(self.apertures.CONDENSER)
         super().atlas(*args,**kwargs)
         msg = 'Atlas finished, Restoring Search state.'
         self.logger.info(msg)
         sem.RestoreState()
 
     def square(self, *args, **kwargs):
-        if self.microscope.apertureControl:
-            self.remove_aperture(self.apertures.CONDENSER)
         super().square(*args,**kwargs)
 
 
