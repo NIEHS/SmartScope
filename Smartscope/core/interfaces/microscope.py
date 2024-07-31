@@ -73,29 +73,3 @@ class Microscope(BaseModel):
 
 class CartridgeLoadingError(Exception):
     pass
-
-# class ImagingState(BaseModel):
-#     mag: int = -1
-#     c2_perc: float = -1
-#     last_update: float = time.time()
-
-#     def set_mag(self, mag):
-#         self.mag = mag
-
-#     def set_c2_perc(self, c2_perc):
-#         self.c2_perc = c2_perc
-    
-
-
-#     def update(self, mag, c2_perc, exposure_time):
-#         self.mag = mag
-#         self.c2_perc = c2_perc
-#         self.exposure_time = exposure_time
-#         self.last_update = time.time()
-
-    
-
-# class ImagingStates(BaseModel):
-#     search: ImagingState = ImagingState()
-#     view: ImagingState = ImagingState()
-#     record: ImagingState = ImagingState()

@@ -28,7 +28,7 @@ class SerialEMLogger(MicroscopeLogger):
 class SerialemInterface(MicroscopeInterface):
     logger = SerialEMLogger()
 
-    def eucentricHeight(self, tiltTo:int=10, increments:int=-5):
+    def eucentricHeight(self, tilt_to:int=10, increments:int=-5, max_movement:int=200):
         self.logger.info(f'Doing eucentric height')
         offsetZ = 51
         iteration = 0
@@ -37,7 +37,7 @@ class SerialemInterface(MicroscopeInterface):
             self.logger.info(f'Staring iteration {iteration}')
             alignments = []
             stageZ = sem.ReportStageXYZ()[2]
-            sem.TiltTo(tiltTo)
+            sem.TiltTo(tilt_to)
             currentAngle = int(sem.ReportTiltAngle())
             sem.Search()
             loop = 0
@@ -52,7 +52,7 @@ class SerialemInterface(MicroscopeInterface):
             self.logger.debug(alignments)
             offsetZ = sum(alignments) / (len(alignments) * 1000)
             totalZ = stageZ + offsetZ
-            if abs(totalZ) < 200:
+            if abs(totalZ) < max_movement:
                 self.logger.info(f'Moving by {offsetZ} um')
 
                 sem.MoveStage(0, 0, offsetZ)
@@ -366,16 +366,23 @@ class SerialemInterface(MicroscopeInterface):
     
     def remove_aperture(self,aperture:int, wait:int=10):
         inital_aperture_size = int(sem.ReportApertureSize(aperture))
-        if inital_aperture_size != 0:
+        if inital_aperture_size == 0:
             return
+        self.state.apertures[aperture] = inital_aperture_size
         self.logger.info( f'Removing aperture {aperture} and waiting {wait}s.')
         sem.RemoveAperture(aperture)
         time.sleep(wait)
-        return inital_aperture_size 
-    
-    def _reinsert_aperture(self, aperture:int):
-        if sem.ReportApertureSize(aperture) == 0:
-            sem.ReInsertAperture(aperture)
+        
+    def reinsert_aperture(self, aperture:int, wait:int=10):
+        if sem.ReportApertureSize(aperture) != 0:
+            return
+        self.logger.info( f'Reinserting aperture {aperture} and waiting {wait}s.')
+        sem.ReInsertAperture(aperture)
+        time.sleep(wait)
+
+    def insert_aperture(self, aperture:int, aperture_size:int, wait:int=10):
+        self.logger.info( f'Inserting/Changing aperture {aperture} to {aperture_size} and waiting {wait}s.')
+        sem.SetApertureSize(aperture, aperture_size)
 
     def autofocus_after_distance(self, def1, def2, step, distance):
         last_autofocus_distance = self.state.get_last_autofocus_distance()
@@ -395,4 +402,3 @@ class SerialemInterface(MicroscopeInterface):
             sem.ChangeFocus(defocus_change)
             return
 
-    # def _set_aperture_size(self, aperture:int, aperture_size:int):

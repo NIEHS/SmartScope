@@ -32,7 +32,7 @@ class Detector(BaseModel):
     atlas_max_tiles_Y = models.IntegerField(default=6)
     spot_size = models.IntegerField(default=None, null=True)
     c2_perc = models.FloatField(default=100)
-    atlas_c2_aperture = models.IntegerField(default=70, help_text='Size of the aperture in microns to use during the atlas procedure. Only works on TFS scopes at this time.')
+    atlas_c2_aperture = models.IntegerField(default=70, help_text='Size of the aperture in microns to use during the atlas procedure. Should be set to 0 on JEOL to remove the aperture.')
     atlas_to_search_offset_x = models.FloatField(
         default=0,
         help_text='X stage offset between the atlas and ' + \
