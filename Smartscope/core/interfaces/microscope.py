@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
 import numpy as np
@@ -19,6 +19,7 @@ class MicroscopeState:
     tiltAngle: float = None
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
+    apertureState: Dict = Field(default_factory=dict)
 
     def setStage(self,stageX,stageY,stageZ):
         self.stageX = stageX
@@ -38,6 +39,12 @@ class MicroscopeState:
     def reset_image_shift_values(self):
         self.imageShiftX = 0
         self.imageShiftY = 0
+
+    def get_aperture_state(self, aperture:int):
+        return self.apertureState.get(aperture, None)
+    
+    def set_aperature_state(self, aperture:int, value:float):
+        self.apertureState[aperture] = value
 
 class AtlasSettings(BaseModel):
     mag:int = Field(alias='atlas_mag')

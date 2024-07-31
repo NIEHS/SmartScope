@@ -171,3 +171,18 @@ class FakeScopeInterface(MicroscopeInterface):
 
     def autofocus_after_distance(self, def1, def2, step, distance):
         pass
+
+    def report_aperture_size(self, aperture:int):
+        pass
+  
+    def remove_aperture(self,aperture:int, wait:int=10):
+        pass
+
+    def insert_aperture(self, aperture:int, aperture_size:int, wait:int=10):
+        pass
+
+    def set_apertures_for_highmag(self, highmag_aperture_size:int, objective_aperture_size:int):
+        pass
+
+    def set_apertures_for_lowmag(self):
+        pass

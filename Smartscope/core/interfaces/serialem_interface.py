@@ -364,25 +364,48 @@ class SerialemInterface(MicroscopeInterface):
     def get_property(self, property_name:str):
         return sem.ReportProperty(property_name)
     
+
+    def report_aperture_size(self, aperture:int):
+        aperture_size = self.state.get_aperture_state(aperture)
+        if not aperture_size is None:
+            return aperture_size
+        aperture_size = int(sem.ReportApertureSize(aperture))
+        self.state.set_aperature_state(aperture, aperture_size)
+        return aperture_size
+           
     def remove_aperture(self,aperture:int, wait:int=10):
-        inital_aperture_size = int(sem.ReportApertureSize(aperture))
+        inital_aperture_size = self.report_aperture_size(aperture)
         if inital_aperture_size == 0:
+            self.logger.info( f'Aperture {aperture} already out.')
             return
-        self.state.apertures[aperture] = inital_aperture_size
         self.logger.info( f'Removing aperture {aperture} and waiting {wait}s.')
         sem.RemoveAperture(aperture)
+        self.state.set_aperature_state(aperture, 0)
         time.sleep(wait)
         
-    def reinsert_aperture(self, aperture:int, wait:int=10):
-        if sem.ReportApertureSize(aperture) != 0:
-            return
-        self.logger.info( f'Reinserting aperture {aperture} and waiting {wait}s.')
-        sem.ReInsertAperture(aperture)
-        time.sleep(wait)
-
     def insert_aperture(self, aperture:int, aperture_size:int, wait:int=10):
+        if self.report_aperture_size(aperture) == aperture_size:
+            self.logger.info( f'Aperture {aperture} already at {aperture_size}.')
+            return
         self.logger.info( f'Inserting/Changing aperture {aperture} to {aperture_size} and waiting {wait}s.')
         sem.SetApertureSize(aperture, aperture_size)
+        time.sleep(wait)
+        self.state.set_aperature_state(aperture, aperture_size)
+
+    def set_apertures_for_highmag(self, highmag_aperture_size:int, objective_aperture_size:int):
+        if not self.microscope.apertureControl:
+            return
+        self.insert_aperture(self.apertures.OBJECTIVE, objective_aperture_size)
+        self.insert_aperture(self.apertures.CONDENSER, highmag_aperture_size)
+
+    def set_apertures_for_lowmag(self):
+        if not self.microscope.apertureControl:
+            return
+        self.remove_aperture(self.apertures.OBJECTIVE)
+        if self.atlas_settings.atlas_c2_aperture == 0:
+            self.remove_aperture(self.atlas_settings.atlas_c2_aperture)
+            return
+        self.insert_aperture(self.apertures.CONDENSER, self.atlas_settings.atlas_c2_aperture)
 
     def autofocus_after_distance(self, def1, def2, step, distance):
         last_autofocus_distance = self.state.get_last_autofocus_distance()

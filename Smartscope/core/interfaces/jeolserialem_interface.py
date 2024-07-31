@@ -53,51 +53,18 @@ class JEOLSerialemInterface(SerialemInterface):
         return self.set_atlas_optics_imaging_state()
 
     def atlas(self, *args, **kwargs):
-        if not self.microscope.apertureControl:
-            super().atlas(*args,**kwargs)
-        else:
-            remove_condenser_aperture(
-                super().atlas, aperture=self.apertures.CONDENSER)(*args,**kwargs)
-        msg = 'Atlas finished, Restoring state.'
+        if self.microscope.apertureControl:
+            self.remove_aperture(self.apertures.CONDENSER)
+        super().atlas(*args,**kwargs)
+        msg = 'Atlas finished, Restoring Search state.'
         self.logger.info(msg)
-        sem.Echo(msg)
         sem.RestoreState()
 
-        # Necessary to go to high mag before setting low dose to call the right beam alignment
-        # delay = 5
-        # msg = f'Setting record mag {self.record_mag} and waiting {delay} s.'
-        # logger.info(msg)
-        # sem.Echo(msg)
-        # self.go_to_highmag()
-        # sem.Delay(delay)
-        # msg = f'Enabling Low Dose and waiting {delay} s'
-        # logger.info(msg)
-        # sem.Echo(msg)
-        # sem.SetLowDoseMode(1)
-        # sem.Delay(delay)
-        # msg = f'Going to Low Dose Record and waiting {delay} s'
-        # logger.info(msg)
-        # sem.Echo(msg)
-        # sem.GoToLowDoseArea('R')
-        # sem.Delay(delay)
-        # msg = f'Going to Low Dose Search and waiting {delay} s'
-        # logger.info(msg)
-        # sem.Echo(msg)
-        # sem.GoToLowDoseArea('Search')
-        # msg = f'Finished setting Low Dose. Taking a Search Image just to test.'
-        # logger.info(msg)
-        # sem.Echo(msg)
-        # sem.Search()
-
     def square(self, *args, **kwargs):
-        if not self.microscope.apertureControl:
-            super().square(*args,**kwargs)
-        else:
-            remove_condenser_aperture(
-                super().square, aperture=self.apertures.CONDENSER)(*args,**kwargs)
-            
+        if self.microscope.apertureControl:
+            self.remove_aperture(self.apertures.CONDENSER)
+        super().square(*args,**kwargs)
 
-        
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
@@ -124,7 +91,6 @@ class JEOLSerialemInterface(SerialemInterface):
             sem.Delay(5)
             command = f'{self.additional_settings.transfer_cartridge_path} \"{position} 3 0\"'
             self.logger.info(f'Loading grid with command: \"{command}\"')
-            sem.Echo(f'Loading grid with command: \"{command}\"')
             sem.RunInShell(command)
             sem.Delay(5)
         sem.SetColumnOrGunValve(1)

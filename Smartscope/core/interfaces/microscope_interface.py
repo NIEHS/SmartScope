@@ -158,14 +158,9 @@ class MicroscopeInterface(ABC):
     def acquire_medium_mag(self):
         pass
 
-
     @abstractmethod
-    def medium_mag_hole(self, tiltAngle, file=''):
+    def medium_mag_hole(self, file:str=''):
         pass
-
-    # @abstractmethod
-    # def focusDrift(self, def1, def2, step, drifTarget):
-    #     pass
 
     @abstractmethod
     def load_hole_ref(self):
@@ -218,4 +213,24 @@ class MicroscopeInterface(ABC):
 
     @abstractmethod
     def autofocus_after_distance(self, def1, def2, step, distance):
+        pass
+
+    @abstractmethod
+    def report_aperture_size(self, aperture:int):
+        pass
+
+    @abstractmethod     
+    def remove_aperture(self,aperture:int, wait:int=10):
+        pass
+
+    @abstractmethod 
+    def insert_aperture(self, aperture:int, aperture_size:int, wait:int=10):
+        pass
+
+    @abstractmethod
+    def set_apertures_for_highmag(self, highmag_aperture_size:int, objective_aperture_size:int):
+        pass
+
+    @abstractmethod
+    def set_apertures_for_lowmag(self):
         pass
