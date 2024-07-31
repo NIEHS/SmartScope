@@ -12,8 +12,26 @@ class Apertures(ABC):
     pass
 
 
+class MicroscopeLogger:
+
+    prefix = 'MicroscopeInterface'
+    debug_prefix = 'DEBUG:'
+    info_prefix = 'INFO:'
+
+    def _create_message(self, message:str, *prefix:str):
+        return ' '.join(prefix) + message
+
+    def info(self, message:str):
+        msg = self._create_message(message, self.prefix, self.info_prefix)
+        logger.info(msg)
+    
+    def debug(self, message:str):
+        msg = self._create_message(message, self.prefix, self.debug_prefix)
+        logger.debug(msg)
+
 @dataclass
 class MicroscopeInterface(ABC):
+    logger = MicroscopeLogger()
     microscope: Microscope
     detector: Detector
     atlas_settings:AtlasSettings
