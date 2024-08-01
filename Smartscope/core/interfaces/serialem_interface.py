@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 class SerialEMLogger(MicroscopeLogger):
 
     def info(self, message:str):
-        msg = self._create_message(message, self.prefix, self.logger.info_prefix)
+        msg = self._create_message(message, self.prefix, self.info_prefix)
         logger.info(msg)
         sem.Echo(msg)
     
     def debug(self, message: str):
-        msg = self._create_message(message, self.prefix, self.logger.debug_prefix)
+        msg = self._create_message(message, self.prefix, self.debug_prefix)
         logger.debug(msg)
         sem.Echo(msg)
 
