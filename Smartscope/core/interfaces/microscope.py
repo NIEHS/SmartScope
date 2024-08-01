@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
 import numpy as np
@@ -19,6 +19,7 @@ class MicroscopeState:
     tiltAngle: float = None
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
+    apertureState: Dict = Field(default_factory=dict)
 
     def setStage(self,stageX,stageY,stageZ):
         self.stageX = stageX
@@ -38,6 +39,12 @@ class MicroscopeState:
     def reset_image_shift_values(self):
         self.imageShiftX = 0
         self.imageShiftY = 0
+
+    def get_aperture_state(self, aperture:int):
+        return self.apertureState.get(aperture, None)
+    
+    def set_aperature_state(self, aperture:int, value:float):
+        self.apertureState[aperture] = value
 
 class AtlasSettings(BaseModel):
     mag:int = Field(alias='atlas_mag')
@@ -73,29 +80,3 @@ class Microscope(BaseModel):
 
 class CartridgeLoadingError(Exception):
     pass
-
-# class ImagingState(BaseModel):
-#     mag: int = -1
-#     c2_perc: float = -1
-#     last_update: float = time.time()
-
-#     def set_mag(self, mag):
-#         self.mag = mag
-
-#     def set_c2_perc(self, c2_perc):
-#         self.c2_perc = c2_perc
-    
-
-
-#     def update(self, mag, c2_perc, exposure_time):
-#         self.mag = mag
-#         self.c2_perc = c2_perc
-#         self.exposure_time = exposure_time
-#         self.last_update = time.time()
-
-    
-
-# class ImagingStates(BaseModel):
-#     search: ImagingState = ImagingState()
-#     view: ImagingState = ImagingState()
-#     record: ImagingState = ImagingState()

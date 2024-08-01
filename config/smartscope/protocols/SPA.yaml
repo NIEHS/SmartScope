@@ -2,9 +2,9 @@ name: SPA
 atlas:
   acquisition:
       - setAtlasOptics
+      - setAperturesForLowMag
       - resetStage
       - removeSlit
-      # - eucentricSearch
       - atlas
   targets:
     finders:
@@ -13,6 +13,7 @@ atlas:
       - Size selector
 square:
   acquisition:
+    - setAperturesForLowMag
     - moveStageWithAtlasToSearchOffset
     - realignToSquare
     - eucentricSearch
@@ -25,6 +26,7 @@ square:
       - Graylevel selector
 mediumMag:
   acquisition:
+    - setAperturesForHighMag
     - setFocusPosition
     - tiltToAngle
     - moveStage

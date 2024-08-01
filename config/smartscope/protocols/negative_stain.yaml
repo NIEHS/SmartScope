@@ -2,6 +2,7 @@ name: NegativeStain
 atlas:
   acquisition:
       - setAtlasOptics
+      - setAperturesForLowMag
       - resetStage
       - removeSlit
       # - eucentricSearch
@@ -13,6 +14,7 @@ atlas:
       - Size selector
 square:
   acquisition:
+    - setAperturesForLowMag
     - moveStageWithAtlasToSearchOffset
     - realignToSquare
     - eucentricSearch
@@ -24,6 +26,7 @@ square:
       - Graylevel selector
 mediumMag:
   acquisition:
+    - setAperturesForHighMag
     - tiltToAngle
     - moveStage
     - mediumMagHole

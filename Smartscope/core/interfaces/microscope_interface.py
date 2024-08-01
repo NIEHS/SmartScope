@@ -12,8 +12,26 @@ class Apertures(ABC):
     pass
 
 
+class MicroscopeLogger:
+
+    prefix = 'MicroscopeInterface'
+    debug_prefix = 'DEBUG:'
+    info_prefix = 'INFO:'
+
+    def _create_message(self, message:str, *prefix:str):
+        return ' '.join(prefix) + message
+
+    def info(self, message:str):
+        msg = self._create_message(message, self.prefix, self.info_prefix)
+        logger.info(msg)
+    
+    def debug(self, message:str):
+        msg = self._create_message(message, self.prefix, self.debug_prefix)
+        logger.debug(msg)
+
 @dataclass
 class MicroscopeInterface(ABC):
+    logger = MicroscopeLogger()
     microscope: Microscope
     detector: Detector
     atlas_settings:AtlasSettings
@@ -140,14 +158,9 @@ class MicroscopeInterface(ABC):
     def acquire_medium_mag(self):
         pass
 
-
     @abstractmethod
-    def medium_mag_hole(self, tiltAngle, file=''):
+    def medium_mag_hole(self, file:str=''):
         pass
-
-    # @abstractmethod
-    # def focusDrift(self, def1, def2, step, drifTarget):
-    #     pass
 
     @abstractmethod
     def load_hole_ref(self):
@@ -200,4 +213,24 @@ class MicroscopeInterface(ABC):
 
     @abstractmethod
     def autofocus_after_distance(self, def1, def2, step, distance):
+        pass
+
+    @abstractmethod
+    def report_aperture_size(self, aperture:int):
+        pass
+
+    @abstractmethod     
+    def remove_aperture(self,aperture:int, wait:int=10):
+        pass
+
+    @abstractmethod 
+    def insert_aperture(self, aperture:int, aperture_size:int, wait:int=10):
+        pass
+
+    @abstractmethod
+    def set_apertures_for_highmag(self, highmag_aperture_size:int, objective_aperture_size:int):
+        pass
+
+    @abstractmethod
+    def set_apertures_for_lowmag(self):
         pass

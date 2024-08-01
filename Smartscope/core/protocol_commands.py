@@ -201,6 +201,16 @@ def autoFocusAfterDistance(scope:MicroscopeInterface,params,instance, content:Di
         distance
         )
 
+def set_apertures_for_highmag(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    """Sets the apertures for the highmag image."""
+    scope.set_apertures_for_highmag(
+        highmag_aperture_size=params.highmag_aperture_size,
+        objective_aperture_size=params.objective_aperture_size
+    )
+
+def set_apertures_for_lowmag(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    scope.set_apertures_for_lowmag()
+
 
 protocolCommandsFactory = dict(
     setAtlasOptics=setAtlasOptics,
@@ -223,6 +233,8 @@ protocolCommandsFactory = dict(
     loadHoleRef=loadHoleRef,
     highMag=highMag,
     setFocusPosition=setFocusPosition,
+    setAperturesForHighMag=set_apertures_for_highmag,
+    setAperturesForLowMag=set_apertures_for_lowmag,
     autoFocus=autoFocus,
     autoFocusAfterDistance=autoFocusAfterDistance,
     waitDrift=waitDrift
