@@ -19,7 +19,7 @@ class MicroscopeState:
     tiltAngle: float = None
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
-    apertureState: Dict = Field(default_factory=dict)
+    apertureState: Dict = dict()
 
     def setStage(self,stageX,stageY,stageZ):
         self.stageX = stageX
