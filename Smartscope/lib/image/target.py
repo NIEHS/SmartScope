@@ -6,6 +6,9 @@ import numpy as np
 from torch import Tensor
 
 from .process_image import ProcessImage
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Target:
@@ -93,18 +96,18 @@ class Target:
             self.coords.reshape(-1,2),
             montage.metadata.piece_center
         )
-        if 'ImageToStageMatrix' in montage.metadata:
-            print('Using ImageToStageMatrix')
-            self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
-                self.flip_y(self.coords,montage.shape_y),
-                montage.metadata.iloc[tile].ImageToStageMatrix
-            )
-            self.stage_z = montage.stage_z
-            return 
-        
-        self.stage_x, self.stage_y = ProcessImage.pixel_to_stage(
-            dist,
-            montage.metadata.iloc[tile],
-            montage.metadata.iloc[tile].TiltAngle
+        # if 'ImageToStageMatrix' in montage.metadata:
+        logger.info('Using ImageToStageMatrix')
+        self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
+            self.flip_y(self.coords,montage.shape_y),
+            montage.metadata.iloc[tile].ImageToStageMatrix
         )
         self.stage_z = montage.stage_z
+        return 
+        
+        # self.stage_x, self.stage_y = ProcessImage.pixel_to_stage(
+        #     dist,
+        #     montage.metadata.iloc[tile],
+        #     montage.metadata.iloc[tile].TiltAngle
+        # )
+        # self.stage_z = montage.stage_z
