@@ -49,7 +49,7 @@ class SerialemInterface(MicroscopeInterface):
                 sem.AlignTo('B', 1)
                 alignments.append(sem.ReportAlignShift()[5] / math.sin(math.radians(abs(increments) * loop)))
 
-            self.logger.debug(alignments)
+            self.logger.debug(', '.join(alignments))
             offsetZ = sum(alignments) / (len(alignments) * 1000)
             totalZ = stageZ + offsetZ
             if abs(totalZ) < max_movement:
