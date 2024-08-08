@@ -403,7 +403,7 @@ class SerialemInterface(MicroscopeInterface):
             return
         self.remove_aperture(self.apertures.OBJECTIVE)
         if self.atlas_settings.atlas_c2_aperture == 0:
-            self.remove_aperture(self.atlas_settings.atlas_c2_aperture)
+            self.remove_aperture(self.apertures.CONDENSER)
             return
         self.insert_aperture(self.apertures.CONDENSER, self.atlas_settings.atlas_c2_aperture)
 
