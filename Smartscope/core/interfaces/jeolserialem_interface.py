@@ -66,7 +66,7 @@ class JEOLSerialemInterface(SerialemInterface):
         if not self.microscope.apertureControl:
             return None
         extra_apertures_property = int(self.get_property('JeolHasExtraApertures'))
-        self.debug(f'Extra apertures property: {extra_apertures_property}, {type(extra_apertures_property)}')
+        # self.debug(f'Extra apertures property: {extra_apertures_property}, {type(extra_apertures_property)}')
         if extra_apertures_property == 1:
             logging.info('Extra apertures detected')
             return JEOLExtraApertures
