@@ -17,7 +17,7 @@ from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.utils.timezone import now
 
-from .forms import *
+from ..forms import *
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol

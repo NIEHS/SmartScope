@@ -36,6 +36,9 @@ class TagGrid(BaseModel):
 
     grid_id = models.ForeignKey('AutoloaderGrid', on_delete=models.CASCADE)
 
+    @property
+    def name(self):
+        return self.content_object.name
 
 class SampleTag(UserGroupTag):
     pass

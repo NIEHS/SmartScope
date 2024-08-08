@@ -245,7 +245,7 @@ class SerialemInterface(MicroscopeInterface):
             sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
 
     def connect(self):
-        self.logger.info(
+        logger.info(
             f"""
             Initiating connection to SerialEM at: {self.microscope.ip}:{self.microscope.port}
             If no more messages show up after this one and the External Control notification 

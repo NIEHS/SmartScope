@@ -217,6 +217,7 @@ class ReportPanel(APIView):
         if user.is_staff or group.pk in user_groups:
             context = dict()
             context['grid'] = grid
+            context['tagsFeatureFlag'] = settings.TAGS_FEATURE_FLAG
             context['gridform'] = AutoloaderGridReportForm(instance=context['grid'])
             context['gridCollectionParamsForm'] = GridCollectionParamsForm(instance=context['grid'].params_id, grid_id=context['grid'].grid_id)
             context['useMicroscope'] = settings.USE_MICROSCOPE

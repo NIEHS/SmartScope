@@ -1,0 +1,16 @@
+{% extends "general/right_sidebar.html" %}
+{% block title %}Tags manager{% endblock %}
+{% block sidebar_content %}
+    <hr class="mx-3 my-2">
+    <div class="col justify-content-center" hx-target="#sampleTypeTags">
+        <span><b>Sample Type Tags</b></span>
+        {% include "tags/tags_list_dropdown.html" with tags=sample_type_tags_choices %}
+        <div id="sampleTypeTags" >
+            {% include "tags/tags_list.html" with tags=sample_type_tags %}
+        </div>
+    </div>
+<script>
+    $("img[id$='_help']").tooltip();
+</script>
+
+{% endblock %}
