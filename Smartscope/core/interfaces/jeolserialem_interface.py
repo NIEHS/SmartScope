@@ -60,14 +60,13 @@ class JEOLSerialemInterface(SerialemInterface):
         super().setup(*args, **kwargs)
         self.apertures = self._apertures_setter()
         sem.SetLowDoseMode(1)
-        # sem.GoToLowDoseArea('R')
-        # self.record_mag = int(sem.ReportMag()[0])
         self.logger.info(f'LD highmag parameters found. Record mag: {self.record_mag}')
 
     def _apertures_setter(self):
         if not self.microscope.apertureControl:
             return None
         extra_apertures_property = int(self.get_property('JeolHasExtraApertures'))
+        self.debug(f'Extra apertures property: {extra_apertures_property}, {type(extra_apertures_property)}')
         if extra_apertures_property == 1:
             logging.info('Extra apertures detected')
             return JEOLExtraApertures
