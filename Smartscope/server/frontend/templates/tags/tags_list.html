@@ -1,0 +1,9 @@
+{% for tag in tags %}
+    <span class="badge rounded-pill bg-primary">
+        {{ tag.name }}
+        <i class="bi bi-x" 
+        hx-delete="{% url 'removeTagFromGrid' object_id=tag.pk %}"
+        ></i>
+    </span>
+
+{% endfor %}

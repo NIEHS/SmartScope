@@ -33,7 +33,7 @@
 
 </head>
 
-<body>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <title>{% block title %}{% endblock %}</title>
     <nav class="navbar navbar-default navbar-expand-md navbar-dark bg-dark fixed-top" role="navigation">
         <div class="navbar-brand m-0 p-0 pl-1">

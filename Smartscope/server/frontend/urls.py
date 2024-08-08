@@ -5,7 +5,7 @@ from django.views.static import serve
 from django.views.generic import RedirectView
 
 
-from . import views
+from .views import views, tags
 
 urlpatterns = [
     path('', RedirectView.as_view(url='browse/'), name=''),
@@ -23,6 +23,10 @@ urlpatterns = [
     path('preprocessing/<grid_id>/start',views.PreprocessingPipeline().start,name='startPreprocessingPipeline'),
     path('preprocessing/<grid_id>/stop',views.PreprocessingPipeline().stop,name='stopPreprocessingPipeline'),
     path('collectionstats/<grid_id>/',views.CollectionStatsView.as_view(),name='collectionStats'),
+    path('tags/<grid_id>/',tags.tag_manager,name='tagsManager'),
+    path('tags/addsampletypetag/<grid_id>/',tags.add_sample_type_tag,name='addSampleTypeTag'),
+    path('tags/searchtags/<tag_type>/',tags.search_tags,name='searchTags'),
+    path('tags/removetag/<object_id>/',tags.remove_tag_from_grid,name='removeTagFromGrid'),
 ]
 if settings.USE_MICROSCOPE:
     urlpatterns += [

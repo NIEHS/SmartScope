@@ -53,7 +53,6 @@
                         rows="1">{{grid.notes}}</textarea>
                 </div>
             </div>
-            <!-- <input id="editNotesSubmit" class="btn btn-sm btn-outline-primary col-2 col-md-auto" type="submit" value="Save"> -->
 
         </form>
         <div class='d-flex flex-row col-12 col-md-4 align-items-center justify-content-center'>
@@ -72,7 +71,11 @@
                 hx-swap="beforeend",>
                 Show protocol
             </button>
-
+            {% if tagFeatureFlag %}
+            <button id='gridTagsBtn' hx-get="{% url 'tagsManager' grid_id=grid.grid_id %}" hx-target="#main" hx-swap="beforeend" class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button">
+                Tags
+            </button>
+            {% endif %}
             <button id='gridParamBtn' class="btn btn-sm btn-outline-primary col-3 col-md-auto mx-1" type="button"
                 data-bs-toggle="collapse" data-bs-target="#collapseGridParams" aria-expanded="false"
                 aria-controls="collapseExample">
