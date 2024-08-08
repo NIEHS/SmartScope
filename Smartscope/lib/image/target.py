@@ -89,7 +89,9 @@ class Target:
             # self.area = np.pi * (self.radius ** 2)
 
     def flip_y(self, coords, shape_y):
-        return np.array([coords[0],shape_y - coords[1]])
+        coords= np.array([coords[0],shape_y - coords[1]])
+        logger.debug(f'Flipping y coords: {coords}')
+        return coords
 
     def convert_image_coords_to_stage(self, montage):
         tile, dist = ProcessImage.closest_node(
