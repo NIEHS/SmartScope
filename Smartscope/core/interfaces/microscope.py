@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
 import numpy as np
 import time
@@ -19,7 +19,7 @@ class MicroscopeState:
     tiltAngle: float = None
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
-    apertureState: Dict = dict()
+    apertureState: Dict = field(default_factory=dict)
 
     def setStage(self,stageX,stageY,stageZ):
         self.stageX = stageX
