@@ -195,3 +195,16 @@ def test_find_hole_geometry(grid_id):
     grid = AutoloaderGrid.objects.get(pk=grid_id)
     rotation, spacing = save_hole_geometry(grid)
     print(f'Updated grid {grid} with rotation: {rotation} degrees and spacing: {spacing} pixels.')
+
+
+def test_image_to_stage_conversion(image_file, coords):
+    from pathlib import Path
+    from Smartscope.lib.image.montage import Montage
+    from Smartscope.lib.image.target import Target
+    montage_file = Path(image_file)
+    montage = Montage(name=montage_file.stem)
+    montage.raw = montage_file
+    montage.load_or_process()
+    coords = [int(i) for i in coords.split(',')]
+    target = Target(coords, from_center=True)
+    target.convert_image_coords_to_stage(montage, compare=True)

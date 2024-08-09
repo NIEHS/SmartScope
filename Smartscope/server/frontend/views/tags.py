@@ -1,14 +1,7 @@
 import logging
 from django.shortcuts import render
 
-from django.contrib.auth import logout, authenticate, login
-from django.conf import settings
-from django.http import JsonResponse, HttpResponse
-from django.template.response import TemplateResponse
-from django.views.generic import TemplateView
-from django.shortcuts import redirect
 from django.contrib.contenttypes.models import ContentType
-from django.utils.timezone import now
 
 from Smartscope.core.models.tags import SampleTypeTag, UserGroupTag, Tag, TagGrid, SampleTag, ProjectTag
 from Smartscope.core.models import AutoloaderGrid
@@ -42,7 +35,6 @@ def create_tag_question(request):
     return render(request, 'tags/create_tag_question.html')
 
 def search_tags(request, tag_type:str):
-    logger.debug(request.__dict__)
     tag = request.GET.get('tag')
     logger.debug(f'Searching for tag {tag} of type {tag_type}')
     tags = get_tag_type(tag_type).objects.filter(name__icontains=tag)
@@ -65,12 +57,7 @@ def add_tag_to_grid(request, tag_type: Tag, grid_id:str):
         content_type = ContentType.objects.get_for_model(tag_type)
         grid_id = AutoloaderGrid.objects.get(grid_id=grid_id)
         tag = request.POST.get('tag')
-        # tag_type = get_tag_type(tag_type)
-        # try:
         object_id = tag_type.objects.get(name=tag)
-        # except tag_type.DoesNotExist:
-        #     return create_tag_question(request)
-        # grid_id = request.POST.get('grid_id')
         tag_instance, _ = TagGrid.objects.get_or_create(content_type=content_type, object_id=object_id.pk, grid_id=grid_id)
         grid_tags = get_grid_tags(grid_id, content_type)
         context = {'tags': grid_tags}
