@@ -6,6 +6,7 @@ import numpy as np
 from torch import Tensor
 
 from .process_image import ProcessImage
+# from .montage import Montage
 import logging
 
 logger = logging.getLogger(__name__)
@@ -89,27 +90,39 @@ class Target:
             # self.area = np.pi * (self.radius ** 2)
 
     def flip_y(self, coords, shape_y):
-        coords= np.array([coords[0],shape_y - coords[1]])
-        logger.debug(f'Flipping y coords: {coords}')
-        return coords
+        flipped_coords= np.array([coords[0],shape_y - coords[1]])
+        logger.debug(f'Flipping y coords: {coords} to {flipped_coords}')
+        return flipped_coords
+    
 
-    def convert_image_coords_to_stage(self, montage):
+
+    def convert_image_coords_to_stage(self, montage, force_legacy=False, compare=False):
         tile, dist = ProcessImage.closest_node(
             self.coords.reshape(-1,2),
             montage.metadata.piece_center
         )
-        # if 'ImageToStageMatrix' in montage.metadata:
-        logger.info('Using ImageToStageMatrix')
-        self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
-            self.flip_y(self.coords,montage.shape_y),
-            montage.metadata.iloc[tile].ImageToStageMatrix
-        )
-        self.stage_z = montage.stage_z
-        return 
+        if 'ImageToStageMatrix' in montage.metadata and not force_legacy:
+            flipped_coords = self.flip_y(self.coords,montage.shape_y)
+            self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
+                flipped_coords,
+                montage.metadata.iloc[tile].ImageToStageMatrix
+            )
+            logger.debug(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[tile].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
+            self.stage_z = montage.stage_z
+            if not compare:
+                return
+            is_to_stage = np.array([self.stage_x, self.stage_y])
         
-        # self.stage_x, self.stage_y = ProcessImage.pixel_to_stage(
-        #     dist,
-        #     montage.metadata.iloc[tile],
-        #     montage.metadata.iloc[tile].TiltAngle
-        # )
-        # self.stage_z = montage.stage_z
+        (self.stage_x, self.stage_y), vector = ProcessImage.pixel_to_stage(
+            dist,
+            montage.metadata.iloc[tile],
+            montage.metadata.iloc[tile].TiltAngle,
+            return_vector=True
+        )
+        logger.debug(f'\nUsed mdoc-derived vector {vector.tolist()} to convert:\n\tImage coords: {self.coords} to\n\tStage coords: {self.stage_coords}')
+        self.stage_z = montage.stage_z
+        mdoc_to_stage = np.array([self.stage_x, self.stage_y])
+        if compare:
+            difference = is_to_stage - mdoc_to_stage
+            logger.debug(f'Difference between ImageToStageMatrix and mdoc-derived vectors: {difference} microns')
+            return is_to_stage, mdoc_to_stage, difference
