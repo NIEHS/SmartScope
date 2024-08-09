@@ -89,7 +89,8 @@ class Target:
         self.radius = min(len1, len2) / 2
             # self.area = np.pi * (self.radius ** 2)
 
-    def flip_y(self, coords, shape_y):
+    @staticmethod
+    def flip_y(coords, shape_y):
         flipped_coords= np.array([coords[0],shape_y - coords[1]])
         logger.debug(f'Flipping y coords: {coords} to {flipped_coords}')
         return flipped_coords
@@ -107,7 +108,7 @@ class Target:
                 flipped_coords,
                 montage.metadata.iloc[tile].ImageToStageMatrix
             )
-            logger.debug(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[tile].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
+            logger.info(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[tile].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
             self.stage_z = montage.stage_z
             if not compare:
                 return
@@ -119,10 +120,10 @@ class Target:
             montage.metadata.iloc[tile].TiltAngle,
             return_vector=True
         )
-        logger.debug(f'\nUsed mdoc-derived vector {vector.tolist()} to convert:\n\tImage coords: {self.coords} to\n\tStage coords: {self.stage_coords}')
+        logger.info(f'\nUsed mdoc-derived vector {vector.tolist()} to convert:\n\tImage coords: {self.coords} to\n\tStage coords: {self.stage_coords}')
         self.stage_z = montage.stage_z
         mdoc_to_stage = np.array([self.stage_x, self.stage_y])
         if compare:
             difference = is_to_stage - mdoc_to_stage
-            logger.debug(f'Difference between ImageToStageMatrix and mdoc-derived vectors: {difference} microns')
+            logger.info(f'Difference between ImageToStageMatrix and mdoc-derived vectors: {difference} microns')
             return is_to_stage, mdoc_to_stage, difference
