@@ -12,21 +12,21 @@ from django.contrib.contenttypes.models import ContentType
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from Smartscope.core.models import *
-# from Smartscope.core.run_grid import load_multishot_from_file
-from Smartscope.server.api.serializers import update_to_fullmeta, SvgSerializer
+
+from Smartscope.server.api.serializers import update_to_fullmeta
+
+# from django.db import models
+from . import models
+from .data_manipulations import filter_targets, apply_filter
 
 logger = logging.getLogger(__name__)
-
-from django.db import models
-from .models.grid import AutoloaderGrid
 
 class Websocket_update_decorator:
 
     def __init__(self,
             f: Callable[[Any],
             List[Any]] = None,
-            grid: Union[AutoloaderGrid, None] = None
+            grid: Union[models.AutoloaderGrid, None] = None
         ):
         self.f = f
         self.grid = grid
@@ -52,15 +52,14 @@ def websocket_update(objs, grid_id):
     async_to_sync(channel_layer.group_send)(grid_id, outputDict)
 
 
-def update_target_selection(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
-    from .models.hole import HoleModel
+def update_target_selection(model:models.BaseModel,objects_ids:List[str],value:str, *args, **kwargs):
 
     status = None
     value = True if value == '1' else False
     if value:
         status = 'queued'
     objs = list(model.objects.filter(pk__in=objects_ids))
-    if model is HoleModel:
+    if model is models.HoleModel:
         bis_groups = set([obj.bis_group for obj in objs])
         extra_params = dict()
         if bis_groups != set([None]):
@@ -79,12 +78,11 @@ def update_target_selection(model:models.Model,objects_ids:List[str],value:str, 
             obj.status = status
             obj.save()  
 
-def update_target_label(model:models.Model,objects_ids:List[str],value:str,method:str, *args, **kwargs):
-    from .models.target_label import Classifier
+def update_target_label(model:models.BaseModel,objects_ids:List[str],value:str,method:str, *args, **kwargs):
 
     content_type = ContentType.objects.get_for_model(model)
     logger.debug('Updating Classifier objects')
-    objs = Classifier.objects.filter(object_id__in=objects_ids, method_name=method)
+    objs = models.Classifier.objects.filter(object_id__in=objects_ids, method_name=method)
     new_objs = set(objects_ids).difference([obj.pk for obj in objs])
     logger.debug(f'From {len(objects_ids)} ids, found {len(objs)}. Updating label to {value}')
     with transaction.atomic():
@@ -92,9 +90,9 @@ def update_target_label(model:models.Model,objects_ids:List[str],value:str,metho
             obj.label = value
             obj.save()
         for obj in new_objs:
-            Classifier(object_id=obj, method_name=method,content_type=content_type, label=value).save()
+            models.Classifier(object_id=obj, method_name=method,content_type=content_type, label=value).save()
 
-def update_target_status(model:models.Model,objects_ids:List[str],value:str, *args, **kwargs):
+def update_target_status(model:models.BaseModel,objects_ids:List[str],value:str, *args, **kwargs):
     objs = list(model.objects.filter(pk__in=objects_ids))
     with transaction.atomic():
         for obj in objs:
@@ -103,16 +101,15 @@ def update_target_status(model:models.Model,objects_ids:List[str],value:str, *ar
 
 
 def set_or_update_refined_finder(object_id, stage_x, stage_y, stage_z):
-    from .models.target_label import Finder
 
-    refined = Finder.objects.filter(object_id=object_id, method_name='Recentering')
+    refined = models.Finder.objects.filter(object_id=object_id, method_name='Recentering')
     if refined:
         refined.update(stage_x=stage_x,
                         stage_y=stage_y,
                         stage_z=stage_z,)
         return
-    original = Finder.objects.filter(object_id=object_id).first()
-    new = Finder(
+    original = models.Finder.objects.filter(object_id=object_id).first()
+    new = models.Finder(
         content_type=original.content_type,
         x=original.x,
         y=original.y,
@@ -132,7 +129,7 @@ def viewer_only(user):
     return False
 
 
-def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, iterations=500, score_weight=2):
+def group_holes_for_BIS(hole_models:List[models.HoleModel], max_radius=4, min_group_size=1, iterations=500, score_weight=2):
     if len(hole_models) == 0:
         return  hole_models
     logger.debug(
@@ -206,11 +203,27 @@ def group_holes_for_BIS(hole_models, max_radius=4, min_group_size=1, iterations=
 
     return hole_models
 
+def group_holes_from_square_for_BIS(square:models.SquareModel, max_radius=4, min_group_size=1, iterations=500, score_weight=2):
+    
+    targets = square.targets.filter(status__isnull=True)
+    filtered = filter_targets(square, targets)
+    holes_for_grouping = apply_filter(targets, filtered)
+    
+    logger.info(f'Holes for grouping = {len(holes_for_grouping)}')
 
-def queue_atlas(grid):
-    from .models.atlas import AtlasModel
+    holes = group_holes_for_BIS(
+        holes_for_grouping,
+        max_radius=max_radius,
+        min_group_size=min_group_size,
+        iterations=iterations,
+    )
 
-    atlas, created = AtlasModel.objects.get_or_create(
+    with transaction.atomic():
+        for hole in holes:
+            hole.save()
+
+def queue_atlas(grid:models.AutoloaderGrid):
+    atlas, created = models.AtlasModel.objects.get_or_create(
         name=f'{grid.name}_atlas',
         grid_id=grid)
     if created or atlas.status is None:
@@ -232,19 +245,15 @@ def update(instance, refresh_from_db=False, extra_fields=[], **kwargs):
 
 
 def add_targets(grid, parent, targets, model, finder, classifier=None, start_number=0, **extra_fields):
-    from .models.square import SquareModel
-    from .models.hole import HoleModel
-    from .models.high_mag import HighMagModel
-    from .models.target_label import Finder
     output = []
     defaut_field_dict = dict(grid_id=grid, **extra_fields)
-    if model is SquareModel:
+    if model is models.SquareModel:
         defaut_field_dict['atlas_id'] = parent
-    elif model is HoleModel:
+    elif model is models.HoleModel:
         defaut_field_dict['square_id'] = parent
-    elif model is HighMagModel:
+    elif model is models.HighMagModel:
         defaut_field_dict['hole_id'] = parent
-    fields = get_fields_names(model)
+    fields = models.get_fields_names(model)
     model_content_type_id = ContentType.objects.get_for_model(model)
     with transaction.atomic():
         for ind, target in enumerate(targets):
@@ -259,7 +268,7 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
             obj = obj.save()
             output.append(obj)
 
-            finder_model = Finder(content_type=model_content_type_id, object_id=obj.pk, method_name=finder,
+            finder_model = models.Finder(content_type=model_content_type_id, object_id=obj.pk, method_name=finder,
                                   x=target.x,
                                   y=target.y,
                                   stage_x=target.stage_x,
@@ -267,16 +276,15 @@ def add_targets(grid, parent, targets, model, finder, classifier=None, start_num
                                   stage_z=target.stage_z)
             finder_model.save()
             if classifier is not None:
-                classifier_model = Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=classifier,
+                classifier_model = models.Classifier(content_type=model_content_type_id, object_id=obj.pk, method_name=classifier,
                                               label=target.quality)
                 classifier_model.save()
     return output
 
 
 def add_high_mag(grid, parent):
-    from .models.high_mag import HighMagModel
     
-    hm, created = HighMagModel.objects.get_or_create(
+    hm, created = models.HighMagModel.objects.get_or_create(
         number=parent.number,
         hole_id=parent,
         grid_id=grid)

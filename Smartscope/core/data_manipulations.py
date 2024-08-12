@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 import logging
 import random
 from copy import copy
+from functools import partial
 from Smartscope.lib.image.target import Target
 from smartscope_connector.Datatypes.querylist import QueryList
 from Smartscope.core.selector_sorter import SelectorSorter, SelectorValueParser, initialize_selector
@@ -63,18 +64,21 @@ def choose_get_index(lst, value):
     return choice
 
 
-def filter_out_of_range(target):
-    return 0 if target.is_out_of_range() else 1
+def filter_out_of_range(target,stage_radius_limit:int = 975, offset_x:float=0, offset_y:float=0):
+    return int(target.is_position_within_stage_limits(stage_radius_limit, offset_x, offset_y))
+
+def count_filtered(filtered, value:int=0):
+    return len(list(filter(lambda x: x == value, filtered)))
 
 
-def filter_targets(parent, targets):
+def filter_targets(parent, targets, stage_radius_limit:int = 975, offset_x:float=0, offset_y:float=0):
     classifiers = get_target_methods(targets, 'classifiers')
     selectors = get_target_methods(targets, 'selectors')
 
     ##Filter out of range targets
-    filtered = list(map(filter_out_of_range, targets))
-    logger.debug(f'Filtering {len(filtered)} targets.')
-    
+    filter_oor_partial = partial(filter_out_of_range, stage_radius_limit=stage_radius_limit, offset_x=offset_x, offset_y=offset_y)
+    filtered = list(map(filter_oor_partial, targets))
+    logger.debug(f'Number of targers: {len(filtered)}. Number of targets out of range: {count_filtered(filtered)}')
     for classifier in classifiers:
         for ind, target in enumerate(targets):
             if filtered[ind] == 0:
@@ -88,7 +92,7 @@ def filter_targets(parent, targets):
             if PLUGINS_FACTORY.get_plugin(classifier).classes[label.label].value <= 0:
                 filtered[ind] = 0
                 continue
-
+    logger.debug(f'Filtered classes against classifiers {classifiers}: {filtered}')            
     filtered = np.array(filtered)
     for selector in selectors:
         sorter = initialize_selector(parent.grid_id, selector, targets)
@@ -100,11 +104,16 @@ def filter_targets(parent, targets):
 def apply_filter(targets, filtered):
     return [target for target, filt in zip(targets, filtered) if filt > 0]
 
-def select_random_areas(targets, filtered, n):
-    filtered_set = set(filtered)
+def prepare_filtered_set(filters)-> set:
+    filtered_set = set(filters)
     if filtered_set == {0} or len(filtered_set) == 0:
         return []
-    filtered_set.discard(0) 
+    filtered_set.discard(0)
+    return filtered_set 
+
+
+def select_random_areas(targets, filtered, n):
+    filtered_set = prepare_filtered_set(filtered)
     logger.debug(f'Selecting from {len(filtered_set)} subsets.')
     choices = randomized_choice(filtered_set, n)
     logger.debug(f'Randomized choices: {choices}')
@@ -123,6 +132,7 @@ def select_n_areas(parent, n, is_bis=False):
     additional_filters['status__isnull'] = True
     targets = list(parent.targets.filter(**additional_filters))
     filtered= filter_targets(parent, targets)
+    assert len(targets) == len(filtered), f'Length of targets {len(targets)} and filtered {len(filtered)} do not match.'
     if n <=0:
         return apply_filter(targets, filtered)
     return select_random_areas(targets, filtered, n)
