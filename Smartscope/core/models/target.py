@@ -89,7 +89,7 @@ class Target(BaseModel):
                 return False
         return True
 
-    def is_out_of_range(self) -> bool:
-        return not self.finders.first().is_position_within_stage_limits()
+    def is_position_within_stage_limits(self, stage_radius_limit:int = 975, offset_x:float=0, offset_y:float=0) -> bool:
+        return self.finders.first().is_position_within_stage_limits(stage_radius_limit, offset_x, offset_y)
 
 

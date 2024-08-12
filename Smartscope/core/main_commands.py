@@ -144,10 +144,9 @@ def select_areas(mag_level, object_id, n_areas):
             update(obj, selected=True, status='queued')
     print('Done.')
 
-def regroup_bis(grid_id, square_id):
+def regroup_bis(grid_id, square_id, reset_groups=True):
     from Smartscope.core.models import AutoloaderGrid, SquareModel, HoleModel
-    from Smartscope.core.db_manipulations import group_holes_for_BIS
-    from Smartscope.core.data_manipulations import filter_targets, apply_filter
+    from Smartscope.core.db_manipulations import group_holes_from_square_for_BIS
     from Smartscope.core.status import status
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)
     if square_id == 'all':
@@ -156,11 +155,12 @@ def regroup_bis(grid_id, square_id):
         queryparams = dict(grid_id=grid_id, square_id=square_id)
     logger.debug(f"{grid_id} {square_id}")
     collection_params = grid.params_id
-    logger.debug(f"Removing all holes from queue")
-    HoleModel.objects.filter(**queryparams,status__isnull=True)\
-        .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
-    HoleModel.objects.filter(**queryparams,status='queued',)\
-        .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
+    if reset_groups:
+        logger.debug(f"Removing all holes from queue")
+        HoleModel.objects.filter(**queryparams,status__isnull=True)\
+            .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
+        HoleModel.objects.filter(**queryparams,status='queued',)\
+            .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
     
     # filtered_holes = HoleModel.display.filter(**queryparams,status__isnull=True)
     holes_for_grouping = []
@@ -170,23 +170,25 @@ def regroup_bis(grid_id, square_id):
     #         holes_for_grouping.append(h)
     squares = SquareModel.display.filter(status=status.COMPLETED,**queryparams)
     for square in squares:
-        logger.debug(f"Filtering square {square}, {square.pk}")
-        targets = square.targets.filter(status__isnull=True)
-        filtered = filter_targets(square, targets)
-        holes_for_grouping += apply_filter(targets, filtered)
+        group_holes_from_square_for_BIS(square, 
+                                        max_radius=collection_params.bis_max_distance,
+                                        min_group_size=collection_params.min_bis_group_size)
+        # logger.debug(f"Filtering square {square}, {square.pk}")
+        # targets = square.targets.filter(status__isnull=True)
+        # filtered = filter_targets(square, targets)
+        # holes_for_grouping += apply_filter(targets, filtered)
 
+        # logger.info(f'Holes for grouping = {len(holes_for_grouping)}')
 
-    logger.info(f'Holes for grouping = {len(holes_for_grouping)}')
+        # holes = group_holes_for_BIS(
+        #     holes_for_grouping,
+        #     max_radius=collection_params.bis_max_distance,
+        #     min_group_size=collection_params.min_bis_group_size,
+        # )
 
-    holes = group_holes_for_BIS(
-        holes_for_grouping,
-        max_radius=collection_params.bis_max_distance,
-        min_group_size=collection_params.min_bis_group_size,
-    )
-
-    with transaction.atomic():
-        for hole in holes:
-            hole.save()
+        # with transaction.atomic():
+        #     for hole in holes:
+        #         hole.save()
     
     logger.info('Regrouping BIS done.')
     return squares
