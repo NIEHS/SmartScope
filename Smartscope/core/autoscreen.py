@@ -8,15 +8,12 @@ logger = logging.getLogger(__name__)
 
 from .interfaces.microscope import Microscope, Detector, AtlasSettings
 from .interfaces.microscope_methods import select_microscope_interface
-from Smartscope.core.models import ScreeningSession, Process
-from Smartscope.core.status import status
+from .models import ScreeningSession, Process
 from .grid.grid_status import GridStatus
-from Smartscope.core.db_manipulations import update
-
-from Smartscope.lib.logger import add_log_handlers
-
+from .db_manipulations import update
 from .run_grid import run_grid, clear_stop_file
 
+from Smartscope.lib.logger import add_log_handlers
 
 def autoscreen(session_id:str):
     '''
