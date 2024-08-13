@@ -58,11 +58,16 @@ class FakeScopeInterface(MicroscopeInterface):
         return super().realign_to_square()
 
     def atlas(self, size, file=''):
+        self.logger.info('Running atlas.')
         Fake.generate_fake_file(
             file,
             'atlas',
             destination_dir=self.microscope.scopePath
         )
+
+    def atlas_in_low_dose_search(self, size, file=''):
+        self.logger.info('Running atlas in low dose search.')
+        self.atlas(size,file)
 
     def square(self, file=''):
         Fake.generate_fake_file(

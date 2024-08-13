@@ -46,16 +46,8 @@ class JEOLSerialemInterface(SerialemInterface):
     def set_atlas_optics(self):
         return self.set_atlas_optics_imaging_state()
 
-    def atlas(self, *args, **kwargs):
-        sem.GoToLowDoseArea('S')
-        super().atlas(*args,**kwargs)
-        msg = 'Atlas finished, Restoring Search state.'
-        self.logger.info(msg)
-        sem.RestoreState()
-
-    def square(self, *args, **kwargs):
-        super().square(*args,**kwargs)
-
+    def atlas(self, size, file=''):
+        return self.atlas_in_low_dose_search(size, file)
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
