@@ -69,6 +69,10 @@ class SquareModel(Target, ExtraPropertyMixin):
     @property
     def prefix(self):
         return 'Square'
+    
+    @property
+    def prefix_lower(self):
+        return self.prefix.lower()
 
     @property
     def targets_prefix(self):
