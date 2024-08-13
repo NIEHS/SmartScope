@@ -21,9 +21,11 @@ class MicroscopeState:
     preAFISimageShiftY: float = 0
     apertureState: Dict = field(default_factory=dict)
 
-    def setStage(self,stageX,stageY,stageZ):
+    def setStage(self,stageX,stageY,stageZ=None):
         self.stageX = stageX
         self.stageY = stageY
+        if stageZ is None:
+            return
         self.stageZ = stageZ
 
     def set_last_autofocus_position(self):
