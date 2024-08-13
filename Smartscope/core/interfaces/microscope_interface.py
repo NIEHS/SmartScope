@@ -127,7 +127,11 @@ class MicroscopeInterface(ABC):
         pass
 
     @abstractmethod
-    def atlas(self, mag, c2, spotsize, tileX, tileY, file='', center_stage_x=0, center_stage_y=0):
+    def atlas(self, size, file=''):
+        pass
+
+    @abstractmethod
+    def atlas_in_low_dose_search(self, size, file=''):
         pass
 
     @abstractmethod

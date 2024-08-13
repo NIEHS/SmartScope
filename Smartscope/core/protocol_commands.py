@@ -43,6 +43,9 @@ def atlas(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwar
     """Collects and atlas of X by Y tiles from the collection parameters using the Montage command"""
     scope.atlas(size=[params.atlas_x,params.atlas_y],file=instance.raw)
 
+def atlasInLowDoseSearch(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
+    scope.atlas_in_low_dose_search(size=[params.atlas_x,params.atlas_y],file=instance.raw)
+
 def realignToSquare(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Realigns to the square using the Search magnification. 
     Mainly useful when the alignement between the Atlas and the Square is off.
@@ -223,6 +226,7 @@ protocolCommandsFactory = dict(
     call=call,
     callFunction=callFunction,
     atlas=atlas,
+    atlasInLowDoseSearch=atlasInLowDoseSearch,
     realignToSquare=realignToSquare,
     square=square,
     moveStage=moveStage,

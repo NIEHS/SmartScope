@@ -11,7 +11,7 @@
                 <li id="{{instance.targets_prefix}}SeleMenu" class="nav-item dropdown">
                 {% if display_type == 'selectors' %}
                 <li class="nav-item d-flex align-items-center">
-                    <a hx-get="{% url 'selector_view' grid_id=instance.grid_id.pk selector=method %}" 
+                    <a hx-get="{% url 'selector_view' grid_id=instance.grid_id.pk selector=method maglevel=instance.prefix_lower %}" 
                     hx-trigger="mousedown" class="nav-link"
                     hx-on--before-request="createHTMXloadingMessage(event, 'Loading selector viewer')"
                     hx-on--after-request="processHTMXloadingMessage(event)"
@@ -46,5 +46,6 @@
 </div>
 
 <script>
-    $('[data-bs-toggle="tooltip"]').tooltip();   
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    htmx.process(htmx.find('.mapCard'))   
 </script>

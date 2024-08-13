@@ -1,6 +1,5 @@
-from pathlib import PureWindowsPath, Path
-from typing import Callable, Tuple, Optional
-from abc import ABC
+from pathlib import PureWindowsPath
+from typing import Tuple
 import serialem as sem
 import time
 import logging
@@ -128,7 +127,6 @@ class SerialemInterface(MicroscopeInterface):
             self.logger.info('Removing slit.')
             sem.SetSlitIn(0)
         
-
     def atlas(self, size, file=''):
         sem.OpenNewMontage(size[0],size[1], file)
         self.checkDewars()
@@ -137,6 +135,13 @@ class SerialemInterface(MicroscopeInterface):
         sem.Montage()
         sem.CloseFile()
         self.logger.info('Atlas acquisition finished')
+
+    def atlas_in_low_dose_search(self, size, file=''):
+        sem.GoToLowDoseArea('S')
+        super().atlas(size, file)
+        msg = 'Atlas finished, Restoring Search state.'
+        self.logger.info(msg)
+        sem.RestoreState()
 
     def save_image(self, file:str):
         image_to_stage_matrix = sem.BufImageToStageMatrix('A', 1)
