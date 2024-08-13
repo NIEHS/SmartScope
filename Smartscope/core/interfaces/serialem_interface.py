@@ -200,11 +200,15 @@ class SerialemInterface(MicroscopeInterface):
         sem.SetAxisPosition('F', distance, angle)
         self.focus_position_set = True
 
-    def moveStage(self,stage_x,stage_y,stage_z):
+    def moveStage(self,stage_x,stage_y,stage_z=None):
         sem.SetImageShift(0, 0)
-        sem.Echo(f'Moving stage to {stage_x},{stage_y},{stage_z}.')
-        sem.MoveStageTo(stage_x,stage_y,stage_z)
-        self.state.setStage(stage_x,stage_y,stage_z)
+        
+        args = [stage_x, stage_y]
+        if stage_z is not None:
+            args.append(stage_z)
+        self.logger.info(f'Moving stage to {args}.')
+        sem.MoveStageTo(*args)
+        self.state.setStage(*args)
     
     def get_conversion_matrix(self, magIndex=0):
         return sem.CameraToSpecimenMatrix(magIndex)
