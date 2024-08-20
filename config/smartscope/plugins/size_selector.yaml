@@ -1,8 +1,8 @@
 name: Size selector
-method: cluster_by_field
+method: size_selector
 module: Smartscope.core.selectors
-kwargs:
-  field: area
+# kwargs:
+#   field: area
 targetClass:
   - Selector
 description: |

@@ -70,9 +70,9 @@ def moveStageWithAtlasToSearchOffset(scope:MicroscopeInterface,params,instance, 
     offset_x = scope.atlas_settings.atlas_to_search_offset_x
     offset_y = scope.atlas_settings.atlas_to_search_offset_y
     finder = instance.finders.first()
-    stage_args = finder.stage_x + offset_x, finder.stage_y + offset_y
+    stage_args = [finder.stage_x + offset_x, finder.stage_y + offset_y]
     if instance.prefix.lower() != 'Square':
-        stage_args += finder.stage_z
+        stage_args.append(finder.stage_z)
     scope.moveStage(*stage_args)
 
 def autoFocus(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :

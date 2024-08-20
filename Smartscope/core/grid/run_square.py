@@ -47,7 +47,7 @@ class RunSquare:
             if montage is None:
                 montage = Montage(name=square.name)
                 montage.load_or_process()
-            selector_wrapper(protocol.selectors, square, n_groups=5, montage=montage)
+            selector_wrapper(protocol.selectors, square, montage=montage)
             square = update(square, status=status.TARGETS_SELECTED)
             transaction.on_commit(lambda: logger.debug('Selectors added'))
         if square.status == status.TARGETS_SELECTED:

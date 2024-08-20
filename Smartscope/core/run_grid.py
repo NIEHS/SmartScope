@@ -40,7 +40,7 @@ def run_grid(
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
     logger.info(f'###Check status of grid, grid ID={grid.grid_id}.')
-    session = grid.session
+    session = grid.session_id
     session_id = session.pk
     microscope = session.microscope_id
 
@@ -134,7 +134,11 @@ def run_grid(
     
     # 
     if atlas.status == status.PROCESSED:
-        selector_wrapper(protocol.atlas.targets.selectors, atlas, n_groups=5)
+        if not 'montage' in locals():
+            from Smartscope.lib.image.montage import Montage
+            montage = Montage(name=atlas.name)
+            montage.load_or_process()
+        selector_wrapper(protocol.atlas.targets.selectors, atlas, montage=montage)
         selected = select_n_areas(atlas, grid.params_id.squares_num)
         with transaction.atomic():
             for obj in selected:

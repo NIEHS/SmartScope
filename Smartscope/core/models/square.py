@@ -104,7 +104,6 @@ class SquareModel(Target, ExtraPropertyMixin):
         from .hole import HoleModel
         return HoleModel
 
-
     # @cached_model_property(key_prefix='svg', 
     # extra_suffix_from_function=['method'], timeout=3600)
     def svg(self, display_type, method):
