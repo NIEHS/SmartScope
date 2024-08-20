@@ -139,6 +139,10 @@ class BaseImage(ABC):
     @property
     def pixel_size(self):
         return self.metadata.iloc[0].PixelSpacing
+    
+    @property
+    def pixel_size_micron(self):
+        return self.pixel_size / 10_000
 
 
     def read_data(self):
