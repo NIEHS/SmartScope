@@ -138,7 +138,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def atlas_in_low_dose_search(self, size, file=''):
         sem.GoToLowDoseArea('S')
-        super().atlas(size, file)
+        self.atlas(size, file)
         msg = 'Atlas finished, Restoring Search state.'
         self.logger.info(msg)
         sem.RestoreState()
