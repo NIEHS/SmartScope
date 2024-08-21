@@ -222,6 +222,6 @@ def test_image_to_stage_conversion(image_file, coords, coordinate_system:Literal
     montage.load_or_process()
     coords = [int(i) for i in coords.split(',')]
     if coordinate_system == 'serialem':
-        coords = Target.flip_y(coords, montage.shape_y)
+        coords = Target.flip_y(coords, montage.shape_x)
     target = Target(coords, from_center=True)
     target.convert_image_coords_to_stage(montage, compare=True)

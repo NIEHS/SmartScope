@@ -103,7 +103,8 @@ class Target:
             montage.metadata.piece_center
         )
         if 'ImageToStageMatrix' in montage.metadata and not force_legacy:
-            flipped_coords = self.flip_y(self.coords,montage.shape_y)
+            logger.debug(f'Montage shape_x: {montage.shape_x}, and shape_y: {montage.shape_y}.')
+            flipped_coords = self.flip_y(self.coords,montage.shape_x)
             self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
                 flipped_coords,
                 montage.metadata.iloc[tile].ImageToStageMatrix
