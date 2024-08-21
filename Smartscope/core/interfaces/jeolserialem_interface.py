@@ -46,9 +46,6 @@ class JEOLSerialemInterface(SerialemInterface):
     def set_atlas_optics(self):
         return self.set_atlas_optics_imaging_state()
 
-    def atlas(self, size, file=''):
-        return self.atlas_in_low_dose_search(size, file)
-
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
         self.apertures = self._apertures_setter()
