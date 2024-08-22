@@ -138,6 +138,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def atlas_in_low_dose_search(self, size, file=''):
         sem.GoToLowDoseArea('S')
+        sem.ParamSetToUseForMontage(3)
         self.atlas(size, file)
         msg = 'Atlas finished, Restoring Search state.'
         self.logger.info(msg)
@@ -328,6 +329,9 @@ class SerialemInterface(MicroscopeInterface):
             if  slot_status != 0:
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
+
+    def zero_image_shift(self):
+        return sem.SetImageShift(0,0)
 
     def reset_image_shift(self):
         return sem.ResetImageShift()

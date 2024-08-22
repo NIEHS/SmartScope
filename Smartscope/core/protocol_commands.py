@@ -71,7 +71,7 @@ def moveStageWithAtlasToSearchOffset(scope:MicroscopeInterface,params,instance, 
     offset_y = scope.atlas_settings.atlas_to_search_offset_y
     finder = instance.finders.first()
     stage_args = [finder.stage_x + offset_x, finder.stage_y + offset_y]
-    if instance.prefix.lower() != 'Square':
+    if instance.prefix.lower() != 'square':
         stage_args.append(finder.stage_z)
     scope.moveStage(*stage_args)
 
@@ -114,11 +114,13 @@ def alignToHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *arg
     while iteration < max_iterations:
         iteration +=1
         shift = scope.align_to_hole_ref()
-        if np.sqrt(np.sum(np.array(shift)**2)) < 700:
+        if np.sqrt(np.sum(np.array(shift)**2)) < 500:
             return
         scope.reset_image_shift()
     logger.warning(f'It seems like the hole realignment did not converge after {max_iterations} iterations.')
 
+def zeroImageShift(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs):
+    return scope.zero_image_shift()
 
 def loadHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Loads the references/holeref.mrc image into buffer T to be used as hole template for the alignToHoleRef command."""
@@ -243,5 +245,6 @@ protocolCommandsFactory = dict(
     setAperturesForLowMag=set_apertures_for_lowmag,
     autoFocus=autoFocus,
     autoFocusAfterDistance=autoFocusAfterDistance,
-    waitDrift=waitDrift
+    waitDrift=waitDrift,
+    zeroImageShift=zeroImageShift
 )

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class TFSApertures(Apertures):
     CONDENSER_1:int=0
-    CONDENSER_2:int=1
+    CONDENSER:int=1
     CONDENSER_3:int=3
     OBJECTIVE:int = 2
 

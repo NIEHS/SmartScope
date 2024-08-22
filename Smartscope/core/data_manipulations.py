@@ -114,6 +114,8 @@ def prepare_filtered_set(filters)-> set:
 
 def select_random_areas(targets, filtered, n):
     filtered_set = prepare_filtered_set(filtered)
+    if len(filtered_set) == 0:
+        return filtered_set
     logger.debug(f'Selecting from {len(filtered_set)} subsets.')
     choices = randomized_choice(filtered_set, n)
     logger.debug(f'Randomized choices: {choices}')
