@@ -102,6 +102,9 @@ class FakeScopeInterface(MicroscopeInterface):
     def load_hole_ref(self):
         return super().load_hole_ref()
     
+    def zero_image_shift(self):
+        pass
+    
     def report_stage(self):
         return super().report_stage()
     

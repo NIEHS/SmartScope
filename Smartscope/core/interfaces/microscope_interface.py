@@ -175,6 +175,10 @@ class MicroscopeInterface(ABC):
         pass
 
     @abstractmethod
+    def zero_image_shift(self):
+        pass
+    
+    @abstractmethod
     def highmag(self, isXi, isYi, isX, isY, currentDefocus, tiltAngle, file='', frames=True):
         pass
 
