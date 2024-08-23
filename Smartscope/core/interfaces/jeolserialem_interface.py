@@ -45,6 +45,9 @@ class JEOLSerialemInterface(SerialemInterface):
         
     def set_atlas_optics(self):
         return self.set_atlas_optics_imaging_state()
+    
+    def atlas(self, size, file=''):
+        return self.atlas_in_low_dose_search(size, file)
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
@@ -68,7 +71,7 @@ class JEOLSerialemInterface(SerialemInterface):
             sem.Delay(5)
             sem.SetColumnOrGunValve(0)
             sem.Delay(5)
-            command = f'{self.additional_settings.transfer_cartridge_path} \"{position} 3 0\"'
+            command = f'{self.additional_settings.transfer_cartridge_path} {position} 3 0'
             self.logger.info(f'Loading grid with command: \"{command}\"')
             sem.RunInShell(command)
             sem.Delay(5)
