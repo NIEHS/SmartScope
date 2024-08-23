@@ -50,7 +50,7 @@ def run_selectors(square_id):
     protocol = get_or_set_protocol(square.grid_id).square.targets
     montage = Montage(name=square.name, working_dir=square.grid_id.directory)
     montage.load_or_process()
-    selector_wrapper(protocol.selectors, square, n_groups=5, montage=montage)
+    selector_wrapper(protocol.selectors, square, montage=montage)
     cache_key = f'{square_id}_targets_methods'
     cache.delete(cache_key)
 
