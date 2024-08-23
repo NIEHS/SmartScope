@@ -40,7 +40,13 @@ def extract_from_image(image, center: np.array, apix: float, box_size: float = 2
 def extract_box_from_radius(image:np.array, x,y , radius: float, apix: float=-1.0):
     if apix != -1.0:
         radius = int(radius//apix)
-    return image[y - radius:y + radius, x - radius:x + radius]
+    up = max([0, y - radius])
+    left = max([0, x - radius])
+    down = min([image.shape[0], y + radius])
+    right = min([image.shape[1], x + radius])
+
+    
+    return image[up:down, left:right]
 
 
 def to_8bits(image):
