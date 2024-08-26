@@ -4,7 +4,7 @@ from typing import Callable
 from pydantic import BaseModel
 import time
 import logging
-from .serialem_interface import SerialemInterface
+from .serialem_interface import SerialemInterface, CartridgeLoadingError
 from .microscope_interface import Apertures
 
 logger = logging.getLogger(__name__)
@@ -53,8 +53,8 @@ class JEOLSerialemInterface(SerialemInterface):
         super().setup(*args, **kwargs)
         self.apertures = self._apertures_setter()
         sem.SetLowDoseMode(1)
-        self.logger.info(f'Checking microscope inventory.')
-        sem.LongOperation('In')
+        # self.logger.info(f'Checking microscope inventory.')
+        # sem.LongOperation('In')
 
     def _apertures_setter(self):
         if not self.microscope.apertureControl:
@@ -83,3 +83,31 @@ class JEOLSerialemInterface(SerialemInterface):
             return
         self.logger.info('Flashing the cold FEG.')
         sem.LongOperation('FF', ffDelay)
+
+    def loadGrid(self, position):
+        if self.microscope.loaderSize > 1:
+            slot_status = sem.ReportSlotStatus(position)
+
+            #This was added to support the new 4.1 2023-02-27 version 
+            # that reports the name of the grid along with the position
+            if isinstance(slot_status,tuple):
+                slot_status = slot_status[1]
+            
+            if slot_status == -1:
+                raise ValueError(f'Slot {position} of the autoloader is empty.')
+            if slot_status == 2:
+                self.logger.info(f'Autoloader position is occupied')
+                self.logger.info(f'Loading grid {position}')
+                sem.Delay(5)
+                sem.SetColumnOrGunValve(0)
+                sem.LoadCartridge(position)
+            self.logger.info(f'Grid {position} is loaded')
+            sem.Delay(5)
+            slot_status = sem.ReportSlotStatus(position)
+            #This was added to support the new 4.1 2023-02-27 version 
+            # that reports the name of the grid along with the position
+            if isinstance(slot_status,tuple):
+                slot_status = slot_status[1]
+            if  slot_status not in [0,3]:
+                raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
+        sem.SetColumnOrGunValve(1)
