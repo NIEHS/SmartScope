@@ -252,7 +252,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def wait_drift(self, drifTarget):
         if drifTarget > 0:
-            sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'T', 1)
+            sem.DriftWaitTask(drifTarget, 'A', 300, 10, -1, 'F', 1)
 
     def connect(self):
         logger.info(

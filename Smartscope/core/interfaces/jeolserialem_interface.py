@@ -1,5 +1,5 @@
 import serialem as sem
-
+import math
 from typing import Callable
 from pydantic import BaseModel
 import time
@@ -116,3 +116,11 @@ class JEOLSerialemInterface(SerialemInterface):
             if  slot_status not in [0,3]:
                 raise CartridgeLoadingError('Cartridge did not load properly. Stopping')
         sem.SetColumnOrGunValve(1)
+
+
+    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
+        sem.GoToLowDoseArea('Record')
+        sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
+        self.state.imageShiftX = -isX
+        self.state.imageShiftY = isY
+        sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))    
