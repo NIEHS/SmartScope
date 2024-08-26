@@ -47,7 +47,12 @@ class JEOLSerialemInterface(SerialemInterface):
         return self.set_atlas_optics_imaging_state()
     
     def atlas(self, size, file=''):
-        return super().atlas_in_low_dose_search(size, file)
+        sem.GoToLowDoseArea('S')
+        sem.ParamSetToUseForMontage(3)
+        super().atlas(size, file)
+        msg = 'Atlas finished, Restoring Search state.'
+        self.logger.info(msg)
+        sem.RestoreState()
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
@@ -95,7 +100,7 @@ class JEOLSerialemInterface(SerialemInterface):
             
             if slot_status == -1:
                 raise ValueError(f'Slot {position} of the autoloader is empty.')
-            if slot_status == 2:
+            if slot_status in [0,2]:
                 self.logger.info(f'Autoloader position is occupied')
                 self.logger.info(f'Loading grid {position}')
                 sem.Delay(5)
