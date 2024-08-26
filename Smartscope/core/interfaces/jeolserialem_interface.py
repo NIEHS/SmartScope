@@ -26,7 +26,7 @@ class JEOLadditionalSettings(BaseModel):
 class JEOLSerialemInterface(SerialemInterface):
     additional_settings: JEOLadditionalSettings = JEOLadditionalSettings()
     apertures: Apertures = None
-    record_mag: int = 0
+    # record_mag: int = 0
         
     def checkPump(self, wait=30):
         pass
@@ -53,7 +53,8 @@ class JEOLSerialemInterface(SerialemInterface):
         super().setup(*args, **kwargs)
         self.apertures = self._apertures_setter()
         sem.SetLowDoseMode(1)
-        self.logger.info(f'LD highmag parameters found. Record mag: {self.record_mag}')
+        self.logger.info(f'Checking microscope inventory.')
+        sem.LongOperation('In')
 
     def _apertures_setter(self):
         if not self.microscope.apertureControl:
