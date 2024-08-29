@@ -129,7 +129,7 @@ def viewer_only(user):
     return False
 
 
-def group_holes_for_BIS(hole_models:List[models.HoleModel], max_radius=4, min_group_size=1, iterations=500, score_weight=2):
+def group_holes_for_BIS(hole_models:List[models.HoleModel], max_radius=4, min_group_size=1, iterations=500, stop_iter=100, score_weight=2):
     if len(hole_models) == 0:
         return  hole_models
     logger.debug(
@@ -185,8 +185,8 @@ def group_holes_for_BIS(hole_models:List[models.HoleModel], max_radius=4, min_gr
             score_no_change = 0
         else:
             score_no_change += 1
-            if score_no_change == 250:
-                logger.debug('No changes for 250 iterations, stopping')
+            if score_no_change == stop_iter:
+                logger.debug(f'No changes for {stop_iter} iterations, stopping')
                 break
 
     logger.info(f'Best hole grouping: Coverage= {best[1]}, num_groups={best[2]}, score= {best[0]}')
@@ -293,92 +293,92 @@ def add_high_mag(grid, parent):
     return hm, created
 
 
-def select_n_squares(parent, n):
-    squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
-    squares = [s for s in squares if s.is_good() and not s.is_out_of_range()]
-    if len(squares) == 0:
-        return
-    split_squares = np.array_split(squares, n)
-    selection = []
-    with transaction.atomic():
-        for bucket in split_squares:
-            if len(bucket) == 0:
-                continue
-            selection = random.choice(bucket)
-            update(selection, selected=True, status='queued')
+# def select_n_squares(parent, n):
+#     squares = np.array(parent.squaremodel_set.all().filter(selected=False, status=None).order_by('area'))
+#     squares = [s for s in squares if s.is_good() and not s.is_out_of_range()]
+#     if len(squares) == 0:
+#         return
+#     split_squares = np.array_split(squares, n)
+#     selection = []
+#     with transaction.atomic():
+#         for bucket in split_squares:
+#             if len(bucket) == 0:
+#                 continue
+#             selection = random.choice(bucket)
+#             update(selection, selected=True, status='queued')
 
 
-def select_n_holes(parent, n, is_bis=False):
-    filter_fields = dict(selected=False, status=None) 
-    if is_bis:
-        filter_fields['bis_type'] = 'center'
-    holes = list(parent.holemodel_set.filter(
-        **filter_fields).order_by('dist_from_center'))
+# def select_n_holes(parent, n, is_bis=False):
+#     filter_fields = dict(selected=False, status=None) 
+#     if is_bis:
+#         filter_fields['bis_type'] = 'center'
+#     holes = list(parent.holemodel_set.filter(
+#         **filter_fields).order_by('dist_from_center'))
 
-    holes = [h for h in holes if h.is_good() and not h.is_out_of_range()]
+#     holes = [h for h in holes if h.is_good() and not h.is_out_of_range()]
 
-    if n <= 0:
-        with transaction.atomic():
-            for h in holes:
-                update(h, selected=True, status='queued')
-        return
-    if len(holes) == 0:
-        return 
-    n += 1
-    minimum, maximum = holes[0].dist_from_center, holes[-1].dist_from_center
-    dist_range = maximum - minimum
-    group_dist = dist_range / (n)
-    groups = [[] for x in range(n)]
-    try:
-        for h in holes:
-            group = min([int((h.dist_from_center - minimum) // group_dist), n - 1])
-            groups[group].append(h)
-    except:
-        groups = np.array_split(np.array(holes), n)
+#     if n <= 0:
+#         with transaction.atomic():
+#             for h in holes:
+#                 update(h, selected=True, status='queued')
+#         return
+#     if len(holes) == 0:
+#         return 
+#     n += 1
+#     minimum, maximum = holes[0].dist_from_center, holes[-1].dist_from_center
+#     dist_range = maximum - minimum
+#     group_dist = dist_range / (n)
+#     groups = [[] for x in range(n)]
+#     try:
+#         for h in holes:
+#             group = min([int((h.dist_from_center - minimum) // group_dist), n - 1])
+#             groups[group].append(h)
+#     except:
+#         groups = np.array_split(np.array(holes), n)
 
-    with transaction.atomic():
-        for bucket in groups[:-1]:
-            if len(bucket) == 0:
-                continue
-            selection = random.choice(bucket)
-            update(selection, selected=True, status='queued')
+#     with transaction.atomic():
+#         for bucket in groups[:-1]:
+#             if len(bucket) == 0:
+#                 continue
+#             selection = random.choice(bucket)
+#             update(selection, selected=True, status='queued')
 
 
-def select_n_areas(parent, n, is_bis=False):
-    filter_fields = dict(selected=False, status=None)
-    if is_bis:
-        filter_fields['bis_type'] = 'center'
-    targets = parent.targets.filter(**filter_fields)
+# def select_n_areas(parent, n, is_bis=False):
+#     filter_fields = dict(selected=False, status=None)
+#     if is_bis:
+#         filter_fields['bis_type'] = 'center'
+#     targets = parent.targets.filter(**filter_fields)
 
-    if n <= 0:
-        with transaction.atomic():
-            for t in targets:
-                if t.is_good() and not t.is_excluded()[0] and not t.is_out_of_range():
-                    update(t, selected=True, status='queued')
-        return
+#     if n <= 0:
+#         with transaction.atomic():
+#             for t in targets:
+#                 if t.is_good() and not t.is_excluded()[0] and not t.is_out_of_range():
+#                     update(t, selected=True, status='queued')
+#         return
 
-    clusters = dict()
-    for t in targets:
-        if not t.is_good() or t.is_out_of_range():
-            continue
-        excluded, label = t.is_excluded()
-        if excluded:
-            continue
-        try:
-            clusters[label].append(t)
-        except:
-            clusters[label] = [t]
+#     clusters = dict()
+#     for t in targets:
+#         if not t.is_good() or t.is_out_of_range():
+#             continue
+#         excluded, label = t.is_excluded()
+#         if excluded:
+#             continue
+#         try:
+#             clusters[label].append(t)
+#         except:
+#             clusters[label] = [t]
 
-    if len(clusters) > 0:
-        randomized_sample = clusters if n == len(clusters) else random.sample(list(clusters), n) if n < len(clusters) else [
-            random.choice(list(clusters)) for i in range(n)]
-        with transaction.atomic():
-            for choice in randomized_sample:
-                sele = random.choice(clusters[choice])
-                logger.debug(f'Selecting {sele.name} from cluster {choice}')
-                update(sele, selected=True, status='queued')
-    else:
-        logger.info('All targets are rejected, skipping')
+#     if len(clusters) > 0:
+#         randomized_sample = clusters if n == len(clusters) else random.sample(list(clusters), n) if n < len(clusters) else [
+#             random.choice(list(clusters)) for i in range(n)]
+#         with transaction.atomic():
+#             for choice in randomized_sample:
+#                 sele = random.choice(clusters[choice])
+#                 logger.debug(f'Selecting {sele.name} from cluster {choice}')
+#                 update(sele, selected=True, status='queued')
+#     else:
+#         logger.info('All targets are rejected, skipping')
 
 
 # def get_center_hole(instance:HoleModel):

@@ -162,34 +162,12 @@ def regroup_bis(grid_id, square_id, reset_groups=True):
         HoleModel.objects.filter(**queryparams,status='queued',)\
             .update(selected=False,status=status.NULL,bis_group=None,bis_type=None)
     
-    # filtered_holes = HoleModel.display.filter(**queryparams,status__isnull=True)
-    holes_for_grouping = []
-    # other_holes = []
-    # for h in filtered_holes:
-    #     if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range():
-    #         holes_for_grouping.append(h)
     squares = SquareModel.display.filter(status=status.COMPLETED,**queryparams)
     for square in squares:
         group_holes_from_square_for_BIS(square, 
                                         max_radius=collection_params.bis_max_distance,
                                         min_group_size=collection_params.min_bis_group_size)
-        # logger.debug(f"Filtering square {square}, {square.pk}")
-        # targets = square.targets.filter(status__isnull=True)
-        # filtered = filter_targets(square, targets)
-        # holes_for_grouping += apply_filter(targets, filtered)
-
-        # logger.info(f'Holes for grouping = {len(holes_for_grouping)}')
-
-        # holes = group_holes_for_BIS(
-        #     holes_for_grouping,
-        #     max_radius=collection_params.bis_max_distance,
-        #     min_group_size=collection_params.min_bis_group_size,
-        # )
-
-        # with transaction.atomic():
-        #     for hole in holes:
-        #         hole.save()
-    
+   
     logger.info('Regrouping BIS done.')
     return squares
 

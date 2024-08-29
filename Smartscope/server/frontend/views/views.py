@@ -326,12 +326,13 @@ class MultiShotView(TemplateView):
             if form.is_valid(): 
                 logger.debug(form.cleaned_data)
                 data=form.cleaned_data
+                min_shots = data.pop('min_number_of_shots')
                 max_shots = data.pop('max_number_of_shots')
                 max_efficiency = data.pop('max_efficiency') / 100
                 params = RecordParams(**data)
                 results = []
-                for n_shots in range(1,max_shots):
-                    shot = set_shots_per_hole(number_of_shots=n_shots+1,
+                for n_shots in range(min_shots,max_shots+1):
+                    shot = set_shots_per_hole(number_of_shots=n_shots,
                                                 hole_size=params.hole_size,
                                                 beam_size=params.beam_size_um,
                                                 image_size=params.detector_size_um,
