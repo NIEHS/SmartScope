@@ -1,12 +1,11 @@
 
-from typing import List, Optional, Dict
+from typing import List, Optional
 import logging
 import random
-from copy import copy
 from functools import partial
 from Smartscope.lib.image.target import Target
 from smartscope_connector.Datatypes.querylist import QueryList
-from Smartscope.core.selector_sorter import SelectorSorter, SelectorValueParser, initialize_selector
+from Smartscope.core.selector_sorter import initialize_selector
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 import numpy as np
 
