@@ -14,7 +14,7 @@ class Targets:
     def create_targets_from_box(
             targets: List,
             montage: BaseImage,
-            target_type: str = 'square'
+            target_type: str = 'square',
             force_mdoc=False
         ):
         output_targets = []
