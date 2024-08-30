@@ -51,7 +51,7 @@ class FakeScopeInterface(MicroscopeInterface):
     def eucentricity(self):
         pass
 
-    def moveStage(self, stage_x, stage_y, stage_z):
+    def moveStage(self, stage_x, stage_y, stage_z=None):
         pass
 
     def realign_to_square(self):
