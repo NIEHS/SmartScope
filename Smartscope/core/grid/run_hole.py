@@ -6,11 +6,12 @@ from typing import List, Union
 import logging
 import numpy as np
 from pathlib import Path
+import os
 
 logger = logging.getLogger(__name__)
 
 from .finders import find_targets
-from .transformations import register_to_other_montage, register_targets_by_proximity, recenter_targets
+from .transformations import register_to_other_montage, register_targets_by_proximity
 from .diagnostics import generate_diagnostic_figure, Timer
 
 
@@ -91,7 +92,7 @@ class RunHole:
                     )
                     
                 if len(protocol.targets.finders) == 0 or targets == []:
-                    targets = Targets.create_targets_from_center(image_coords, montage)
+                    targets = Targets.create_targets_from_center(image_coords, montage, force_mdoc=eval(os.getenv('FORCE_MDOC_TARGETING','False')))
                 timer.report_timer('Identifying and registering targets')
                 
 
