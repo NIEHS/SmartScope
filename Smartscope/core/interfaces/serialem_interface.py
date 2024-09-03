@@ -161,6 +161,12 @@ class SerialemInterface(MicroscopeInterface):
         # sem.WriteAutodoc()
         sem.CloseFile()
 
+    def recenter_beam(self, interval_in_minutes:int=5):
+        if interval_in_minutes < 0 or self.state.time_since_last_autocenter < interval_in_minutes * 60:
+            return
+        sem.AutoCenterBeam()
+        self.state.last_autocenter_time = time.time()
+
     def square(self, file=''):
         sem.SetLowDoseMode(1)
         sem.GoToLowDoseArea('S')

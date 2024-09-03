@@ -20,6 +20,7 @@ class MicroscopeState:
     preAFISimageShiftX: float = 0
     preAFISimageShiftY: float = 0
     apertureState: Dict = field(default_factory=dict)
+    last_autocenter_time: int= -1
 
     def setStage(self,stageX,stageY,stageZ=None):
         self.stageX = stageX
@@ -37,6 +38,10 @@ class MicroscopeState:
     
     def getStage(self):
         return self.stageX, self.stageY, self.stageZ
+    
+    @property
+    def time_since_last_autocenter(self):
+        return time.time() - self.last_autocenter_time
 
     def reset_image_shift_values(self):
         self.imageShiftX = 0

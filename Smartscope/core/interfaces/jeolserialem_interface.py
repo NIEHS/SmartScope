@@ -87,7 +87,7 @@ class JEOLSerialemInterface(SerialemInterface):
         if not self.microscope.coldFEG or ffDelay < 0:
             return
         self.logger.info('Flashing the cold FEG.')
-        sem.LongOperation('FF', ffDelay)
+        sem.LongOperation('FF', str(ffDelay))
 
     def loadGrid(self, position):
         if self.microscope.loaderSize > 1:
