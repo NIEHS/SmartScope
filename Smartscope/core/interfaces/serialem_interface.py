@@ -133,6 +133,7 @@ class SerialemInterface(MicroscopeInterface):
         self.checkPump()
         self.logger.info('Starting Atlas acquisition')
         sem.Montage()
+        self._add_vectors_to_mdoc()
         sem.CloseFile()
         self.logger.info('Atlas acquisition finished')
 
@@ -144,13 +145,20 @@ class SerialemInterface(MicroscopeInterface):
         self.logger.info(msg)
         sem.RestoreState()
 
-    def save_image(self, file:str):
+    def _add_vectors_to_mdoc(self):
         image_to_stage_matrix = sem.BufImageToStageMatrix('A', 1)
         image_to_stage_matrix = [str(x) for x in image_to_stage_matrix]
-        sem.OpenNewFile(file)
-        sem.Save()
         sem.AddToAutodoc('ImageToStageMatrix', ' '.join(image_to_stage_matrix))
         sem.WriteAutodoc()
+
+    def save_image(self, file:str):
+        # image_to_stage_matrix = sem.BufImageToStageMatrix('A', 1)
+        # image_to_stage_matrix = [str(x) for x in image_to_stage_matrix]
+        sem.OpenNewFile(file)
+        sem.Save()
+        self._add_vectors_to_mdoc()
+        # sem.AddToAutodoc('ImageToStageMatrix', ' '.join(image_to_stage_matrix))
+        # sem.WriteAutodoc()
         sem.CloseFile()
 
     def square(self, file=''):
