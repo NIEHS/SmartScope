@@ -139,6 +139,7 @@ class SerialemInterface(MicroscopeInterface):
 
     def atlas_in_low_dose_search(self, size, file=''):
         sem.GoToLowDoseArea('S')
+        sem.SetEucentricFocus()
         sem.ParamSetToUseForMontage(3)
         self.atlas(size, file)
         msg = 'Atlas finished, Restoring Search state.'
