@@ -167,7 +167,9 @@ class SerialemInterface(MicroscopeInterface):
 
     def recenter_beam(self, interval_in_minutes:int=5):
         if interval_in_minutes < 0 or self.state.time_since_last_autocenter < interval_in_minutes * 60:
+            self.logger.info(f'Time since last autocenter: {self.state.time_since_last_autocenter}. Skipping beam centering')
             return
+        self.logger.info('Running beam centering.')
         sem.Trial()
         sem.CenterBeamFromImage()
         sem.Trial()
