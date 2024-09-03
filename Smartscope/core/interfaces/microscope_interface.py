@@ -84,6 +84,9 @@ class MicroscopeInterface(ABC):
     def flash_cold_FEG(self, ffDelay:int):
         pass
 
+    def recenter_beam(self, interval_in_minutes:int=5):
+        pass
+
     def rollDefocus(self, def1, def2, step):
         mindef = max([def1, def2])
         maxdef = min([def1, def2])

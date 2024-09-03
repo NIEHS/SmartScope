@@ -54,6 +54,9 @@ class FakeScopeInterface(MicroscopeInterface):
     def moveStage(self, stage_x, stage_y, stage_z=None):
         pass
 
+    def recenter_beam(self, interval_in_minutes:int=5):
+        pass
+
     def realign_to_square(self):
         return super().realign_to_square()
 

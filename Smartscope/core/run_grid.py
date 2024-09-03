@@ -212,6 +212,7 @@ def run_grid(
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
             scope.flash_cold_FEG(params.coldfegflash_delay)
+            scope.recenter_beam(params.beam_centering_delay)
         elif priority == TargetPriority.SQUARE:
             is_done = False
             logger.info(f'Running Square {square}')

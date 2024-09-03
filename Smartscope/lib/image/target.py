@@ -102,14 +102,15 @@ class Target:
             self.coords.reshape(-1,2),
             montage.metadata.piece_center
         )
-        if 'ImageToStageMatrix' in montage.metadata and not force_legacy:
+        print(montage.metadata.columns)
+        if 'ImageToStageMatrix' in montage.metadata.iloc[-1].keys() and not force_legacy:
             logger.debug(f'Montage shape_x: {montage.shape_x}, and shape_y: {montage.shape_y}.')
             flipped_coords = self.flip_y(self.coords,montage.shape_x)
             self.stage_x, self.stage_y = ProcessImage.pixel_to_stage_from_vectors(
                 flipped_coords,
-                montage.metadata.iloc[tile].ImageToStageMatrix
+                montage.metadata.iloc[-1].ImageToStageMatrix
             )
-            logger.info(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[tile].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
+            logger.info(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[-1].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
             self.stage_z = montage.stage_z
             if not compare:
                 return
