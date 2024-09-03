@@ -168,7 +168,9 @@ class SerialemInterface(MicroscopeInterface):
     def recenter_beam(self, interval_in_minutes:int=5):
         if interval_in_minutes < 0 or self.state.time_since_last_autocenter < interval_in_minutes * 60:
             return
-        sem.AutoCenterBeam()
+        sem.Trial()
+        sem.CenterBeamFromImage()
+        sem.Trial()
         self.state.last_autocenter_time = time.time()
 
     def square(self, file=''):
