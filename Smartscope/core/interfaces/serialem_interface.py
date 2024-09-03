@@ -146,7 +146,8 @@ class SerialemInterface(MicroscopeInterface):
         sem.RestoreState()
 
     def _add_vectors_to_mdoc(self, buffer='A'):
-        binning = sem.ImageProperties(buffer)[2]
+        binning_tile = sem.ImageProperties('A')[2]
+        binning = sem.ImageProperties(buffer)[2] / binning_tile
         image_to_stage_matrix = np.array(sem.BufImageToStageMatrix(buffer, 1))
         image_to_stage_matrix /= np.array([binning, binning, binning, binning, 1, 1])
         image_to_stage_matrix = [str(x) for x in image_to_stage_matrix.tolist()]
