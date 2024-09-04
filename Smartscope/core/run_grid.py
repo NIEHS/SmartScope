@@ -52,7 +52,6 @@ def run_grid(
     else:
         update.grid = grid
 
-    raise KeyboardInterrupt
     if grid.status == GridStatus.COMPLETED:
         logger.info(f'Grid {grid.name} already complete. grid ID={grid.grid_id}')
         return
