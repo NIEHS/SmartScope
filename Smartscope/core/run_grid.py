@@ -20,7 +20,7 @@ from .grid.run_hole import RunHole
 from .interfaces.microscope_interface import MicroscopeInterface
 from .selectors import selector_wrapper
 from .models import SquareModel, AutoloaderGrid
-from .settings.worker import PROTOCOL_COMMANDS_FACTORY
+from .settings.worker import PROTOCOL_COMMANDS_FACTORY, SKIP_WEBSOCKET_DURING_DATACOLLECTION
 from .frames import get_frames_prefix, parse_frames_prefix
 from .status import status
 from .protocols import get_or_set_protocol
@@ -47,8 +47,12 @@ def run_grid(
 
     grid = update(grid, refresh_from_db=True, last_update=None)
     # Set the Websocket_update_decorator grid property
-    update.grid = grid
+    if SKIP_WEBSOCKET_DURING_DATACOLLECTION and grid.collection_mode == 'collection':
+        logger.info('Skipping websocket updates during data collection')
+    else:
+        update.grid = grid
 
+    raise KeyboardInterrupt
     if grid.status == GridStatus.COMPLETED:
         logger.info(f'Grid {grid.name} already complete. grid ID={grid.grid_id}')
         return
