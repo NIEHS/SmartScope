@@ -221,6 +221,7 @@ class SetMultiShotForm(forms.Form):
     pixel_size= forms.FloatField(label='Pixel Size (A/pix)',min_value=0,required=True,help_text='Pixel size of the Record preset')
     beam_size = forms.IntegerField(label='Beam size (nm)', min_value=0, required=True, help_text='Beam diameter in nm')
     hole_size = forms.FloatField(label='Hole Size (um)', min_value=0, required=True, help_text='Grid hole size in micrometers')
+    min_number_of_shots = forms.IntegerField(label='Minimum shots', min_value=2,initial=2,help_text='Minimum number of shots per hole to try.')
     max_number_of_shots = forms.IntegerField(label='Maximum shots', min_value=2,initial=2,help_text='Maxmimum number of shots per hole to try.')
     max_efficiency = forms.FloatField(label='Mininum field of view in hole (%)',initial=85, min_value=0, max_value=100,help_text="Minimum percentage of the total field of view accross all shots to fall within the hole.")
 

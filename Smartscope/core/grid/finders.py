@@ -1,7 +1,7 @@
 import logging
 from Smartscope.lib.image.montage import Montage
 from Smartscope.lib.Datatypes.base_plugin import TargetClass
-from Smartscope.core.settings.worker import PLUGINS_FACTORY
+from Smartscope.core.settings.worker import PLUGINS_FACTORY, FORCE_MDOC_TARGETING
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ def find_targets(montage: Montage, methods: list):
         method = PLUGINS_FACTORY.get_plugin(method)
 
         try:
-            targets, success, additional_outputs  = method.run(montage=montage)
+            targets, success, additional_outputs  = method.run(montage=montage, force_mdoc=FORCE_MDOC_TARGETING)
         except Exception as err:
             logger.exception(err)
             success = False

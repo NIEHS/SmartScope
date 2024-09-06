@@ -113,10 +113,10 @@ class PluginFactory:
 
     def get_plugin(self, name) -> BaseFeatureAnalyzer:
         if self._factory == {}:
-            logger.debug('No plugins registered, loading plugins now.')
+            # logger.debug('No plugins registered, loading plugins now.')
             self.load_plugins()
         if (plugin := self._factory.get(name)) is not None:
-            logger.debug(f'Getting plugin {name}')
+            # logger.debug(f'Getting plugin {name}')
             return plugin
         raise PluginDoesnNotExistError(name, self._factory)
 

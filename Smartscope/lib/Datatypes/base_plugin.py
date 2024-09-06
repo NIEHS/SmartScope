@@ -1,7 +1,7 @@
 
 import importlib
 from enum import Enum
-from abc import ABC, abstractclassmethod
+from abc import ABC
 from typing import Any, Optional, Protocol, List, Dict, Union, Callable
 from pydantic import BaseModel, Field
 from Smartscope.lib.image.montage import Montage
@@ -48,12 +48,13 @@ class BaseFeatureAnalyzer(BaseModel, ABC):
     def run(self,
             montage:Montage,
             create_targets_method:Callable=Targets.create_targets_from_box,
+            force_mdoc:bool=False,
             *args, **kwargs):
         """Where the main logic for the algorithm is"""
         module = importlib.import_module(self.module)
         function = getattr(module, self.method)
         output = function(montage,*args, **kwargs, **self.kwargs)
-        targets = create_targets_method(output[0],montage)
+        targets = create_targets_method(output[0],montage, force_mdoc=force_mdoc)
 
         return targets, output[1],output[2]
 

@@ -2,13 +2,14 @@ import os
 import sys
 import time
 import logging
+from typing import Union
 from enum import Enum
 from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
 from django.db import transaction
 
-logger = logging.getLogger(__name__)
+from Smartscope.lib.image_manipulations import export_as_png
 
 from .grid.grid_status import GridStatus
 from .grid.finders import find_targets
@@ -16,41 +17,40 @@ from .grid.grid_io import GridIO
 from .grid.run_io import get_file_and_process
 from .grid.run_square import RunSquare
 from .grid.run_hole import RunHole
-
 from .interfaces.microscope_interface import MicroscopeInterface
+from .selectors import selector_wrapper
+from .models import SquareModel, AutoloaderGrid
+from .settings.worker import PROTOCOL_COMMANDS_FACTORY, SKIP_WEBSOCKET_DURING_DATACOLLECTION
+from .frames import get_frames_prefix, parse_frames_prefix
+from .status import status
+from .protocols import get_or_set_protocol
+from .preprocessing_pipelines import load_preprocessing_pipeline
+from .db_manipulations import update, queue_atlas, add_targets
+from .data_manipulations import select_n_areas
 
-from Smartscope.core.selectors import selector_wrapper
-from Smartscope.core.models import ScreeningSession, SquareModel, AutoloaderGrid
-from Smartscope.core.settings.worker import PROTOCOL_COMMANDS_FACTORY
-from Smartscope.core.frames import get_frames_prefix, parse_frames_prefix
-from Smartscope.core.status import status
-from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.core.preprocessing_pipelines import load_preprocessing_pipeline
-from Smartscope.core.db_manipulations import update, queue_atlas, add_targets
-from Smartscope.core.data_manipulations import select_n_areas
-
-from Smartscope.lib.image_manipulations import export_as_png
-    
-
+logger = logging.getLogger(__name__)
 
 def run_grid(
         grid:AutoloaderGrid,
-        session:ScreeningSession,
         scope:MicroscopeInterface
-    ): #processing_queue:multiprocessing.JoinableQueue,
+    ): 
     """Main logic for the SmartScope process
     Args:
         grid (AutoloaderGrid): AutoloadGrid object from Smartscope.server.models
         session (ScreeningSession): ScreeningSession object from Smartscope.server.models
     """
     logger.info(f'###Check status of grid, grid ID={grid.grid_id}.')
+    session = grid.session_id
     session_id = session.pk
     microscope = session.microscope_id
 
 
     grid = update(grid, refresh_from_db=True, last_update=None)
     # Set the Websocket_update_decorator grid property
-    update.grid = grid
+    if SKIP_WEBSOCKET_DURING_DATACOLLECTION and grid.collection_mode == 'collection':
+        logger.info('Skipping websocket updates during data collection')
+    else:
+        update.grid = grid
 
     if grid.status == GridStatus.COMPLETED:
         logger.info(f'Grid {grid.name} already complete. grid ID={grid.grid_id}')
@@ -68,14 +68,14 @@ def run_grid(
         grid = update(grid, status=GridStatus.STARTED)
 
     GridIO.create_grid_directories(grid.directory)
-    logger.info(f"create and the enter into Grid directory={grid.directory}")
+    logger.info(f"Create and then enter into Grid directory={grid.directory}")
     os.chdir(grid.directory)
     params = grid.params_id
 
     protocol = get_or_set_protocol(grid)
     preprocessing = load_preprocessing_pipeline(Path('preprocessing.json'))
     preprocessing.start(grid)
-    is_stop_file(session_id)
+    check_stop_flag(session_id)
     atlas = queue_atlas(grid)
 
     # scope
@@ -87,7 +87,7 @@ def run_grid(
         GridIO.create_grid_frames_directory(session.detector_id.frames_directory, grid.frames_dir(prefix=prefix))
         logger.debug(f'Saving the frames in {grid_dir}')
     scope.loadGrid(grid.position)
-    is_stop_file(session_id)
+    check_stop_flag(session_id)
     scope.setup(params.save_frames,grid_dir=grid_dir,framesName=f'{session.date}_{grid.name}')
     scope.reset_state()
 
@@ -119,7 +119,7 @@ def run_grid(
             montage,
             protocol.atlas.targets.finders
         )
-        squares = add_targets(
+        add_targets(
             grid,
             atlas,
             targets,
@@ -137,7 +137,11 @@ def run_grid(
     
     # 
     if atlas.status == status.PROCESSED:
-        selector_wrapper(protocol.atlas.targets.selectors, atlas, n_groups=5)
+        if not 'montage' in locals():
+            from Smartscope.lib.image.montage import Montage
+            montage = Montage(name=atlas.name)
+            montage.load_or_process()
+        selector_wrapper(protocol.atlas.targets.selectors, atlas, montage=montage)
         selected = select_n_areas(atlas, grid.params_id.squares_num)
         with transaction.atomic():
             for obj in selected:
@@ -154,7 +158,7 @@ def run_grid(
     running = True
     is_done = False
     while running:
-        is_stop_file(session_id)
+        check_stop_flag(session_id)
         grid = update(grid, refresh_from_db=True, last_update=None)
         params = grid.params_id
         if grid.status == GridStatus.ABORTING:
@@ -211,6 +215,7 @@ def run_grid(
             scope.refineZLP(params.zeroloss_delay)
             scope.collectHardwareDark(params.hardwaredark_delay)
             scope.flash_cold_FEG(params.coldfegflash_delay)
+            scope.recenter_beam(params.beam_centering_delay)
         elif priority == TargetPriority.SQUARE:
             is_done = False
             logger.info(f'Running Square {square}')
@@ -228,7 +233,7 @@ def run_grid(
             RunSquare.process_square_image(square, grid, microscope)
             # calculate_hole_geometry(grid)
         elif is_done:
-            microscope_id = session.microscope_id.pk
+            microscope_id = microscope.pk
             tmp_file = os.path.join(settings.TEMPDIR, f'.pause_{microscope_id}')
             if os.path.isfile(tmp_file):
                 paused = os.path.join(settings.TEMPDIR, f'paused_{microscope_id}')
@@ -284,11 +289,24 @@ def get_queue(grid):
     return square, hole#[h for h in holes if not h.bisgroup_acquired]
 
 
-def is_stop_file(sessionid: str) -> bool:
-    stop_file = os.path.join(settings.TEMPDIR, f'{sessionid}.stop')
-    if os.path.isfile(stop_file):
+
+
+def get_stop_file(session_id: str, default=None) -> Union[Path,None]:
+    stop_file = Path(settings.TEMPDIR, f'{session_id}.stop')
+    if stop_file.exists():
         logger.debug(f'Stop file {stop_file} found.')
-        os.remove(stop_file)
+        return stop_file
+    return default
+
+def clear_stop_file(session_id: str) -> bool:
+    stop_file = get_stop_file(session_id)
+    if stop_file is None:
+        return False
+    stop_file.unlink()
+    return True
+
+def check_stop_flag(session_id: str):
+    if clear_stop_file(session_id):
         raise KeyboardInterrupt()
 
 

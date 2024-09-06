@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Literal
 import torch
 import logging
 import time
@@ -145,11 +145,25 @@ def test_protocol_command(microscope_id,detector_id,command, instance=None, inst
         instance = SquareModel.objects.get(pk=instance)
     microscope = Microscope.objects.get(pk=microscope_id)
     detector = Detector.objects.get(pk=detector_id)
-    scopeInterface = select_microscope_interface(microscope)
+    scopeInterface, additional_settings  = select_microscope_interface(microscope)
     with scopeInterface(microscope = micModels.Microscope.model_validate(microscope),
                               detector= micModels.Detector.model_validate(detector),
-                              atlas_settings= micModels.AtlasSettings.model_validate(detector)) as scope:
+                              atlas_settings= micModels.AtlasSettings.model_validate(detector),
+                              additional_settings=additional_settings) as scope:
         PROTOCOL_COMMANDS_FACTORY[command](scope,params,instance)
+
+def run_microscope_command(microscope_id, detector_id, command, *args):
+    from Smartscope.core.models import Microscope, Detector
+    from Smartscope.core.interfaces.microscope_methods import select_microscope_interface
+    import Smartscope.core.interfaces.microscope as micModels
+    microscope = Microscope.objects.get(pk=microscope_id)
+    detector = Detector.objects.get(pk=detector_id)
+    scopeInterface, additional_settings  = select_microscope_interface(microscope)
+    with scopeInterface(microscope = micModels.Microscope.model_validate(microscope),
+                              detector= micModels.Detector.model_validate(detector),
+                              atlas_settings= micModels.AtlasSettings.model_validate(detector),
+                              additional_settings=additional_settings) as scope:
+        getattr(scope, command)(*args)
 
 
 def list_plugins():
@@ -195,3 +209,19 @@ def test_find_hole_geometry(grid_id):
     grid = AutoloaderGrid.objects.get(pk=grid_id)
     rotation, spacing = save_hole_geometry(grid)
     print(f'Updated grid {grid} with rotation: {rotation} degrees and spacing: {spacing} pixels.')
+
+
+def test_image_to_stage_conversion(image_file, coords, coordinate_system:Literal['smartscope','serialem']='smartscope'):
+    from pathlib import Path
+    from Smartscope.lib.image.montage import Montage
+    from Smartscope.lib.image.target import Target
+
+    montage_file = Path(image_file)
+    montage = Montage(name=montage_file.stem)
+    montage.raw = montage_file
+    montage.load_or_process()
+    coords = [int(i) for i in coords.split(',')]
+    if coordinate_system == 'serialem':
+        coords = Target.flip_y(coords, montage.shape_x)
+    target = Target(coords, from_center=True)
+    target.convert_image_coords_to_stage(montage, compare=True)

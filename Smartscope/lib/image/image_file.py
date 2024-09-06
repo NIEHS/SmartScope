@@ -13,7 +13,7 @@ def parse_mdoc(mdocFile: str, movie: bool = False) -> pd.DataFrame:
     Opens an mdoc file and returns a dataframe 
     with the different values from the file and the pixel size
     """
-    pattern = re.compile(r'(\w*)\s=\s([\-\w\.\s\\:]+)\n')
+    pattern = re.compile(r'(\w*)\s=\s([\-\w\.\s\\:]+)(?:\n|$)')
     metadata= None
     with open(mdocFile, 'r') as file:
         mdocFile = file.read().split('\n\n')
@@ -24,9 +24,11 @@ def parse_mdoc(mdocFile: str, movie: bool = False) -> pd.DataFrame:
         stacks = [m for m in mdocFile[3:] if '[MontSection =' not in m]
 
     for index, stack in enumerate(stacks):
+        # print(stack)
         mdocValues = re.findall(pattern, '\n\n'.join([mdocFile[0], stack]))
         mdoc = pd.DataFrame()
         for key, val in mdocValues:
+            print(key,"=", val)
             try:
                 mdoc[key] = [[int(i) for i in val.split(' ')] if len(val.split(' ')) > 1 else int(val)]
             except:

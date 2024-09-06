@@ -1,6 +1,8 @@
 from pathlib import Path
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils import timezone
 from .base_model import *
+from .tags import ProjectTag, SampleTag, SampleTypeTag, TagGrid
 
 class GridManager(models.Manager):
     def get_queryset(self):
@@ -55,6 +57,9 @@ class AutoloaderGrid(BaseModel):
         on_delete=models.SET_NULL,
         to_field='params_id'
     )
+    # project_tags = GenericRelation(ProjectTag, related_query_name='grid_id')
+    # sample_tags = GenericRelation(SampleTag, related_query_name='grid_id')
+    # sample_type_tags = GenericRelation(TagGrid, related_query_name='grid_id')
 
     objects = GridManager()
     # aliases

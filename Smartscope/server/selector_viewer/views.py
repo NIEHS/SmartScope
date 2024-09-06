@@ -17,13 +17,11 @@ from Smartscope.core.status import status
 logger =logging.getLogger(__name__)
 
 
-def parse_maglevel(func, *args, maglevel='square'):
-    def wrapper(*args, **kwargs):
-        if maglevel == 'square':
-            return func(*args,maglevel=SquareModel, **kwargs)
-        elif maglevel == 'atlas':
-            return func(*args,maglevel=AtlasModel, **kwargs)
-    return wrapper
+def parse_maglevel(maglevel='square'):
+    if maglevel == 'square':
+        return SquareModel
+    elif maglevel == 'atlas':
+        return AtlasModel
 
 
 def set_transparent_background(fig):
@@ -59,9 +57,9 @@ def draw_selector_image(selector:str, grid:AutoloaderGrid,maglevel=SquareModel, 
     return plots
 
 
-@parse_maglevel
 def selector_view(request, grid_id, selector, maglevel='square'):
-    logger.debug(f'Grid_id = {grid_id}, selector = {selector}')
+    logger.debug(f'Grid_id = {grid_id}, selector = {selector}, maglevel = {maglevel}')
+    maglevel = parse_maglevel(maglevel)
     context = dict()
     context['grid_id'] = grid_id
     grid = AutoloaderGrid.objects.get(grid_id=grid_id)

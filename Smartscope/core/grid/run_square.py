@@ -13,7 +13,7 @@ from Smartscope.core.selectors import selector_wrapper
 from Smartscope.core.models import HoleModel
 from Smartscope.core.status import status
 from Smartscope.core.protocols import get_or_set_protocol
-from Smartscope.core.db_manipulations import update, add_targets, group_holes_for_BIS
+from Smartscope.core.db_manipulations import update, add_targets, group_holes_from_square_for_BIS
 from Smartscope.core.data_manipulations import select_n_areas
 from Smartscope.lib.image_manipulations import export_as_png
 from Smartscope.lib.image.montage import Montage
@@ -47,19 +47,13 @@ class RunSquare:
             if montage is None:
                 montage = Montage(name=square.name)
                 montage.load_or_process()
-            selector_wrapper(protocol.selectors, square, n_groups=5, montage=montage)
+            selector_wrapper(protocol.selectors, square, montage=montage)
             square = update(square, status=status.TARGETS_SELECTED)
             transaction.on_commit(lambda: logger.debug('Selectors added'))
         if square.status == status.TARGETS_SELECTED:
-            if is_bis:
-                holes = list(HoleModel.display.filter(square_id=square.square_id))
-                holes = group_holes_for_BIS(
-                    [h for h in holes if h.is_good() and not h.is_excluded()[0] and not h.is_out_of_range()],
-                    max_radius=grid.params_id.bis_max_distance,
-                    min_group_size=grid.params_id.min_bis_group_size
-                )
-                for hole in holes:
-                    hole.save()
+            group_holes_from_square_for_BIS(square, 
+                                            max_radius=params.bis_max_distance,
+                                            min_group_size=params.min_bis_group_size)
             logger.info(f'Picking holes on {square}')
             selected = select_n_areas(square, grid.params_id.holes_per_square, is_bis=is_bis)
             with transaction.atomic():

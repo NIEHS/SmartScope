@@ -1,0 +1,11 @@
+<select name="tag" id="tag"
+    class="form-control"
+    hx-post="{% url 'addSampleTypeTag' grid_id=grid_id %}"  
+    hx-swap="innerHTML"
+    hx-trigger="change"
+    >
+    <option value="" selected disabled hidden>Choose a tag</option>
+{% for tag in tags %}
+    <option value="{{ tag.name }}">{{ tag.name }}</option>
+{% endfor %}
+</select>

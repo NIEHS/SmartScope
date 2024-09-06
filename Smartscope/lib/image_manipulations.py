@@ -37,6 +37,17 @@ def extract_from_image(image, center: np.array, apix: float, box_size: float = 2
         overLimits = True
     return image[topleft[1]:botright[1], topleft[0]:botright[0]], apix, box_size, topleft, overLimits
 
+def extract_box_from_radius(image:np.array, x,y , radius: float, apix: float=-1.0):
+    if apix != -1.0:
+        radius = int(radius//apix)
+    up = max([0, y - radius])
+    left = max([0, x - radius])
+    down = min([image.shape[0], y + radius])
+    right = min([image.shape[1], x + radius])
+
+    
+    return image[up:down, left:right]
+
 
 def to_8bits(image):
     img = image.astype('float64')

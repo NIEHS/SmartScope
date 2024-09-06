@@ -115,21 +115,22 @@ def set_shots_per_hole(
         hole_size:float,
         beam_size:float,
         image_size:np.ndarray,
-        radius_step:int=0.02,
         starting_angle:float=0,
-        consider_aspect=True,
+        # consider_aspect=True,
         min_efficiency=0.85
     ):
     hole_area = np.pi*(hole_size/2)**2
     min_allowed_coverage = np.prod(image_size)/hole_area
     angle_between_shots = 2*np.pi / number_of_shots
-    aspect= 1
+    aspect= image_size[0]/image_size[1] 
     aspect_step = 1
     steps=1
-    if consider_aspect:
-        aspect = image_size[0]/image_size[1] 
+    if aspect > 1:
+        
+        # aspect = image_size[0]/image_size[1] 
         aspect_step = 0.1
-        steps=20
+        steps=int((aspect-1)//aspect_step)
+        logger.info(f'Not a square detector. Will run {steps} step of aspect ratio optimization.')
 
     # start_radius = (hole_size/2 - np.sqrt(np.sum(image_size**2))/2)
     #  if number_of_shots != 1 else 0
@@ -140,17 +141,46 @@ def set_shots_per_hole(
     best_fraction_in_hole = 0
     best_hole_coverage = 0
     best_aspect_val = 0
+    best_extra_rotation = 0
+    best_radius = start_radius
+    coarse_search = True
+
+    initial_radius_step  = hole_size/10
+
     
     while True:
-        for extra_rotation in range(int(np.degrees(angle_between_shots/2))):
+        if coarse_search:
+            radius_step = initial_radius_step
+            
+            num_aspect_steps = 1
+            radius=start_radius
+            end_radius = max_radius
+            angle_range = int(np.degrees(angle_between_shots/2)*1.2)
+            initial_angle_step = int(angle_range/10)
+            rotation_range = range(0,angle_range,initial_angle_step)
+            logger.info(f'Coarse search with radius step: {radius_step:.2f} and angle step: {initial_angle_step:.2f}')
+        else:
+            radius_step = 0.02
+            num_aspect_steps = steps
+            
+            radius = best_radius - initial_radius_step*2
+            start_radius = radius
+            end_radius = best_radius + initial_radius_step*2
+            rotation_range = range(best_extra_rotation-initial_angle_step*2, best_extra_rotation+initial_angle_step*2+1)
+            logger.info(f'Fine search with radius: {best_radius} +/- {initial_radius_step*2} and angle step: {best_extra_rotation} +/- {initial_angle_step*2}')
+
+        for extra_rotation in rotation_range:
             center_shot = False
             hole_coverage=1
             in_hole=1
-            radius=start_radius
+            
             running=True
             while running:
-                for i in range(steps):
+                
+                for i in range(num_aspect_steps):
+
                     aspect_val = 1+i*aspect_step
+                    # logger.debug(f'Radius: {radius:.2f}. Rotation: {extra_rotation}. Aspect: {aspect_val}')
                     shots = []
                     remaining_number_of_shots = number_of_shots
                     new_angle_between_shots = angle_between_shots
@@ -176,14 +206,19 @@ def set_shots_per_hole(
                         best_hole_coverage = hole_coverage
                         best_shots = shots.copy()
                         best_aspect_val=aspect_val
-                        # print(f'New Best Shot! Shots: {number_of_shots}; Rotation: {extra_rotation}; Radius: {radius}; Efficiency: {best_fraction_in_hole*100:.1f} %; Hole coverage: {best_hole_coverage} %; In Hole: {in_hole:.2f}; Init in Hole: {init_in_hole}; Sum in Hole: {sum_in_hole} ;Center hole: {center_shot}; Aspect val: {best_aspect_val}')
+                        best_extra_rotation = extra_rotation
+                        best_radius = radius
+                        logger.debug(f'New Best Shot! Shots: {number_of_shots}; Rotation: {extra_rotation}; Radius: {radius}; Efficiency: {best_fraction_in_hole*100:.1f} %; Hole coverage: {best_hole_coverage} %; In Hole: {in_hole:.2f}; Init in Hole: {init_in_hole}; Sum in Hole: {sum_in_hole} ;Center hole: {center_shot}; Aspect val: {best_aspect_val}')
+
                     # time.sleep(0.2)
-                if radius >= max_radius:
+                if radius >= end_radius:
+                    radius = start_radius
                     break
                 radius += radius_step
                 # print('Breaking out of loop', end='\r')
-                
-        if best_shots is not None:
+        if coarse_search:
+            coarse_search=False
+        elif best_shots is not None:
             logger.info(f'Shots: {number_of_shots}; Efficiency: {best_fraction_in_hole*100:.1f} %; Hole coverage: {best_hole_coverage*100:.1f} %; Aspect val: {best_aspect_val}')
             return MultiShot(n_shots=number_of_shots,
                         shots=[s.tolist() for s in best_shots],

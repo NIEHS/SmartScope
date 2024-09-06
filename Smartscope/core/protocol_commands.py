@@ -43,6 +43,9 @@ def atlas(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwar
     """Collects and atlas of X by Y tiles from the collection parameters using the Montage command"""
     scope.atlas(size=[params.atlas_x,params.atlas_y],file=instance.raw)
 
+def atlasInLowDoseSearch(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
+    scope.atlas_in_low_dose_search(size=[params.atlas_x,params.atlas_y],file=instance.raw)
+
 def realignToSquare(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Realigns to the square using the Search magnification. 
     Mainly useful when the alignement between the Atlas and the Square is off.
@@ -67,8 +70,10 @@ def moveStageWithAtlasToSearchOffset(scope:MicroscopeInterface,params,instance, 
     offset_x = scope.atlas_settings.atlas_to_search_offset_x
     offset_y = scope.atlas_settings.atlas_to_search_offset_y
     finder = instance.finders.first()
-    stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
-    scope.moveStage(stage_x+offset_x,stage_y+offset_y,stage_z)
+    stage_args = [finder.stage_x + offset_x, finder.stage_y + offset_y]
+    if instance.prefix.lower() != 'square':
+        stage_args.append(finder.stage_z)
+    scope.moveStage(*stage_args)
 
 def autoFocus(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Acquires the focus drift image using the Search preset."""
@@ -109,11 +114,13 @@ def alignToHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *arg
     while iteration < max_iterations:
         iteration +=1
         shift = scope.align_to_hole_ref()
-        if np.sqrt(np.sum(np.array(shift)**2)) < 700:
+        if np.sqrt(np.sum(np.array(shift)**2)) < 500:
             return
         scope.reset_image_shift()
     logger.warning(f'It seems like the hole realignment did not converge after {max_iterations} iterations.')
 
+def zeroImageShift(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs):
+    return scope.zero_image_shift()
 
 def loadHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
     """Loads the references/holeref.mrc image into buffer T to be used as hole template for the alignToHoleRef command."""
@@ -201,6 +208,16 @@ def autoFocusAfterDistance(scope:MicroscopeInterface,params,instance, content:Di
         distance
         )
 
+def set_apertures_for_highmag(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    """Sets the apertures for the highmag image."""
+    scope.set_apertures_for_highmag(
+        highmag_aperture_size=params.highmag_aperture_size,
+        objective_aperture_size=params.objective_aperture_size
+    )
+
+def set_apertures_for_lowmag(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs) :
+    scope.set_apertures_for_lowmag()
+
 
 protocolCommandsFactory = dict(
     setAtlasOptics=setAtlasOptics,
@@ -211,6 +228,7 @@ protocolCommandsFactory = dict(
     call=call,
     callFunction=callFunction,
     atlas=atlas,
+    atlasInLowDoseSearch=atlasInLowDoseSearch,
     realignToSquare=realignToSquare,
     square=square,
     moveStage=moveStage,
@@ -223,7 +241,10 @@ protocolCommandsFactory = dict(
     loadHoleRef=loadHoleRef,
     highMag=highMag,
     setFocusPosition=setFocusPosition,
+    setAperturesForHighMag=set_apertures_for_highmag,
+    setAperturesForLowMag=set_apertures_for_lowmag,
     autoFocus=autoFocus,
     autoFocusAfterDistance=autoFocusAfterDistance,
-    waitDrift=waitDrift
+    waitDrift=waitDrift,
+    zeroImageShift=zeroImageShift
 )

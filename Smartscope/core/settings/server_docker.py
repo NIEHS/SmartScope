@@ -47,6 +47,8 @@ if USE_LONGTERMSTORAGE:
 else:
     AUTOSCREENSTORAGE = None
 
+TAGS_FEATURE_FLAG = eval(os.getenv('TAGS_FEATURE_FLAG', 'False'))
+
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',

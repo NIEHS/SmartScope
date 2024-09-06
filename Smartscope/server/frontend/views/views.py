@@ -17,7 +17,7 @@ from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.utils.timezone import now
 
-from .forms import *
+from ..forms import *
 from Smartscope.core.db_manipulations import viewer_only
 from Smartscope.core.stats import get_hole_count
 from Smartscope.core.protocols import get_or_set_protocol
@@ -326,12 +326,13 @@ class MultiShotView(TemplateView):
             if form.is_valid(): 
                 logger.debug(form.cleaned_data)
                 data=form.cleaned_data
+                min_shots = data.pop('min_number_of_shots')
                 max_shots = data.pop('max_number_of_shots')
                 max_efficiency = data.pop('max_efficiency') / 100
                 params = RecordParams(**data)
                 results = []
-                for n_shots in range(1,max_shots):
-                    shot = set_shots_per_hole(number_of_shots=n_shots+1,
+                for n_shots in range(min_shots,max_shots+1):
+                    shot = set_shots_per_hole(number_of_shots=n_shots,
                                                 hole_size=params.hole_size,
                                                 beam_size=params.beam_size_um,
                                                 image_size=params.detector_size_um,

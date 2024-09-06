@@ -10,10 +10,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 from .finders import find_targets
-from .transformations import register_to_other_montage, register_targets_by_proximity, recenter_targets
+from .transformations import register_to_other_montage, register_targets_by_proximity
 from .diagnostics import generate_diagnostic_figure, Timer
 
 
+from Smartscope.core.settings.worker import FORCE_MDOC_TARGETING
 from Smartscope.core.models.hole import HoleModel
 from Smartscope.core.models.high_mag import HighMagModel
 from Smartscope.core.status import status
@@ -90,8 +91,8 @@ class RunHole:
                         Path(montage.directory / f'hole_recenter_it.png')
                     )
                     
-                if len(protocol.targets.finders) == 0 or targets == []:
-                    targets = Targets.create_targets_from_center(image_coords, montage)
+                if targets == []:
+                    targets = Targets.create_targets_from_center(image_coords, montage, force_mdoc=FORCE_MDOC_TARGETING)
                 timer.report_timer('Identifying and registering targets')
                 
 

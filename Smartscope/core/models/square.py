@@ -69,6 +69,10 @@ class SquareModel(Target, ExtraPropertyMixin):
     @property
     def prefix(self):
         return 'Square'
+    
+    @property
+    def prefix_lower(self):
+        return self.prefix.lower()
 
     @property
     def targets_prefix(self):
@@ -99,7 +103,6 @@ class SquareModel(Target, ExtraPropertyMixin):
     def target_model(cls):
         from .hole import HoleModel
         return HoleModel
-
 
     # @cached_model_property(key_prefix='svg', 
     # extra_suffix_from_function=['method'], timeout=3600)
