@@ -48,6 +48,7 @@ class JEOLSerialemInterface(SerialemInterface):
     
     def atlas(self, size, file=''):
         sem.GoToLowDoseArea('S')
+        sem.SetEucentricFocus()
         sem.ParamSetToUseForMontage(3)
         super().atlas(size, file)
         msg = 'Atlas finished, Restoring Search state.'
