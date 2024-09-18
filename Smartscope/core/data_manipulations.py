@@ -59,16 +59,17 @@ def choose_get_index(lst, value):
     if indices == []:
         return None
     choice = random.choice(indices)
-    del lst[choice]
     return choice
 
 
 def filter_out_of_range(target,stage_radius_limit:int = 975, offset_x:float=0, offset_y:float=0):
-    return int(target.is_position_within_stage_limits(stage_radius_limit, offset_x, offset_y))
+    return str(int(target.is_position_within_stage_limits(stage_radius_limit, offset_x, offset_y))) + "_"
 
-def count_filtered(filtered, value:int=0):
+def count_filtered(filtered, value:str="0"):
     return len(list(filter(lambda x: x == value, filtered)))
 
+def add_selector_to_score_string(score, selector_class):
+    return score + str(selector_class)
 
 def filter_targets(parent, targets, stage_radius_limit:int = 975, offset_x:float=0, offset_y:float=0):
     classifiers = get_target_methods(targets, 'classifiers')
@@ -78,37 +79,42 @@ def filter_targets(parent, targets, stage_radius_limit:int = 975, offset_x:float
     filter_oor_partial = partial(filter_out_of_range, stage_radius_limit=stage_radius_limit, offset_x=offset_x, offset_y=offset_y)
     filtered = list(map(filter_oor_partial, targets))
     logger.debug(f'Number of targers: {len(filtered)}. Number of targets out of range: {count_filtered(filtered)}')
-    for classifier in classifiers:
-        for ind, target in enumerate(targets):
-            if filtered[ind] == 0:
-                continue
-            t_classifiers = target.classifiers
-            if not isinstance(t_classifiers, list):
-                t_classifiers = list(t_classifiers.all())
+    # for classifier in classifiers:
+    for ind, target in enumerate(targets):
+        # if '0' in filtered[ind]:
+        #     continue
+        t_classifiers = target.classifiers
+        if not isinstance(t_classifiers, list):
+            t_classifiers = list(t_classifiers.all())
+        for classifier in classifiers:
             label = next(filter(lambda x: x.method_name == classifier, t_classifiers),None)
             if label is None:
                 continue
-            if PLUGINS_FACTORY.get_plugin(classifier).classes[label.label].value <= 0:
-                filtered[ind] = 0
-                continue
+            value = PLUGINS_FACTORY.get_plugin(classifier).classes[label.label].value
+            if value <= 0:
+                filtered[ind] += '0'
+            else:
+                filtered[ind] += str(value)
+        filtered[ind] += "_"
     logger.debug(f'Filtered classes against classifiers {classifiers}: {filtered}')            
-    filtered = np.array(filtered)
+    # filtered = np.array(filtered)
     for selector in selectors:
         sorter = initialize_selector(parent.grid_id, selector, targets)
-        filtered *= np.array(sorter.classes)
+        filtered = list(map(add_selector_to_score_string, filtered, sorter.classes))
     logger.debug(f'Filtered classes against classifiers {classifiers} and selectors {selectors}: {filtered}')
     
-    return filtered.tolist()
+    return filtered
 
 def apply_filter(targets, filtered):
-    return [target for target, filt in zip(targets, filtered) if filt > 0]
+    for target, filt in zip(targets, filtered):
+        if '0' in filt:
+            continue
+        yield target
+    # return [target for target, filt in zip(targets, filtered) if '0' not in filt]
 
 def prepare_filtered_set(filters)-> set:
     filtered_set = set(filters)
-    if filtered_set == {0} or len(filtered_set) == 0:
-        return []
-    filtered_set.discard(0)
-    return filtered_set 
+    return {s for s in filtered_set if '0' not in s}
 
 
 def select_random_areas(targets, filtered, n):
@@ -120,10 +126,15 @@ def select_random_areas(targets, filtered, n):
     logger.debug(f'Randomized choices: {choices}')
     output = []
     for choice in choices:
+        assert len(targets) == len(filtered), f'Length of targets {len(targets)} and filtered {len(filtered)} do not match.'
         ind = choose_get_index(filtered, choice)
         if ind is None:
             break
-        output.append(targets[ind])
+        selection = targets[ind]
+        assert '0' not in filtered[ind], f'Filtered value {filtered[ind]} for target {selection} is not valid.'
+        del filtered[ind]
+        del targets[ind]
+        output.append(selection)
     return output
 
 def select_n_areas(parent, n, is_bis=False):
@@ -135,7 +146,7 @@ def select_n_areas(parent, n, is_bis=False):
     filtered= filter_targets(parent, targets)
     assert len(targets) == len(filtered), f'Length of targets {len(targets)} and filtered {len(filtered)} do not match.'
     if n <=0:
-        return apply_filter(targets, filtered)
+        return list(apply_filter(targets, filtered))
     return select_random_areas(targets, filtered, n)
 
 def set_or_update_refined_finder(instance, stage_x, stage_y, stage_z):

@@ -2,7 +2,7 @@ from functools import partial
 import logging
 import Smartscope.bin.smartscope
 
-from Smartscope.core.data_manipulations import get_target_methods,filter_targets, prepare_filtered_set, select_random_areas, count_filtered, filter_targets, filter_out_of_range, randomized_choice, choose_get_index
+from Smartscope.core.data_manipulations import get_target_methods,filter_targets, prepare_filtered_set, select_n_areas, count_filtered, filter_targets, filter_out_of_range, randomized_choice, choose_get_index
 from Smartscope.core.models import SquareModel, HoleModel, AtlasModel
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def test_filter_out_of_range():
     logger.debug(f'Number of targers: {len(filtered)}. Number of targets out of range: {count_filtered(filtered)}')
 
     assert len(filtered) == len(targets)
-    assert set(filtered) == {0,1}
+    assert set(filtered) == {'0_','1_'}
 
 def test_filter_targets_and_out_of_range():
     logger.info('Testing filter targets and out of range')
@@ -38,15 +38,14 @@ def test_filter_targets_and_out_of_range():
     filter_oor_partial = partial(filter_out_of_range, stage_radius_limit=100, offset_x=0, offset_y=0)
     filtered_oor= list(map(filter_oor_partial, targets))
     for item, item_oor in zip(filtered, filtered_oor):
-        if item_oor == 0:
-            assert item == 0
+        if item_oor == '0':
+            assert item[0] == '0'
         # assert item >= item_oor
 
 def test_prepare_filtered_set():
-    filters = [0,0,1,0,1,1,2]
+    filters = ['0_12','1_','10_2','00_0','13_4','13_0','4_0']
     filtered_set = prepare_filtered_set(filters)
     assert len(filtered_set) == 2
-    assert 0 not in filtered_set   
 
 def test_randomized_choice():
     filtered_set = {1,2,3,4,5}
@@ -64,11 +63,19 @@ def test_randomized_choice():
 
 def test_choose_get_index():
     lst = [1,2,2,3,4,4,4,5]
-    init_len = len(lst)
+    # init_len = len(lst)
     value = 4
     choice = choose_get_index(lst, value)
     assert choice in [4,5,6]
-    assert len(lst) == init_len - 1
+    # assert len(lst) == init_len - 1
+
+
+def test_select_n_areas():
+    logger.info('Testing select_n_areas')
+    parent = AtlasModel.objects.get(pk='testgrid_1_atlasDXdHqPR3RhyJm9')
+    selection = select_n_areas(parent,3,False)
+    selection = select_n_areas(parent,0,False)
+
 
 # def test_select_random_areas():
 #     parent = AtlasModel.objects.get(pk='testgrid_1_atlasDXdHqPR3RhyJm9')

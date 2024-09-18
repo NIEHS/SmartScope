@@ -36,14 +36,14 @@
 
 <div class="d-flex flex-row align-items-center slider-container">
     <div class="col-2">
-        <input type="number" id="sliderValue1" step="0.1" class="form-control">
+        <input type="number" id="sliderValue1" step="0.01" class="form-control">
     </div>
     <div class="slider col-8 mx-2" id="slider">
         <div class="slider-handle" id="handle1"></div>
         <div class="slider-handle" id="handle2"></div>
     </div>
     <div class="col-2">
-    <input type="number" id="sliderValue2" step="0.1" class="form-control">
+    <input type="number" id="sliderValue2" step="0.01" class="form-control">
     </div>
 </div>
 
@@ -77,8 +77,8 @@
         });
 
         function calculatePos() {
-            let value1 = Math.round(pos1 / ($slider.width() - $handle1.width()) * (maxvalue-minvalue) + minvalue);
-            let value2 = Math.round(pos2 / ($slider.width() - $handle1.width()) * (maxvalue-minvalue) + minvalue);
+            let value1 = (pos1 / ($slider.width() - $handle1.width()) * (maxvalue-minvalue) + minvalue).toFixed(2);
+            let value2 = (pos2 / ($slider.width() - $handle1.width()) * (maxvalue-minvalue) + minvalue).toFixed(2);
             console.log(value1, value2);
             return [value1, value2];
         }

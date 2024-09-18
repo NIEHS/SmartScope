@@ -207,7 +207,7 @@ def group_holes_from_square_for_BIS(square:models.SquareModel, max_radius=4, min
     
     targets = square.targets.filter(status__isnull=True)
     filtered = filter_targets(square, targets)
-    holes_for_grouping = apply_filter(targets, filtered)
+    holes_for_grouping = list(apply_filter(targets, filtered))
     
     logger.info(f'Holes for grouping = {len(holes_for_grouping)}')
 
