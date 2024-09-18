@@ -1,0 +1,11 @@
+name: Distance from center selector
+method: distance_from_center_selector
+module: Smartscope.core.selectors
+targetClass:
+  - Selector
+description: |
+  Sorts and clusters the targets by their relative distance from the center of the square
+limits: [0, 0.9]
+clusters:
+  values: ascending
+  colors: ['blue', 'lightblue', 'CornflowerBlue', 'blueviolet', 'purple', 'white']
