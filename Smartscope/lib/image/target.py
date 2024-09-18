@@ -110,7 +110,7 @@ class Target:
                 flipped_coords,
                 montage.metadata.iloc[-1].ImageToStageMatrix
             )
-            logger.info(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[-1].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
+            # logger.info(f'\nUsed ImageToStageMatrix vectors {montage.metadata.iloc[-1].ImageToStageMatrix} to convert:\n\tY-flipped image coords: {flipped_coords} to\n\tStage coords: {self.stage_coords}')
             self.stage_z = montage.stage_z
             if not compare:
                 return
@@ -122,7 +122,7 @@ class Target:
             montage.metadata.iloc[tile].TiltAngle,
             return_vector=True
         )
-        logger.info(f'\nUsed mdoc-derived vector {vector.tolist()} to convert:\n\tImage coords: {self.coords} to\n\tStage coords: {self.stage_coords}')
+        # logger.info(f'\nUsed mdoc-derived vector {vector.tolist()} to convert:\n\tImage coords: {self.coords} to\n\tStage coords: {self.stage_coords}')
         self.stage_z = montage.stage_z
         mdoc_to_stage = np.array([self.stage_x, self.stage_y])
         if compare:
