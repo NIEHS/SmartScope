@@ -10,7 +10,7 @@ from Smartscope.core.models import Selector
 from Smartscope.lib.image.montage import Montage
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from Smartscope.lib.image_manipulations import extract_box_from_radius
-from Smartscope.lib.Finders.basic_finders import find_squares
+from Smartscope.lib.Finders.basic_finders import find_square_center
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,20 +24,6 @@ def generate_selector(target,value:float, label:Optional[str]=None):
 
 def generate_selectors(targets:List, field:str, label:Optional[str]=None):
     return list(map(lambda x: generate_selector(x, value=getattr(x,field), label=label), targets))
-# def generate_equal_clusters(parent, targets, n_groups, extra_fields=dict()):
-#     output = list()
-#     if len(targets) > 0:
-#         split_targets = np.array_split(targets, n_groups)
-#         for ind, bucket in enumerate(split_targets):
-#             for target in bucket:
-#                 extra_updates = dict()
-#                 for field, attribute in extra_fields.items():
-#                     extra_updates[field] = getattr(target,attribute)
-#                 output.append(dict(content_type=ContentType.objects.get_for_model(target),
-#                                    object_id=target.pk,
-#                                    label=ind,
-#                                    **extra_updates))
-#     return output
 
 
 def cluster_by_field(parent, field='area', **kwargs):
@@ -82,6 +68,19 @@ def gray_level_selector(parent, montage=None):
         target.median = np.mean(extracted)
     
     return generate_selectors(targets, 'median')
+
+def distance_from_center_selector(parent, montage=None):
+    targets, montage = prepare_selector(parent, montage)
+    montage_center = find_square_center(montage.image)
+    distances = []
+    for target in targets:
+        finder = list(target.finders.all())[0]
+        x, y = finder.x, finder.y
+        distances.append(np.sqrt((x - montage_center[0])**2 + (y - montage_center[1])**2))
+    relative_distances = np.array(distances) / np.max(distances)
+    for target, distance in zip(targets, relative_distances):
+        target.distance = distance
+    return generate_selectors(targets, 'distance')
 
 def run_selector(selector_name,selection,*args, **kwargs):
     method = PLUGINS_FACTORY.get_plugin(selector_name)
