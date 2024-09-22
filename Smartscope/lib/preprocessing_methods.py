@@ -54,8 +54,12 @@ def get_CTFFIND5_data(ctf_text: Path) -> List[float]:
             if not line.startswith('#'):
                 values = line.rstrip().split()
                 for k,v in zip(columns, values):
+                    if v == 'inf':
+                        print(f'{k} is inf')
+                        v= '10000'
                     ctf[k] = float(v)
                 break
+         
     return {
         'defocus': (ctf['df1'] + ctf['df2']) / 2,
         'astig': ctf['df1'] - ctf['df2'],
