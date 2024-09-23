@@ -31,7 +31,7 @@ class ScreeningSessionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['session'].widget.attrs.update({
-            "pattern": "^[a-zA-Z0-9-_]+$"
+            "pattern": "^[a-zA-Z0-9_\-]+$"
         })
         self.fields['group'].widget.attrs.update({
             "hx-get": reverse('getUsersInGroup'),
@@ -80,7 +80,7 @@ class AutoloaderGridForm(forms.ModelForm):
 
         self.fields['name'].widget.attrs.update({'class': 'form-control',
                                                 'placeholder': self.fields['name'].label, 'aria-label': "...",
-                                                 "pattern": "^[a-zA-Z0-9-_]+$"})
+                                                 "pattern": "^[a-zA-Z0-9_\-]+$"})
         self.fields['name'].label = ''
 
         # visible.field.widget.attrs['placeholder'] = visible.field.label
