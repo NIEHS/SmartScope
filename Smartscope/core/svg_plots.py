@@ -30,7 +30,7 @@ def add_scale_bar(pixelsize, w, h, id_type='atlas'):
         lineLenght = 1_000 / pixelsize
     final_value = value
     final_lineLenght = lineLenght
-    while final_lineLenght <= w*0.1:
+    while final_lineLenght <= w*0.15:
         final_value += value
         final_lineLenght += lineLenght
     line = draw.Line(startpoint - final_lineLenght, h * 0.98, startpoint, h * 0.98, stroke='white', stroke_width=ft_sz / 2, id=f'line_{id_type}')
