@@ -4,8 +4,7 @@ import logging
 import plotly.graph_objs as go
 import plotly.express as px
 
-from django.http import HttpResponse, HttpRequest
-from django.http import HttpRequest
+from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.template.response import TemplateResponse
 
 from Smartscope.core.models import AutoloaderGrid, HoleModel, SquareModel, AtlasModel
@@ -73,22 +72,34 @@ def selector_view(request, grid_id, selector, maglevel='square'):
 
 
 
-def save_selector_limits(request:HttpRequest, grid_id, selector):
-    logger.debug(f'Request received: {request.__dict__}')
+def extract_selector_limits(request:HttpRequest):
     kwargs = dict()
-    if request.method != 'POST':
-        return HttpResponse('Method not allowed', status=405)
     low_limit = request.POST.get('low_limit', None)
     high_limit = request.POST.get('high_limit', None)
     apply_to = request.POST.get('apply_to', 'grid')
     if apply_to == 'session':
         kwargs = {'save_to':save_to_session_directory}
+    return low_limit, high_limit, kwargs
+
+def save_selector_limits(request:HttpRequest, grid_id, selector):
+    logger.debug(f'Request received: {request.__dict__}')
+    if request.method != 'POST':
+        return HttpResponse('Method not allowed', status=405)
+    low_limit, high_limit, kwargs = extract_selector_limits(request)
     if high_limit is None:
         return HttpResponse('High Limit cannot be none', status=400)
-    selector_data = save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
-
+    save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
     return TemplateResponse(request, 'update_all_button.html', {'grid_id': grid_id}, status=200)
 
+def save_selector_limits_json(request:HttpRequest, grid_id, selector):
+    logger.debug(f'Request received: {request.__dict__}')
+    if request.method != 'POST':
+        return JsonResponse({'error':'Method not allowed'}, status=405)
+    low_limit, high_limit, kwargs = extract_selector_limits(request)
+    if high_limit is None:
+        return JsonResponse({'error': 'High Limit cannot be none'}, status=400)
+    save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
+    return JsonResponse({'success': True}, status=200)
 
 # class CollectionStatsView(TemplateView):
 #     template_name = "autoscreenViewer/collection_stats.html"
