@@ -1,0 +1,16 @@
+
+<div class="w-100 d-flex flex-row">
+    <span class="fw-bold">Annotation name: </span>
+    <span class="fw-light">{{annotation_name}}</span>
+</div>
+<form method="post" class="col-10">
+    <div id="annotationClasses" class="w-100">
+        {% for class in classes %}
+        {% include "class_form.html" with class_number=class.class_number class_color=class.class_color %}
+        {% endfor %}
+    </div>
+    <div class="col-1">
+        <button type="button" class="btn btn-secondary btn-small" hx-get="{% url 'add_annotation_class' name=annotation_name %}" hx-target="#annotationClasses" hx-swap="beforeend">Add class</button>
+    </div>
+</form>
+<div id="btnResult" class="col-2 mx-1"></div>

@@ -1,0 +1,94 @@
+
+{% extends 'general/full_overlay.html' %}
+
+{% block title %}Annotator Viewer:{% endblock %}
+
+
+
+{% block overlay_content %}
+<style>
+    /* Ensure the color input matches the height of the other form controls */
+    input[type="color"].form-control {
+      padding: 0.375rem 0.75rem; /* Match the padding of other form-control elements */
+      height: calc(1.5em + 0.75rem + 2px); /* Match the height calculation */
+    }
+    .annotatorSelected {
+        border: 4px solid rgb(0, 0, 255);
+    }
+  </style>
+
+<button class="btn btn-secondary" hx-get="{% url 'create_annotation' %}" hx-target="#annotationContainer" hx-swap="beforeend"><i class="bi bi-plus-square""></i></button>
+<!-- <span class="fw-bold">Description: </span>
+<span class="fw-light">blabla</span> -->
+
+<div id="annotationContainer" >
+</div>
+
+
+<div class="d-flex flex-row">
+    {% for image in images %}
+    <div class="col-4">
+        {{image|safe}}
+    </div>
+    {% endfor %}
+</div>
+
+
+<script>
+var target_size = null;
+var target_color = null;
+var rect_id = 0;
+
+$('[id$="-svg"]').on('click', function(event) {
+    var svg = $(this)[0];
+
+    var stroke_width = parseInt(svg.getBBox().width/250);
+    // Get the click coordinates relative to the SVG
+    var pt = svg.createSVGPoint();
+    pt.x = event.clientX 
+    pt.y = event.clientY 
+    var svgCoords = pt.matrixTransform(svg.getScreenCTM().inverse());
+    // svgCoords = pt
+    var rectX = svgCoords.x - Math.floor(target_size / 2);
+    var rectY = svgCoords.y - Math.floor(target_size / 2);
+
+    var $rect = $(document.createElementNS('http://www.w3.org/2000/svg', 'rect'))
+        .attr({
+        id: rect_id++,
+        x: rectX,  // Set X position for centering
+        y: rectY,  // Set Y position for centering
+        width: target_size,
+        height: target_size,
+        fill: target_color,
+        stroke: target_color,
+        "fill-opacity": 0,
+        "stroke-width": stroke_width,
+        });
+
+    // Append the rectangle to the clicked SVG element
+    $(this).append($rect);
+})
+
+// $('#fullOverlayMenu').on('mouseover', 'rect' ,function(event) {
+   
+//     var item = $(this);
+//     console.log('HOVER', item)
+// })
+
+$('#fullOverlayMenu').on('contextmenu', 'rect' ,function(event) {
+    event.preventDefault(); 
+    $(this).remove();
+})
+
+$('#fullOverlayMenu').on('mousedown', '.annotationClass' ,function(event) {
+    $('.annotatorSelected').removeClass('annotatorSelected')
+    $(this).addClass('annotatorSelected')
+    target_size = parseInt($(this).find('input[name="class_size"]').val());
+    target_color = $(this).find('input[name="class_color"]').val();
+    console.log('SELECTED', target_size, target_color)
+})
+
+$
+
+</script>
+{% endblock %}

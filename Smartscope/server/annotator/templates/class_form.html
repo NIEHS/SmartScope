@@ -1,0 +1,23 @@
+<div id="class_{{class_number}}" class="card col-12 d-flex p-1 annotationClass">
+    <div class="row">
+        <div class="col-2 d-flex align-items-center"">
+            <span class="fw-bold">Class {{class_number}}</span>
+        </div>
+        <!-- First input group (Size) -->
+        <div class="col-5">
+            <div class="input-group">
+                <label for="btnInput" class="input-group-text">Size</label>
+                <input type="number" class="form-control" name="class_size" value="100">
+                <label for="btnInput" class="input-group-text">px</label>
+            </div>
+        </div>
+    
+        <!-- Second input group (Color) -->
+        <div class="col-5">
+            <div class="input-group">
+                <label for="btnColor" class="input-group-text">Color</label>
+                <input type="color" class="form-control" name="class_color" value="{{class_color}}">
+            </div>
+        </div>
+    </div>
+</div>

@@ -21,6 +21,18 @@
                         class="bi bi-pencil"></i></a>
                 </li>
                 {% endif %}
+                {% if TRAINING_ANNOTATOR_FEATURE_FLAG %}
+                <li class="nav-item d-flex align-items-center">
+                    <a hx-get="{% url 'annotator_view' grid_id=instance.grid_id.pk maglevel=instance.prefix_lower %}" 
+                    hx-trigger="mousedown" class="nav-link"
+                    hx-on--before-request="createHTMXloadingMessage(event, 'Loading selector viewer')"
+                    hx-on--after-request="processHTMXloadingMessage(event)"
+                    hx-target="#main" 
+                    hx-swap="beforeend"
+                    data-bs-toggle="tooltip" data-bs-placement="top" title="Annotate data for training"><i
+                        class="bi bi-bucket"></i></a>
+                </li>
+                {% endif %}
                 {% include "mapcard/add_targets.html" %}
                 {% include "mapcard/action_menu.html" %}
                 <li class="nav-item d-flex align-items-center">

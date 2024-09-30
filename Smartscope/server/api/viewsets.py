@@ -98,6 +98,7 @@ class ExtraActionsMixin:
             'targets_methods': targets_methods(instance),
             'display_type': get_request_param(request, 'display_type', 'classifiers'),
             'method': get_request_param(request, 'method'),
+            'TRAINING_ANNOTATOR_FEATURE_FLAG': settings.TRAINING_ANNOTATOR_FEATURE_FLAG,
         }
         if context['method'] is None:
             methods = context['targets_methods'].get(context['display_type'], [])

@@ -1,0 +1,37 @@
+
+<style>
+    dialog.card-dialog {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    max-width: 500px; /* Adjust the width as necessary */
+    width: 100%; /* Ensure it scales on smaller screens */
+    }
+
+    dialog.card-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5); /* Optional: Modal backdrop effect */
+    }
+</style>
+
+<dialog open id="modalCard" class="card-dialog">
+  <div class="card shadow">
+    <!-- Card Header -->
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0">Create New Annotation</h5>
+      <button type="button" class="btn-close" aria-label="Close" onmousedown="$('#modalCard').remove()"></button>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body">
+      <form hx-post="{% url 'create_annotation' %}" hx-target="#annotationContainer" hx-swap="innerHTML" method="POST">
+        <!-- Input Field for Annotation Name -->
+        <div class="mb-3">
+          <input type="text" class="form-control" id="annotationName" name="name" placeholder="Annotation name">
+        </div>
+        <!-- Create Button -->
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  </div>
+</dialog>
