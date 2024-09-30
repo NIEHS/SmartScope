@@ -72,11 +72,11 @@ def selector_view(request, grid_id, selector, maglevel='square'):
 
 
 
-def extract_selector_limits(request:HttpRequest):
+def extract_selector_limits(data:HttpRequest):
     kwargs = dict()
-    low_limit = request.POST.get('low_limit', None)
-    high_limit = request.POST.get('high_limit', None)
-    apply_to = request.POST.get('apply_to', 'grid')
+    low_limit = data.get('low_limit', None)
+    high_limit = data.get('high_limit', None)
+    apply_to = data.get('apply_to', 'grid')
     if apply_to == 'session':
         kwargs = {'save_to':save_to_session_directory}
     return low_limit, high_limit, kwargs
@@ -85,7 +85,7 @@ def save_selector_limits(request:HttpRequest, grid_id, selector):
     logger.debug(f'Request received: {request.__dict__}')
     if request.method != 'POST':
         return HttpResponse('Method not allowed', status=405)
-    low_limit, high_limit, kwargs = extract_selector_limits(request)
+    low_limit, high_limit, kwargs = extract_selector_limits(request.POST)
     if high_limit is None:
         return HttpResponse('High Limit cannot be none', status=400)
     save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
@@ -97,7 +97,7 @@ def save_selector_limits_json(request, grid_id, selector):
     logger.debug(f'Request received: {request.__dict__}')
     if request.method != 'POST':
         return Response({'error':'Method not allowed'}, status=405)
-    low_limit, high_limit, kwargs = extract_selector_limits(request)
+    low_limit, high_limit, kwargs = extract_selector_limits(request.data)
     if high_limit is None:
         return Response({'error': 'High Limit cannot be none'}, status=400)
     save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
