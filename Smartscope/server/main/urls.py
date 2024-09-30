@@ -37,6 +37,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('smartscope/', include('Smartscope.server.frontend.urls')),
     path('selector_viewer/', include('Smartscope.server.selector_viewer.urls')),
+    path('annotator/', include('Smartscope.server.annotator.urls')),
     path('', RedirectView.as_view(url="smartscope/browse")),
 ]
 

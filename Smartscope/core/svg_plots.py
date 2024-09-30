@@ -1,7 +1,5 @@
 import drawsvg as draw
-from drawsvg import elements as elementsModule
 from math import floor, sqrt
-from io import StringIO
 from Smartscope.core.settings.worker import PLUGINS_FACTORY
 import logging
 
@@ -267,4 +265,11 @@ def drawSelector(obj, selector_sorter) -> draw.Drawing:
         r = draw.Rectangle(x, y, sz, sz, id=i.pk, stroke_width=floor(d.width / 300), stroke=color, fill=color, fill_opacity=0, class_='selectorTarget',value_=selector_sorter.values[index],)
         shapes.append(r)
     d.append(shapes)
+    return d
+
+def drawBase(obj, padding_fraction=0.25) -> draw.Drawing:
+    padded_img_size = [obj.shape_x * (1 + padding_fraction), obj.shape_y * (1 + padding_fraction)]
+    d = draw.Drawing(*padded_img_size, id=f'{obj.pk}-svg', displayInline=False, style_='height: 100%; width: 100%')
+    d.append(draw.Rectangle(0, 0, *padded_img_size, stroke_width=floor(d.width / 100), stroke='black', fill='black', fill_opacity=0))
+    d.append(draw.Image((padded_img_size[0]-obj.shape_x)//2, (padded_img_size[1]-obj.shape_y)//2, obj.shape_x, obj.shape_y, path=obj.png, embed= not obj.is_aws))
     return d

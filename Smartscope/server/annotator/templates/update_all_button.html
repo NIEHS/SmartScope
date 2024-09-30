@@ -1,0 +1,13 @@
+<button id="regroupAndReselectBtn" class="btn btn-primary"
+{% include "bootstrap_tooltip.html" with position="top" tooltip="Apply new settings to already aquired areas" %}
+>
+Regroup and reselect
+</button>
+
+<script>
+    $('#regroupAndReselectBtn').tooltip()
+    $('#regroupAndReselectBtn').click(async function() {
+        await regroupBIS('{{grid_id}}', getRegroupBISandReselectUrl)
+        $('#close-right-sidebar').trigger('click')
+    })
+</script>
