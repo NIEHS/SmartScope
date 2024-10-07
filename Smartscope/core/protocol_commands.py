@@ -63,7 +63,7 @@ def moveStage(scope:MicroscopeInterface,params,instance, content:Dict, *args, **
     """Moves the stage to the instance position"""
     finder = instance.finders.first()
     stage_x, stage_y, stage_z = finder.stage_x, finder.stage_y, finder.stage_z
-    scope.moveStage(stage_x,stage_y,stage_z)
+    scope.moveStage(stage_x,stage_y,stage_z=stage_z)
 
 def moveStageWithAtlasToSearchOffset(scope:MicroscopeInterface,params,instance, content:Dict, *args, **kwargs)  -> None:
     """Moves the stage to the instance position with an offset"""
