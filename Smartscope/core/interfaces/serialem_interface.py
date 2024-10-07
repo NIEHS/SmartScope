@@ -60,6 +60,35 @@ class SerialemInterface(MicroscopeInterface):
                 self.logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
                 break
 
+    # def eucentricity_by_beam_tilt(self, max_movement:int=200, beam_tilt_angle:int=2):
+    #     self.logger.info(f'Doing eucentric height by beam tilt')
+    #     sem.GoToLowDoseArea('V')
+    #     target_Z = sem.ReportLDDefocusOffset('V')
+    #     offsetZ = 51
+    #     iteration = 0
+    #     while abs(offsetZ) > 5 and iteration != 3:
+    #         iteration += 1
+    #         self.logger.info(f'Staring iteration {iteration}')
+    #         alignments = []
+    #         stageZ = sem.ReportStageXYZ()[2]
+    #         sem.SetBeamTilt(-beam_tilt_angle, 0)
+    #         sem.View()
+    #         sem.SetBeamTilt(beam_tilt_angle, 0)
+    #         sem.View()
+    #         sem.AlignTo('B', 1)
+            #CONTINUE HERE
+    #         # self.logger.debug(', '.join(alignments))
+    #         offsetZ = sum(alignments) / (len(alignments) * 1000)
+    #         totalZ = stageZ + offsetZ
+    #         if abs(totalZ) < max_movement:
+    #             self.logger.info(f'Moving by {offsetZ} um')
+
+    #             sem.MoveStage(0, 0, offsetZ)
+    #             time.sleep(0.2)
+    #         else:
+    #             self.logger.info('Eucentric alignement would send the stage too far, stopping Eucentricity.')
+    #             break        
+
     def eucentricity(self):
         sem.GoToLowDoseArea('V')
         sem.Eucentricity(1)
@@ -217,7 +246,7 @@ class SerialemInterface(MicroscopeInterface):
         sem.View()
         sem.CropCenterToSize('A', self.hole_crop_size, self.hole_crop_size)
         sem.AlignTo('T')
-        return sem.ReportAlignShift()[5:]
+        return sem.ReportAlignShift()
     
     def align_to_coord(self, coord):
         sem.ImageShiftByPixels(coord[0], coord[1])
