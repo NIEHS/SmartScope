@@ -92,6 +92,7 @@ class RunHole:
                     )
                     
                 if targets == []:
+                    logger.info('No targets found, registering points from square mag registration.')
                     targets = Targets.create_targets_from_center(image_coords, montage, force_mdoc=FORCE_MDOC_TARGETING)
                 timer.report_timer('Identifying and registering targets')
                 
