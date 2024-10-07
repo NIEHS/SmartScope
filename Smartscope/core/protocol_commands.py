@@ -114,7 +114,7 @@ def alignToHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *arg
     while iteration < max_iterations:
         iteration +=1
         if iteration > 1:
-            scope.image_shift_by_microns(0.2,0)
+            scope.image_shift_by_microns(0.2,0, tiltAngle=params.tilt_angle)
         shift = scope.align_to_hole_ref()
         if np.sqrt(np.sum(np.array(shift[:5])**2)) < 500:
             return
