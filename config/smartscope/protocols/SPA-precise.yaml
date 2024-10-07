@@ -36,6 +36,7 @@ mediumMag:
     - mediumMagHole
     - autoFocus
     - waitDrift
+    - zeroImageShift
 highMag:
   acquisition:
     - highMag
