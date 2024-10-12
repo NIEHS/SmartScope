@@ -114,7 +114,7 @@ def alignToHoleRef(scope:MicroscopeInterface,params,instance, content:Dict, *arg
     while iteration < max_iterations:
         iteration +=1
         if iteration > 1:
-            scope.image_shift_by_microns(0.2,0, tiltAngle=params.tilt_angle)
+            scope.image_shift_by_microns(0.2,0, tiltAngle=params.tilt_angle, goToRecord=False)
         shift = scope.align_to_hole_ref()
         if np.sqrt(np.sum(np.array(shift[:5])**2)) < 500:
             return
@@ -145,9 +145,13 @@ def highMag(scope:MicroscopeInterface, params,instance, content:Dict, *args, **k
     offset = 0
     if params.offset_targeting and not params.multishot_per_hole and (grid.collection_mode == 'screening' or params.offset_distance != -1) and grid_type.hole_size is not None:
         offset = add_IS_offset(grid_type.hole_size, grid_mesh.name, offset_in_um=params.offset_distance)
-    isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) * cos(radians(params.tilt_angle))
+    isX, isY = stage_x - finder.stage_x + offset, (stage_y - finder.stage_y) #* cos(radians(params.tilt_angle))
     logger.debug(f'The tilt angle is {params.tilt_angle}, Y axis image-shift corrected from {stage_y - finder.stage_y:.2f} to {isY:.2f}')
     scope.image_shift_by_microns(isX,isY,params.tilt_angle, afis=params.afis)
+    logger.debug(f'Image shift is {isX},{isY}.')
+    scope.state.imageShiftX = isX
+    scope.state.imageShiftY = isY
+    scope.set_focus_for_bis_tilt(isY,tiltAngle=params.tilt_angle)
     frames = scope.highmag(file=instance.raw, 
                            frames=params.save_frames, 
                            earlyReturn=any([params.force_process_from_average, params.save_frames is False, 'Falcon' in grid.session_id.detector_id.detector_model]))

@@ -398,11 +398,14 @@ class SerialemInterface(MicroscopeInterface):
         if afis:
             sem.RestoreBeamTilt()
 
-    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False):
-        sem.GoToLowDoseArea('Record')
+    def image_shift_by_microns(self,isX,isY,tiltAngle, afis:bool=False, goToRecord=True):
+        if goToRecord:
+            sem.GoToLowDoseArea('Record')
         sem.ImageShiftByMicrons(isX - self.state.imageShiftX, isY - self.state.imageShiftY, 1, int(afis))
-        self.state.imageShiftX = isX
-        self.state.imageShiftY = isY
+
+    def set_focus_for_bis_tilt(self,isY,tiltAngle):
+        if tiltAngle == 0:
+            return
         sem.SetDefocus(self.state.currentDefocus - isY * math.sin(math.radians(tiltAngle)))     
 
     def highmag(self, file='', frames=True, earlyReturn=False):
