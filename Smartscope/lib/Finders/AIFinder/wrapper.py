@@ -41,13 +41,13 @@ def find_holes(montage:Montage, **kwargs):
         kwargs['device'] = 'cpu'
     image = montage.image
     binning=1
-    if montage.pixel_size < 100:
-        logger.info(f'Resizing image')
-        binning = (150/montage.pixel_size)
-        image = fourier_crop(image, height=montage.shape_x/binning)
-        pad_x = int((montage.shape_x - image.shape[0]) //2)
-        pad_y = int((montage.shape_y - image.shape[1]) //2)
-        image = cv2.copyMakeBorder(image,pad_x,pad_x,pad_y,pad_y,cv2.BORDER_CONSTANT,value=0)
+    # if montage.pixel_size < 100:
+    #     logger.info(f'Resizing image')
+    #     binning = (150/montage.pixel_size)
+    #     image = fourier_crop(image, height=montage.shape_x/binning)
+    #     pad_x = int((montage.shape_x - image.shape[0]) //2)
+    #     pad_y = int((montage.shape_y - image.shape[1]) //2)
+    #     image = cv2.copyMakeBorder(image,pad_x,pad_x,pad_y,pad_y,cv2.BORDER_CONSTANT,value=0)
     logger.debug(f'Resized shape: {image.shape}, original: {montage.image.shape}')
     holes, _ = detect_holes(image, **kwargs)
     logger.info(f'AI hole detection found {len(holes)} holes')

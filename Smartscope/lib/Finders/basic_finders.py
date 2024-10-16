@@ -105,16 +105,26 @@ def find_square(image):
     cY = int(M["m01"] / M["m00"])
     return contour, np.array([cX, cY]), hist
 
+def check_aspect(rect, ratio=1.4):
+    x, y, w, h = rect
+    if max(w, h) / min(w, h) < ratio:
+        return True
+    return False
 
-def find_targets_binary(montage, threshold=30, save=False):
+def rect_to_box(rect):
+    x, y, w, h = rect
+    return np.array([x, y, x + w, y + h])
+
+def find_targets_binary(image, minsize=20, maxsize=500):
     """
     Finds holes by applying a binary threshold on the image.
     The threshold is automatically evaluated based on the gaussian curve
     fitting on the pixel intensity histogram.
     """
-    _, centroid, _ = find_square(montage)
-    blurred = cv2.GaussianBlur(montage.montage, (5, 5), 0)
-    result = cv2.cvtColor(montage.montage.copy(), cv2.COLOR_GRAY2RGB)
+    square_mask = create_square_mask(image)
+    image = auto_contrast(image*square_mask)
+    blurred = cv2.GaussianBlur(image, (5, 5), 0)
+    result = cv2.cvtColor(image.copy(), cv2.COLOR_GRAY2RGB)
     done = False
 
     (mu, sigma, a), is_fit = fit_gauss(blurred)
@@ -127,19 +137,33 @@ def find_targets_binary(montage, threshold=30, save=False):
         threshold = mu + sigma * sig
 
         cnts, t = find_contours(blurred, threshold)
-        cnts = [cnt for cnt in cnts if (75 < cv2.contourArea(cnt) < 500)]
+        cnts = [cv2.boundingRect(cnt) for cnt in cnts]
+        cnts = [cnt for cnt in cnts if check_aspect(cnt)]
+        median_size = np.median([cnt[2]*cnt[3] for cnt in cnts])
+        logger.info(f'Found {len(cnts)} targets with mean size {median_size}')
+        cnts = [rect_to_box(cnt) for cnt in cnts if (minsize < cnt[2]*cnt[3] < maxsize)]
+        # cnts = [cnt for cnt in cnts if (50 < cv2.contourArea(cnt) < 500)]
+ 
         for cnt in cnts:
-            cv2.drawContours(result, [cnt], -1, (0, 255, 0), cv2.FILLED)
+            cv2.rectangle(result, cnt[:2],cnt[2:], (0, 255, 0), 2)
 
         if len(cnts) < 90 and sig > 2:
             sig -= 0.5
         else:
             done = True
 
-    if len(cnts) < 30:
-        return None, False, None, None
+        cv2.imwrite('test.png', result)     
 
-    return cnts, True, 'HoleTarget', centroid
+    if len(cnts) < 30:
+        return None, False, dict()
+
+    return cnts, True, dict()
+
+
+def binary_finder(montage):
+    pixel_size = montage.pixel_size
+    average_hole_size = 1 / (pixel_size / 10000)
+    return find_targets_binary(montage.image, minsize=average_hole_size*0.2, maxsize=average_hole_size*5)
 
 
 def fourrier_filter(im, ang, coords):

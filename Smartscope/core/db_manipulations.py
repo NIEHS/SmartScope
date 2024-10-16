@@ -148,7 +148,12 @@ def group_holes_for_BIS(hole_models:List[models.HoleModel], max_radius=4, min_gr
 
     # Find lines with the most hits as max group size
     max_group_size = np.max(np.sum(filter_start, axis=0))
-    logger.debug(f'Max group size: {max_group_size}')
+    additional_msg = ''
+    if max_group_size > 20 and min_group_size < max_group_size/2:
+        min_group_size = int(max_group_size//2)
+        additional_msg = f' Adjusted min group size to {min_group_size}.'
+
+    logger.debug(f'Max group size: {max_group_size}.{additional_msg}')
     best = (-1000, 0, 0, [])
     score_no_change = 0
     # Start iterations
