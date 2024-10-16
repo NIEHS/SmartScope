@@ -225,12 +225,13 @@ def check_directories_for_selector_data(grid:models.AutoloaderGrid, selector_nam
             return directory
     
 
-def initialize_selector(grid: models.AutoloaderGrid, selector:str, queryset) -> SelectorSorter:
+def initialize_selector(grid: models.AutoloaderGrid, selector:str, queryset:Optional=None) -> SelectorSorter:
     selector_sorter = SelectorSorter(selector_name=selector,fractional_limits=PLUGINS_FACTORY.get_plugin(selector).limits)
     directory = check_directories_for_selector_data(grid,selector)
     if directory is not None:
         selector_data = SelectorSorterData.load(directory, selector)
         selector_sorter = selector_data.create_sorter()
     selector_data = SelectorValueParser(selector, from_server=True)
-    selector_sorter.values = selector_data.extract_values(queryset)
+    if queryset is not None:
+        selector_sorter.values = selector_data.extract_values(queryset)
     return selector_sorter

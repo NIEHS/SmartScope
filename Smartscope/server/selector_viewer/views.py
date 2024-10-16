@@ -103,6 +103,13 @@ def save_selector_limits_json(request, grid_id, selector):
     save_selector_data(grid_id=grid_id,selector_name=selector, data=dict(low_limit=low_limit, high_limit=high_limit), **kwargs)
     return Response({'success': True}, status=200)
 
+@api_view(['GET'])
+def get_selector_limits(request, grid_id, selector):
+    logger.debug(f'Request received: {request.__dict__}')
+    grid_id = AutoloaderGrid.objects.get(grid_id=grid_id)
+    selector_sorter = initialize_selector(grid_id, selector)
+    return Response({'low_limit': selector_sorter.limits[0], 'high_limit': selector_sorter.limits[1]}, status=200)
+
 # class CollectionStatsView(TemplateView):
 #     template_name = "autoscreenViewer/collection_stats.html"
 
