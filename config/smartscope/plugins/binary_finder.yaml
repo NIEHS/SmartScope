@@ -1,0 +1,8 @@
+name: Binary Finder
+method: binary_finder
+module: Smartscope.lib.Finders.basic_finders
+kwargs: {}
+targetClass:
+  - Finder
+description: |
+  Basic hole finder that finds holes using a binary thresholding. The threshold is determined with fitting gaussian function to the histogram of the image.
