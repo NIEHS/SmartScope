@@ -1,0 +1,45 @@
+name: SPA-hex
+atlas:
+  acquisition:
+      - setAtlasOptics
+      - setAperturesForLowMag
+      - resetStage
+      - removeSlit
+      # - eucentricSearch
+      - atlas
+  targets:
+    finders:
+      - AI square finder
+    selectors:
+      - Size selector
+square:
+  acquisition:
+    - setAperturesForLowMag
+    - moveStageWithAtlasToSearchOffset
+    - realignToSquare
+    - eucentricMediumMag
+    - square
+  targets:
+    finders:
+      - Binary Finder
+    selectors:
+      - Graylevel selector
+      - Distance from center selector
+mediumMag:
+  acquisition:
+    - setAperturesForHighMag
+    - setFocusPosition
+    - tiltToAngle
+    - moveStage
+    - createHoleRefPtolemy
+    - alignToHoleRef
+    - zeroImageShift
+    - mediumMagHole
+    - autoFocus
+    - waitDrift
+  targets:
+    finders:
+      - AI hole finder
+highMag:
+  acquisition:
+    - highMag
