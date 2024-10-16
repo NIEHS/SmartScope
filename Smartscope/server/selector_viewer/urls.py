@@ -6,4 +6,5 @@ urlpatterns = [
     path('<grid_id>/<selector>/<maglevel>', views.selector_view, name='selector_view'),
     path('<grid_id>/<selector>/save/', views.save_selector_limits, name='save_selector_limits'),
     path('api/<grid_id>/<selector>/save/', views.save_selector_limits_json, name='save_selector_limits_json'),
+    path('api/<grid_id>/<selector>/getlimits/', views.get_selector_limits, name='get_selector_limits'),
 ]
