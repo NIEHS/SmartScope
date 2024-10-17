@@ -1,5 +1,3 @@
-
-
 import os
 import time
 import shutil
@@ -29,24 +27,56 @@ def split_path(path):
 def copy_file(file, remove=True):
     mdoc = file + '.mdoc'
     while not os.path.isfile(mdoc):
-        logging.info('Waiting for ', mdoc)
+        logger.info('Waiting for ', mdoc)
         time.sleep(2)
 
-    new_mdoc = shutil.copy2(mdoc, 'raw')
+    new_mdoc = None
+    new_file = None
 
-    new_file = shutil.copy2(file, 'raw')
-    if all([os.path.getsize(mdoc) == os.path.getsize(new_mdoc),
-            os.path.getsize(file) == os.path.getsize(new_file),
-            remove is True]):
-        exists = True
-        while exists:
-            try:
-                os.remove(file)
+    copied = False
+    while not copied:
+        try:
+            logger.info(f'Copying {mdoc} ({os.path.getsize(mdoc)} bytes)...')
+            new_mdoc = shutil.copy2(mdoc, 'raw')
+
+            logger.info(f'Copying {file} ({os.path.getsize(file)} bytes)...')
+            new_file = shutil.copy2(file, 'raw')
+
+            logger.info('Checking files integrity...')
+            mdoc_size, new_mdoc_size = os.path.getsize(mdoc), os.path.getsize(new_mdoc)
+            if mdoc_size != new_mdoc_size:
+                logger.warning(f'Integrity check failure: '
+                               f'{mdoc} ({mdoc_size} bytes) <> its copy ({new_mdoc_size} bytes)')
+            file_size, new_file_size = os.path.getsize(file), os.path.getsize(new_file)
+            if file_size != new_file_size:
+                logger.warning(f'Integrity check failure: '
+                               f'{file} ({file_size} bytes) <> its copy ({new_file_size} bytes)')
+            if all([mdoc_size == new_mdoc_size,
+                    file_size == new_file_size]):
+                copied = True
+                logger.info('Integrity check success')
+                logger.info('Copied')
+            else:
+                raise OSError('Integrity check failure')
+        except OSError as err:
+            logger.warning(err, 'Sleeping 2 secs and retrying')
+            time.sleep(2)
+
+    removed = False
+    while not removed and remove:
+        try:
+            logger.info(f'Removing {mdoc}...')
+            if os.path.exists(mdoc):
                 os.remove(mdoc)
-                exists = False
-            except OSError as err:
-                logger.warning(err, 'Sleeping 2 secs and retrying')
-                time.sleep(2)
+            logger.info(f'Removing {file}...')
+            if os.path.exists(file):
+                os.remove(file)
+            removed = True
+            logger.info('Removed')
+        except OSError as err:
+            logger.warning(err, 'Sleeping 2 secs and retrying')
+            time.sleep(2)
+
     return split_path(new_file)
 
 
@@ -72,7 +102,7 @@ def now():
 
 def clean_source_dir(source_dir=None):
     if source_dir is None:
-        source_dir = os.getenv('MOUNTLOC') 
+        source_dir = os.getenv('MOUNTLOC')
     files = glob.glob(os.path.join(source_dir, '*.txt'))
     files += glob.glob(os.path.join(source_dir, '.*'))
 
@@ -93,4 +123,3 @@ def locate_file_in_directories(directory_list: List[str], file_name: str) -> Uni
         if path.exists():
             return directory, path
     return None, None
-
