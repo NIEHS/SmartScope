@@ -8,6 +8,12 @@ def export_grid(instance:AutoloaderGrid, export_to:str):
     with open(export_to,'wb') as file:
         file.write(YAMLRenderer().render(data=serializer.data))
 
+def write_grid(instance:AutoloaderGrid, export_to:str):
+    serializer = ExportMetaSerializer(instance=instance)
+    with open(export_to,'wb') as file:
+        file.write(YAMLRenderer().render(data=serializer.data))
+        
+
 def import_grid(file_to_import:str, override_group:str='', override_user:str=''):
     with open(file_to_import,'r') as file:
         data = yaml.safe_load(file)

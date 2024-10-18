@@ -281,15 +281,124 @@ def get_atlas_to_search_offset(detector_name,maximum=0):
     print('Skip setting values')
 
 
-def export_grid(grid_id, export_to=''):
+def export_grid(grid_id: str, export_to: str = ''):
+    """
+    Exports a specific grid, with each grid having its own export YAML file.
+
+    Args:
+        grid_id (str): The ID of the grid to export.
+        export_to (str, optional): The path to export the YAML file.
+                                   If not provided, defaults to the grid's directory.
+    Exceptions:
+        - Handles missing grid IDs gracefully.
+        - Catches permission or file path errors during file export.
+    """
     from Smartscope.core.models import AutoloaderGrid
-    from Smartscope.core.utils.export_import import export_grid
-    grid = AutoloaderGrid.objects.get(grid_id=grid_id)
-    if export_to == '':
-        export_to = os.path.join(grid.directory, 'export.yaml')
-        print(f'Export path not specified. Exporting to default loacation: {export_to}')
-    export_grid(grid, export_to=export_to)
-    print('Done.')
+    from Smartscope.core.utils.export_import import write_grid
+
+    try:
+        # Retrieve the grid based on grid_id
+        grid = AutoloaderGrid.objects.get(grid_id=grid_id)
+
+        # Determine the export path
+        if not export_to:
+            export_to = os.path.join(grid.directory, f'export_{grid.id}.yaml')
+            print(f'Export path not specified. Using default location: {export_to}')
+        else:
+            export_to = os.path.join(export_to, f'export_{grid.id}.yaml')
+            print(f'Exporting to: {export_to}')
+
+        # Write the export file
+        write_grid(instance=grid, export_to=export_to)
+        print(f'Success: Grid {grid.id} exported successfully.')
+
+    except AutoloaderGrid.DoesNotExist:
+        print(f"Error: Grid with ID '{grid_id}' does not exist.")
+
+    except (OSError, IOError) as e:
+        print(f"Error: Failed to export grid {grid_id} due to file error: {str(e)}")
+
+    except Exception as e:
+        print(f"Error: An unexpected error occurred while exporting grid {grid_id}: {str(e)}")
+
+
+
+def export_session(session_id: str):
+    """
+    Exports all grids from a session by calling the export_grid function.
+
+    Args:
+        session_id (str): The ID of the session to export.
+
+    Exceptions:
+        - Handles missing session IDs gracefully.
+        - Catches permission or file path errors during the session export.
+    """
+    from Smartscope.core.models import AutoloaderGrid, ScreeningSession
+
+    try:
+        # Retrieve the session to ensure it exists
+        session = ScreeningSession.objects.get(session_id=session_id)
+        print(f"Session found: {session_id}. Proceeding with the export request.")
+
+        # Retrieve all grids for the session
+        grids = AutoloaderGrid.objects.filter(session_id=session_id)
+
+        if not grids:
+            print(f"No grids found in session {session_id}.")
+            return
+
+        print(f"Found {len(grids)} grids for session {session_id}.")
+        for grid in grids:
+            print(f" Grid_ID - {grid}")
+
+        # Call export_grid function for each grid
+        for grid in grids:
+            print(f"Exporting grid: {grid.id}")
+            export_grid(grid.id)
+
+    except ScreeningSession.DoesNotExist:
+        print(f"Session ID: {session_id} does not exist.")
+
+    except Exception as e:
+        print(f"An error occurred while exporting session {session_id}: {str(e)}")
+
+
+
+def export_group(group_name: str):
+    """
+    Exports all sessions within a group by calling the export_session function.
+
+    Args:
+        group_name (str): The name of the group to export.
+
+    Exceptions:
+        - Handles group with no sessions gracefully.
+        - Catches any unexpected errors during the export.
+    """
+    from Smartscope.core.models import AutoloaderGrid, ScreeningSession
+
+    try:
+        # Retrieve all session IDs for the given group
+        session_ids = ScreeningSession.objects.filter(group=group_name).values_list('session_id', flat=True)
+
+        if not session_ids:
+            print(f"No sessions found for group '{group_name}'.")
+            return
+
+        print(f"Found {len(session_ids)} sessions for group '{group_name}'.")
+        for session_id in session_ids:
+            print(f"Session ID - {session_id}")
+
+        # Call export_session function for each session
+        for session_id in session_ids:
+            print(f"*************************************************************************************")
+            print(f"Exporting session: {session_id}")
+            export_session(session_id)
+
+    except Exception as e:
+        print(f"An error occurred while exporting the group '{group_name}': {e}")
+
 
 def import_grid(file:str, group:str='', user:str=''):
     from Smartscope.core.utils.export_import import import_grid
