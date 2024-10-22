@@ -11,6 +11,10 @@
   mode: any
   protocol: SPA
 - conditions:
+    - [holeType.name, 'HexAUFoil']
+  mode: all
+  protocol: SPA-hex
+- conditions:
     - [holeType.hole_size, '!__None']
     - [params_id.bis_max_distance, '!__0']
     - [params_id.tilt_angle, 0]
