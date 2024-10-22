@@ -63,6 +63,7 @@ class Detector(BaseModel):
         help_text='Location of the frames directory from SmartScope that point ' + \
             'to the same location as frames_windows_directory.'
     )
+    deprecated = models.BooleanField(default=False, help_text='This detector is no longer in use. This will effectively hide the detector from the user interface while still keeping the data in the database for historical session.')
 
     objects = DetectorManager()
 
