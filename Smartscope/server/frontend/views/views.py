@@ -560,6 +560,6 @@ def getMicroscopeDetectors(request):
     microscope = request.GET.get('microscope_id',None)
     if microscope is None:
         return HttpResponse('Microscope not specified')
-    detectors = Detector.objects.filter(microscope_id=microscope)
+    detectors = Detector.objects.filter(microscope_id=microscope, deprecated=False)
     options = [{"value":d.pk,"field":d} for d in detectors]
     return render(request, "general/options_fields.html", {"options": options})

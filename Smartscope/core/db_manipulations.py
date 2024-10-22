@@ -12,10 +12,8 @@ from django.contrib.contenttypes.models import ContentType
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-
 from Smartscope.server.api.serializers import update_to_fullmeta
 
-# from django.db import models
 from . import models
 from .data_manipulations import filter_targets, apply_filter
 
