@@ -569,7 +569,13 @@ class AutoloaderGridViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraAct
             return Response(dict(out=out))
         except Exception as err:
             logger.error(f'Error tring to regrouping BIS and reselecting, {err}')
-            return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(dict(success=False),status=rest_status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @ action(detail=True, methods=['get'])
+    def get_report_url(self, request, *args, **kwargs):
+        obj:AutoloaderGrid = self.get_object()
+        url=  request.build_absolute_uri(reverse('browser') + f'?group={obj.session_id.group.pk}&session_id={obj.session_id.pk}&grid_id={obj.pk}')
+        return Response(url)
 
 
 class AtlasModelViewSet(viewsets.ModelViewSet, GeneralActionsMixin, ExtraActionsMixin, TargetRouteMixin):
